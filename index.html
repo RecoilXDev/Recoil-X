@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X — VERSION X.5 | ALL 10 NEW FEATURES</title>
-<meta name="description" content="RECOIL X Version X.5: preserves X.4 and older game modes and adds six-mission campaign, evolving Nemesis bot, stealth heist, grappling and wall movement, tactical gadgets, offline map creator, convoy mode, 50-level weapon mastery, infinite survival, and adaptive Lite performance." />
+<title>RECOIL X — UPDATE Z | 19 HOLIDAY BATTLE PASSES · HOLIDAY VAULT 2031 + KINGDOMS + CHESS</title>
+<meta name="description" content="RECOIL X Update Z: preserves X.5, X.4 and older game modes and adds six-mission campaign, evolving Nemesis bot, stealth heist, grappling and wall movement, tactical gadgets, offline map creator, convoy mode, 50-level weapon mastery, infinite survival, and adaptive Lite performance." />
 <meta name="color-scheme" content="dark" />
 <style>
 :root{--ink:#eef7ff;--muted:#a4b9d1;--accent:#43f4d5;--hot:#ff6074;--blue:#3f85ff;--pane:rgba(11,24,47,.88)}
@@ -695,7 +695,7 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 <script>
 (()=>{'use strict';
 // RECOIL X V8.2: LOCK-LOAD-DOMINATE — 3D browser FPS, token jackpots, pass, spectator, cosmetics and 5 maps.
-const GAME_VERSION="X.5 ALL-FEATURE EXPANSION", GAME_NAME="RECOIL X";
+const GAME_VERSION="UPDATE Z - THE NEXT ERA", GAME_NAME="RECOIL X";
 const $=id=>document.getElementById(id), canvas=$('game');
 let gl=canvas.getContext('webgl',{alpha:true,antialias:false,depth:true,preserveDrawingBuffer:false,powerPreference:/iPhone|iPad|Android/i.test(navigator.userAgent)?'low-power':'default'});
 let ctx2d=gl?null:canvas.getContext('2d',{alpha:false});
@@ -1772,7 +1772,7 @@ let zoom=isScope&&!menu&&!v8ThirdPerson&&weapons[pl.weapon].id==='sniper'?2.5:1;
 gl.uniformMatrix4fv(uniform.proj,false,perspective((mobile?81:77)/zoom*Math.PI/180,canvas.width/canvas.height,.075,360));gl.uniformMatrix4fv(uniform.view,false,lookAt(eye,center));gl.uniform1f(uniform.time,now);gl.uniform3fv(uniform.fog,new Float32Array(activeMap().sky));gl.uniform3fv(uniform.camera,new Float32Array(eye));gl.uniform1f(uniform.quality,v91EffectiveGraphics());rx2ShaderUniforms();
 dynVerts.length=0;
 for(const b of bots){const d=len2(b.x-eye[0],b.z-eye[2]);if(d<v91RenderDistance()+12){v92DrawActor(dynVerts,b,d);if(mode==='mystery'&&b.alive&&b.role==='murderer'&&d<34)vxKnifeAtActor(dynVerts,b,VX_KNIVES[0],now,false);}}
-for(const p of remotePlayers.values())if((mode==='host'||mode==='guest')&&!p.spectating){const d=len2(p.x-eye[0],p.z-eye[2]);if(d>v91RenderDistance()+8)continue;if(v92Active())v92DrawActor(dynVerts,{...p,alive:p.alive!==false&&p.hp>0,skinId:p.skinId||'sandstorm'},d);else renderRemote(dynVerts,p);if(!v92Active()||d<16)v8DrawWeapon(dynVerts,{x:p.x,y:1.45,z:p.z,yaw:p.yaw||0,pitch:0},p.weapon||0,gunFinishFor((p.weapon||0)),false,now);}
+for(const p of remotePlayers.values())if((mode==='host'||mode==='guest'||mode==='z-online')&&!p.spectating){const d=len2(p.x-eye[0],p.z-eye[2]);if(d>v91RenderDistance()+8)continue;if(v92Active())v92DrawActor(dynVerts,{...p,alive:p.alive!==false&&p.hp>0,skinId:p.skinId||'sandstorm'},d);else renderRemote(dynVerts,p);if(!v92Active()||d<16)v8DrawWeapon(dynVerts,{x:p.x,y:1.45,z:p.z,yaw:p.yaw||0,pitch:0},p.weapon||0,gunFinishFor((p.weapon||0)),false,now);}
 if(mode==='guest')renderRemote(dynVerts,{...pl,x:-999,z:-999});
 if(!menu&&!spectating&&pl.alive){if(v8ThirdPerson){renderBot(dynVerts,{...pl,skinId:equipped,walk:pl.walk,verticalOffset:pl.jump});if(mode!=='mystery'||vxRole==='sheriff')v8DrawWeapon(dynVerts,{x:pl.x,y:1.38+pl.jump,z:pl.z,yaw:pl.yaw,pitch:pl.pitch*.2},pl.weapon,gunFinishFor(pl.weapon),false,now);else if(vxRole==='murderer')vxDrawHeldKnife(dynVerts,now);}else if(!v92Active()||v92MobileResolved()!=='eco'||(mode==='mystery'&&vxRole==='murderer')){if(mode!=='mystery'||vxRole==='sheriff')v8DrawWeapon(dynVerts,{x:pl.x,y:pl.y,z:pl.z,yaw:pl.yaw,pitch:pl.pitch},pl.weapon,gunFinishFor(pl.weapon),true,now);else if(vxRole==='murderer')vxDrawHeldKnife(dynVerts,now);}}
 renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);if(v91Resolved()!=='pi'&&graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
@@ -1792,7 +1792,7 @@ function drawFallback(now){
  let zoom=isScope&&!menu&&!v8ThirdPerson&&weapons[pl.weapon].id==='sniper'?2.5:1;
  let scale=h/(2*Math.tan((mobile?81:77)/zoom*Math.PI/360));
  dynVerts.length=0;for(const b of bots){const d=len2(b.x-eye[0],b.z-eye[2]);if(d<v91RenderDistance()+10){v92DrawActor(dynVerts,b,d);if(mode==='mystery'&&b.alive&&b.role==='murderer'&&d<34)vxKnifeAtActor(dynVerts,b,VX_KNIVES[0],now,false);}}
- for(const p of remotePlayers.values())if((mode==='host'||mode==='guest')&&!p.spectating){renderRemote(dynVerts,p);v8DrawWeapon(dynVerts,{x:p.x,y:1.45,z:p.z,yaw:p.yaw||0,pitch:0},p.weapon||0,gunFinishFor((p.weapon||0)),false,now);}
+ for(const p of remotePlayers.values())if((mode==='host'||mode==='guest'||mode==='z-online')&&!p.spectating){renderRemote(dynVerts,p);v8DrawWeapon(dynVerts,{x:p.x,y:1.45,z:p.z,yaw:p.yaw||0,pitch:0},p.weapon||0,gunFinishFor((p.weapon||0)),false,now);}
  if(!menu&&!spectating&&pl.alive){if(v8ThirdPerson){renderBot(dynVerts,{...pl,skinId:equipped,walk:pl.walk,verticalOffset:pl.jump});if(mode!=='mystery'||vxRole==='sheriff')v8DrawWeapon(dynVerts,{x:pl.x,y:1.38+pl.jump,z:pl.z,yaw:pl.yaw,pitch:pl.pitch*.2},pl.weapon,gunFinishFor(pl.weapon),false,now);else if(vxRole==='murderer')vxDrawHeldKnife(dynVerts,now);}else if(!v92Active()||v92MobileResolved()!=='eco'||(mode==='mystery'&&vxRole==='murderer')){if(mode!=='mystery'||vxRole==='sheriff')v8DrawWeapon(dynVerts,{x:pl.x,y:pl.y,z:pl.z,yaw:pl.yaw,pitch:pl.pitch},pl.weapon,gunFinishFor(pl.weapon),true,now);else if(vxRole==='murderer')vxDrawHeldKnife(dynVerts,now);}}
 renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);if(graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
  for(const t of tracers)putBeam(dynVerts,t.a.x,t.a.y,t.a.z,t.b.x,t.b.y,t.b.z,.055,t.color);vxDrawEffects(dynVerts,now);
@@ -3730,6 +3730,725 @@ function x5UI(){const host=x5P('mainMenu');const button=document.createElement('
  const ctrl=x5P('mobileControls');for(const [id,name,fn] of [['x5TouchGrapple','🪝 GRAPPLE',x5Grapple],['x5TouchGadget','⚡ GADGET',x5UseGadget],['x5TouchSwap','🔄 SWAP',()=>{x5GadgetIndex=(x5GadgetIndex+1)%X5_GADGETS.length;x5Hud();x5Message(X5_GADGETS[x5GadgetIndex].name);}],['x5TouchUse','✋ USE',x5Interact]]){const b=document.createElement('button');b.id=id;b.className='x5-touch';b.textContent=name;b.type='button';b.onclick=fn;ctrl.append(b);}
  x5RefreshHub();}
 x5UI();
+
+
+/* RECOIL X UPDATE Z -- additive systems, retains X.5 and all earlier modules.
+ * Holiday hub is UI/inventory only. No holiday map meshes, weather, or particles.
+ */
+const Z_VERSION='Z';
+const Z_HOLIDAYS=[
+ ['lunar','🐉','Lunar New Year','Dragon Dynasty','#b52b26','#ffd979','chineseNew',12],
+ ['valentine','💘',"Valentine’s Day",'Heartbreaker','#d94e81','#ffd2ea','fixed:2:14',10],
+ ['ramadan','🌙','Ramadan Nights','Moonlit Lantern','#173d65','#f7d68b','hijriRamadan',30],
+ ['eidfitr','🎁','Eid al-Fitr','Eid Radiance','#33966a','#ffe3a1','hijriFitr',9],
+ ['april','😂',"April Fools’ Day",'Banana Blaster','#ffd137','#8c49d8','fixed:4:1',7],
+ ['easter','🐰','Easter','Pastel Bunny','#8dbde8','#ffe4a9','easter',10],
+ ['earth','🌍','Earth Day','Emerald Earth','#167e54','#b7ffca','fixed:4:22',8],
+ ['eidadha','✨','Eid al-Adha','Golden Crescent','#b0863d','#fff2b7','hijriAdha',9],
+ ['summer','☀️','Summer Vacation','Tropical Wave','#00a1ad','#ffe65f','fixed:6:15',30],
+ ['friendship','🤝','Friendship Day','Twin Hearts','#4c7fd1','#f7c3f7','fixed:7:30',9],
+ ['midautumn','🌕','Mid-Autumn Festival','Jade Moon','#385a8f','#f4edb4','chineseMoon',10],
+ ['saudi','🇸🇦','Saudi National Day','Emerald Falcon','#13784c','#f9ffe4','fixed:9:23',10],
+ ['diwali','🪔','Diwali','Festival of Lights','#962d9a','#ffd95e','diwali',10],
+ ['halloween','🎃','Halloween','Phantom Reaper','#ad521e','#c47df5','fixed:10:31',14],
+ ['oman','🇴🇲','Oman National Day','Royal Falcon','#bc2331','#f7f0df','fixed:11:20',14],
+ ['thanksgiving','🍂','Thanksgiving','Autumn Harvest','#8f4c24','#ffce75','thanksgiving',8],
+ ['christmas','🎄','Christmas','Candy Frost','#c23142','#d6ffed','fixed:12:25',14],
+ ['solstice','❄️','Winter Solstice','Ice Crystal','#497aad','#d6f8ff','fixed:12:21',8],
+ ['anniversary','🎂','RECOIL X Anniversary','Founders Legacy','#7e4dd4','#ffe394','fixed:8:1',14]
+].map(([id,icon,name,loot,base,glow,rule,duration])=>({id,icon,name,loot,base,glow,rule,duration}));
+const Z_ROLES={assault:{label:'Assault',icon:'⚔️',text:'Fast reload and extra weapon stability'},medic:{label:'Medic',icon:'❤️',text:'Health boost and a heal pulse (V)'},recon:{label:'Recon',icon:'🔭',text:'Track nearby opponents (V)'},engineer:{label:'Engineer',icon:'🔧',text:'Repair armor and barricades (V)'},heavy:{label:'Heavy',icon:'🛡️',text:'Additional armor and a protective pulse (V)'}};
+const Z_ULTS={shockwave:{icon:'💥',label:'Shockwave',text:'Disrupt and damage nearby enemies'},cloak:{icon:'👻',label:'Ghost Protocol',text:'Reduce enemy firing for 12 seconds'},turret:{icon:'🤖',label:'Guardian Turret',text:'Automated defense for 17 seconds'}};
+const Z_MODES=[['royale','👑','RECOIL ROYALE','Last survivor in a closing arena'],['titanraid','🤖','TITAN RAIDS','Multi-stage boss with reinforcements'],['faction','🏳️','FACTION WARS','Capture three territories for your faction'],['sabotage','💣','SABOTAGE','Plant the objective and defend it'],['gungame','🔫','GUN GAME CHAOS','Upgrade through four guns, finish with a knife'],['realm','🔮','THE HIDDEN REALM','Discover three clues and confront the guardian']];
+function zRead(key,fallback){try{return getStore(key,fallback)}catch(e){return fallback}}
+const zRaw=zRead('recoil_x_z_profile_v1',{});
+const zProfile={classId:Z_ROLES[zRaw.classId]?zRaw.classId:'assault',ult:Z_ULTS[zRaw.ult]?zRaw.ult:'shockwave',faction:['Falcons','Vipers'].includes(zRaw.faction)?zRaw.faction:'Falcons', armor:zRaw.armor||'balanced',rating:Number(zRaw.rating)||1000,seasonWins:Number(zRaw.seasonWins)||0,factionPoints:Number(zRaw.factionPoints)||0, realm:!!zRaw.realm,keys:zRaw.keys&&typeof zRaw.keys==='object'?zRaw.keys:{},tokens:zRaw.tokens&&typeof zRaw.tokens==='object'?zRaw.tokens:{},claims:zRaw.claims&&typeof zRaw.claims==='object'?zRaw.claims:{},collection:Array.isArray(zRaw.collection)?zRaw.collection:[],titles:Array.isArray(zRaw.titles)?zRaw.titles:[]};
+function zSave(){setStore('recoil_x_z_profile_v1',zProfile)}
+function zToday(){const date=new Date(),dtf=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric',day:'numeric'}),part=Object.fromEntries(dtf.formatToParts(date).filter(v=>v.type!=='literal').map(v=>[v.type,Number(v.value)]));return {y:part.year,m:part.month,d:part.day,dayKey:`${part.year}-${String(part.month).padStart(2,'0')}-${String(part.day).padStart(2,'0')}`};}
+function zDateNumber(y,m,d){return Date.UTC(y,m-1,d)/86400000;}
+function zEaster(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k+7)%7,n=Math.floor((a+11*h+22*l)/451),month=Math.floor((h+l-7*n+114)/31),day=(h+l-7*n+114)%31+1;return {m:month,d:day};}
+function zLunarParts(calendar){try{const v=new Intl.DateTimeFormat('en-u-ca-'+calendar,{timeZone:'Asia/Muscat',month:'numeric',day:'numeric'}).formatToParts(new Date());return {m:Number(v.find(x=>x.type==='month')?.value),d:Number(v.find(x=>x.type==='day')?.value)};}catch(e){return {m:0,d:0};}}
+function zHolidayStatus(h){const t=zToday(),now=zDateNumber(t.y,t.m,t.d),rule=h.rule,parts=rule.split(':'),year=t.y;let start=0,end=0,source='yearly';
+ if(parts[0]==='fixed'){const m=Number(parts[1]),d=Number(parts[2]);start=zDateNumber(year,m,d);if(now<start-25&&m===12)start=zDateNumber(year-1,m,d);if(now>start+h.duration-1)start=zDateNumber(year+1,m,d);end=start+h.duration-1;}
+ else if(rule==='easter'){let q=zEaster(year);start=zDateNumber(year,q.m,q.d)-4;if(now>start+h.duration-1){q=zEaster(year+1);start=zDateNumber(year+1,q.m,q.d)-4;}end=start+h.duration-1;}
+ else if(rule==='thanksgiving'){let nov1=new Date(Date.UTC(year,10,1)).getUTCDay(),fourthThu=1+((4-nov1+7)%7)+21;start=zDateNumber(year,11,fourthThu)-2;if(now>start+h.duration-1){nov1=new Date(Date.UTC(year+1,10,1)).getUTCDay();fourthThu=1+((4-nov1+7)%7)+21;start=zDateNumber(year+1,11,fourthThu)-2;}end=start+h.duration-1;}
+ else if(rule==='diwali'){const table={2026:[11,8],2027:[10,28],2028:[10,17],2029:[11,5],2030:[10,26],2031:[11,14]};let p=table[year];if(p){start=zDateNumber(year,p[0],p[1])-3;if(now>start+h.duration-1&&table[year+1]){p=table[year+1];start=zDateNumber(year+1,p[0],p[1])-3;}end=start+h.duration-1;}else return {active:false,label:'Dates to be confirmed'};}
+ else if(rule.startsWith('hijri')){const q=zLunarParts('islamic-umalqura');let active=false;if(rule==='hijriRamadan')active=q.m===9;else if(rule==='hijriFitr')active=q.m===10&&q.d<=9;else active=q.m===12&&q.d>=10&&q.d<=18;return {active,label:active?'LIVE NOW · Hijri calendar':'Moves with the Hijri calendar · dates may vary by moon sighting'};}
+ else if(rule.startsWith('chinese')){const q=zLunarParts('chinese');const target=rule==='chineseNew'?1:8,day=rule==='chineseNew'?1:15;let active=q.m===target&&q.d>=Math.max(1,day-2)&&q.d<=day+8;return {active,label:active?'LIVE NOW · Lunar calendar':'Moves with the Chinese lunar calendar'};}
+ return {active:now>=start&&now<=end,label:now>=start&&now<=end?'LIVE NOW':new Date(start*86400000).toISOString().slice(0,10)+' · '+h.duration+' days'};}
+const zHolidayActive=()=>Z_HOLIDAYS.filter(h=>zHolidayStatus(h).active);
+function zEventYear(h){const t=zToday();return h.id==='christmas'&&t.m===1?t.y-1:t.y;}
+// Each event owns a distinct usable character skin, gun finish, and knife design.
+for(const h of Z_HOLIDAYS){
+ const sId='z_suit_'+h.id;if(!skins.some(s=>s.id===sId))skins.push({id:sId,name:h.loot+' Armor',ar:h.loot+' Armor',price:99999999,body:h.base,trim:h.glow,mask:'#181c29',glow:h.glow});
+ const gun='z_gun_'+h.id;if(!V8_GUN_FINISHES.some(s=>s.id===gun))V8_GUN_FINISHES.push({id:gun,gun:'ar',name:h.loot+' // Holiday Edition',ar:h.loot,rarity:'godly',style:'standard',base:h.base,glow:h.glow,shadow:'#111a27'});
+ const knife='z_knife_'+h.id;if(!VX_KNIVES.some(k=>k.id===knife))VX_KNIVES.push({id:knife,box:'holiday',rarity:'godly',light:h.glow,dark:h.base,icon:h.icon,name:h.loot+' Edge',shape:2,rarityIndex:4});
+}
+let zRun=null,zArmor={helmet:55,chest:100,legs:60},zArmorPacks=2,zEnergy=0,zCloak=0,zTurret=0,zUltReady=0,zAbilityReady=0,zDashReady=0,zZipReady=0,zLastHud=0,zLastDirector=0,zOnline=null,zOnlineTimer=0,zNetId='',zRoomId='',zNetURL='';
+const zP=id=>document.getElementById(id);
+const zDist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+const zNear=(p,r=5)=>p&&zDist(pl,p)<=r;
+function zHudText(msg){const el=zP('zLive');if(el)el.textContent=msg;}
+function zNotice(message){toast(message,1750)}
+function zGiveReward(points){if(points>0){addCoins(points);x4EarnXp(Math.round(points/6));}}
+function zSeasonPoints(victory){const old=zProfile.rating;const change=victory?Math.min(32,14+Math.floor(pl.kills/4)):-(Math.min(23,6+Math.max(0,pl.deaths)));zProfile.rating=Math.max(100,zProfile.rating+change);if(victory)zProfile.seasonWins++;zSave();return `${change>=0?'+':''}${change} offline rating (${old} → ${zProfile.rating})`;}
+function zArmorTemplate(){return zProfile.armor==='heavy'?{helmet:80,chest:155,legs:90}:zProfile.armor==='light'?{helmet:32,chest:65,legs:38}:{helmet:55,chest:100,legs:60};}
+function zResetRun(which){zRun=null;zEnergy=0;zCloak=0;zTurret=0;zUltReady=0;zAbilityReady=0;zDashReady=0;zZipReady=0;zArmor=zArmorTemplate();zArmorPacks=2;
+ if(which==='z-online'){bots.length=0;gameSeconds=3600;zRun={type:'online',started:performance.now()/1000};x5Nemesis=null;zHudText('🌐 SERVER MATCH');return;}
+ if(!Z_MODES.some(v=>v[0]===which))return;
+ rx2MapSurprise=0;rx2MapSurpriseAt=Infinity;rxWeatherSet('clear');
+ if(x5Nemesis){x5Nemesis.x5nemesis=false;x5Nemesis=null;}
+ if(zProfile.classId==='medic')pl.hp=115;else if(zProfile.classId==='heavy')pl.shield=125;else if(zProfile.classId==='engineer')zArmorPacks=3;
+ if(which==='royale'){gameSeconds=450;bots.length=0;for(let i=0;i<(mobile?8:17);i++){const b=spawnBot(i);b.respawn=Infinity;bots.push(b);}zRun={type:which,radius:87,center:{x:0,z:0},lastTick:0};zNotice('👑 RECOIL ROYALE — LAST SURVIVOR WINS');}
+ if(which==='titanraid'){gameSeconds=540;bots.length=0;const boss=spawnBot(0);boss.x=0;boss.z=-35;boss.hp=1700;boss.maxHp=1700;boss.speed=2.1;boss.name='🤖 TITAN OMEGA';boss.respawn=Infinity;boss.isZTitan=true;bots.push(boss);for(let i=1;i<4;i++)bots.push(spawnBot(i));zRun={type:which,boss,phase:1};zNotice('🤖 TITAN OMEGA — DESTROY ALL THREE ARMOR PHASES');}
+ if(which==='faction'){gameSeconds=420;zRun={type:which,flags:[{...x5Point(-29,-30),name:'A',progress:0,held:false},{...x5Point(25,-18),name:'B',progress:0,held:false},{...x5Point(0,38),name:'C',progress:0,held:false}],captures:0};zNotice('🏳️ '+zProfile.faction.toUpperCase()+' — SECURE THREE CONTROL POINTS');}
+ if(which==='sabotage'){gameSeconds=330;zRun={type:which,site:x5Point(24,-24),planted:false,defended:0,charge:42,lastAttack:0};zNotice('💣 REACH THE SITE AND PRESS E TO PLANT');}
+ if(which==='gungame'){gameSeconds=380;zRun={type:which,stage:0,gunOrder:[0,3,1,2],knifeGoal:false};pl.weapon=0;drawGunModel(0);zNotice('🔫 GUN GAME — ADVANCE WITH EVERY KILL');}
+ if(which==='realm'){gameSeconds=560;zRun={type:which,clues:[{...x5Point(-30,-28),found:false},{...x5Point(29,-27),found:false},{...x5Point(0,36),found:false}],gate:x5Point(0,-49),opened:false,boss:null};zNotice('🔮 FIND THREE SECRETS TO OPEN THE HIDDEN REALM');}
+ zRefreshHud();}
+function zVictory(msg,bonus=350){if(!zRun||zRun.done)return;zRun.done=true;zRun.won=true;zGiveReward(bonus);zNotice(msg);if(zRun.type==='faction'){zProfile.factionPoints+=3;zSave();}if(zRun.type==='realm'){zProfile.realm=true;zSave();}if(zRun.type!=='online')zSeasonPoints(true);finish();}
+const zStartBase=startGame;startGame=function(which){const r=zStartBase(which);if(phase==='playing'){zResetRun(which);document.body.classList.toggle('z-playing',!!zRun);document.body.classList.remove('z-actions-open');zP('zEndLine')?.classList.add('hide');}return r;};
+const zFinishBase=finish;finish=function(){if(phase!=='playing')return;const r=zRun,win=!!r?.won,kind=r?.type||mode;
+ if(r&&!r.done){r.done=true;if(kind!=='online')zSeasonPoints(false);}
+ if(phase==='playing'&&kind!=='online'&&kind!=='guest'&&kind!=='host')zHolidayMatchReward();
+ zFinishBase();if(r){const e=zP('zEndLine');if(e){e.classList.remove('hide');e.textContent=`UPDATE Z · ${kind.toUpperCase()} · ${win?'VICTORY':'MATCH ENDED'} · ${zProfile.rating} OFFLINE RATING`;}if(kind!=='online'&&zP('endTitle'))zP('endTitle').textContent=win?'🏆 UPDATE Z · VICTORY':'⚔️ UPDATE Z · MATCH ENDED';}
+};
+const zQuitBase=quit;quit=function(){zDisconnect();zRun=null;document.body.classList.remove('z-playing');zP('zLive')?.classList.add('hide');document.body.classList.remove('z-actions-open');return zQuitBase();};
+const zKillBase=killBot;killBot=function(b,killer){const alive=!!b?.alive;const r=zRun;const result=zKillBase(b,killer);if(!alive||b.alive||!r||killer!==pl)return result;
+ zEnergy=Math.min(100,zEnergy+21);
+ if(r.type==='royale')b.respawn=Infinity;
+ if(r.type==='titanraid'&&b.isZTitan){b.respawn=Infinity;zVictory('🏆 TITAN OMEGA DEFEATED',750);}
+ if(r.type==='gungame'){r.stage++;if(r.stage>=r.gunOrder.length){r.knifeGoal=true;zNotice('🔪 FINAL STAGE — PRESS K FOR KNIFE FINISHER!');}else{pl.weapon=r.gunOrder[r.stage];drawGunModel(pl.weapon);zNotice('🔫 GUN '+(r.stage+1)+'/4 UNLOCKED');}}
+ if(r.type==='realm'&&b.isZGuardian){b.respawn=Infinity;zVictory('🔮 THE HIDDEN REALM IS YOURS',600);}
+ return result;};
+const zHurtBase=hurt;hurt=function(damage){if(!zRun||mode==='z-online')return zHurtBase(damage);const area=damage>32?'chest':(['helmet','chest','legs'][Math.floor(Math.random()*3)]),dur=zArmor[area];let reduce=0;if(dur>0){reduce=Math.min(dur,damage*.58);zArmor[area]=Math.max(0,dur-reduce);}if(zProfile.classId==='heavy')damage*=.85;const wasAlive=pl.alive;const result=zHurtBase(Math.max(1,damage-reduce*.65));if(wasAlive&&!pl.alive&&zRun?.type==='royale'){clearDeathTimers();finish();}return result;};
+function zArmorRepair(){if(!zRun||!x5Active()||zArmorPacks<=0)return zNotice('NO ARMOR PACKS LEFT');zArmorPacks--;zArmor=zArmorTemplate();zNotice('🛡️ ARMOR FULLY REPAIRED');zRefreshHud();}
+function zMelee(){if(!zRun||!x5Active())return;const candidate=bots.filter(b=>b.alive&&zDist(pl,b)<3.5).sort((a,b)=>zDist(a,pl)-zDist(b,pl))[0];if(!candidate)return zNotice('🔪 MOVE CLOSER TO AN ENEMY');const a=Math.atan2(candidate.x-pl.x,-(candidate.z-pl.z));if(Math.abs(Math.atan2(Math.sin(a-pl.yaw),Math.cos(a-pl.yaw)))>1.65)return zNotice('🔪 FACE THE TARGET');if(zRun.type==='gungame'&&!zRun.knifeGoal)return zNotice('🔫 FINISH THE GUN STAGES FIRST');candidate.hp=0;killBot(candidate,pl);if(zRun?.type==='gungame'&&zRun.knifeGoal)zVictory('🏆 GUN GAME KNIFE FINISH!',420);}
+function zUseUltimate(){const now=performance.now()/1000;if(!zRun||!x5Active())return;if(zEnergy<100||now<zUltReady)return zNotice('⚡ ULTIMATE NOT READY');zEnergy=0;zUltReady=now+8;
+ if(zProfile.ult==='shockwave'){let count=0;for(const b of bots)if(b.alive&&zDist(pl,b)<23){count++;b.hp-=95;if(b.hp<=0)killBot(b,pl);}zNotice('💥 SHOCKWAVE · '+count+' ENEMIES HIT');}
+ else if(zProfile.ult==='cloak'){zCloak=now+12;zNotice('👻 GHOST PROTOCOL · 12 SECONDS');}
+ else{zTurret=now+17;zNotice('🤖 GUARDIAN TURRET · 17 SECONDS');}zRefreshHud();}
+function zUseClass(){const now=performance.now()/1000;if(!zRun||!x5Active())return;if(now<zAbilityReady)return zNotice('CLASS ABILITY RECHARGING');zAbilityReady=now+28;
+ if(zProfile.classId==='medic'){pl.hp=Math.min(115,pl.hp+45);zNotice('❤️ MEDIC PULSE +45 HP');}
+ else if(zProfile.classId==='recon'){const n=bots.filter(b=>b.alive&&zDist(pl,b)<38).length;zNotice('🔭 RECON SCAN · '+n+' HOSTILES NEARBY');}
+ else if(zProfile.classId==='engineer'){zArmor=zArmorTemplate();for(const c of rx2Covers)if(c.hp>0&&zDist(pl,c)<10)c.hp=Math.min(c.maxHp,c.hp+40);zNotice('🔧 ARMOR AND NEARBY COVER REPAIRED');}
+ else if(zProfile.classId==='heavy'){pl.shield=Math.min(175,pl.shield+65);zNotice('🛡️ HEAVY BARRIER +65 SHIELD');}
+ else{pl.stocks[pl.weapon]+=Math.ceil(weapons[pl.weapon].mag*.75);zNotice('⚔️ ASSAULT RESUPPLY');}zRefreshHud();}
+function zDash(){const now=performance.now()/1000;if(!zRun||!x5Active()||now<zDashReady)return;zDashReady=now+4;const d=aimVector(pl.yaw,0);for(let i=0;i<8;i++)slide(pl,d.x*1.15,d.z*1.15,.47);pl.sprintUsed=Math.max(0,pl.sprintUsed-1);zNotice('⚡ MOMENTUM SLIDE');}
+function zZipline(){const now=performance.now()/1000;if(!zRun||!x5Active()||now<zZipReady)return;const entry={x:0,z:-3},exit={x:0,z:-34};if(!zNear(entry,10))return zNotice('🔗 FIND THE CENTRAL ZIPLINE AT 0, -3');zZipReady=now+14;for(let i=0;i<35;i++)slide(pl,0,-.88,.47);zNotice('🔗 ZIPLINE TRAVERSE');}
+function zInteract(){if(!zRun||!x5Active())return false;const r=zRun;
+ if(r.type==='sabotage'&&!r.planted&&zNear(r.site,6)){r.planted=true;r.defended=0;zNotice('💣 CHARGE PLANTED — HOLD FOR 42s');return true;}
+ if(r.type==='realm'&&r.clues.every(c=>c.found)&&!r.opened&&zNear(r.gate,6)){r.opened=true;const boss=spawnBot(83);boss.x=r.gate.x;boss.z=r.gate.z-8;boss.hp=800;boss.maxHp=800;boss.name='🔮 REALM GUARDIAN';boss.isZGuardian=true;boss.respawn=Infinity;bots.push(boss);r.boss=boss;zNotice('🔮 THE REALM GUARDIAN AWAKENS');return true;}return false;}
+const zGunCore=fireCore;fireCore=function(shooter,weapon,byGuest){if(!zRun||shooter!==pl||mode==='z-online')return zGunCore(shooter,weapon,byGuest);const spread=weapon.spread,range=weapon.range;let moving=!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||mobileSprint);weapon.spread*=moving?1.32:1;weapon.spread*=zProfile.classId==='assault'?.80:1;weapon.range*=weapon.id==='sniper'?.96:1;try{return zGunCore(shooter,weapon,byGuest)}finally{weapon.spread=spread;weapon.range=range;}};
+const zFireBase=fire;fire=function(now){if(zRun?.type==='online'&&zOnline?.readyState===1&&pl.mags[pl.weapon]>0&&now>=pl.nextShot&&pl.alive){zOnline.send(JSON.stringify({t:'fire',yaw:pl.yaw,pitch:pl.pitch,weapon:pl.weapon}));}return zFireBase(now);};
+const zMoveBase=rx2MovePlayer;rx2MovePlayer=function(dx,dz,dt,running){if(zRun){const m=zProfile.armor==='light'?1.1:zProfile.armor==='heavy'?.89:1;dx*=m;dz*=m;}return zMoveBase(dx,dz,dt,running);};
+const zReloadBase=reload;reload=function(now=performance.now()/1000){const old=weapons[pl.weapon]?.reload;if(old&&zRun&&zProfile.classId==='assault')weapons[pl.weapon].reload*=.86;try{return zReloadBase(now)}finally{if(old)weapons[pl.weapon].reload=old;}};
+const zBotBase=botBehavior;botBehavior=function(b,dt,now){if(zRun?.type==='online')return;if(zRun?.type==='royale'&&!b.alive){b.respawn=Infinity;return;}if(zCloak>now&&b.alive)b.nextShot=Math.max(b.nextShot||0,.45);return zBotBase(b,dt,now);};
+const zTickBase=simulate;simulate=function(dt,now){zTickBase(dt,now);if(phase==='playing'&&!paused)zTick(dt,now);};
+function zTick(dt,now){if(!zRun||zRun.done)return;const r=zRun;rxWeather='clear';
+ if(r.type==='online'){if(zOnline?.readyState===1&&now-zOnlineTimer>.095){zOnlineTimer=now;zOnline.send(JSON.stringify({t:'move',x:pl.x,z:pl.z,yaw:pl.yaw,weapon:pl.weapon}));}if(now-zLastHud>.45){zLastHud=now;zRefreshHud();}return;}
+ if(r.type==='royale'){
+  r.radius=Math.max(11,87-(450-gameSeconds)*.19);
+  if(now-r.lastTick>1){r.lastTick=now;if(zDist(pl,r.center)>r.radius)hurt(7);for(const b of bots)if(b.alive&&zDist(b,r.center)>r.radius+1){b.hp-=20;if(b.hp<=0)killBot(b,pl);}}
+  if(!bots.some(b=>b.alive))zVictory('👑 YOU ARE THE LAST SURVIVOR!',550);
+ }
+ else if(r.type==='titanraid'){
+  const b=r.boss;if(b.alive){const hp=b.hp/b.maxHp;const phase=hp<.30?3:hp<.66?2:1;if(phase>r.phase){r.phase=phase;b.speed*=1.15;b.nextShot=.3;const count=mobile?1:3;for(let i=0;i<count;i++){const escort=spawnBot(bots.length);escort.respawn=Infinity;bots.push(escort);}zNotice('🤖 TITAN PHASE '+phase+' — REINFORCEMENTS');}}
+ }
+ else if(r.type==='faction'){
+  for(const f of r.flags)if(!f.held){if(zNear(f,8)){const nearby=bots.some(b=>b.alive&&zDist(b,f)<7);f.progress=Math.min(100,f.progress+dt*(nearby?8:19));}else f.progress=Math.max(0,f.progress-dt*3);if(f.progress>=100){f.held=true;r.captures++;zEnergy=Math.min(100,zEnergy+28);zGiveReward(75);zNotice('🏳️ FLAG '+f.name+' SECURED · '+r.captures+'/3');}}
+  if(r.captures===3)zVictory('🏆 FACTION VICTORY — '+zProfile.faction,400);
+ }
+ else if(r.type==='sabotage'&&r.planted){r.defended+=dt;const attackers=bots.filter(b=>b.alive&&zDist(b,r.site)<9);if(attackers.length>0)r.charge-=dt*attackers.length*.65;else r.charge-=dt;if(r.defended>=42)zVictory('💣 SABOTAGE SUCCESS — OBJECTIVE SECURED',400);else if(r.charge<=0){zNotice('❌ CHARGE DEFUSED');finish();}}
+ else if(r.type==='realm'){for(const c of r.clues)if(!c.found&&zNear(c,5)){c.found=true;zGiveReward(25);zEnergy=Math.min(100,zEnergy+15);zNotice('🔮 SECRET '+r.clues.filter(c=>c.found).length+'/3 FOUND');}if(r.clues.every(c=>c.found)&&!r.opened&&zNear(r.gate,6))zInteract();}
+ if(zTurret>now){const b=bots.find(b=>b.alive&&zDist(pl,b)<24);if(b&&Math.random()<dt*4){b.hp-=22;if(b.hp<=0)killBot(b,pl);}}
+ if(now-zLastDirector>20){zLastDirector=now;const alive=bots.filter(b=>b.alive);if(alive.length&&(r.type!=='royale'&&r.type!=='titanraid'&&r.type!=='gungame')){const power=Math.min(1.4,Math.max(.80,(pl.hp+pl.shield)/180));for(const b of alive){b.speed=Math.min(4.2,Math.max(1.7,b.speed*(power>1.06?1.035:.98)));}}}
+ if(now-zLastHud>.4){zLastHud=now;zRefreshHud();}
+}
+function zDraw(out,now){if(phase!=='playing'||!zRun)return;const r=zRun;if(r.type==='royale'&&(!mobile||v91EffectiveGraphics()>1)){const radius=r.radius;const n=20;for(let i=0;i<n;i++){const a=i*Math.PI*2/n,bb=(i+1)*Math.PI*2/n;putBeam(out,Math.cos(a)*radius,.16,Math.sin(a)*radius,Math.cos(bb)*radius,.16,Math.sin(bb)*radius,.09,[.98,.35,.26]);}}
+ if(r.type==='faction')for(const f of r.flags){putBox(out,f.x,.12,f.z,2,.22,2,f.held?[.19,.92,.45]:[.88,.65,.22]);putBox(out,f.x,2.2,f.z,.16,4,.16,[.95,.92,.74]);}
+ if(r.type==='sabotage'){putBox(out,r.site.x,.3,r.site.z,2,.4,2,r.planted?[.95,.18,.2]:[.95,.73,.21]);}
+ if(r.type==='realm'){for(const c of r.clues)if(!c.found){putBox(out,c.x,.62,c.z,1.1,1.1,1.1,[.6,.37,.93]);}if(r.clues.every(c=>c.found)){putBox(out,r.gate.x,1.2,r.gate.z,2.2,2.4,1,[.52,.28,.85]);}}
+ if(zTurret>now){const d=aimVector(pl.yaw,0);putBox(out,pl.x-d.x*3,.7,pl.z-d.z*3,1.1,1.3,1.1,[.17,.77,.82]);}
+}
+function zRefreshHud(){const el=zP('zLive');if(!el)return;el.classList.toggle('hide',phase!=='playing'||!zRun);if(!zRun||phase!=='playing')return;const r=zRun;let label='';
+ if(r.type==='royale')label=`👑 SURVIVORS ${bots.filter(b=>b.alive).length+1} · ZONE ${Math.ceil(r.radius)}m`;
+ else if(r.type==='titanraid')label=`🤖 TITAN ${Math.ceil(100*Math.max(0,r.boss.hp)/r.boss.maxHp)}% · PHASE ${r.phase}`;
+ else if(r.type==='faction')label=`🏳️ ${zProfile.faction} ${r.captures}/3 · ${r.flags.map(f=>f.name+':'+Math.round(f.progress)+'%').join(' ')}`;
+ else if(r.type==='sabotage')label=r.planted?`💣 CHARGE ${Math.ceil(Math.max(0,42-r.defended))}s · ENEMIES NEAR SITE!`:'💣 REACH PLANT SITE · E';
+ else if(r.type==='gungame')label=r.knifeGoal?'🔪 FINAL KNIFE (K)':`🔫 GUN ${r.stage+1}/4 · NEXT KILL ADVANCES`;
+ else if(r.type==='realm')label=`🔮 SECRETS ${r.clues.filter(c=>c.found).length}/3 · ${r.opened?'DEFEAT GUARDIAN':'FIND GATE'}`;
+ else label=`🌐 ${zRoomId||'ONLINE'} · ${remotePlayers.size+1} PLAYER(S)`;
+ el.textContent=label;const sub=zP('zCombat');if(sub)sub.textContent=`🛡️ ${Math.round(zArmor.helmet+zArmor.chest+zArmor.legs)} · CLASS ${Z_ROLES[zProfile.classId].label} [V] · ULT ${zEnergy}% [U] · REPAIR [T] · SLIDE [X]`;}
+function zPlay(which){if(!Z_MODES.some(v=>v[0]===which))return;const maps={royale:'dunes',titanraid:'citadel',faction:'depot',sabotage:'fortress',gungame:'solar',realm:'rift'};chooseMap(maps[which]||'dunes');startGame(which);}
+function zHolidayMatchReward(){const active=zHolidayActive(),t=zToday();for(const h of active){const k=h.id+'-'+zEventYear(h);zProfile.tokens[k]=(zProfile.tokens[k]||0)+15;}if(active.length){zSave();zNotice('🎁 +15 HOLIDAY TOKENS · '+active.map(h=>h.name).join(', '));}}
+function zDailyClaim(id){const h=Z_HOLIDAYS.find(x=>x.id===id);if(!h||!zHolidayStatus(h).active)return zNotice('EVENT IS NOT ACTIVE');const t=zToday(),key=h.id+'-'+t.dayKey;if(zProfile.claims[key])return zNotice('🎁 TODAY’S GIFT ALREADY CLAIMED');zProfile.claims[key]=true;zProfile.tokens[h.id+'-'+zEventYear(h)]=(zProfile.tokens[h.id+'-'+zEventYear(h)]||0)+40;zGiveReward(90);zSave();zNotice('🎁 HOLIDAY GIFT +40 TOKENS +90 COINS');zRenderEvents();}
+function zBuyHoliday(id,kind){const h=Z_HOLIDAYS.find(x=>x.id===id);if(!h||!zHolidayStatus(h).active)return zNotice('HOLIDAY COLLECTION IS CLOSED');const t=zToday(),key=h.id+'-'+zEventYear(h),price=kind==='knife'?140:kind==='gun'?110:80,item='z_'+(kind==='skin'?'suit':kind)+'_'+h.id;if(zProfile.collection.includes(item))return zNotice('YOU ALREADY OWN THIS REWARD');if((zProfile.tokens[key]||0)<price)return zNotice('NOT ENOUGH EVENT TOKENS');zProfile.tokens[key]-=price;zProfile.collection.push(item);
+ if(kind==='skin'){if(!unlocked.includes(item))unlocked.push(item);setStore('unlocked',unlocked);}
+ if(kind==='gun'){if(!v8Owned.includes(item))v8Owned.push(item);setStore('v8GunOwned',v8Owned);}
+ if(kind==='knife'){if(!vxOwnedKnives.includes(item))vxOwnedKnives.push(item);vxSaveKnives();}
+ zSave();zNotice('🏆 UNLOCKED · '+h.loot+' '+kind.toUpperCase());zRenderEvents();}
+function zEquipHoliday(id,kind){const h=Z_HOLIDAYS.find(x=>x.id===id);if(!h)return;const item='z_'+(kind==='skin'?'suit':kind)+'_'+h.id;if(!zProfile.collection.includes(item))return;
+ if(kind==='skin'){equipped=item;setStore('equipped',item);}
+ if(kind==='gun'){v8Equipped.ar=item;setStore('v8GunEquipped',v8Equipped);v8GunChangeAt=performance.now()/1000;}
+ if(kind==='knife'){vxEquippedKnife=item;vxSaveKnives();}
+ zNotice('✅ EQUIPPED '+h.loot+' '+kind.toUpperCase());zRenderEvents();}
+function zRenderEvents(){const root=zP('zEventsList');if(!root)return;root.replaceChildren();const t=zToday();for(const h of Z_HOLIDAYS){const status=zHolidayStatus(h),live=status.active,key=h.id+'-'+zEventYear(h),amount=zProfile.tokens[key]||0;let section=document.createElement('article');section.className='z-event '+(live?'z-event-live':'');const head=document.createElement('div');head.className='z-event-head';head.innerHTML=`<span class="z-event-icon">${h.icon}</span><span class="z-event-info"><b>${h.name}</b><small>${status.label}</small></span><span class="z-event-number">${live?'🟢 LIVE':'🔒'}<br>🎟️ ${amount}</span>`;section.append(head);
+ const controls=document.createElement('div');controls.className='z-event-buttons';const claim=document.createElement('button');claim.textContent=zProfile.claims[h.id+'-'+t.dayKey]?'✔ Gift claimed':'🎁 Daily gift';claim.disabled=!live||!!zProfile.claims[h.id+'-'+t.dayKey];claim.onclick=()=>zDailyClaim(h.id);controls.append(claim);
+ for(const [kind,cost] of [['skin',80],['gun',110],['knife',140]]){const owned=zProfile.collection.includes('z_'+(kind==='skin'?'suit':kind)+'_'+h.id);const b=document.createElement('button');b.textContent=(owned?'✓ Equip ':`🎟️ ${cost} · `)+({skin:'Armor',gun:'AR Finish',knife:'Knife'}[kind]);b.disabled=!owned&&!live;b.onclick=()=>owned?zEquipHoliday(h.id,kind):zBuyHoliday(h.id,kind);controls.append(b);}section.append(controls);root.append(section);}}
+function zRenderHub(){zP('zPlayerStatus').textContent=`🏅 ${zProfile.rating} OFFLINE RATING · 🏳️ ${zProfile.faction}: ${zProfile.factionPoints} POINTS · 🔮 ${zProfile.realm?'REALM CLEARED':'MYSTERY UNSOLVED'}`;zP('zClass').value=zProfile.classId;zP('zUlt').value=zProfile.ult;zP('zFaction').value=zProfile.faction;zP('zArmorMode').value=zProfile.armor;}
+function zOpenHub(){showScreen('zHubMenu');zRenderHub();}
+function zOpenEvents(){showScreen('zEventsMenu');zRenderEvents();}
+const zShowBase=showScreen;showScreen=function(s){if(s==='zHubMenu'||s==='zEventsMenu'){zShowBase('x5HubMenu');zP('x5HubMenu').classList.add('hide');zP('zHubMenu').classList.toggle('hide',s!=='zHubMenu');zP('zEventsMenu').classList.toggle('hide',s!=='zEventsMenu');return;}zP('zHubMenu')?.classList.add('hide');zP('zEventsMenu')?.classList.add('hide');return zShowBase(s);};
+function zKeyboard(e){if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||e.repeat||!zRun||phase!=='playing'||paused)return;if(e.code==='KeyU')zUseUltimate();if(e.code==='KeyV')zUseClass();if(e.code==='KeyT')zArmorRepair();if(e.code==='KeyX')zDash();if(e.code==='KeyY')zZipline();if(e.code==='KeyK')zMelee();if(e.code==='KeyE')zInteract();}
+document.addEventListener('keydown',zKeyboard);
+function zDisconnect(){try{if(zOnline){zOnline.onclose=null;zOnline.close();zOnline=null;}}catch(e){}zNetId='';zRoomId='';remotePlayers.clear();}
+function zConnectOnline(){const input=zP('zServerUrl'),raw=(input.value||'').trim(),room=(zP('zRoomCode').value||'public').trim().replace(/[^a-z0-9_-]/gi,'').slice(0,20)||'public';if(!/^wss?:\/\//i.test(raw)){zP('zServerStatus').textContent='Enter a ws:// or wss:// server URL first.';return;}if(location.protocol==='https:'&&!raw.startsWith('wss://')){zP('zServerStatus').textContent='GitHub Pages requires a secure wss:// server URL.';return;}
+ try{zDisconnect();zP('zServerStatus').textContent='Connecting to multiplayer server…';const socket=new WebSocket(raw);zOnline=socket;zNetURL=raw;zRoomId=room;socket.onopen=()=>{socket.send(JSON.stringify({t:'join',room,name:username}));};socket.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return;}zHandleNetwork(m);};socket.onerror=()=>{zP('zServerStatus').textContent='Cannot reach the server. Deploy the included server first.';};socket.onclose=()=>{if(zOnline!==socket)return;zP('zServerStatus').textContent='Disconnected from server';if(zRun?.type==='online'&&phase==='playing'){zNotice('⚠️ SERVER CONNECTION LOST');}zOnline=null;};}catch(err){zP('zServerStatus').textContent='Connection failed: '+err.message;}}
+function zHandleNetwork(m){if(m.t==='error'){zP('zServerStatus').textContent='Server: '+String(m.message||'Error');return;}
+ if(m.t==='welcome'){zNetId=m.id;zP('zServerStatus').textContent='Connected! Room: '+zRoomId+' · Player #'+m.id;chooseMap('dunes');startGame('z-online');bots.length=0;}
+ if(m.t==='state'&&zRun?.type==='online'){remotePlayers.clear();for(const p of (m.players||[])){if(p.id===zNetId)continue;remotePlayers.set(p.id,{...p,alive:p.hp>0,skinId:'sandstorm',spectating:false});}const me=(m.players||[]).find(p=>p.id===zNetId);if(me){if(Math.hypot(pl.x-me.x,pl.z-me.z)>8){pl.x=me.x;pl.z=me.z;}pl.hp=me.hp;pl.kills=me.kills;pl.deaths=me.deaths;if(me.hp<=0)pl.alive=false;else if(!pl.alive){pl.alive=true;pl.shield=60;}}}
+ if(m.t==='hit'){if(m.targetId===zNetId){zNotice('💥 HIT FOR '+m.damage);$('hurtfx').style.opacity='.45';setTimeout(()=>$('hurtfx').style.opacity='0',150);}else if(m.shooterId===zNetId){playSound('hit');}}
+ if(m.t==='frag'){addFeed(String(m.killerName||'PLAYER')+' ✦ '+String(m.victimName||'PLAYER'));if(m.killerId===zNetId){addCoins(60);zEnergy=Math.min(100,zEnergy+20);}}
+}
+function zAddUI(){const style=document.createElement('style');style.textContent=`
+ .z-hub{direction:ltr;text-align:left;color:#f4e7cb;width:100%;max-height:76vh;overflow:auto;padding:10px 16px 25px;scrollbar-width:thin}.z-hub h2{font:900 25px Impact,Arial,sans-serif;letter-spacing:.6px;color:#ffe4ac;margin:8px 0}.z-hub h3{color:#f6c782;font-size:15px;margin:19px 0 8px}.z-hub small,.z-hub p{color:#e3c8a4;font-size:12px;line-height:1.6}.z-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.z-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.z-modes button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px;color:#fff1ce;background:#65402b;border:1px solid #b58b5b;border-radius:12px;min-height:75px}.z-modes button:hover{background:#8b5633}.z-modes small{color:#e2c5a5}.z-hub select,.z-hub input{background:#241b19;color:#ffe7bb;border:1px solid #ab8153;border-radius:8px;padding:10px;max-width:100%;width:100%;font:12px Tahoma,Arial;text-transform:none;letter-spacing:normal}.z-hub label{font-size:12px;display:block;margin:7px 0}.z-event{border:1px solid #896643;background:#352a23;border-radius:11px;padding:10px;margin:9px 0}.z-event-live{border-color:#eac66f;background:linear-gradient(125deg,#665134,#2f2822)}.z-event-head{display:flex;align-items:center;gap:10px}.z-event-icon{font-size:29px}.z-event-info{flex:1;min-width:0}.z-event-info b{display:block;font-size:13px}.z-event-info small{display:block;font-size:10px;color:#cbb397;margin-top:3px}.z-event-number{font-size:11px;text-align:right;white-space:nowrap;color:#ffdc91}.z-event-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.z-event-buttons button{background:#715038;border:1px solid #ad8557;border-radius:7px;color:#ffefd3;padding:8px 9px;font:700 11px Tahoma,Arial;min-height:31px}.z-event-buttons button:disabled{opacity:.45}.z-highlight{border:1px solid #bea16e;padding:10px;border-radius:9px;background:#69472570;font-size:12px;line-height:1.7}.z-label{position:absolute;right:13px;top:195px;padding:7px 11px;border-radius:8px;background:#251b19db;border:1px solid #d7ac5c;color:#ffe5a5;font:800 11px/1.5 Tahoma,Arial;max-width:40%;z-index:4;pointer-events:none}.z-label.bottom{top:auto;bottom:8px;left:30%;right:auto;max-width:40%;opacity:.88;font-size:10px}.z-touch{position:absolute;left:73px;z-index:32;font:900 10px Tahoma,Arial;color:#fff1d7;background:#4e3f2ad9;border:1px solid #c5a36b;border-radius:9px;padding:8px 5px;pointer-events:auto;display:none}.touch-selected.z-playing.z-actions-open .z-touch{display:block}.z-mobile-toggle{position:absolute;left:5px;top:32%;z-index:40;padding:8px;background:#7d5434;color:#ffedcd;border:1px solid #edc077;border-radius:10px;font:900 10px Tahoma,Arial;pointer-events:auto;display:none}.touch-selected.z-playing .z-mobile-toggle{display:block}.z-touch.z-u{top:36%}.z-touch.z-v{top:44%}.z-touch.z-x{top:52%}.z-touch.z-k{top:60%}.z-touch.z-t{top:68%}@media(max-width:720px){.z-hub{padding:7px 9px;max-height:76vh}.z-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.z-modes button{padding:9px 7px;min-height:71px}.z-label{right:5px;top:98px;font-size:9px;max-width:39%}.z-label.bottom{font-size:8px;bottom:2px;left:35%}.z-touch{left:63px;padding:5px 3px;font-size:9px}.z-touch.z-u{top:31%}.z-touch.z-v{top:39%}.z-touch.z-x{top:47%}.z-touch.z-k{top:55%}.z-touch.z-t{top:63%}}@media(max-height:480px){.z-touch.z-u{top:14%}.z-touch.z-v{top:26%}.z-touch.z-x{top:38%}.z-touch.z-k{top:50%}.z-touch.z-t{top:62%}}
+ `;document.head.append(style);
+ const btn=document.createElement('button');btn.className='primary full';btn.id='zMainBtn';btn.textContent='🚀 UPDATE Z — THE NEXT ERA · 20 FEATURES + 19 HOLIDAYS';btn.style.margin='10px 0';btn.onclick=zOpenHub;zP('x5MenuBtn').insertAdjacentElement('afterend',btn);
+ const hub=document.createElement('section');hub.id='zHubMenu';hub.className='hide z-hub';hub.innerHTML=`<div class="eyebrow">RECOIL X // UPDATE Z</div><h2>🚀 THE NEXT ERA</h2><p>New playable modes, armor, class abilities, skill-based offline seasons, destructible props, secrets, and dedicated-server connection support. Existing X.5 features remain available.</p><div id="zPlayerStatus" class="z-highlight"></div><h3>⚔️ SIX PLAYABLE Z MODES</h3><div id="zModeButtons" class="z-modes"></div><h3>🎁 19 ANNUAL HOLIDAY EVENTS</h3><button class="primary full" id="zEventsOpen">🎊 OPEN HOLIDAY EVENT HUB · NO NEW YEAR EVENT</button><p>Holiday events only change menus, inventory and prizes. Their costumes and finishes work in normal matches; no extra holiday effects or weather.</p><h3>🎖️ CUSTOMIZE YOUR OPERATOR</h3><div class="z-two"><label>Class<select id="zClass"></select></label><label>Ultimate<select id="zUlt"></select></label><label>Faction<select id="zFaction"><option>Falcons</option><option>Vipers</option></select></label><label>Armor preset<select id="zArmorMode"><option value="balanced">Balanced</option><option value="heavy">Heavy</option><option value="light">Light</option></select></label></div><p id="zClassInfo"></p><h3>🌐 ONLINE MATCHES (REQUIRES EXTERNAL SERVER)</h3><p>Use the included Node.js WebSocket server. Enter its public wss:// URL once deployed. Existing PeerJS rooms still work separately.</p><label>Server WebSocket address<input id="zServerUrl" placeholder="wss://your-server.onrender.com"></label><label>Room code<input id="zRoomCode" value="public" maxlength="20"></label><button class="primary full" id="zConnect">🌐 CONNECT TO LIVE SERVER</button><p id="zServerStatus" class="z-highlight">No server connected. Offline modes work immediately.</p><h3>🎮 Z COMBAT CONTROLS</h3><p>U ultimate · V class ability · T repair armor · X tactical slide · Y zipline from center · K knife strike · E interact. Mobile has action buttons. Original controls are unchanged.</p><p class="z-highlight">ONLINE SCOPE: Dedicated rooms and server-validated positions/hits are supported by the included backend; global account login, persistent competitive leaderboards, and production security still require additional infrastructure. Offline rating is clearly labelled.</p><button class="secondary full" id="zBack">← MAIN MENU</button>`;
+ zP('x5HubMenu').parentElement.append(hub);
+ const events=document.createElement('section');events.id='zEventsMenu';events.className='hide z-hub';events.innerHTML='<div class="eyebrow">RECOIL X // HOLIDAYS</div><h2>🎊 HOLIDAY EVENTS</h2><p>19 annual celebrations with daily gifts and event-only armor, rifle finishes and knives. Only active events allow purchases; owned collectibles stay yours. Islamic holidays are based on calendar calculations and can differ by local moon sighting. Anniversary date defaults to August 1 and can be customized in source.</p><div id="zEventsList"></div><button class="secondary full" id="zEventsBack">← UPDATE Z</button>';
+ hub.parentElement.append(events);
+ const modes=zP('zModeButtons');for(const [key,icon,name,desc] of Z_MODES){const b=document.createElement('button');b.innerHTML=`<strong>${icon} ${name}</strong><small>${desc}</small>`;b.onclick=()=>zPlay(key);modes.append(b);}
+ zP('zClass').innerHTML=Object.entries(Z_ROLES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('');zP('zUlt').innerHTML=Object.entries(Z_ULTS).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('');
+ for(const [id,key] of [['zClass','classId'],['zUlt','ult'],['zFaction','faction'],['zArmorMode','armor']])zP(id).onchange=e=>{zProfile[key]=e.target.value;zSave();zP('zClassInfo').textContent=Z_ROLES[zProfile.classId].text;};
+ zP('zClassInfo').textContent=Z_ROLES[zProfile.classId].text;zP('zEventsOpen').onclick=zOpenEvents;zP('zBack').onclick=()=>showScreen('mainMenu');zP('zEventsBack').onclick=zOpenHub;zP('zConnect').onclick=zConnectOnline;
+ const zToggle=document.createElement('button');zToggle.id='zMobileToggle';zToggle.className='z-mobile-toggle';zToggle.textContent='⚡ Z';zToggle.onclick=()=>{const open=document.body.classList.toggle('z-actions-open');zToggle.textContent=open?'✕ CLOSE':'⚡ Z';};zP('mobileControls').append(zToggle);
+ const h=document.createElement('div');h.id='zLive';h.className='z-label hide';zP('hud').append(h);const sub=document.createElement('div');sub.id='zCombat';sub.className='z-label bottom hide';zP('hud').append(sub);const end=document.createElement('p');end.id='zEndLine';end.className='x5-stat hide';zP('endMenu').append(end);
+ for(const [cls,label,fn] of [['z-u','⚡ ULT',zUseUltimate],['z-v','🩹 CLASS',zUseClass],['z-x','⇥ SLIDE',zDash],['z-k','🔪 KNIFE',zMelee],['z-t','🛡️ ARMOR',zArmorRepair]]){const b=document.createElement('button');b.className='z-touch '+cls;b.textContent=label;b.onclick=()=>{fn();document.body.classList.remove('z-actions-open');zP('zMobileToggle').textContent='⚡ Z';};zP('mobileControls').append(b);}
+ const input=zRead('recoil_x_z_ws_url','');zP('zServerUrl').value=typeof input==='string'?input:'';zP('zServerUrl').onchange=e=>setStore('recoil_x_z_ws_url',e.target.value.slice(0,240));
+ zRenderHub();}
+const zSimBase=simulate; // movement/interaction already hooked
+const zDrawBase=x5Draw;x5Draw=function(out,now){zDrawBase(out,now);zDraw(out,now);};
+const zHudBase=updateHUD;updateHUD=function(){zHudBase();if(zRun&&phase==='playing'){zP('zCombat')?.classList.remove('hide');zRefreshHud();}else{zP('zCombat')?.classList.add('hide');}};
+const zAgainBase=zP('againBtn').onclick;zP('againBtn').onclick=()=>{if(zRun&&Z_MODES.some(v=>v[0]===zRun.type)){zPlay(zRun.type);return;}if(zRun?.type==='online'){quit();zOpenHub();return;}if(zAgainBase)zAgainBase();};
+// Legacy randomized atmospheric effects remain available in older versions, but Z disables them.
+const zRx2Tick=rx2Tick;rx2Tick=function(dt,now){if(zRun){rx2MapSurprise=0;rx2MapSurpriseAt=Infinity;zRx2Tick(dt,now);rx2MapSurpriseAt=Infinity;}else zRx2Tick(dt,now);};
+const zWeatherBase=rxWeatherTick;rxWeatherTick=function(now){if(zRun&&phase==='playing'){if(rxWeather!=='clear')rxWeatherSet('clear');return;}zWeatherBase(now);};
+/* UPDATE Z -- X.6 feature migration, excluding extreme disaster/weather events. */
+Z_MODES.push(
+ ['zvehicles','🚙','VEHICLE WARFARE','Pilot jeeps, trucks and a lightweight helicopter'],
+ ['ztournament','🏆','TOURNAMENT CHAMPIONSHIP','Advance through an eight-team AI bracket'],
+ ['zundercover','🕵️','UNDERCOVER AGENT','Gather intel while managing suspicion']
+);
+const Z_SUITS={phantom:{icon:'👻',label:'Phantom',text:'Temporary stealth and evasive ability'},titan:{icon:'🦾',label:'Titan',text:'Large armor shield pulse'},velocity:{icon:'⚡',label:'Velocity',text:'Burst dash and stamina recovery'}};
+const z6State={suit:Z_SUITS[zRaw.suit]?zRaw.suit:'phantom',hq:zRaw.hq&&typeof zRaw.hq==='object'?zRaw.hq:{level:0,trophies:0},evolutions:zRaw.evolutions&&typeof zRaw.evolutions==='object'?zRaw.evolutions:{},replay:[],lastReplay:zRead('recoil_x_z_replay_v1',[]),lastFrame:0,nextSuit:0,mutations:0};
+function z6Save(){zProfile.suit=z6State.suit;zProfile.hq=z6State.hq;zProfile.evolutions=z6State.evolutions;zSave();}
+const z6StartBase=zResetRun;zResetRun=function(which){z6State.replay=[];z6State.lastFrame=0;z6State.mutations=0;z6StartBase(which);if(which==='infection')z6State.infection={started:performance.now()/1000,stage:0};else z6State.infection=null;
+ if(which==='zvehicles'){
+  gameSeconds=510;const p=x5Point(-12,28),a=x5Point(16,18),b=x5Point(0,-6);
+  zRun={type:which,vehicles:[{type:'jeep',emoji:'🚙',x:p.x,z:p.z,hp:170,maxHp:170,speed:12},{type:'truck',emoji:'🚚',x:a.x,z:a.z,hp:320,maxHp:320,speed:8},{type:'heli',emoji:'🚁',x:b.x,z:b.z,hp:130,maxHp:130,speed:16}],vehicle:null,points:[x5Point(22,-17),x5Point(-20,-35),x5Point(12,-60)],stage:0};zNotice('🚙 GET IN A VEHICLE (E), DRIVE THREE CHECKPOINTS');
+ }
+ if(which==='ztournament'){
+  gameSeconds=880;zRun={type:which,round:1,kills:0,goal:4,bracket:['Falcons','Vipers','Nomads','Wraiths','Ravens','Cobras','Spectres','Titans']};z6TournamentRound(zRun);zNotice('🏆 8-TEAM ELIMINATION BRACKET · QUARTERFINALS');
+ }
+ if(which==='zundercover'){
+  gameSeconds=480;zRun={type:which,stage:0,suspicion:0,stations:[x5Point(-30,-27),x5Point(31,-26),x5Point(0,-46)],extraction:x5Point(0,42)};zNotice('🕵️ DISGUISED · CROUCH TO AVOID RAISING SUSPICION');
+ }
+ if(zRun){z6State.nextSuit=0;rxWeatherSet('clear');}zRefreshHud();};
+function z6TournamentRound(r){bots.length=0;for(let i=0;i<(mobile?4:6);i++){const bot=spawnBot(i);bot.hp=100+(r.round-1)*40;bot.maxHp=bot.hp;bot.respawn=Infinity;bot.name='🏆 '+r.bracket[(i+r.round)%r.bracket.length];bots.push(bot);}r.kills=0;r.goal=[4,5,6][r.round-1]||6;}
+const z6KillBase=killBot;killBot=function(bot,killer){const was=!!bot?.alive,run=zRun;const out=z6KillBase(bot,killer);if(was&&!bot.alive&&killer===pl&&run?.type==='ztournament'){
+ bot.respawn=Infinity;run.kills++;if(run.kills>=run.goal){if(run.round>=3){z6State.hq.trophies=(z6State.hq.trophies||0)+1;z6Save();zVictory('🏆 TOURNAMENT CHAMPION!',750);}else{run.round++;z6TournamentRound(run);zNotice('🏆 ADVANCE TO ROUND '+run.round+'/3');}}
+ }return out;};
+const z6BotBase=botBehavior;botBehavior=function(b,dt,now){if(zRun?.type==='zundercover'&&zRun.suspicion<60)b.nextShot=Math.max(b.nextShot||0,2.3);return z6BotBase(b,dt,now);};
+const z6TickBase=zTick;zTick=function(dt,now){z6TickBase(dt,now);z6Tick(dt,now);};
+function z6Tick(dt,now){if(phase!=='playing'||paused)return;
+ if(now-z6State.lastFrame>.45){z6State.lastFrame=now;z6State.replay.push({t:Math.round(now*10)/10,x:+pl.x.toFixed(2),z:+pl.z.toFixed(2),yaw:+pl.yaw.toFixed(2),hp:Math.round(pl.hp),kills:pl.kills,mode});if(z6State.replay.length>620)z6State.replay.shift();}
+ const s=zRun;
+ if(s?.type==='zvehicles'&&s.vehicle){const v=s.vehicle,vec=aimVector(pl.yaw,0);let forward=(keys.KeyW?1:0)-(keys.KeyS?1:0);if(mobile)forward+=-moveJoy.y;if(Math.abs(forward)>.15){let oldx=v.x,oldz=v.z;slide(v,vec.x*v.speed*dt*forward,vec.z*v.speed*dt*forward,1.4);pl.x=v.x;pl.z=v.z;if(Math.hypot(v.x-oldx,v.z-oldz)<.01)v.hp=Math.max(0,v.hp-dt*.9);}if(v.type==='heli')pl.y=3.3;else pl.y=1.63;
+  const near=bots.filter(b=>b.alive&&zDist(b,v)<12).length;v.hp=Math.max(0,v.hp-dt*near*.5);if(v.hp<=0){zNotice('💥 VEHICLE DESTROYED');s.vehicle=null;}
+  if(s.vehicle&&zNear(s.points[s.stage],7)){s.stage++;zEnergy=Math.min(100,zEnergy+25);zGiveReward(80);zNotice('🚙 CHECKPOINT '+s.stage+'/3');if(s.stage>=3)zVictory('🏆 VEHICLE ESCORT COMPLETE',450);}
+ }
+ if(s?.type==='zundercover'){
+  const watchers=bots.filter(b=>b.alive&&zDist(b,pl)<17&&!pl.crouched&&los(b.x,b.z,pl.x,pl.z));s.suspicion=Math.max(0,Math.min(100,s.suspicion+dt*(watchers.length*1.7-1.5)));
+  if(s.suspicion>=100){zNotice('🚨 DISGUISE BLOWN — MISSION FAILED');finish();}
+  if(s.stage===3&&zNear(s.extraction,5))zVictory('🕵️ UNDERCOVER EXTRACTION SUCCESS',440);
+ }
+ if(z6State.infection&&mode==='infection'&&phase==='playing'){
+  const level=Math.min(4,Math.floor((now-z6State.infection.started)/45));if(level>z6State.infection.stage){z6State.infection.stage=level;for(const b of bots)if(b.alive){b.speed=Math.min(5.2,b.speed*1.10);b.hp=Math.min(280,b.hp+20);b.name='🧟 '+(b.name||'INFECTED');}zNotice('🧬 INFECTION EVOLUTION · MUTATION '+level);}
+ }
+}
+const z6InteractBase=zInteract;zInteract=function(){const s=zRun;
+ if(s?.type==='zvehicles'){if(s.vehicle){zNotice('🚗 EXIT VEHICLE');s.vehicle=null;return true;}const v=s.vehicles.filter(v=>v.hp>0&&zNear(v,7)).sort((a,b)=>zDist(pl,a)-zDist(pl,b))[0];if(v){s.vehicle=v;pl.x=v.x;pl.z=v.z;zNotice(v.emoji+' PILOTING '+v.type.toUpperCase());return true;}}
+ if(s?.type==='zundercover'&&s.stage<3&&zNear(s.stations[s.stage],5)){s.stage++;s.suspicion=Math.max(0,s.suspicion-22);zGiveReward(55);zEnergy=Math.min(100,zEnergy+20);zNotice('📋 INTELLIGENCE '+s.stage+'/3 EXTRACTED');if(s.stage===3)zNotice('🚁 REACH EXTRACTION');return true;}
+ return z6InteractBase();};
+const z6DrawBase=zDraw;zDraw=function(out,now){z6DrawBase(out,now);if(!zRun||phase!=='playing')return;const r=zRun;
+ if(r.type==='zvehicles'){for(const v of r.vehicles){if(v.hp<=0)continue;const helicopter=v.type==='heli',truck=v.type==='truck';putBox(out,v.x,helicopter?2.75:1.0,v.z,truck?3.8:helicopter?4.2:3,truck?1.9:1.2,truck?7.2:5.4,helicopter?[.23,.57,.68]:truck?[.41,.47,.42]:[.4,.48,.33]);if(helicopter)putBox(out,v.x,3.6,v.z,7.7,.14,.34,[.18,.20,.23]);else for(const x of [-1.5,1.5])for(const z of [-1.8,1.8])putBox(out,v.x+x,.4,v.z+z,.5,.9,.95,[.13,.13,.12]);}if(r.points[r.stage]){const p=r.points[r.stage];putBox(out,p.x,.12,p.z,3,.2,3,[.14,.90,.63]);}}
+ if(r.type==='zundercover'){for(let i=r.stage;i<3;i++){const p=r.stations[i];putBox(out,p.x,.55,p.z,1.5,1.1,1.5,[.18,.73,.87]);}if(r.stage===3)putBox(out,r.extraction.x,.1,r.extraction.z,3,.2,3,[.2,.91,.37]);}
+};
+const z6RefreshBase=zRefreshHud;zRefreshHud=function(){z6RefreshBase();if(!zRun||phase!=='playing')return;const s=zRun,el=zP('zLive');if(s.type==='zvehicles')el.textContent=`🚙 ${s.vehicle?'PILOT '+s.vehicle.type.toUpperCase()+' · '+Math.ceil(s.vehicle.hp)+' HP':'REACH A VEHICLE · E'} · CHECKPOINT ${s.stage}/3`;
+ if(s.type==='ztournament')el.textContent=`🏆 TOURNAMENT ROUND ${s.round}/3 · ELIMINATIONS ${s.kills}/${s.goal}`;
+ if(s.type==='zundercover')el.textContent=`🕵️ INTEL ${s.stage}/3 · SUSPICION ${Math.round(s.suspicion)}% · E INTERACT`;
+};
+function z6SuitAbility(){const now=performance.now()/1000;if(!zRun||!x5Active())return;if(now<z6State.nextSuit)return zNotice('EXOSUIT RECHARGING');z6State.nextSuit=now+34;
+ if(z6State.suit==='phantom'){zCloak=Math.max(zCloak,now+10);zNotice('👻 PHANTOM CLOAK · 10s');}
+ if(z6State.suit==='titan'){pl.shield=Math.min(190,pl.shield+85);zArmor=zArmorTemplate();zNotice('🦾 TITAN PLATING RECHARGED');}
+ if(z6State.suit==='velocity'){const vec=aimVector(pl.yaw,0);for(let i=0;i<13;i++)slide(pl,vec.x*1.05,vec.z*1.05,.47);pl.sprintLockedUntil=0;pl.sprintUsed=0;zNotice('⚡ VELOCITY OVERDRIVE');}}
+document.addEventListener('keydown',e=>{if(e.code==='KeyB'&&!e.repeat&&!['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))z6SuitAbility();});
+const z6FireBase=fire;fire=function(now){const id=weapons[pl.weapon]?.id,trait=z6State.evolutions[id],w=weapons[pl.weapon];if(!zRun||!w)return z6FireBase(now);const hold=[w.damage,w.spread,w.cadence];if(trait==='precision'){w.damage*=1.13;w.spread*=.71;w.cadence*=1.18;}else if(trait==='rapid'){w.damage*=.88;w.spread*=1.12;w.cadence*=.77;}w.spread*=Math.max(.88,1-(z6State.hq.level||0)*.025);try{return z6FireBase(now)}finally{[w.damage,w.spread,w.cadence]=hold;}};
+const z6FinishBase=finish;finish=function(){if(z6State.replay.length>1){z6State.lastReplay=z6State.replay.slice(-620);try{setStore('recoil_x_z_replay_v1',z6State.lastReplay);}catch(_){}}return z6FinishBase();};
+const z6QuitBase=quit;quit=function(){if(z6State.replay.length>1){z6State.lastReplay=z6State.replay.slice(-620);try{setStore('recoil_x_z_replay_v1',z6State.lastReplay)}catch(_){}}return z6QuitBase();};
+function z6UpgradeHQ(){const lv=z6State.hq.level||0;if(lv>=5)return zNotice('HEADQUARTERS MAX LEVEL');const cost=300+lv*220;if(coins<cost)return zNotice('NEED '+cost+' COINS');coins-=cost;setStore('coins',coins);refreshWallet();z6State.hq.level=lv+1;z6Save();z6RenderHub();zNotice('🏠 HQ LEVEL '+(lv+1)+' UNLOCKED');}
+function z6SetEvolution(id,trait){const w=weapons.find(w=>w.id===id);if(!w)return;if(trait!=='standard'&&z6State.evolutions[id]!==trait){if(coins<250)return zNotice('NEED 250 COINS TO FORGE');coins-=250;setStore('coins',coins);refreshWallet();}z6State.evolutions[id]=trait==='standard'?null:trait;z6Save();z6RenderHub();zNotice('⚙️ '+w.name+' · '+trait.toUpperCase());}
+function z6DrawReplay(){const c=zP('zReplayCanvas'),bar=zP('zReplaySlider');if(!c)return;const ctx=c.getContext('2d'),a=z6State.lastReplay||[];ctx.fillStyle='#161f2b';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#a78659';for(let p=0;p<=c.width;p+=40){ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,c.height);ctx.stroke();}for(let p=0;p<=c.height;p+=35){ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(c.width,p);ctx.stroke();}if(!a.length){ctx.fillStyle='#d1bf9e';ctx.fillText('PLAY A MATCH TO CREATE A REPLAY',12,25);return;}const end=Math.max(1,Math.floor((bar.value/100)*a.length)),scaleX=x=>((x+100)/200)*c.width,scaleZ=z=>((z+100)/200)*c.height;ctx.strokeStyle='#55e6dd';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<end;i++){const x=scaleX(a[i].x),y=scaleZ(a[i].z);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();const p=a[end-1]||a[0];ctx.fillStyle='#ffd275';ctx.beginPath();ctx.arc(scaleX(p.x),scaleZ(p.z),5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f6e1b5';ctx.fillText(`FRAME ${end}/${a.length} · HP ${p.hp} · KILLS ${p.kills} · ${p.mode.toUpperCase()}`,8,16);}
+function z6ExportReplay(){const a=z6State.lastReplay||[];if(!a.length)return zNotice('NO REPLAY RECORDED YET');const blob=new Blob([JSON.stringify({format:'RECOIL_X_Z_REPLAY',version:1,frames:a},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.download='RECOIL_X_Z_REPLAY.json';link.href=url;link.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
+function z6RenderHub(){const h=zP('zHQStatus');if(!h)return;h.textContent=`HQ LEVEL ${z6State.hq.level||0}/5 · TROPHIES ${z6State.hq.trophies||0} · TRAINING ACCURACY BONUS ${(z6State.hq.level||0)*2.5}%`;zP('zSuit').value=z6State.suit;const forge=zP('zForge');forge.replaceChildren();for(const w of weapons){const label=document.createElement('label');label.textContent=w.name+' · ';const choose=document.createElement('select');choose.innerHTML='<option value="standard">Standard (free)</option><option value="precision">Precision · 250 coins</option><option value="rapid">Rapid-fire · 250 coins</option>';choose.value=z6State.evolutions[w.id]||'standard';choose.onchange=e=>{const old=z6State.evolutions[w.id]||'standard';z6SetEvolution(w.id,e.target.value);if((z6State.evolutions[w.id]||'standard')!==e.target.value)choose.value=old;};label.append(choose);forge.append(label);}z6DrawReplay();}
+function z6UI(){const h=zP('zHubMenu');const end=zP('zBack');const section=document.createElement('div');section.id='zExpandedFeatures';section.innerHTML=`<h3>🦾 EXPERIMENTAL EXOSUITS</h3><label>Equip exosuit<select id="zSuit"><option value="phantom">👻 Phantom</option><option value="titan">🦾 Titan</option><option value="velocity">⚡ Velocity</option></select></label><p>B activates your suit ability. Each suit has a cooldown and no permanent visual particles.</p><h3>🏠 YOUR HEADQUARTERS</h3><p id="zHQStatus"></p><div class="z-two"><button class="secondary" id="zHQUpgrade">🏗️ UPGRADE HQ</button><button class="secondary" id="zHQTraining">🎯 PRACTICE RANGE</button></div><p>HQ upgrades slightly improve precision; tournament championships earn permanent trophies.</p><h3>⚙️ WEAPON EVOLUTION LAB</h3><p>Choose Precision or Rapid-fire. Trade-offs are applied to damage, rate of fire, and spread.</p><div id="zForge" class="z-two"></div><h3>🎥 REPLAY STUDIO 2.0</h3><p>Capture a capped top-down position trace during matches. Scrub the timeline or export JSON for editing. Full cinematic 3D playback is not yet implemented.</p><canvas id="zReplayCanvas" width="520" height="220" style="max-width:100%;background:#14202a;border:1px solid #a47b51;border-radius:9px"></canvas><input id="zReplaySlider" type="range" min="1" max="100" value="100" style="width:100%"><button id="zReplayExport" class="secondary full">📤 EXPORT LAST REPLAY JSON</button><p class="z-highlight">X.6 expansions included: extended destructible cover, vehicle missions, infection mutations, exosuits, headquarters, tournaments, weapon evolution, undercover operations, and replay studio. <b>No disaster or extreme weather events.</b></p>`;end.before(section);
+ zP('zSuit').onchange=e=>{z6State.suit=e.target.value;z6Save();};zP('zHQUpgrade').onclick=z6UpgradeHQ;zP('zHQTraining').onclick=()=>{chooseMap('citadel');startGame('training');};zP('zReplaySlider').oninput=z6DrawReplay;zP('zReplayExport').onclick=z6ExportReplay;
+ const toggle=zP('zMobileToggle');if(toggle){const old=toggle.onclick;toggle.onclick=()=>{old();toggle.textContent=document.body.classList.contains('z-actions-open')?'✕ CLOSE':'⚡ Z';};}
+ const suitButton=document.createElement('button');suitButton.className='z-touch z-b';suitButton.textContent='🦾 SUIT';suitButton.style.top='74%';suitButton.onclick=()=>{z6SuitAbility();document.body.classList.remove('z-actions-open');zP('zMobileToggle').textContent='⚡ Z';};zP('mobileControls').append(suitButton);
+ const p=zOpenHub;zOpenHub=function(){p();z6RenderHub();};zP('zMainBtn').onclick=zOpenHub;z6RenderHub();}
+// Extend destructible prop count in Z modes only, after existing X.4 cover generation.
+const z6CoverBase=rx2MakeCovers;rx2MakeCovers=function(){z6CoverBase();if(!Z_MODES.some(v=>v[0]===mode))return;for(const [x,z] of [[-42,-15],[45,9],[-14,45],[32,41],[-50,-45],[53,-47]]){if(blocked(x,z,2))continue;rx2Covers.push({x,z,w:2.5,d:1.8,h:1.7,hp:110,maxHp:110});}};
+
+zAddUI();z6UI();
+
+/* UPDATE Z — Holiday Pass Expansion
+ * 19 independent seasonal passes; each 100 tiers (tier 100 = 1,000 coins),
+ * five distinct holiday quests and separate gun/knife loot boxes per season.
+ * Only event menus, counters, saved cosmetics; no extra game-world graphics.
+ */
+const ZP_TIER_COUNT=100, ZP_XP_TIER=70, ZP_BOX_COST=90;
+const ZP_RARITIES=[
+ {id:'common',label:'Common',weight:43,labelColor:'#b8b6b2',suffix:'Scout'},
+ {id:'uncommon',label:'Uncommon',weight:27,labelColor:'#61d5b4',suffix:'Spark'},
+ {id:'rare',label:'Rare',weight:16,labelColor:'#67a9ff',suffix:'Sentinel'},
+ {id:'legendary',label:'Legendary',weight:9,labelColor:'#f06f7b',suffix:'Royal'},
+ {id:'godly',label:'Godly',weight:4,labelColor:'#ed74ce',suffix:'Mythic'},
+ {id:'golden',label:'Golden',weight:1,labelColor:'#fdd86a',suffix:'Eternal'}
+];
+// Deliberately individual quests for each holiday (same five measurable gameplay categories).
+const ZP_QUEST_NAMES={
+ lunar:['Dragon Awakening','Parade of Lanterns','Red Envelope Hunt','Dynasty Victories','Jade Blade Trial'],
+ valentine:['Heartbreaker Hunt','Cupid’s Encounters','Love Letter Supply','Power of Friendship','Rose Thorn Duel'],
+ ramadan:['Lantern Guard','Nights of Gathering','Moonlight Treasure','Crescent Triumph','Silver Crescent Trial'],
+ eidfitr:['Celebration Defender','Eid Gathering','Gift Basket Search','Radiant Victory','Golden Crescent Trial'],
+ april:['Prank Patrol','Laughing Rounds','Mystery Banana Hunt','Jester’s Champion','Rubber Blade Joke'],
+ easter:['Bunny Patrol','Spring Celebration','Easter Egg Hunt','Pastel Champion','Carrot Blade Trial'],
+ earth:['Nature Guardian','Green Mission','Emerald Treasure','Earth Defender','Forest Blade Trial'],
+ eidadha:['Golden Guardian','Festival Gathering','Star Gift Hunt','Crescent Champion','Golden Edge Trial'],
+ summer:['Tropical Patrol','Sunny Adventures','Beach Treasure','Summer Champion','Tidal Blade Trial'],
+ friendship:['Friends United','Party Together','Shared Treasure','Buddy Victories','Twin Blade Trial'],
+ midautumn:['Jade Guardians','Lantern Journey','Mooncake Treasure','Moonlight Champion','Jade Edge Trial'],
+ saudi:['Falcon Patrol','Green Celebration','Falcon Treasure','Emerald Champion','Desert Blade Trial'],
+ diwali:['Festival Defender','Light Parade','Diya Treasure','Radiant Champion','Flame Blade Trial'],
+ halloween:['Ghost Hunter','Haunted Matches','Pumpkin Treasure','Phantom Victor','Reaper’s Knife'],
+ oman:['Royal Falcon Guard','National Day Parade','Fort Treasure','Omani Champion','Khanjar Trials'],
+ thanksgiving:['Harvest Defender','Autumn Gatherings','Golden Harvest','Grateful Victory','Maple Blade Trial'],
+ christmas:['Snowflake Defender','Winter Gatherings','Present Hunt','Frost Champion','Candy Cane Trial'],
+ solstice:['Ice Guardian','Longest Night','Crystal Treasure','Frost Victor','Winter Blade Trial'],
+ anniversary:['Founders Vanguard','Legacy Matches','Birthday Treasure','Anniversary Champion','Founders Blade Trial']
+};
+const ZP_METRICS=['kills','matches','chests','wins','knifeKills'];
+const ZP_QUEST_GOALS=[18,4,5,2,3],ZP_QUEST_TOKENS=[90,120,95,150,135],ZP_QUEST_XP=[240,280,250,320,300];
+const ZP_METRIC_XP={kills:8,matches:130,chests:22,wins:55,knifeKills:25};
+const ZP_PAGES=5, ZP_PAGE_SIZE=20;
+let zpSelected=null,zpPage=0,zpLastSaveAt=0,zpDirty=false,zpActivityDate='',zpActiveCache=[];
+zProfile.passes=(zProfile.passes&&typeof zProfile.passes==='object'&&!Array.isArray(zProfile.passes))?zProfile.passes:{};
+function zpKey(h){return h.id+'-'+zEventYear(h);}
+function zpData(h){
+ const key=zpKey(h);if(!zProfile.passes[key]||typeof zProfile.passes[key]!=='object'||Array.isArray(zProfile.passes[key]))zProfile.passes[key]={};
+ const d=zProfile.passes[key];d.xp=Math.min(10000000,Math.max(0,Math.floor(Number(d.xp)||0)));
+ if(!d.stats||typeof d.stats!=='object'||Array.isArray(d.stats))d.stats={};
+ for(const metric of ZP_METRICS)d.stats[metric]=Math.min(1000000,Math.max(0,Math.floor(Number(d.stats[metric])||0)));
+ if(!Array.isArray(d.claimedTiers))d.claimedTiers=[];
+ d.claimedTiers=Array.from(new Set(d.claimedTiers.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=100))).sort((a,b)=>a-b);
+ if(!Array.isArray(d.claimedQuests))d.claimedQuests=[];
+ d.claimedQuests=Array.from(new Set(d.claimedQuests.filter(v=>ZP_METRICS.includes(v))));
+ if(!d.vouchers||typeof d.vouchers!=='object')d.vouchers={};
+ for(const k of ['gun','knife'])d.vouchers[k]=Math.min(1000,Math.max(0,Math.floor(Number(d.vouchers[k])||0)));
+ if(!Array.isArray(d.history))d.history=[];
+ return d;
+}
+function zpProgress(h){return Math.min(100,Math.floor(zpData(h).xp/ZP_XP_TIER));}
+function zpSaved(){zSave();zpDirty=false;zpLastSaveAt=Date.now();}
+function zpMarkDirty(immediately=false){zpDirty=true;const n=Date.now();if(immediately||n-zpLastSaveAt>5500)zpSaved();}
+function zpActive(){const d=zToday().dayKey;if(d!==zpActivityDate){zpActivityDate=d;zpActiveCache=zHolidayActive();}return zpActiveCache;}
+function zpRecord(metric,n=1){if(!ZP_METRICS.includes(metric)||phase!=='playing'||paused||!Number.isFinite(n)||n<=0)return;
+ const events=zpActive();if(!events.length)return;
+ for(const h of events){const d=zpData(h);d.stats[metric]=Math.min(1000000,d.stats[metric]+Math.min(20,Math.floor(n)));d.xp=Math.min(ZP_TIER_COUNT*ZP_XP_TIER+100000,d.xp+Math.floor(n)*ZP_METRIC_XP[metric]);}
+ zpMarkDirty();
+}
+function zpQuest(h,index){
+ const id=ZP_METRICS[index],eventIndex=Math.max(0,Z_HOLIDAYS.findIndex(x=>x.id===h.id));
+ const goals=[12+(eventIndex%5)*3,3+eventIndex%3,3+eventIndex%4,1+eventIndex%3,2+eventIndex%3];
+ return {id,name:ZP_QUEST_NAMES[h.id][index],goal:goals[index],tokens:ZP_QUEST_TOKENS[index],xp:ZP_QUEST_XP[index]};
+}
+function zpTierReward(tier){
+ if(tier===100)return {kind:'coins',amount:1000,label:'🪙 1,000 COINS · GRAND FINAL'};
+ if(tier%10===0)return {kind:'voucher',type:(tier/10)%2===1?'gun':'knife',amount:1,label:(tier/10)%2===1?'🔫 Free Gun Box':'🔪 Free Knife Box'};
+ if(tier%5===0)return {kind:'coins',amount:55,label:'🪙 55 Coins'};
+ const n=18+(tier%7)*4;return {kind:'tokens',amount:n,label:'🎟️ '+n+' Event Tokens'};
+}
+function zpGrantTier(h,tier,d){const reward=zpTierReward(tier);if(reward.kind==='coins')addCoins(reward.amount);
+ else if(reward.kind==='tokens'){const key=zpKey(h);zProfile.tokens[key]=(Number(zProfile.tokens[key])||0)+reward.amount;}
+ else d.vouchers[reward.type]+=reward.amount;
+}
+function zpClaimTier(h,tier,silent=false){const d=zpData(h);
+ if(!zHolidayStatus(h).active||!Number.isInteger(tier)||tier<1||tier>100||d.claimedTiers.includes(tier)||d.xp<tier*ZP_XP_TIER)return false;
+ d.claimedTiers.push(tier);zpGrantTier(h,tier,d);zpMarkDirty(true);if(!silent){zNotice(h.icon+' TIER '+tier+' CLAIMED'+(tier===100?' · +1,000 COINS!':''));zpRenderDetails(h);}return true;
+}
+function zpClaimAll(h){if(!zHolidayStatus(h).active)return zNotice('THIS EVENT IS NOT CURRENTLY ACTIVE');const d=zpData(h),unlocked=zpProgress(h);let count=0,grand=false;
+ for(let tier=1;tier<=unlocked;tier++){if(d.claimedTiers.includes(tier))continue;d.claimedTiers.push(tier);zpGrantTier(h,tier,d);count++;if(tier===100)grand=true;}
+ if(count){zpMarkDirty(true);refreshWallet();zNotice('🏆 CLAIMED '+count+' TIERS'+(grand?' · TIER 100 +1,000 COINS!':''));}else zNotice('NO UNCLAIMED TIERS AVAILABLE');zpRenderDetails(h);
+}
+function zpClaimQuest(h,index){if(!zHolidayStatus(h).active)return zNotice('EVENT NOT ACTIVE');const q=zpQuest(h,index),d=zpData(h);if(d.claimedQuests.includes(q.id)||d.stats[q.id]<q.goal)return;
+ d.claimedQuests.push(q.id);d.xp=Math.min(ZP_TIER_COUNT*ZP_XP_TIER+100000,d.xp+q.xp);
+ const key=zpKey(h);zProfile.tokens[key]=(Number(zProfile.tokens[key])||0)+q.tokens;zpMarkDirty(true);zNotice('🎯 '+q.name+' · +'+q.xp+' XP · +'+q.tokens+' TOKENS');zpRenderDetails(h);
+}
+function zpMix(c1,c2,t){const a=[1,3,5].map(i=>parseInt(c1.slice(i,i+2),16)),b=[1,3,5].map(i=>parseInt(c2.slice(i,i+2),16));return '#'+a.map((v,i)=>Math.round(v*(1-t)+b[i]*t).toString(16).padStart(2,'0')).join('');}
+function zpItem(h,kind,index){const r=ZP_RARITIES[index],godly=index===4;
+ if(kind==='gun')return {id:godly?'z_gun_'+h.id:'zp_gun_'+h.id+'_'+r.id,gun:godly?'ar':['ar','smg','shotgun','sniper','ar','ar'][index],name:h.loot+' '+r.suffix+' Rifle',ar:h.loot+' '+r.suffix,rarity:r.id,style:'standard',base:index===5?'#e4b74e':zpMix(h.base,'#969c9d',index===0?.68:index===1?.2:.07),glow:index===5?'#fff3a1':h.glow,shadow:'#11151e'};
+ return {id:godly?'z_knife_'+h.id:'zp_knife_'+h.id+'_'+r.id,box:'zp-'+h.id,rarity:r.id,light:index===5?'#fff4a0':h.glow,dark:index===5?'#ac7923':zpMix(h.base,'#60616a',index===0?.5:0),icon:h.icon,name:h.loot+' '+r.suffix+' Edge',shape:index%6,rarityIndex:index===5?6:index};
+}
+// Registered once in existing inventory systems. Loot boxes never require additional 3D entities.
+function zpRegisterItems(){let gunsChanged=false,knivesChanged=false;
+ for(const h of Z_HOLIDAYS){for(const kind of ['gun','knife'])for(let i=0;i<ZP_RARITIES.length;i++){
+  const item=zpItem(h,kind,i),arr=kind==='gun'?V8_GUN_FINISHES:VX_KNIVES;
+  if(!arr.some(e=>e.id===item.id)){arr.push(item);if(kind==='gun')gunsChanged=true;else knivesChanged=true;}
+  if(zProfile.collection.includes(item.id)){
+   const owned=kind==='gun'?v8Owned:vxOwnedKnives;
+   if(!owned.includes(item.id))owned.push(item.id);
+  }
+ }}
+ if(gunsChanged)setStore('v8GunOwned',v8Owned);
+ if(knivesChanged)vxSaveKnives();
+}
+function zpGrantItem(h,kind,index){const item=zpItem(h,kind,index),owned=zProfile.collection.includes(item.id);
+ if(!owned){zProfile.collection.push(item.id);if(kind==='gun'){if(!v8Owned.includes(item.id))v8Owned.push(item.id);setStore('v8GunOwned',v8Owned);}
+ else{if(!vxOwnedKnives.includes(item.id))vxOwnedKnives.push(item.id);vxSaveKnives();}}
+ return {item,owned};
+}
+function zpOpenBox(h,kind){if(!zHolidayStatus(h).active)return zNotice('EVENT BOX IS NOT CURRENTLY OPEN');if(!['gun','knife'].includes(kind))return;
+ const d=zpData(h),key=zpKey(h),wallet=Number(zProfile.tokens[key])||0,credit=d.vouchers[kind]>0;
+ if(!credit&&wallet<ZP_BOX_COST)return zNotice('NEED '+ZP_BOX_COST+' EVENT TOKENS');
+ if(credit)d.vouchers[kind]--;else zProfile.tokens[key]-=ZP_BOX_COST;
+ const roll=Math.random()*100;let acc=0,index=ZP_RARITIES.length-1;
+ for(let i=0;i<ZP_RARITIES.length;i++){acc+=ZP_RARITIES[i].weight;if(roll<acc){index=i;break;}}
+ const result=zpGrantItem(h,kind,index);
+ const refund=result.owned?Math.floor(ZP_BOX_COST*.45):0;if(refund)zProfile.tokens[key]+=refund;
+ d.history.unshift({kind,itemId:result.item.id,name:result.item.name,rarity:ZP_RARITIES[index].label,duplicate:result.owned});d.history=d.history.slice(0,6);
+ zpMarkDirty(true);zNotice(h.icon+' '+(result.owned?'DUPLICATE +'+refund+' TOKENS':'NEW '+ZP_RARITIES[index].label.toUpperCase())+' · '+result.item.name);zpRenderDetails(h);
+}
+function zpEventList(){const root=zP('zEventsList');if(!root)return;root.replaceChildren();for(const h of Z_HOLIDAYS){const status=zHolidayStatus(h),data=zpData(h),level=zpProgress(h),k=zpKey(h),wallet=zProfile.tokens[k]||0,article=document.createElement('article');article.className='zp-event'+(status.active?' zp-live':'');article.style.setProperty('--zp-primary',h.base);article.style.setProperty('--zp-glow',h.glow);
+ const top=document.createElement('div');top.className='zp-event-top';top.innerHTML='<span class="zp-icon"></span><div><b></b><small></small></div><span class="zp-status"></span>';
+ top.querySelector('.zp-icon').textContent=h.icon;top.querySelector('b').textContent=h.name;top.querySelector('small').textContent=status.label;top.querySelector('.zp-status').textContent=status.active?'🟢 LIVE':'🔒 PREVIEW';article.append(top);
+ const desc=document.createElement('div');desc.className='zp-level';desc.textContent='🏆 '+level+'/100 Tiers · 🎟️ '+wallet+' Tokens · 🔫 Gun Box · 🔪 Knife Box';article.append(desc);
+ const track=document.createElement('div');track.className='zp-track';const fill=document.createElement('i');fill.style.width=level+'%';track.append(fill);article.append(track);
+ const btn=document.createElement('button');btn.className='primary';btn.textContent='🎁 VIEW 100-TIER PASS & EVENT BOXES';btn.onclick=()=>{zpSelected=h.id;zpPage=Math.max(0,Math.min(4,Math.floor(level/20)));zpRenderDetails(h);};article.append(btn);root.append(article);
+ }
+}
+function zpRenderDetails(h){const view=zP('zpDetail'),list=zP('zEventsList');if(!view||!list)return;if(!h){view.classList.add('hide');list.classList.remove('hide');zpSelected=null;return;}
+ zpSelected=h.id;view.classList.remove('hide');list.classList.add('hide');view.replaceChildren();
+ const d=zpData(h),level=zpProgress(h),active=zHolidayStatus(h).active,key=zpKey(h),money=zProfile.tokens[key]||0;
+ const back=document.createElement('button');back.className='secondary zp-back';back.textContent='← ALL 19 HOLIDAY EVENTS';back.onclick=()=>{zpEventList();zpRenderDetails(null);};view.append(back);
+ const hero=document.createElement('div');hero.className='zp-hero';hero.style.setProperty('--zp-primary',h.base);hero.style.setProperty('--zp-glow',h.glow);
+ hero.innerHTML='<div class="zp-hero-icon"></div><h2></h2><p></p><div class="zp-big"></div><div class="zp-track"><i></i></div><p class="zp-caption"></p>';
+ hero.querySelector('.zp-hero-icon').textContent=h.icon;hero.querySelector('h2').textContent=h.name+' — HOLIDAY PASS';hero.querySelector('p').textContent=active?'🟢 EVENT LIVE · Rewards available now':'🔒 EVENT INACTIVE · Preview rewards and quests';hero.querySelector('.zp-big').textContent='TIER '+level+' / 100';hero.querySelector('i').style.width=level+'%';hero.querySelector('.zp-caption').textContent='⭐ '+d.xp.toLocaleString()+' / '+(ZP_TIER_COUNT*ZP_XP_TIER).toLocaleString()+' Event XP · 🎟️ '+money.toLocaleString()+' Tokens · Final Tier: 1,000 Coins';view.append(hero);
+ // Preserve the original holiday's daily gift alongside the new event pass.
+ const giftClaimed=!!zProfile.claims[h.id+'-'+zToday().dayKey],daily=document.createElement('button');
+ daily.className='primary full';daily.textContent=giftClaimed?'🎁 DAILY GIFT ALREADY CLAIMED':'🎁 CLAIM TODAY’S GIFT · +40 TOKENS +90 COINS';
+ daily.disabled=!active||giftClaimed;daily.onclick=()=>zDailyClaim(h.id);view.append(daily);
+ const questSection=document.createElement('section');questSection.className='zp-panel';questSection.innerHTML='<h3>🎯 '+h.name.toUpperCase()+' — EXCLUSIVE EVENT QUESTS</h3><p>Five separate holiday quests. Claim each completed quest for event XP and tokens.</p>';
+ for(let i=0;i<5;i++){const q=zpQuest(h,i),done=d.claimedQuests.includes(q.id),row=document.createElement('div');row.className='zp-row';row.innerHTML='<div class="zp-row-text"><strong></strong><small></small></div>';row.querySelector('strong').textContent=q.name;row.querySelector('small').textContent=Math.min(q.goal,d.stats[q.id])+' / '+q.goal+' '+({kills:'eliminations',matches:'matches played',chests:'chests opened',wins:'victories',knifeKills:'knife eliminations'}[q.id])+' · +'+q.xp+' XP · +'+q.tokens+' Tokens';const b=document.createElement('button');b.className='secondary';b.textContent=done?'✓ CLAIMED':'CLAIM';b.disabled=!active||done||d.stats[q.id]<q.goal;b.onclick=()=>zpClaimQuest(h,i);row.append(b);questSection.append(row);}
+ view.append(questSection);
+ const boxSection=document.createElement('section');boxSection.className='zp-panel';boxSection.innerHTML='<h3>📦 '+h.name.toUpperCase()+' — LIMITED BOXES</h3><p>Each holiday has its own gun box and knife box, with 6 unique cosmetics in each. Every item is cosmetic-only. No real-money purchases.</p>';
+ const boxGrid=document.createElement('div');boxGrid.className='zp-box-grid';for(const kind of ['gun','knife']){const card=document.createElement('div');card.className='zp-box-card';card.style.setProperty('--zp-primary',h.base);card.style.setProperty('--zp-glow',h.glow);card.innerHTML='<div class="zp-box-icon"></div><strong></strong><small></small><div class="zp-box-voucher"></div>';
+ card.querySelector('.zp-box-icon').textContent=kind==='gun'?'🔫📦':'🔪📦';card.querySelector('strong').textContent=h.loot+' '+(kind==='gun'?'Gun Box':'Knife Box');card.querySelector('small').textContent='6 rewards · 100% cosmetic · 1 roll / opening';card.querySelector('.zp-box-voucher').textContent='🎫 '+d.vouchers[kind]+' FREE BOX CREDIT'+(d.vouchers[kind]===1?'':'S');
+ const b=document.createElement('button');b.className='primary full';b.textContent='OPEN '+(kind==='gun'?'GUN':'KNIFE')+' BOX · '+(d.vouchers[kind]?'USE FREE CREDIT':'90 TOKENS');b.disabled=!active||(!d.vouchers[kind]&&money<ZP_BOX_COST);b.onclick=()=>zpOpenBox(h,kind);card.append(b);
+ const drops=document.createElement('details');drops.innerHTML='<summary>View the 6 possible rewards and exact odds</summary>';
+ for(let i=0;i<ZP_RARITIES.length;i++){const r=ZP_RARITIES[i],it=zpItem(h,kind,i),p=document.createElement('p');p.className='zp-drop';p.style.color=r.labelColor;p.textContent=r.label+' '+r.weight+'% · '+it.name;drops.append(p);}card.append(drops);boxGrid.append(card);}
+ boxSection.append(boxGrid);
+ if(d.history.length){const recent=document.createElement('p');recent.className='zp-history';recent.textContent='🎊 LAST DROP: '+d.history[0].name+' · '+d.history[0].rarity+(d.history[0].duplicate?' (Duplicate → +40 tokens)':' · NEW!');boxSection.append(recent);}
+ view.append(boxSection);
+ const pass=document.createElement('section');pass.className='zp-panel';pass.innerHTML='<h3>🏆 100-TIER HOLIDAY BATTLE PASS</h3><p>100 free tiers per holiday. Earn XP in normal matches; each tier can be claimed once. Tier 100 always rewards exactly 1,000 coins.</p>';
+ const toolbar=document.createElement('div');toolbar.className='zp-pass-tools';const previous=document.createElement('button');previous.className='secondary';previous.textContent='◀ PREVIOUS 20';previous.disabled=zpPage===0;previous.onclick=()=>{zpPage--;zpRenderDetails(h);};toolbar.append(previous);
+ const pageLabel=document.createElement('span');pageLabel.textContent='TIERS '+(zpPage*20+1)+'–'+((zpPage+1)*20)+' OF 100';toolbar.append(pageLabel);
+ const next=document.createElement('button');next.className='secondary';next.textContent='NEXT 20 ▶';next.disabled=zpPage>=4;next.onclick=()=>{zpPage++;zpRenderDetails(h);};toolbar.append(next);pass.append(toolbar);
+ const claimAll=document.createElement('button');claimAll.className='primary full';claimAll.textContent='🎁 CLAIM ALL AVAILABLE TIERS';claimAll.disabled=!active||d.claimedTiers.length>=level;claimAll.onclick=()=>zpClaimAll(h);pass.append(claimAll);
+ const tiles=document.createElement('div');tiles.className='zp-tier-grid';for(let tier=zpPage*20+1;tier<=Math.min(100,(zpPage+1)*20);tier++){const reward=zpTierReward(tier),claimed=d.claimedTiers.includes(tier),unlocked=level>=tier,card=document.createElement('div');card.className='zp-tier'+(tier===100?' zp-final':'')+(claimed?' zp-claimed':'')+(unlocked?' zp-unlocked':'');card.innerHTML='<strong></strong><small></small>';card.querySelector('strong').textContent='TIER '+tier;card.querySelector('small').textContent=reward.label;
+ const b=document.createElement('button');b.className='secondary';b.textContent=claimed?'✓ CLAIMED':unlocked?'CLAIM':'🔒 LOCKED';b.disabled=!active||claimed||!unlocked;b.onclick=()=>zpClaimTier(h,tier);card.append(b);tiles.append(card);}pass.append(tiles);view.append(pass);
+ const armor=document.createElement('section');armor.className='zp-panel';armor.innerHTML='<h3>🛡️ HOLIDAY ARMOR COLLECTION</h3><p>Retained from original Z. Costs 80 event tokens; can be equipped from the existing skins system.</p>';
+ const hasSkin=zProfile.collection.includes('z_suit_'+h.id),armorButton=document.createElement('button');armorButton.className='secondary';armorButton.textContent=hasSkin?'✓ EQUIP '+h.loot+' ARMOR':'REDEEM '+h.loot+' ARMOR · 80 TOKENS';armorButton.disabled=!hasSkin&&(!active||money<80);armorButton.onclick=()=>hasSkin?zEquipHoliday(h.id,'skin'):zBuyHoliday(h.id,'skin');armor.append(armorButton);view.append(armor);
+}
+function zpEventHubOpen(){zpSelected=null;zpPage=0;zpEventList();zpRenderDetails(null);}
+function zpMount(){
+ const style=document.createElement('style');style.textContent=`
+ #zEventsMenu .zp-event,#zEventsMenu .zp-panel{background:#2d241e;border:1px solid #8d6947;border-radius:12px;padding:14px;margin:12px 0}
+ #zEventsMenu .zp-event.zp-live{border-color:#f7d38c}#zEventsMenu .zp-event-top{display:flex;align-items:center;gap:12px}#zEventsMenu .zp-event-top>div{flex:1}#zEventsMenu .zp-icon{font-size:31px}#zEventsMenu .zp-event-top b{display:block;font-size:15px;color:#ffe4ac}#zEventsMenu .zp-event-top small{display:block;color:#d7ba96;font-size:11px}#zEventsMenu .zp-status{font-size:10px;color:#f6d7a3}
+ #zEventsMenu .zp-level{font-size:12px;margin:9px 0;color:#ffe4b5}#zEventsMenu .zp-track{height:10px;border-radius:8px;background:#1e1714;border:1px solid #74563e;overflow:hidden;margin:9px 0}#zEventsMenu .zp-track i{display:block;height:100%;background:linear-gradient(90deg,#e2a15f,#fbe6ac);transition:width .2s}#zEventsMenu .zp-event>button{width:100%;margin:5px 0 0}
+ #zEventsMenu .zp-hero{border:1px solid var(--zp-glow);border-radius:15px;padding:16px;margin:12px 0;background:linear-gradient(120deg,var(--zp-primary),#261e1a 65%);text-align:center}#zEventsMenu .zp-hero-icon{font-size:35px}#zEventsMenu .zp-hero h2{font-size:24px}#zEventsMenu .zp-big{font:900 32px Impact,Arial,sans-serif;color:#ffe3a7}#zEventsMenu .zp-caption{font-size:12px}#zEventsMenu .zp-panel h3{font-size:16px;margin:3px 0 10px;color:#fbe2aa}#zEventsMenu .zp-panel p{margin:8px 0;font-size:12px}
+ #zEventsMenu .zp-row{display:flex;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid #72543a}#zEventsMenu .zp-row-text{flex:1}#zEventsMenu .zp-row strong{display:block;font-size:13px}#zEventsMenu .zp-row small{display:block;font-size:10px;color:#c6b79e;margin-top:5px}#zEventsMenu .zp-row button{flex-shrink:0}
+ #zEventsMenu .zp-box-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#zEventsMenu .zp-box-card{padding:12px;min-width:0;text-align:center;border:1px solid var(--zp-glow);border-radius:12px;background:linear-gradient(135deg,var(--zp-primary),#241d1b 78%)}#zEventsMenu .zp-box-icon{font-size:35px;margin:10px auto}#zEventsMenu .zp-box-card strong{display:block;font-size:14px}#zEventsMenu .zp-box-card small{display:block;color:#ead1a8;margin:8px auto}#zEventsMenu .zp-box-voucher{font-size:11px;padding:8px}#zEventsMenu .zp-box-card details{margin:12px 0;text-align:left;font-size:11px}#zEventsMenu .zp-box-card summary{cursor:pointer}#zEventsMenu .zp-drop{font-size:11px;line-height:1.2;margin:5px 0}
+ #zEventsMenu .zp-pass-tools{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}#zEventsMenu .zp-pass-tools span{font-size:11px;text-align:center}#zEventsMenu .zp-tier-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px}#zEventsMenu .zp-tier{min-height:120px;display:flex;flex-direction:column;gap:7px;justify-content:space-between;padding:10px 7px;border-radius:10px;background:#3d3025;border:1px solid #78573f}#zEventsMenu .zp-tier strong{font-size:12px}#zEventsMenu .zp-tier small{font-size:11px;min-height:27px;color:#f4daab}#zEventsMenu .zp-tier button{min-height:29px;padding:5px;font-size:10px}#zEventsMenu .zp-tier.zp-unlocked{border-color:#f5ca6d}#zEventsMenu .zp-tier.zp-claimed{background:#273b31;border-color:#68ac8c}#zEventsMenu .zp-tier.zp-final{background:linear-gradient(135deg,#99732c,#38271d);border:2px solid #ffda68}#zEventsMenu .zp-back{margin-bottom:8px}
+ @media(max-width:680px){#zEventsMenu .zp-box-grid{grid-template-columns:1fr}#zEventsMenu .zp-tier-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zEventsMenu .zp-event-top b{font-size:13px}#zEventsMenu .zp-pass-tools button{font-size:10px;padding:7px 6px}#zEventsMenu .zp-row strong{font-size:11px}}
+ `;document.head.append(style);
+ const events=zP('zEventsMenu'),list=zP('zEventsList');const detail=document.createElement('div');detail.id='zpDetail';detail.className='hide';list.insertAdjacentElement('afterend',detail);
+ zP('zEventsOpen').textContent='🎊 19 HOLIDAYS · 100 TIERS EACH · GUN + KNIFE BOXES';
+ const blurb=events.querySelector('p');if(blurb)blurb.textContent='19 holiday events, each with its OWN 100-tier free pass, five unique quests, a Gun Box and Knife Box. Tier 100 = 1,000 coins. No New Year event, weather events, holiday world meshes, or real-money purchases. Rewards are saved locally; active dates follow the device calendar in Oman time.';
+ zP('zEventsBack').textContent='← UPDATE Z';
+ const originalOpen=zOpenEvents;zOpenEvents=function(){zpSelected=null;originalOpen();zpEventHubOpen();};
+ zP('zEventsOpen').onclick=zOpenEvents;
+ const oldRender=zRenderEvents;zRenderEvents=function(){zpEventList();if(zpSelected){const h=Z_HOLIDAYS.find(e=>e.id===zpSelected);if(h)zpRenderDetails(h);}else zpRenderDetails(null);};
+ zP('zEventsBack').onclick=()=>{if(zpSelected){zpEventHubOpen();}else zOpenHub();};
+ zpRegisterItems();zpEventHubOpen();
+}
+// Existing gameplay hooks, with low-frequency writes and no new per-frame 3D work.
+const zpKillBase=vxOnKill;vxOnKill=function(killer){const r=zpKillBase(killer);if(killer===pl)zpRecord('kills');return r;};
+const zpKnifeBase=rxKnifeKill;rxKnifeKill=function(){const r=zpKnifeBase();zpRecord('knifeKills');return r;};
+const zpMeleeBase=zMelee;zMelee=function(){const kills=pl.kills,r=zpMeleeBase();if(pl.kills>kills)zpRecord('knifeKills',pl.kills-kills);return r;};
+const zpChestBase=applyChestLoot;applyChestLoot=function(reward){const valid=reward&&Number.isInteger(reward.weapon)&&reward.weapon>=0&&reward.weapon<weapons.length;const r=zpChestBase(reward);if(valid)zpRecord('chests');return r;};
+const zpFinishBase=finish;finish=function(){if(phase==='playing'&&!['guest','host','z-online'].includes(mode)){
+ zpRecord('matches');const modeVictory=!!zRun?.won||mode==='mystery'&&vxMysteryOutcome==='win'||mode==='boss'&&vxBossOutcome==='win'||(typeof rxModeResult==='function'&&rxModeResult()==='win')||pl.kills>=30;
+ if(modeVictory)zpRecord('wins');zpMarkDirty(true);
+ }return zpFinishBase();};
+window.addEventListener('pagehide',()=>{if(zpDirty)zpSaved();});
+zpMount();
+
+/* RECOIL X — UPDATE Z: 2026–2031 UNREVEALED HOLIDAY VAULT + KINGDOM & CHESS
+   This addon runs inside the existing game closure, after zpMount().
+   All event availability on a static/offline build depends on local dates.
+   For a competitive online game use authenticated, server-enforced event releases.
+*/
+const ZZ_FIRST_YEAR=2026,ZZ_LAST_YEAR=2031;
+const ZZ_YEAR_MOTIFS={2026:'Origins',2027:'Ascension',2028:'Eclipse',2029:'Legacy',2030:'Eternity',2031:'Final Crown'};
+const ZZ_SEASON_SUBTITLES=['Vanguard','Radiant','Aether','Celestial','Sovereign','Mythbound'];
+const ZZ_KINGDOMS=[
+ {id:'lava',name:'Lava Kingdom',icon:'🌋',boss:'INFERNO TYRANT',hp:680,speed:3.0,weapon:'ar',reward:'Godly Lava Assault Rifle',base:'#e4562d',glow:'#ffbc47'},
+ {id:'ice',name:'Ice Kingdom',icon:'🧊',boss:'FROST EMPEROR',hp:750,speed:2.9,weapon:'sniper',reward:'Godly Glacial Sniper',base:'#58bcea',glow:'#e1faff'},
+ {id:'darkness',name:'Darkness Kingdom',icon:'🌑',boss:'VOID OVERLORD',hp:810,speed:3.4,weapon:'smg',reward:'Godly Shadow SMG',base:'#654a93',glow:'#c7a4ff'},
+ {id:'earth',name:'Earth Kingdom',icon:'🌿',boss:'TERRA COLOSSUS',hp:1000,speed:2.5,weapon:'shotgun',reward:'Godly Earthbreaker Shotgun',base:'#56844c',glow:'#cfe482'},
+ {id:'water',name:'Water Kingdom',icon:'🌊',boss:'TIDAL LEVIATHAN',hp:850,speed:3.2,weapon:'ar',reward:'Godly Tidal Assault Rifle',base:'#268bb3',glow:'#8af3ef'}
+];
+const ZZ_SCRAPS=[['Ember','#f17e39','🔥'],['Glacier','#71c6ee','❄️'],['Umbral','#b29ad7','🌑'],['Root','#89c87a','🌱'],['Tide','#66c4d1','💧']];
+const ZZ_CHESS_TYPES=[['pawn','Pawn','♟️',185,2.7],['knight','Knight','♞',310,3.6],['bishop','Bishop','♝',400,3.1],['rook','Rook','♜',500,2.8],['queen','Queen','♛',720,3.7],['king','King','♚',900,3.35]];
+const zzPieces=(()=>{const result=[];for(const side of ['White','Black']){for(const [kind,quantity] of [['pawn',8],['rook',2],['knight',2],['bishop',2],['queen',1],['king',1]])for(let i=1;i<=quantity;i++)result.push({id:side.toLowerCase()+'_'+kind+'_'+i,name:side+' '+kind.toUpperCase()+' '+i,type:kind,side});}return result;})();
+function zzInt(value,max=10000000){return Math.min(max,Math.max(0,Math.floor(Number(value)||0)));}
+function zzRandom(n){if(globalThis.crypto?.getRandomValues){const x=new Uint32Array(1);crypto.getRandomValues(x);return x[0]%n;}return Math.floor(Math.random()*n);}
+function zzSafeArray(arr){return Array.isArray(arr)?arr.filter(v=>typeof v==='string').slice(0,2000):[];}
+const zzRaw=zProfile.zz&&typeof zProfile.zz==='object'?zProfile.zz:{};
+const zzState=zProfile.zz={scrap:ZZ_SCRAPS.map(s=>zzInt(zzRaw.scrap?.[ZZ_SCRAPS.indexOf(s)],9999)),kingdomKeys:zzRaw.kingdomKeys&&typeof zzRaw.kingdomKeys==='object'?zzRaw.kingdomKeys:{},kingdomWins:zzSafeArray(zzRaw.kingdomWins),chessPieces:zzSafeArray(zzRaw.chessPieces),chessDust:zzInt(zzRaw.chessDust,9999),chessWins:zzSafeArray(zzRaw.chessWins),chestsOpened:zzInt(zzRaw.chestsOpened),lastDrop:zzRaw.lastDrop||null};
+for(const k of ZZ_KINGDOMS)zzState.kingdomKeys[k.id]=zzInt(zzState.kingdomKeys[k.id],9999);
+zzState.chessPieces=[...new Set(zzState.chessPieces.filter(id=>zzPieces.some(p=>p.id===id)))];
+zzState.kingdomWins=[...new Set(zzState.kingdomWins.filter(id=>ZZ_KINGDOMS.some(k=>k.id===id)))];
+zzState.chessWins=[...new Set(zzState.chessWins.filter(id=>ZZ_CHESS_TYPES.some(c=>c[0]===id)))];
+let zzFight=null,zzSelected='kingdom',zzLastStatus='',zzCurrentYear=0;
+const zzDTF={chinese:new Intl.DateTimeFormat('en-u-ca-chinese',{timeZone:'Asia/Muscat',month:'numeric',day:'numeric'}),hijri:new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{timeZone:'Asia/Muscat',month:'numeric',day:'numeric'})};
+const zzCalendarCache=new Map(),zzWindowCache=new Map();
+function zzCal(y,calendar){const key=calendar+'-'+y;if(zzCalendarCache.has(key))return zzCalendarCache.get(key);const dtf=zzDTF[calendar];const found=[];let date=Date.UTC(y,0,1,12);for(let i=0;i<(y%4===0?366:365);i++,date+=86400000){const parts=dtf.formatToParts(new Date(date));const mon=Number(parts.find(x=>x.type==='month')?.value),day=Number(parts.find(x=>x.type==='day')?.value);found.push({dayN:Math.floor(date/86400000),m:mon,d:day});}zzCalendarCache.set(key,found);return found;}
+function zzFixedDay(y,m,d){return Math.floor(Date.UTC(y,m-1,d)/86400000);}
+function zzEventStarts(h,year){
+ const rule=h.rule,part=rule.split(':');if(part[0]==='fixed')return [zzFixedDay(year,+part[1],+part[2])];
+ if(rule==='easter'){const e=zEaster(year);return [zzFixedDay(year,e.m,e.d)];}
+ if(rule==='thanksgiving'){const first=new Date(Date.UTC(year,10,1)).getUTCDay(),d=1+(4-first+7)%7+21;return [zzFixedDay(year,11,d)];}
+ if(rule==='diwali'){const table={2026:[11,8],2027:[10,28],2028:[10,17],2029:[11,5],2030:[10,26],2031:[11,14]},v=table[year];return v?[zzFixedDay(year,v[0],v[1])]:[];}
+ if(rule==='hijriRamadan'||rule==='hijriFitr'||rule==='hijriAdha'){
+  const m=rule==='hijriRamadan'?9:rule==='hijriFitr'?10:12,d=rule==='hijriAdha'?10:1;
+  return zzCal(year,'hijri').filter(p=>p.m===m&&p.d===d).map(p=>p.dayN);
+ }
+ if(rule==='chineseNew'||rule==='chineseMoon'){
+  const m=rule==='chineseNew'?1:8,d=rule==='chineseNew'?1:15;
+  return zzCal(year,'chinese').filter(p=>p.m===m&&p.d===d).map(p=>p.dayN);
+ }
+ return [];
+}
+function zzWindows(h,year){const key=h.id+'-'+year;if(!zzWindowCache.has(key)){zzWindowCache.set(key,zzEventStarts(h,year).map(dayN=>({start:dayN,end:dayN+h.duration-1,year})));}return zzWindowCache.get(key);}
+function zzNowDay(){const n=zToday();return zzFixedDay(n.y,n.m,n.d);}
+function zzStatus(h){const now=zzNowDay(),year=zToday().y;
+ for(let y=Math.max(ZZ_FIRST_YEAR,year-1);y<=Math.min(ZZ_LAST_YEAR,year);y++)for(const w of zzWindows(h,y))if(now>=w.start&&now<=w.end)return {active:true,year:y,start:w.start,end:w.end,label:'LIVE · '+y};
+ return {active:false,year:null,label:'HIDDEN UNTIL RELEASE'};
+}
+// Future holiday content must NEVER be rendered by the game UI prior to its start date.
+zHolidayStatus=zzStatus;
+zEventYear=function(h){return zzStatus(h).year||Math.min(ZZ_LAST_YEAR,Math.max(ZZ_FIRST_YEAR,zToday().y));};
+function zzTheme(h,year){const i=year-ZZ_FIRST_YEAR,stamp=(h.id.length*17+i*19)%53,shift=(i+1)*27+stamp;
+ const base=h.base,rgba=Number.parseInt(base.slice(1),16);const r=(((rgba>>16)&255)+shift)%180+35,g=(((rgba>>8)&255)+shift*2)%170+55,b=((rgba&255)+shift*3)%170+60;
+ return {title:h.loot+' '+year+' — '+ZZ_YEAR_MOTIFS[year],stamp:ZZ_YEAR_MOTIFS[year]+' '+ZZ_SEASON_SUBTITLES[i],base:'#'+[r,g,b].map(x=>Math.min(255,x).toString(16).padStart(2,'0')).join(''),glow:h.glow};}
+function zzYearItem(h,kind,index,year){const theme=zzTheme(h,year),rarity=ZP_RARITIES[index],id=`zz_${kind}_${h.id}_${year}_${rarity.id}`,name=`${h.loot} ${year} ${ZZ_YEAR_MOTIFS[year]} ${rarity.suffix} ${kind==='gun'?'Blaster':'Blade'}`;
+ if(kind==='gun')return {id,gun:['ar','smg','shotgun','sniper','ar','ar'][index],name,ar:name,rarity:rarity.id,style:'standard',base:theme.base,glow:theme.glow,shadow:'#181321'};
+ return {id,box:'zz-'+h.id+'-'+year,rarity:rarity.id,light:theme.glow,dark:theme.base,icon:h.icon,name,shape:(index+year)%7,rarityIndex:index===5?6:index};
+}
+zpItem=function(h,kind,index){return zzYearItem(h,kind,index,zEventYear(h));};
+zpQuest=function(h,index){const y=zEventYear(h),base=ZP_QUEST_NAMES[h.id][index],holidayIndex=Z_HOLIDAYS.findIndex(x=>x.id===h.id),metric=ZP_METRICS[index];return {id:metric,name:`${base} · ${ZZ_YEAR_MOTIFS[y]} ${y}`,goal:[12+(holidayIndex+y)%7*3,3+(holidayIndex+y)%4,3+(holidayIndex+y)%5,1+(holidayIndex+y)%3,2+(holidayIndex+y)%4][index],tokens:ZP_QUEST_TOKENS[index]+(y-2026)*10,xp:ZP_QUEST_XP[index]+(y-2026)*15};};
+const zzOrigTierReward=zpTierReward;
+zpTierReward=function(tier){const reward=zzOrigTierReward(tier);if(tier===100)return reward;
+ if(tier===25||tier===50||tier===75||tier===99)return {kind:'yearCollectible',amount:1,label:'🏅 EXCLUSIVE YEAR '+tier+' COLLECTIBLE'};
+ return reward;
+};
+const zzOrigGrantTier=zpGrantTier;
+zpGrantTier=function(h,tier,d){if([25,50,75,99].includes(tier)){
+ const y=zEventYear(h),id=`zz_tier_${h.id}_${y}_${tier}`;if(!zProfile.collection.includes(id))zProfile.collection.push(id);
+ if(!zProfile.titles.includes(`${h.name} ${y} Tier ${tier}`))zProfile.titles.push(`${h.name} ${y} Tier ${tier}`);
+ return;
+ }return zzOrigGrantTier(h,tier,d);
+};
+// Register only a LIVE holiday's inventory for this year, plus any previously owned historical items.
+function zzRegisterLive(){for(const h of zHolidayActive())for(const kind of ['gun','knife'])for(let i=0;i<ZP_RARITIES.length;i++){
+ const item=zpItem(h,kind,i),arr=kind==='gun'?V8_GUN_FINISHES:VX_KNIVES;
+ if(!arr.some(x=>x.id===item.id))arr.push(item);
+ }
+ for(const itemId of zProfile.collection.filter(id=>id.startsWith('zz_'))){const match=/^zz_(gun|knife)_([a-z]+)_(202[6-9]|203[01])_(common|uncommon|rare|legendary|godly|golden)$/.exec(itemId);if(!match)continue;const h=Z_HOLIDAYS.find(x=>x.id===match[2]);if(!h)continue;const idx=ZP_RARITIES.findIndex(r=>r.id===match[4]);if(idx<0)continue;
+ const item=zzYearItem(h,match[1],idx,+match[3]),arr=match[1]==='gun'?V8_GUN_FINISHES:VX_KNIVES,owned=match[1]==='gun'?v8Owned:vxOwnedKnives;
+ if(!arr.some(x=>x.id===item.id))arr.push(item);if(!owned.includes(item.id))owned.push(item.id);
+ }
+}
+// Remove unowned 2026 preview items and all old, unreleased event inventory from the shop.
+function zzUnhideOwnedOnly(){const owned=new Set([...unlocked,...v8Owned,...vxOwnedKnives,...zProfile.collection]);
+ const purge=(arr)=>{for(let i=arr.length-1;i>=0;i--){const id=arr[i]?.id||'';if((id.startsWith('zp_')||id.startsWith('z_gun_')||id.startsWith('z_knife_')||id.startsWith('z_suit_'))&&!owned.has(id))arr.splice(i,1);}};
+ purge(V8_GUN_FINISHES);purge(VX_KNIVES);purge(skins);
+ zzRegisterLive();
+}
+// No previews and no inactive events in the Event Hub, or on the main menu.
+zpEventList=function(){const root=zP('zEventsList');if(!root)return;root.replaceChildren();const available=zHolidayActive();
+ if(!available.length){const p=document.createElement('p');p.textContent='🔒 All events are hidden until their official opening day. Keep playing for Kingdom Scrap and Chess Pieces!';root.append(p);return;}
+ for(const h of available){const year=zEventYear(h),p=zpData(h),progress=zpProgress(h),amount=zProfile.tokens[zpKey(h)]||0,theme=zzTheme(h,year),item=document.createElement('article');item.className='zp-event zp-live';item.style.setProperty('--zp-primary',theme.base);item.style.setProperty('--zp-glow',theme.glow);
+ const title=document.createElement('h3');title.textContent=h.icon+' '+theme.title;item.append(title);
+ const meta=document.createElement('p');meta.textContent='🟢 LIVE ONLY · 🏆 '+progress+'/100 tiers · 🎟️ '+amount+' tokens · 🔫 Exclusive Gun Box · 🔪 Exclusive Knife Box';item.append(meta);
+ const button=document.createElement('button');button.className='primary full';button.textContent='🎁 ENTER '+year+' EVENT';button.onclick=()=>{zpPage=0;zpRenderDetails(h);};item.append(button);root.append(item);
+ }
+};
+const zzOrigDetail=zpRenderDetails;
+zpRenderDetails=function(h){if(h&&!zHolidayStatus(h).active){zpEventList();zzOrigDetail(null);return;}
+ zzOrigDetail(h);
+ if(!h)return;
+ const year=zEventYear(h),theme=zzTheme(h,year),view=zP('zpDetail');
+ const hero=view.querySelector('.zp-hero');if(hero){hero.style.setProperty('--zp-primary',theme.base);hero.querySelector('h2').textContent=theme.title+' · 100-TIER PASS';}
+ for(const box of view.querySelectorAll('.zp-box-card')){box.style.setProperty('--zp-primary',theme.base);box.querySelector('strong').textContent=theme.title+' '+(box.querySelector('.zp-box-icon')?.textContent.includes('🔫')?'Gun Box':'Knife Box');}
+ const pass=view.querySelector('.zp-tier-grid');if(pass)for(const tile of pass.children){const label=tile.querySelector('small');if(label)label.textContent=theme.stamp+' · '+label.textContent;}
+ const armor=view.querySelector('.zp-panel:last-child');if(armor&&armor.querySelector('h3')?.textContent.includes('HOLIDAY ARMOR')){armor.remove();const panel=document.createElement('section');panel.className='zp-panel';panel.innerHTML='<h3>🛡️ YEAR-EXCLUSIVE ARMOR</h3><p>New armor each year; retain your historical collection after the event closes.</p>';
+ const id=`zz_suit_${h.id}_${year}`;const b=document.createElement('button');b.className='secondary full';const has=zProfile.collection.includes(id);b.textContent=has?'✅ EQUIP '+theme.title+' Armor':'REDEEM '+theme.title+' Armor · 80 TOKENS';b.disabled=!has&&(zProfile.tokens[zpKey(h)]||0)<80;b.onclick=()=>zzArmor(h);panel.append(b);view.append(panel);}
+};
+function zzArmor(h){const year=zEventYear(h),key=zpKey(h),id=`zz_suit_${h.id}_${year}`,isOwned=zProfile.collection.includes(id);
+ if(!isOwned){if(!zHolidayStatus(h).active||zProfile.tokens[key]<80)return;zProfile.tokens[key]-=80;zProfile.collection.push(id);}
+ let skin=skins.find(x=>x.id===id);if(!skin){const th=zzTheme(h,year);skin={id,name:th.title+' Armor',ar:th.title,price:9999999,body:th.base,trim:h.glow,mask:'#1b1a27',glow:th.glow};skins.push(skin);}
+ if(!unlocked.includes(id))unlocked.push(id);equipped=id;setStore('equipped',id);setStore('unlocked',unlocked);zSave();refreshWallet();zNotice('🛡️ '+skin.name+' EQUIPPED');zpRenderDetails(h);
+}
+const zzPrevBox=zpOpenBox;
+zpOpenBox=function(h,kind){const data=zpData(h),before=(data.vouchers[kind]||0)*100000+(zProfile.tokens[zpKey(h)]||0),last=data.history.length;
+ const out=zzPrevBox(h,kind);const after=(data.vouchers[kind]||0)*100000+(zProfile.tokens[zpKey(h)]||0);
+ if(data.history.length>last||after<before){zzChestBonus('Holiday '+kind+' Box');}
+ return out;
+};
+function zzRegisterRewards(){for(const k of ZZ_KINGDOMS){const id='zz_kingdom_godly_'+k.id;if(!V8_GUN_FINISHES.some(x=>x.id===id))V8_GUN_FINISHES.push({id,gun:k.weapon,name:k.reward,ar:k.reward,rarity:'godly',style:'standard',base:k.base,glow:k.glow,shadow:'#12161c'});const suitId='zz_kingdom_boss_'+k.id;if(!skins.some(x=>x.id===suitId))skins.push({id:suitId,name:k.boss,ar:k.boss,price:99999999,body:k.base,trim:k.glow,mask:'#161721',glow:k.glow});if(zzState.kingdomWins.includes(k.id)){if(!v8Owned.includes(id))v8Owned.push(id);}}
+ for(const [id,label,icon] of ZZ_CHESS_TYPES){const name='Chess Godly '+label+' Edge',knifeId='zz_chess_godly_'+id;if(!VX_KNIVES.some(x=>x.id===knifeId))VX_KNIVES.push({id:knifeId,box:'chess',rarity:'godly',light:'#e9dbaf',dark:'#25283c',icon,name,shape:3,rarityIndex:4});if(zzState.chessWins.includes(id)&&!vxOwnedKnives.includes(knifeId))vxOwnedKnives.push(knifeId);}
+}
+function zzChestBonus(source){const scrapIndex=zzRandom(5);zzState.scrap[scrapIndex]++;let piece=zzPieces[zzRandom(32)],duplicate=zzState.chessPieces.includes(piece.id);
+ if(!duplicate)zzState.chessPieces.push(piece.id);else zzState.chessDust++;
+ zzState.chestsOpened++;
+ zzState.lastDrop={source,scrap:ZZ_SCRAPS[scrapIndex][0],chess:piece.name,duplicate};zSave();
+ zNotice('📦 '+ZZ_SCRAPS[scrapIndex][2]+' '+ZZ_SCRAPS[scrapIndex][0]+' SCRAP · '+(duplicate?'♟️ +1 CHESS DUST':'♟️ '+piece.name));
+}
+const zzOriginalWorldChest=applyChestLoot;
+applyChestLoot=function(reward){const valid=reward&&Number.isInteger(reward.weapon)&&reward.weapon>=0&&reward.weapon<weapons.length;const result=zzOriginalWorldChest(reward);if(valid&&mode!=='guest'&&mode!=='z-online')zzChestBonus('Arena Chest');return result;};
+const zzOriginalCosmeticBox=openBox;
+openBox=function(theme){const eligible=!boxOpening&&coins>=BOX_COST;const out=zzOriginalCosmeticBox(theme);if(eligible)zzChestBonus('Character Crate');return out;};
+const zzOriginalV8Case=v8OpenCase;
+v8OpenCase=function(gun){const eligible=!v8Opening&&coins>=V8_CASE_COST;const out=zzOriginalV8Case(gun);if(eligible)zzChestBonus('Weapon Case');return out;};
+const zzOriginalKnifeBox=vxOpenKnife;
+vxOpenKnife=function(box){const eligible=coins>=220;const out=zzOriginalKnifeBox(box);if(eligible)zzChestBonus('Knife Box');return out;};
+function zzCanCraft(){return zzState.scrap.every(n=>n>=1);}
+function zzCraftKingdom(){if(!zzCanCraft())return zNotice('NEED FIVE DIFFERENT KINGDOM SCRAPS');const available=ZZ_KINGDOMS.filter(k=>!zzState.kingdomWins.includes(k.id));const pool=available.length?available:ZZ_KINGDOMS;
+ const kingdom=pool[zzRandom(pool.length)];for(let i=0;i<5;i++)zzState.scrap[i]--;
+ zzState.kingdomKeys[kingdom.id]++;zSave();zzSelected='kingdom';zzRenderSpecial();zNotice(kingdom.icon+' YOU CRAFTED '+kingdom.name.toUpperCase()+'!');
+}
+function zzChessComplete(){return zzState.chessPieces.length===32;}
+function zzMakePiece(){if(zzState.chessDust<5||zzChessComplete())return;const left=zzPieces.filter(p=>!zzState.chessPieces.includes(p.id));if(!left.length)return;const p=left[zzRandom(left.length)];zzState.chessDust-=5;zzState.chessPieces.push(p.id);zSave();zzRenderSpecial();zNotice('♟️ CRAFTED '+p.name);}
+function zzStartFight(type,id){if(phase==='playing')return;let enemy;
+ if(type==='kingdom'){enemy=ZZ_KINGDOMS.find(k=>k.id===id);if(!enemy||zzState.kingdomKeys[id]<1)return zNotice('CRAFT THIS KINGDOM FIRST');}
+ else {enemy=ZZ_CHESS_TYPES.find(k=>k[0]===id);if(!enemy||!zzChessComplete())return zNotice('COMPLETE THE 32-PIECE CHESS BOARD FIRST');}
+ const kingdomMaps={lava:'solar',ice:'rift',darkness:'depot',earth:'dunes',water:'citadel'};chooseMap(type==='kingdom'?(kingdomMaps[id]||'citadel'):'depot');startGame('solo');bots.length=0;pickups.length=0;chests.length=0;
+ const boss=spawnBot(type==='kingdom'?73:74);boss.name=type==='kingdom'?enemy.boss:'♟️ CHESS '+enemy[1].toUpperCase();if(type==='kingdom')boss.skinId='zz_kingdom_boss_'+enemy.id;boss.hp=type==='kingdom'?enemy.hp:enemy[3];boss.maxHp=boss.hp;boss.speed=type==='kingdom'?enemy.speed:enemy[4];boss.nextShot=2.5;boss.respawn=Infinity;boss.id=8800;boss.x=pl.x+14;boss.z=pl.z-24;
+ if(blocked(boss.x,boss.z,.7)){for(let i=0;i<40;i++){const px=pl.x+Math.cos(i)*20,pz=pl.z+Math.sin(i)*20;if(!blocked(px,pz,.7)){boss.x=px;boss.z=pz;break;}}}
+ bots.push(boss);gameSeconds=type==='kingdom'?360:240;pl.shield=75;zzFight={type,id,boss,won:false,started:performance.now()/1000,lastAbility:performance.now()/1000};zHudText((type==='kingdom'?enemy.icon:'♟️')+' '+boss.name+' · '+boss.hp+' HP');zNotice('⚔️ 1v1 BOSS START! WIN FOR GODLY. LOSE = NO GODLY.');updateHUD();
+}
+const zzPreviousBotKill=killBot;
+killBot=function(bot,killer){if(zzFight&&bot===zzFight.boss&&killer===pl){const f=zzFight;f.won=true;bot.alive=false;bot.hp=0;bot.respawn=Infinity;
+ if(f.type==='kingdom'){const k=ZZ_KINGDOMS.find(x=>x.id===f.id);zzState.kingdomKeys[k.id]=Math.max(0,zzState.kingdomKeys[k.id]-1);
+  if(!zzState.kingdomWins.includes(k.id))zzState.kingdomWins.push(k.id);
+  const id='zz_kingdom_godly_'+k.id;if(!v8Owned.includes(id))v8Owned.push(id);setStore('v8GunOwned',v8Owned);if(!zProfile.collection.includes(id))zProfile.collection.push(id);
+  zNotice('🏆 '+k.reward.toUpperCase()+' UNLOCKED!');
+ }else{const c=ZZ_CHESS_TYPES.find(x=>x[0]===f.id);if(!zzState.chessWins.includes(c[0]))zzState.chessWins.push(c[0]);const id='zz_chess_godly_'+c[0];if(!vxOwnedKnives.includes(id))vxOwnedKnives.push(id);vxSaveKnives();if(!zProfile.collection.includes(id))zProfile.collection.push(id);zNotice('♟️ CHESS GODLY '+c[1].toUpperCase()+' EDGE UNLOCKED!');}
+ zSave();pl.kills++;addCoins(120);addFeed('🏆 '+bossName(f)+' DEFEATED');zzFight=null;finish();return;
+ }return zzPreviousBotKill(bot,killer);
+};
+function bossName(f){return f.type==='kingdom'?ZZ_KINGDOMS.find(x=>x.id===f.id).boss:'Chess '+f.id;}
+const zzPreviousFinish=finish;
+finish=function(){if(zzFight&&!zzFight.won){zNotice('❌ CHALLENGE LOST · NO GODLY AWARDED');zzFight=null;}return zzPreviousFinish();};
+
+// Each Kingdom boss has an inexpensive timed ability; no weather, particles or extra maps.
+const zzPreSimulate=simulate;
+simulate=function(dt,now){zzPreSimulate(dt,now);if(!zzFight||zzFight.type!=='kingdom'||phase!=='playing'||!pl.alive||!zzFight.boss.alive||paused)return;
+ const f=zzFight;if(now-f.lastAbility<8)return;f.lastAbility=now;const k=f.id,b=f.boss;
+ if(k==='earth'){b.hp=Math.min(b.maxHp,b.hp+38);zNotice('🌱 TERRA COLOSSUS REGENERATES ARMOR!');return;}
+ const distance=Math.hypot(pl.x-b.x,pl.z-b.z);if(distance>22)return;
+ if(k==='lava'){hurt(16);zNotice('🌋 INFERNO PULSE!');}
+ if(k==='ice'){pl.sprintLockedUntil=Math.max(pl.sprintLockedUntil||0,now+3);hurt(9);zNotice('🧊 FROST SHOCK — SPRINT LOCKED!');}
+ if(k==='darkness'){hurt(12);b.hp=Math.min(b.maxHp,b.hp+18);zNotice('🌑 VOID LIFE DRAIN!');}
+ if(k==='water'){hurt(13);zNotice('🌊 TIDAL SHOCKWAVE!');}
+};
+
+const zzOldHurt=hurt;
+hurt=function(dmg){const result=zzOldHurt(dmg);if(zzFight&&!pl.alive){zNotice('❌ DEFEATED · NO GODLY AWARDED');zzFight=null;clearDeathTimers();finish();}return result;};
+// Keep duel integrity: no chest farming or bot waves inside a crafted boss 1v1.
+// Rendering a compact boss HP HUD does not create expensive new 3D effects.
+const zzPrevRefresh=zRefreshHud;
+zRefreshHud=function(){zzPrevRefresh();if(zzFight&&phase==='playing'){zHudText((zzFight.type==='kingdom'?'🏰 ':'♟️ ')+bossName(zzFight)+' · '+Math.max(0,Math.ceil(zzFight.boss.hp))+'/'+zzFight.boss.maxHp+' HP · 1v1');}};
+function zzBuildSpecial(){const hub=zP('zHubMenu'),main=zP('zMainBtn');if(!hub||!main)return;
+ const actions=document.createElement('div');actions.className='zz-actions';actions.innerHTML='<button type="button" class="primary" id="zzKingdomBtn">🏰 KINGDOM FORGE</button><button type="button" class="primary" id="zzChessBtn">♟️ CHESS CHALLENGES</button>';hub.querySelector('#zPlayerStatus')?.insertAdjacentElement('afterend',actions);
+ const shortcut=document.createElement('button');shortcut.className='primary full zz-shortcut';shortcut.textContent='🏰 KINGDOMS + ♟️ CHESS';shortcut.onclick=()=>zzOpenSpecial('kingdom');main.insertAdjacentElement('afterend',shortcut);
+ const eventTab=document.createElement('button');eventTab.id='zzLiveEventTab';eventTab.className='primary full zz-event-tab hide';eventTab.onclick=()=>zOpenEvents();shortcut.insertAdjacentElement('beforebegin',eventTab);
+ const panel=document.createElement('section');panel.id='zzSpecialMenu';panel.className='hide z-hub';panel.innerHTML='<div class="eyebrow">RECOIL X // UPDATE Z</div><h2>🏰 KINGDOMS & ♟️ CHESS</h2><p>Every eligible chest opening gives 1 random Kingdom Scrap and 1 random Chess Piece. Duplicates become Chess Dust.</p><div class="zz-actions"><button id="zzKingdomSelect" class="primary">🏰 KINGDOM FORGE</button><button id="zzChessSelect" class="secondary">♟️ CHESS BOARD</button></div><div id="zzSpecialContents"></div><button id="zzSpecialBack" class="secondary full">← BACK TO UPDATE Z</button>';
+ hub.insertAdjacentElement('afterend',panel);
+ zP('zzKingdomBtn').onclick=()=>zzOpenSpecial('kingdom');zP('zzChessBtn').onclick=()=>zzOpenSpecial('chess');zP('zzKingdomSelect').onclick=()=>{zzSelected='kingdom';zzRenderSpecial();};zP('zzChessSelect').onclick=()=>{zzSelected='chess';zzRenderSpecial();};zP('zzSpecialBack').onclick=zOpenHub;
+ const style=document.createElement('style');style.textContent=`
+ .zz-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.zz-actions button{font-size:12px;padding:12px 8px}.zz-shortcut{margin:10px 0}.zz-event-tab{margin:10px 0;background:linear-gradient(120deg,#e8bd67,#b4593e)}
+ .zz-special-card{margin:10px 0;padding:14px;background:#30271f;border:1px solid #97714d;border-radius:13px}.zz-special-card h3{color:#ffd99e;font-size:16px}.zz-special-card p{font-size:11px;margin:6px 0}.zz-special-card button{max-width:100%}.zz-special-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.zz-scrap{padding:12px 5px;text-align:center;border:1px solid #88633e;border-radius:8px;background:#443226;font-size:11px}.zz-scrap b{display:block;font-size:19px;margin:5px 0}.zz-chess-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;direction:ltr;margin:8px 0}.zz-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:23px;background:#79654e;color:#12151b}.zz-cell:nth-child(even){background:#c8b696}.zz-white-piece{color:#ffefcc;text-shadow:0 1px 3px #10121a,0 0 2px #10121a}.zz-black-piece{color:#182034;text-shadow:0 0 3px #f3e1bf,0 0 2px #f3e1bf}.zz-cell.missing{opacity:.24}.zz-results{font-size:12px;color:#ffdda4;margin:8px 0}.zz-boss{display:flex;align-items:center;justify-content:space-between;gap:10px}.zz-boss div{flex:1}.zz-boss button{flex-shrink:0}.zz-event-tab:focus-visible{outline:2px solid white}@media(max-width:680px){.zz-special-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.zz-chess-grid .zz-cell{font-size:17px}.zz-boss{align-items:stretch;flex-direction:column}.zz-actions{gap:5px}.zz-actions button{font-size:10px}}
+ `;document.head.append(style);
+ zzRefreshTabs();
+}
+function zzOpenSpecial(select){zzSelected=select;showScreen('zzSpecialMenu');zzRenderSpecial();}
+function zzRenderSpecial(){const root=zP('zzSpecialContents');if(!root)return;root.replaceChildren();zP('zzKingdomSelect').className=zzSelected==='kingdom'?'primary':'secondary';zP('zzChessSelect').className=zzSelected==='chess'?'primary':'secondary';
+ if(zzSelected==='kingdom'){
+  const total=document.createElement('section');total.className='zz-special-card';const head=document.createElement('h3');head.textContent='⚒️ COLLECT ALL 5 DIFFERENT KINGDOM SCRAPS';total.append(head);
+  const line=document.createElement('div');line.className='zz-special-grid';ZZ_SCRAPS.forEach(([name,color,icon],i)=>{const tile=document.createElement('div');tile.className='zz-scrap';tile.style.borderColor=color;tile.innerHTML='<span></span><b></b><small></small>';tile.querySelector('span').textContent=icon+' '+name;tile.querySelector('b').textContent=zzState.scrap[i];tile.querySelector('small').textContent='scrap';line.append(tile);});total.append(line);
+  const info=document.createElement('p');info.textContent='Open ANY eligible chest/box for one random Scrap and one Chess Piece. Crafting spends 1 of each of the five different scraps and produces one random uncollected Kingdom; once defeated, its Godly is permanently yours.';total.append(info);
+  const forge=document.createElement('button');forge.className='primary full';forge.textContent='⚒️ CRAFT RANDOM KINGDOM · 5 DIFFERENT SCRAPS';forge.disabled=!zzCanCraft();forge.onclick=zzCraftKingdom;total.append(forge);root.append(total);
+  for(const k of ZZ_KINGDOMS){const panel=document.createElement('section');panel.className='zz-special-card';panel.style.borderColor=k.base;panel.innerHTML='<div class="zz-boss"><div><h3></h3><p></p><p></p></div></div>';panel.querySelector('h3').textContent=k.icon+' '+k.name;panel.querySelector('p').textContent='⚔️ VERY HARD BOSS: '+k.boss+' · '+k.hp+' HP';panel.querySelectorAll('p')[1].textContent='🏆 '+k.reward+' · '+(zzState.kingdomWins.includes(k.id)?'✅ GODLY OWNED':'🔒 NOT WON')+' · 🎟️ Crafted Keys: '+zzState.kingdomKeys[k.id];const b=document.createElement('button');b.className='primary';b.textContent='⚔️ FIGHT BOSS';b.disabled=!zzState.kingdomKeys[k.id];b.onclick=()=>zzStartFight('kingdom',k.id);panel.querySelector('.zz-boss').append(b);root.append(panel);}
+ }else{
+  const section=document.createElement('section');section.className='zz-special-card';section.innerHTML='<h3>♟️ COLLECT A COMPLETE 32-PIECE CHESS SET</h3><p>Collect 16 White and 16 Black chess pieces. Each chest gives one random piece. A duplicate becomes +1 Chess Dust; 5 dust can craft one random missing piece.</p>';
+  const c=document.createElement('div');c.className='zz-results';c.textContent='♟️ '+zzState.chessPieces.length+'/32 PIECES · '+zzState.chessDust+' CHESS DUST · '+(zzChessComplete()?'🏆 BOARD COMPLETE — 1v1 UNLOCKED':'🔒 COLLECT TO UNLOCK 1v1');section.append(c);
+  const board=document.createElement('div');board.className='zz-chess-grid';for(let i=0;i<64;i++){const cell=document.createElement('div');cell.className='zz-cell';const row=Math.floor(i/8),col=i%8;if((row<=1||row>=6)){let side=row<2?'black':'white',type=row===0||row===7?['rook','knight','bishop','queen','king','bishop','knight','rook'][col]:'pawn';let index=type==='pawn'?col+1:type==='queen'||type==='king'?1:col<=3?1:2;const id=side+'_'+type+'_'+index;const icon={pawn:'♟',rook:'♜',knight:'♞',bishop:'♝',queen:'♛',king:'♚'}[type];cell.textContent=icon;cell.title=id;cell.classList.add(side==='white'?'zz-white-piece':'zz-black-piece');cell.classList.toggle('missing',!zzState.chessPieces.includes(id));}board.append(cell);}section.append(board);
+  const craft=document.createElement('button');craft.className='secondary full';craft.textContent='♟️ CRAFT RANDOM MISSING PIECE · 5 CHESS DUST';craft.disabled=zzState.chessDust<5||zzChessComplete();craft.onclick=zzMakePiece;section.append(craft);root.append(section);
+  const choices=document.createElement('section');choices.className='zz-special-card';choices.innerHTML='<h3>♟️ 1v1 CHESS BOSS ARENA</h3><p>Once your board is complete, choose which Chess piece you want to fight. Win the 1v1 shooter duel to receive that piece’s unique Chess Godly. Lose and you receive no Godly; your board stays assembled.</p>';root.append(choices);
+  for(const [id,name,icon,hp] of ZZ_CHESS_TYPES){const c=document.createElement('div');c.className='zz-boss';const info=document.createElement('div');info.innerHTML='<b></b><p></p>';info.querySelector('b').textContent=icon+' '+name+' · '+hp+' HP';info.querySelector('p').textContent='🏆 Chess Godly '+name+' Edge '+(zzState.chessWins.includes(id)?'✅ OWNED':'🔒');const b=document.createElement('button');b.className='primary';b.textContent='⚔️ 1v1';b.disabled=!zzChessComplete();b.onclick=()=>zzStartFight('chess',id);c.append(info,b);choices.append(c);}
+ }
+}
+function zzRefreshTabs(){const active=zHolidayActive(),tab=zP('zzLiveEventTab'),hub=zP('zEventsOpen');if(!tab||!hub)return;
+ const fresh=active.map(h=>h.id+'-'+zEventYear(h)).join('|');if(fresh!==zzLastStatus){zzLastStatus=fresh;const usable=new Set(active.map(h=>h.id+'_'+zEventYear(h)));const owned=new Set([...zProfile.collection,...v8Owned,...vxOwnedKnives]);for(const arr of [V8_GUN_FINISHES,VX_KNIVES])for(let i=arr.length-1;i>=0;i--){const id=arr[i].id||'',m=/^zz_(?:gun|knife)_([a-z]+)_(202[6-9]|203[01])_/.exec(id);if(m&&!usable.has(m[1]+'_'+m[2])&&!owned.has(id))arr.splice(i,1);}zzRegisterLive();}
+ const live=!!active.length;tab.classList.toggle('hide',!live);hub.classList.toggle('hide',!live);
+ if(live){tab.textContent='🎉 LIVE EVENT: '+active.map(h=>h.icon+' '+h.name+' '+zEventYear(h)).join(' · ');hub.textContent='🎊 ENTER ACTIVE HOLIDAY EVENT';}else{tab.textContent='';hub.textContent='🔒 HOLIDAY EVENTS HIDDEN';}
+}
+const zzOldOpenHub=zOpenHub;
+zOpenHub=function(){zzOldOpenHub();zzRefreshTabs();};
+const zzOldEventsOpen=zOpenEvents;
+zOpenEvents=function(){zzRefreshTabs();if(!zHolidayActive().length){zNotice('🔒 HOLIDAY EVENTS UNLOCK ON THEIR OFFICIAL DAY');return;}return zzOldEventsOpen();};
+// Existing onclick pointers need rebinding because these handlers were attached before this patch.
+zzUnhideOwnedOnly();for(const h of Z_HOLIDAYS)for(let y=ZZ_FIRST_YEAR;y<=ZZ_LAST_YEAR;y++){const id=`zz_suit_${h.id}_${y}`;if(zProfile.collection.includes(id)&&!skins.some(s=>s.id===id)){const th=zzTheme(h,y);skins.push({id,name:th.title+' Armor',ar:th.title,price:9999999,body:th.base,trim:h.glow,mask:'#1b1a27',glow:th.glow});if(!unlocked.includes(id))unlocked.push(id);}}zzRegisterRewards();zzBuildSpecial();zP('zEventsOpen').onclick=zOpenEvents;
+zP('zzLiveEventTab').onclick=zOpenEvents;
+const zzInitialOpen=zOpenEvents;
+// Revalidate event visibility across midnight without a render loop or GPU work.
+setInterval(zzRefreshTabs,90*1000);
+window.addEventListener('pagehide',zSave);
 
 })();
 </script>
