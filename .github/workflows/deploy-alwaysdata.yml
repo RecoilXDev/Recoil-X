@@ -1,0 +1,90 @@
+name: Deploy RECOIL X to Alwaysdata
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'server/**'
+      - '.github/workflows/deploy-alwaysdata.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recoil-x-alwaysdata
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Intentionally disabled until the owner configures the secrets below.
+    if: ${{ vars.RECOIL_X_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out RECOIL X
+        uses: actions/checkout@v4
+
+      - name: Validate deployment settings
+        env:
+          DEPLOY_KEY: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.ALWAYSDATA_SSH_KNOWN_HOSTS }}
+          API_KEY: ${{ secrets.ALWAYSDATA_API_KEY }}
+          SITE_ID: ${{ vars.ALWAYSDATA_SITE_ID }}
+        run: |
+          test -n "$DEPLOY_KEY" || { echo "Missing ALWAYSDATA_SSH_KEY"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "Missing ALWAYSDATA_SSH_KNOWN_HOSTS"; exit 1; }
+          test -n "$API_KEY" || { echo "Missing ALWAYSDATA_API_KEY"; exit 1; }
+          [[ "$SITE_ID" =~ ^[0-9]+$ ]] || { echo "ALWAYSDATA_SITE_ID must be numeric"; exit 1; }
+
+      - name: Prepare verified SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.ALWAYSDATA_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Validate server syntax
+        run: node --check server/server.mjs
+
+      - name: Upload the game page
+        run: |
+          scp -4 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -i "$HOME/.ssh/id_ed25519" \
+            index.html recoil-x@ssh-recoil-x.alwaysdata.net:/home/recoil-x/index.html
+
+      - name: Upload server code without deleting the player database
+        run: |
+          rsync -avz \
+            -e "ssh -4 -o BatchMode=yes -o StrictHostKeyChecking=yes -i $HOME/.ssh/id_ed25519" \
+            --exclude='node_modules/' --exclude='.env' \
+            --exclude='*.sqlite*' --exclude='*.db*' \
+            server/ recoil-x@ssh-recoil-x.alwaysdata.net:/home/recoil-x/recoilx-server/
+
+      - name: Install required server dependencies
+        run: |
+          ssh -4 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -i "$HOME/.ssh/id_ed25519" \
+            recoil-x@ssh-recoil-x.alwaysdata.net \
+            'cd /home/recoil-x/recoilx-server && npm install --omit=dev --no-audit'
+
+      - name: Restart RECOIL X site using Alwaysdata API
+        env:
+          API_KEY: ${{ secrets.ALWAYSDATA_API_KEY }}
+          SITE_ID: ${{ vars.ALWAYSDATA_SITE_ID }}
+        run: |
+          curl --fail --silent --show-error --request POST --basic \
+            --user "$API_KEY account=recoil-x:" \
+            "https://api.alwaysdata.com/v1/site/$SITE_ID/restart/"
+          echo "Alwaysdata accepted the RECOIL X restart request."
+
+      - name: Check live website
+        run: |
+          curl --fail --silent --show-error --location \
+            --retry 5 --retry-delay 3 --output /dev/null \
+            https://recoil-x.alwaysdata.net/
+          echo "RECOIL X website responded successfully."
