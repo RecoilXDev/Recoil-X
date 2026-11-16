@@ -10,23 +10,34 @@ jobs:
   lookup:
     runs-on: ubuntu-latest
     steps:
-      - name: Safely look up the RECOIL X site ID
+      - name: Look up Alwaysdata Site ID (read-only)
+        shell: bash
         env:
           ALWAYSDATA_TOKEN: ${{ secrets.ALWAYSDATA_API_KEY }}
-        shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$ALWAYSDATA_TOKEN" ]]; then
-            echo "Missing ALWAYSDATA_API_KEY repository secret." >&2
+          if [[ -z "${ALWAYSDATA_TOKEN:-}" ]]; then
+            echo "::error::Missing ALWAYSDATA_API_KEY secret in repository Settings > Secrets and variables > Actions."
             exit 1
           fi
           response="$(mktemp)"
           trap 'rm -f "$response"' EXIT
-          curl --fail --silent --show-error --basic \
-            --user "$ALWAYSDATA_TOKEN account=recoil-x:" \
-            "https://api.alwaysdata.com/v1/site/" > "$response"
+          url="https://api.alwaysdata.com/v1/site/"
+          # Alwaysdata documents both token-only and account-scoped Basic authentication.
+          status="$(curl -sS --basic --output "$response" --write-out '%{http_code}' \
+            --user "$ALWAYSDATA_TOKEN:" "$url")"
+          if [[ "$status" == "401" || "$status" == "403" ]]; then
+            echo "Token-only API access returned HTTP $status; trying the documented account-scoped form."
+            status="$(curl -sS --basic --output "$response" --write-out '%{http_code}' \
+              --user "$ALWAYSDATA_TOKEN account=recoil-x:" "$url")"
+          fi
+          if [[ "$status" != "200" ]]; then
+            echo "::error::Alwaysdata API returned HTTP $status. If 401, review the ALWAYSDATA_API_KEY secret: it must contain the token value only (not its name or 'Bearer'), be enabled, and not have IP restrictions excluding GitHub runners. If 403, check account access and token permissions."
+            exit 1
+          fi
           python3 - "$response" <<'PY'
           import json, os, sys
+          from urllib.parse import urlsplit
           with open(sys.argv[1], encoding="utf-8") as f:
               data = json.load(f)
           sites = data if isinstance(data, list) else data.get("results", data.get("objects", []))
@@ -38,21 +49,21 @@ jobs:
               if isinstance(addresses, str):
                   addresses = [addresses]
               for address in addresses:
-                  host = str(address).split("/", 1)[0].split(":", 1)[0].lower()
-                  if host == "recoil-x.alwaysdata.net":
+                  raw = str(address).strip()
+                  host = urlsplit(raw if "://" in raw else "https://" + raw).hostname
+                  if host and host.lower() == "recoil-x.alwaysdata.net":
                       matches.append(site)
                       break
           if len(matches) != 1:
-              print("Expected exactly one recoil-x.alwaysdata.net site; found", len(matches))
-              print("Check the Alwaysdata account and API token permissions.")
+              print(f"Found {len(matches)} sites matching recoil-x.alwaysdata.net.")
+              print("Check the token's account access or the site's address in Alwaysdata.")
               sys.exit(1)
           site_id = matches[0].get("id")
           if not isinstance(site_id, int):
               print("The matching site has no numeric ID.")
               sys.exit(1)
-          message = f"RECOIL X Alwaysdata Site ID: {site_id}"
-          print(message)
+          print(f"RECOIL X Alwaysdata Site ID: {site_id}")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
               f.write(f"### RECOIL X Alwaysdata Site ID\n\n**Site ID: {site_id}**\n\n")
-              f.write("Save this number in repository variable `ALWAYSDATA_SITE_ID`.\n")
+              f.write("Save this number as the repository variable `ALWAYSDATA_SITE_ID`.\n")
           PY
