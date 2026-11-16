@@ -1,0 +1,58 @@
+name: Find RECOIL X Alwaysdata Site ID
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Safely look up the RECOIL X site ID
+        env:
+          ALWAYSDATA_TOKEN: ${{ secrets.ALWAYSDATA_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$ALWAYSDATA_TOKEN" ]]; then
+            echo "Missing ALWAYSDATA_API_KEY repository secret." >&2
+            exit 1
+          fi
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+          curl --fail --silent --show-error --basic \
+            --user "$ALWAYSDATA_TOKEN account=recoil-x:" \
+            "https://api.alwaysdata.com/v1/site/" > "$response"
+          python3 - "$response" <<'PY'
+          import json, os, sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              data = json.load(f)
+          sites = data if isinstance(data, list) else data.get("results", data.get("objects", []))
+          matches = []
+          for site in sites:
+              if not isinstance(site, dict):
+                  continue
+              addresses = site.get("addresses") or []
+              if isinstance(addresses, str):
+                  addresses = [addresses]
+              for address in addresses:
+                  host = str(address).split("/", 1)[0].split(":", 1)[0].lower()
+                  if host == "recoil-x.alwaysdata.net":
+                      matches.append(site)
+                      break
+          if len(matches) != 1:
+              print("Expected exactly one recoil-x.alwaysdata.net site; found", len(matches))
+              print("Check the Alwaysdata account and API token permissions.")
+              sys.exit(1)
+          site_id = matches[0].get("id")
+          if not isinstance(site_id, int):
+              print("The matching site has no numeric ID.")
+              sys.exit(1)
+          message = f"RECOIL X Alwaysdata Site ID: {site_id}"
+          print(message)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write(f"### RECOIL X Alwaysdata Site ID\n\n**Site ID: {site_id}**\n\n")
+              f.write("Save this number in repository variable `ALWAYSDATA_SITE_ID`.\n")
+          PY
