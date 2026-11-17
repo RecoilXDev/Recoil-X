@@ -1,11 +1,13 @@
 import { createServer } from 'node:http';
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
+import { createOverdrive } from './overdrive.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -85,12 +87,20 @@ async function passwordHash(password, salt) {
 }
 
 export function createRecoilServer(options = {}) {
-  const db = openDb(options.database ?? 'recoil-x.sqlite');
+  const filename = options.database ?? 'recoil-x.sqlite';
+  const existing = filename !== ':memory:' && existsSync(filename);
+  const db = openDb(filename);
+  try {migrateOverdrive(db,filename,existing);}
+  catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
   const clients = new Map(), rooms = new Map();
   let passwordJobs = 0;
   let lastExpiry = 0;
+  const overdriveData = overdriveStore(db,fail);
+  const overdrive = createOverdrive({
+    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
+  });
 
   const st = sql => db.prepare(sql);
   const byName = st('SELECT * FROM users WHERE handle=?');
@@ -120,20 +130,28 @@ export function createRecoilServer(options = {}) {
     if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) throw fail(401, 'Sign in first.');
     const user = session.get(hashToken(token), sqlTime());
     if (!user) throw fail(401, 'Sign in again.');
-    if (user.banned) throw fail(403, 'This account is banned.');
+    verifyBan(user);
     return user;
+  }
+
+  function verifyBan(user) {
+    const ban=overdriveData.activeBan(user.id,sqlTime());
+    if (user.banned || ban) {
+      const end=ban?.until ? ' until '+new Date(ban.until).toISOString() : '';
+      throw fail(403,'This account is banned'+end+'.'+(ban?.reason?' '+ban.reason:''));
+    }
   }
 
   const profile = user => ({ id:user.id, name:user.name, admin:!!user.admin, joins:!!user.joins });
   const isFriend = (a,b) => !!findFriend.get(...roomPair(a,b))?.accepted;
   function contact(user, name) {
     const row = byName.get(canonical(name));
-    if (!row || row.id === user.id || row.banned) throw fail(404, 'Player is unavailable.');
+    if (!row || row.id === user.id || overdriveData.banned(row.id,sqlTime())) throw fail(404, 'Player is unavailable.');
     return row;
   }
 
   function send(client, event) {
-    if (client?.socket.readyState === 1 && client.socket.bufferedAmount < 400000)
+    if (client?.socket.readyState === 1 && client.socket.bufferedAmount < (event.type==='z2:state'?96000:400000))
       client.socket.send(JSON.stringify(event));
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
@@ -161,6 +179,7 @@ export function createRecoilServer(options = {}) {
   function cutConnection(client, message) {
     if (!client) return;
     leave(client, message);
+    overdrive.disconnect(client);
     send(client, { type:'account-closed', message });
     if (clients.get(client.id) === client) clients.delete(client.id);
     client.socket.close(1000, 'Session ended');
@@ -193,13 +212,14 @@ export function createRecoilServer(options = {}) {
     } else if (!account || !timingSafeEqual(Buffer.from(secret,'hex'),Buffer.from(account.secret,'hex'))) {
       throw fail(401, 'Account name or password is incorrect.');
     }
-    if (account.banned) throw fail(403, 'This account is banned.');
+    verifyBan(account);
     const token = randomBytes(32).toString('hex');
     st('INSERT INTO sessions(token_hash,account,expires) VALUES (?,?,?)').run(hashToken(token),account.id,sqlTime()+sessionAge);
     return { token, user:profile(account) };
   }
 
   function directMessage(from, target, raw) {
+    if (overdriveData.muted(from.id,sqlTime())) throw fail(403,'Your chat is muted.');
     if (!isFriend(from.id, target.id)) throw fail(403, 'Chat opens after the friend request is accepted.');
     const body = cleanChat(raw);
     if (!allowed('dm:'+from.id,12,10000)) throw fail(429, 'You are sending messages too quickly.');
@@ -246,28 +266,29 @@ export function createRecoilServer(options = {}) {
     return { ok:true };
   }
 
-  function ban(user, body) {
-    if (!user.admin) throw fail(403,'Administrator access is required.');
-    const target = byName.get(canonical(body.name));
-    if (!target) throw fail(404,'Player not found.');
-    if (target.admin) throw fail(403,'Administrator accounts cannot be changed here.');
-    const banned = body.banned !== false;
-    st('UPDATE users SET banned=? WHERE id=?').run(Number(banned),target.id);
-    if (banned) {
-      st('DELETE FROM sessions WHERE account=?').run(target.id);
-      cutConnection(clients.get(target.id),'This account is banned.');
+  function moderate(user, body) {
+    const now=sqlTime();
+    const result=overdriveData.moderation(user,body,now);
+    if (['kick','tempban','ban'].includes(result.action)) {
+      const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
+      overdrive.drop(result.id,now,message);
+      cutConnection(clients.get(result.id),message);
     }
-    return { name:target.name,banned };
+    return result;
   }
 
   async function endpoint(req, path) {
     if ((path === '/register' || path === '/login') && req.method === 'POST')
       return credentials(req,await readJson(req),path === '/register');
-    const user = authenticate(req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined);
+    const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
+    const body = req.method === 'POST' ? await readJson(req) : null;
+    const user = authenticate(token);
     if (req.method === 'GET') {
       if (path === '/me') return {user:profile(user)};
+      if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
+      if (path === '/z2/admin') return overdriveData.history(user);
       if (path === '/friends') {
-        const friends = roster.all(user.id,user.id,user.id).filter(row=>!row.banned).map(row=>({
+        const friends = roster.all(user.id,user.id,user.id).filter(row=>!overdriveData.banned(row.id,sqlTime())).map(row=>({
           name:row.name, status:row.accepted?'friend':row.requester===user.id?'sent':'incoming',
           online:!!row.accepted&&clients.has(row.id),
           playing:row.accepted&&row.joins ? rooms.get(row.id)?.label || '' : ''
@@ -285,14 +306,21 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
-      const body = await readJson(req);
       if (path === '/friends') return doFriend(user,body);
       if (path === '/messages') return directMessage(user,contact(user,body.name),body.body);
-      if (path === '/ban') return ban(user,body);
+      if (path === '/ban') {
+        const action=body.banned===false?'unban':'ban';
+        return moderate(user,{name:body.name,action,reason:'Updated from the Friends moderation panel'});
+      }
+      if (path === '/z2/admin/action') return moderate(user,body);
+      if (path === '/z2/report') return overdriveData.report(user,body,sqlTime());
       if (path === '/logout') {
         st('DELETE FROM sessions WHERE token_hash=?').run(user.token_hash);
         const active = clients.get(user.id);
-        if (active?.tokenHash === user.token_hash) cutConnection(active,'Signed out.');
+        if (active?.tokenHash === user.token_hash) {
+          overdrive.drop(user.id,sqlTime(),'Signed out.');
+          cutConnection(active,'Signed out.');
+        }
         return {ok:true};
       }
       if (path === '/settings') {
@@ -326,7 +354,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.1',protocol:1} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.2',protocol:1,overdrive:1} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
@@ -336,11 +364,18 @@ export function createRecoilServer(options = {}) {
   });
 
   function socketPacket(c, data) {
-    const current = session.get(c.tokenHash,sqlTime());
-    if (!current || current.banned) {cutConnection(c,'Sign in again.');return;}
     if (!allowed('wire:'+c.id,260,1000)) return;
+    const current = session.get(c.tokenHash,sqlTime());
+    if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
+      overdrive.drop(c.id,sqlTime(),'This session ended.');
+      cutConnection(c,'Sign in again.');return;
+    }
+    if (typeof data.type==='string'&&data.type.startsWith('z2:')) {
+      overdrive.packet(c,current,data);return;
+    }
     if (data.type === 'leave') {leave(c);return;}
     if (data.type === 'host') {
+      if (overdrive.inRoom(c.id)) throw fail(409,'Leave Overdrive before hosting a Friends match.');
       if (!current.joins) throw fail(403,'Friend joins are turned off.');
       const label = typeof data.label==='string' ? data.label.trim().slice(0,64) : '';
       if (!label) throw fail(400,'Playing mode is required.');
@@ -356,6 +391,7 @@ export function createRecoilServer(options = {}) {
       return;
     }
     if (data.type === 'join') {
+      if (overdrive.inRoom(c.id)) throw fail(409,'Leave Overdrive before joining a Friends match.');
       const target=contact(current,data.name),room=rooms.get(target.id);
       if (!target.joins || !isFriend(c.id,target.id) || !room) throw fail(409,'That friend’s match is unavailable.');
       if (c.room===target.id) return;
@@ -369,6 +405,7 @@ export function createRecoilServer(options = {}) {
     const room=rooms.get(c.room);
     if (!room || !room.members.has(c.id)) return;
     if (data.type==='room-chat') {
+      if (overdriveData.muted(c.id,sqlTime())) throw fail(403,'Your chat is muted.');
       if (!allowed('chat:'+c.id,12,10000)) throw fail(429,'You are sending messages too quickly.');
       const message={from:current.name,body:cleanChat(data.body),sent:sqlTime()};
       for (const id of room.members) send(clients.get(id),{type:'room-chat',message});
@@ -395,9 +432,11 @@ export function createRecoilServer(options = {}) {
     timeout.unref();
     ws.on('message',event=>{
       if (typeof event.data!=='string' || event.data.length>65536) return;
+      let overdriveRequest=false;
       try {
         const data=JSON.parse(event.data);
         if (!data || typeof data!=='object' || Array.isArray(data)) return;
+        overdriveRequest=typeof data.type==='string'&&data.type.startsWith('z2:');
         if (!connected) {
           if (data.type!=='auth') throw fail(401,'Sign in first.');
           const user=authenticate(data.token);
@@ -405,11 +444,14 @@ export function createRecoilServer(options = {}) {
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,room:null};
           clients.set(user.id,connected);clearTimeout(timeout);
           send(connected,{type:'ready',user:profile(user)});
+          overdrive.attach(connected,true);
           return;
         }
         if (clients.get(connected.id)===connected) socketPacket(connected,data);
       } catch(error) {
-        if (ws.readyState===1) ws.send(JSON.stringify({type:'error',message:error.status?error.message:'Invalid game message.'}));
+        if (ws.readyState===1) {
+          ws.send(JSON.stringify({type:overdriveRequest?'z2:error':'error',message:error.status?error.message:'Invalid game message.'}));
+        }
         if (!connected) ws.close(1000,'Sign in again');
       }
     });
@@ -417,6 +459,7 @@ export function createRecoilServer(options = {}) {
       clearTimeout(timeout);
       if (connected&&clients.get(connected.id)===connected) {
         leave(connected,'Your friend disconnected.');clients.delete(connected.id);
+        overdrive.disconnect(connected);
       }
     });
   });
@@ -427,7 +470,11 @@ export function createRecoilServer(options = {}) {
     if (now-lastExpiry>3600000) {st('DELETE FROM sessions WHERE expires<?').run(now);lastExpiry=now;}
   },60000);
   cleanup.unref();
-  server.on('close',()=>{clearInterval(cleanup);for (const c of clients.values()) cutConnection(c,'Game server stopped.');db.close();});
+  server.on('close',()=>{
+    clearInterval(cleanup);overdrive.close();
+    for (const c of clients.values()) cutConnection(c,'Game server stopped.');
+    db.close();
+  });
   return server;
 }
 
@@ -443,6 +490,6 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
     const server=createRecoilServer({database,origins});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.1 listening on port '+port));
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.2 listening on port '+port));
   }
 }
