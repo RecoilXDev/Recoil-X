@@ -11,7 +11,6 @@ const maxRooms = 80;
 const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
-const teamName = n => 'Team ' + (n + 1);
 
 export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error}) {
   const rooms = new Map();
