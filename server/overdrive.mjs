@@ -1,0 +1,380 @@
+import { randomInt, randomUUID, scryptSync, timingSafeEqual, randomBytes } from 'node:crypto';
+import {
+  TEAM_SIZES, MODES, DRAFTS, FIELD, ROOM_GRACE, makeMatch, inputMatch,
+  setOffline, restorePlayer, updateMatch, snapshot, tacticalPing, canSee
+} from './overdrive-match.mjs';
+import { seasonAt } from './overdrive-store.mjs';
+
+const letters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const idleTime = 15 * 60 * 1000;
+const maxRooms = 80;
+const maxQueue = 200;
+const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
+const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
+
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error}) {
+  const rooms = new Map();
+  const membership = new Map();
+  const queue = new Map();
+  let nextMatchmaking=0;
+  const emit = (id,type,fields={}) => send(client(id),{type:'z2:'+type,...fields});
+  const demand = (condition,status,message) => { if(!condition) throw fail(status,message); };
+
+  function code() {
+    let result;
+    do {result=Array.from({length:6},()=>letters[randomInt(letters.length)]).join('');}
+    while(rooms.has(result));
+    return result;
+  }
+
+  function capacity(room) { return room.size*(room.tournament?.teams||2); }
+  function players(room) { return [...room.members.values()].filter(p=>!p.spectator); }
+  function filled(room) {
+    return Array.from({length:room.tournament?.teams||2},(_,i)=>
+      players(room).filter(p=>p.team===i).length===room.size).every(Boolean);
+  }
+
+  function lobby(room) {
+    const tournament=room.tournament;
+    return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
+      limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
+      password:!!room.secret,expires:room.expires,phase:room.phase,
+      members:[...room.members.values()].map(({id,name,team,spectator,draft,away})=>
+        ({id,name,team,spectator,draft,away:!!away})),
+      votes:[...room.votes],tournament:tournament&&{
+        teams:tournament.teams,matches:tournament.bracket.map(({a,b,winner,mvp,score})=>({a,b,winner,mvp,score})),
+        index:tournament.index,champion:tournament.champion
+      }};
+  }
+  function broadcast(room,type,body,filter=()=>true) {
+    for(const p of room.members.values()) if(filter(p)) emit(p.id,type,body);
+  }
+  function publish(room) {broadcast(room,'lobby',lobby(room));}
+  function clearRoom(room,reason) {
+    rooms.delete(room.code);
+    for(const id of room.members.keys()){
+      if(membership.get(id)===room)membership.delete(id);
+      emit(id,'left',{reason});
+    }
+  }
+  function roomFor(id) {return membership.get(id);}
+  function space(room, team, ignore) {
+    return players(room).filter(p=>p.team===team&&p.id!==ignore).length<room.size;
+  }
+  function availableTeam(room,id) {
+    const teams=Array.from({length:room.tournament?.teams||2},(_,i)=>i);
+    return teams.filter(t=>space(room,t,id)).sort((a,b)=>
+      players(room).filter(p=>p.team===a).length-players(room).filter(p=>p.team===b).length)[0];
+  }
+
+  function drop(id,now,reason='Left the lobby.') {
+    if(queue.delete(id))emit(id,'queue',{waiting:false});
+    const room=roomFor(id);
+    if(!room)return;
+    membership.delete(id);
+    room.members.delete(id);
+    room.votes.delete(id);
+    setOffline(room.match,id,now,true);
+    if(room.host===id)room.host=players(room)[0]?.id??null;
+    emit(id,'left',{reason});
+    if(!room.members.size&&!room.match)clearRoom(room,reason);
+    else publish(room);
+  }
+
+  function add(room,c,user,team,spectator=false) {
+    leaveLegacy(c);
+    queue.delete(c.id);
+    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0};
+    room.members.set(c.id,member);
+    membership.set(c.id,room);
+    return member;
+  }
+
+  function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null},now) {
+    const room={code:code(),phase:'lobby',host,mode,size,limit,ranked,tournament,secret,
+      locked:false,expires:now+idleTime,members:new Map(),votes:new Set(),match:null,result:null};
+    rooms.set(room.code,room);
+    return room;
+  }
+
+  function announceMatch(room,member) {
+    const match=room.match;
+    if(!match)return;
+    const self=match.players.get(member.id);
+    emit(member.id,'begin',{id:match.id,mode:match.mode,ranked:!!match.season,team:self?.team??null,
+      roster:[...match.players.values()].map(({id,name,team,draft})=>({id,name,team,draft})),
+      field:FIELD,limit:match.limit,match:room.tournament?.index??null});
+    emit(member.id,'state',snapshot(match,member.id,clock()));
+  }
+
+  function start(room,now,contestants) {
+    const seats=contestants||players(room);
+    room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
+      limit:room.limit,players:seats,now,tournament:!!room.tournament});
+    for(const p of seats)if(p.away)setOffline(room.match,p.id,p.away);
+    room.phase='playing';room.result=null;room.votes.clear();
+    publish(room);
+    for(const member of room.members.values())announceMatch(room,member);
+  }
+
+  function advanceTournament(room,now) {
+    const t=room.tournament;
+    const current=t.bracket[t.index];
+    if(!current)return;
+    const available = team => players(room).filter(p=>p.team===team&&!p.away);
+    const a=available(current.a),b=available(current.b);
+    if(!a.length||!b.length){
+      tournamentResult(room,a.length?current.a:b.length?current.b:Math.min(current.a,current.b),
+        [Number(!!a.length),Number(!!b.length)],null,now,!!(a.length||b.length));
+      return;
+    }
+    const sides=[a,b].flatMap((group,team)=>group.map(p=>({...p,team})));
+    start(room,now,sides);
+  }
+
+  function tournamentResult(room,winner,score,mvp,now,awardable=true) {
+    const t=room.tournament, match=t.bracket[t.index];
+    Object.assign(match,{winner,score,mvp});
+    const n=t.teams-1;
+    room.phase='results';
+    if(t.index===n-1){
+      t.champion=winner;
+      if(awardable)for(const p of players(room))if(p.team===winner)store.giveAward(p.id,'Overdrive Cup Champion',now);
+    } else {
+      t.winners.push(winner);
+      t.index++;
+      if(t.index===t.bracket.length){
+        for(let i=0;i<t.winners.length;i+=2)t.bracket.push({a:t.winners[i],b:t.winners[i+1],winner:null});
+        t.winners=[];
+      }
+      t.next=now+7500;
+    }
+    publish(room);
+  }
+
+  function startTournament(room,now) {
+    const t=room.tournament;
+    t.bracket=Array.from({length:t.teams/2},(_,i)=>({a:i*2,b:i*2+1,winner:null}));
+    t.winners=[];t.index=0;
+    advanceTournament(room,now);
+  }
+
+  function create(c,user,data,now) {
+    demand(rooms.size<maxRooms,503,'All lobby slots are in use.');
+    const tournament=[4,8].includes(data.teams)?{teams:data.teams,bracket:[],index:0,champion:null,next:0}:null;
+    const mode=tournament?'arena':data.mode;
+    demand(MODES.includes(mode),400,'Choose a supported match mode.');
+    let size=mode==='chess'?1:data.size;
+    const sizes=tournament?[1,2]:mode==='rescue'?[2,3,5]:TEAM_SIZES;
+    demand(sizes.includes(size),400,'Choose a supported team size.');
+    const limit=data.limit??15;
+    demand(Number.isInteger(limit)&&limit>=1&&limit<=50,400,'Choose a kill limit from 1 to 50.');
+    const password=readPassword(data.password);
+    demand(!data.password||password.length>=4,400,'Use a room password of 4–64 characters.');
+    const salt=password?randomBytes(16):null;
+    const secret=password?{salt,key:passwordKey(password,salt)}:null;
+    demand(roomFor(c.id)?.phase!=='playing',409,'Leave your active match first.');
+    drop(c.id,now);
+    const room=buildRoom({host:c.id,mode,size,limit,tournament,secret},now);
+    add(room,c,user,0);
+    publish(room);
+  }
+
+  function join(c,user,data,now) {
+    demand(allowed('z2-join:'+c.id,10,60000),429,'Wait a minute before trying more codes.');
+    const key=typeof data.code==='string'?data.code.trim().toUpperCase():'';
+    const room=rooms.get(key);
+    demand(room&&!room.ranked&&room.expires>now,404,'That match code is unavailable.');
+    if(room===roomFor(c.id)){publish(room);return;}
+    const spectator=data.spectate===true;
+    demand(!room.locked&&(room.phase==='lobby'||(spectator&&room.tournament)),409,'This lobby is closed to new players.');
+    if(room.secret){
+      const pass=readPassword(data.password);
+      demand(timingSafeEqual(passwordKey(pass,room.secret.salt),room.secret.key),403,'Incorrect match password.');
+    }
+    demand(!spectator||room.tournament,400,'Spectating is available in tournaments.');
+    const team=spectator?null:availableTeam(room,c.id);
+    demand(spectator?room.members.size-players(room).length<6:team!==undefined,409,'This lobby is full.');
+    demand(roomFor(c.id)?.phase!=='playing',409,'Leave your active match first.');
+    drop(c.id,now);
+    const member=add(room,c,user,team,spectator);
+    room.expires=now+idleTime;
+    publish(room);
+    if(room.phase==='playing')announceMatch(room,member);
+    if(room.phase==='results'&&room.result)emit(c.id,'result',room.result);
+  }
+
+  function matchmaking(now) {
+    if(now<nextMatchmaking)return;
+    nextMatchmaking=now+1000;
+    const season=seasonAt(now);
+    for(const [id,p] of queue)if(now-p.since>600000||!client(id)){
+      queue.delete(id);emit(id,'queue',{waiting:false,reason:'Queue timed out.'});
+    }
+    for(const size of TEAM_SIZES){
+      const list=[...queue.values()].filter(p=>p.size===size);
+      while(list.length>=size*2&&rooms.size<maxRooms){
+        const anchor=list.shift(),base=store.rating(anchor.id,season).points;
+        const radius=Math.min(950,120+(now-anchor.since)/100);
+        const compatible=list.filter(other=>Math.abs(store.rating(other.id,season).points-base)<=radius);
+        if(compatible.length<size*2-1)continue;
+        const group=[anchor,...compatible.slice(0,size*2-1)]
+          .sort((a,b)=>store.rating(b.id,season).points-store.rating(a.id,season).points);
+        const room=buildRoom({mode:'arena',size,limit:size===1?10:25,ranked:true},now);
+        for(let i=0;i<group.length;i++){
+          const p=group[i], team=i%4===0||i%4===3?0:1;
+          const j=list.indexOf(p);
+          if(j>=0)list.splice(j,1);
+          add(room,client(p.id),p,team);
+          emit(p.id,'queue',{waiting:false});
+        }
+        start(room,now);
+      }
+    }
+  }
+
+  function queuePlayer(c,user,data,now) {
+    if(data.join===false){queue.delete(c.id);emit(c.id,'queue',{waiting:false});return;}
+    demand(TEAM_SIZES.includes(data.size),400,'Choose a ranked team size.');
+    demand(!roomFor(c.id),409,'Leave your lobby before joining ranked.');
+    demand(queue.has(c.id)||queue.size<maxQueue,503,'The ranked queue is full.');
+    if(queue.get(c.id)?.size!==data.size)queue.set(c.id,{id:c.id,name:user.name,size:data.size,since:now});
+    emit(c.id,'queue',{waiting:true,size:data.size});
+  }
+
+  function packet(c,user,data) {
+    const now=clock(), action=data.type.slice(3);
+    if(action==='echo'){emit(c.id,'echo',{value:Number.isFinite(data.value)?data.value:0});return;}
+    if(action==='create'){
+      demand(allowed('z2-create:'+c.id,6,60000),429,'Wait before creating another lobby.');
+      create(c,user,data,now);return;
+    }
+    if(action==='join'){join(c,user,data,now);return;}
+    if(action==='queue'){queuePlayer(c,user,data,now);return;}
+    if(action==='leave'){drop(c.id,now);return;}
+    const room=roomFor(c.id);
+    if(action==='input'){if(room?.phase==='playing')inputMatch(room.match,c.id,data,now);return;}
+    if(action==='resync'){attach(c);return;}
+    demand(room,404,'Join a multiplayer lobby first.');
+    const member=room.members.get(c.id);
+    if(action==='ping'){
+      const message=room.phase==='playing'&&tacticalPing(room.match,c.id,data.kind,now);
+      if(message)broadcast(room,'ping',message,p=>room.match.players.get(p.id)?.team===message.team);
+      return;
+    }
+    if(action==='chat'){
+      demand(!store.muted(c.id,now),403,'Your chat is muted.');
+      demand(allowed('chat:'+c.id,12,10000),429,'You are sending messages too quickly.');
+      broadcast(room,'chat',{from:member.name,body:cleanChat(data.body)});
+      return;
+    }
+    if(action==='draft'){
+      demand(room.mode==='chess'&&room.phase!=='playing'&&!member.spectator&&DRAFTS.includes(data.piece),400,'Choose a chess role between matches.');
+      member.draft=data.piece;publish(room);return;
+    }
+    if(action==='rematch'){
+      demand(room.phase==='results'&&!room.ranked&&!room.tournament&&!member.spectator,409,'Rematch voting is unavailable.');
+      room.votes.add(c.id);publish(room);
+      if(filled(room)&&players(room).every(p=>room.votes.has(p.id)&&!p.away))start(room,now);
+      return;
+    }
+    if(action==='team'){
+      demand(room.phase==='lobby'&&!room.ranked&&!member.spectator,409,'Teams are locked.');
+      const team=data.team;
+      demand(Number.isInteger(team)&&team>=0&&team<(room.tournament?.teams||2)&&space(room,team,c.id),
+        409,'That team is unavailable.');
+      member.team=team;room.expires=now+idleTime;publish(room);return;
+    }
+    demand(c.id===room.host&&!room.ranked,403,'Only the lobby host can do that.');
+    if(action==='lock'){room.locked=data.locked===true;publish(room);return;}
+    if(action==='remove'){
+      demand(room.phase!=='playing'&&room.members.has(data.id)&&data.id!==c.id,409,'That player cannot be removed.');
+      drop(data.id,now,'The host removed you from this lobby.');return;
+    }
+    if(action==='start'){
+      demand(room.phase==='lobby'&&filled(room)&&players(room).every(p=>!p.away),409,'Fill all team seats before starting.');
+      if(room.tournament)startTournament(room,now);else start(room,now);
+      return;
+    }
+    throw fail(400,'Unknown Overdrive action.');
+  }
+
+  function routedEvents(room) {
+    const match=room.match;
+    for(const event of match.events.splice(0)){
+      const {type,only,team,...body}=event;
+      broadcast(room,type.slice(3),body,member=>{
+        const recipient=match.players.get(member.id);
+        if(only!=null)return member.id===only;
+        if(type==='z2:shot'){
+          return !match.season||recipient?.team===team||
+            (recipient&&canSee(recipient,match.players.get(body.origin)));
+        }
+        return team==null||recipient?.team===team;
+      });
+    }
+  }
+
+  function settle(room,now) {
+    const result=room.match.result;
+    const deltas=store.settle(result,now);
+    room.result={...result,deltas};
+    room.expires=now+Math.min(idleTime,180000);
+    if(room.tournament){
+      const t=room.tournament, current=t.bracket[t.index], recordedWinner=result.winner===1?current.b:current.a;
+      tournamentResult(room,recordedWinner,result.score,result.mvp,now);
+    }else{room.phase='results';publish(room);}
+    broadcast(room,'result',room.result);
+  }
+
+  function tick() {
+    const now=clock();
+    matchmaking(now);
+    for(const room of rooms.values()){
+      try{
+        for(const member of [...room.members.values()]){
+          if(member.away&&member.away+ROOM_GRACE<=now&&room.phase!=='playing')drop(member.id,now);
+        }
+        if(!rooms.has(room.code))continue;
+        if(room.phase!=='playing'&&room.expires<=now){clearRoom(room,'This match code expired.');continue;}
+        if(room.tournament?.next&&room.tournament.next<=now){room.tournament.next=0;advanceTournament(room,now);}
+        if(room.phase!=='playing')continue;
+        const match=room.match;
+        updateMatch(match,now);
+        routedEvents(room);
+        if(match.result){settle(room,now);continue;}
+        for(const p of [...room.members.values()])if(p.away&&p.away+ROOM_GRACE<=now)drop(p.id,now);
+        if(match.tick%2===0){
+          for(const p of room.members.values())if(!p.away)send(client(p.id),snapshot(match,p.id,now));
+        }
+      }catch(error){
+        onError(error);
+        clearRoom(room,'The match ended after a server error.');
+      }
+    }
+  }
+
+  function attach(c,reset=false) {
+    const room=roomFor(c.id), member=room?.members.get(c.id), now=clock();
+    if(!member){emit(c.id,'left',{reason:''});return;}
+    if(member.away&&member.away+ROOM_GRACE<=now){drop(c.id,now,'The reconnect window expired.');return;}
+    member.away=0;
+    if(reset&&room.match?.players.has(c.id))restorePlayer(room.match,c.id);
+    publish(room);
+    if(room.phase==='playing')announceMatch(room,member);
+    if(room.phase==='results'&&room.result)emit(c.id,'result',room.result);
+  }
+
+  function disconnect(c) {
+    queue.delete(c.id);
+    const room=roomFor(c.id), member=room?.members.get(c.id);
+    if(!member)return;
+    member.away=clock();
+    setOffline(room.match,c.id,member.away);
+    publish(room);
+  }
+
+  const timer=setInterval(tick,50);
+  timer.unref();
+  return {packet,attach,disconnect,drop,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
+}
