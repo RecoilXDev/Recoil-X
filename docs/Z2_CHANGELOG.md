@@ -2,6 +2,10 @@
 
 The update builds on Z.1 Crown Trials at commit `6b2726bfb5fc7c853bdd6419ae619eaf6f284757`. Open **Operation Overdrive** from the home screen or Play menu. Use your Friends account for online matches. **Local challenges** opens the offline additions.
 
+## Mission Mode, 18 November 2026
+
+Four new solo operations are available from **Play → Missions → Mission Mode**. See [the 20 updates, controls, testing instructions and rollback plan](MISSION_MODE.md).
+
 ## Multiplayer connection update, 18 November 2026
 
 - Overdrive sends movement starts, stops and button changes promptly. Held controls use a regular heartbeat. Short taps that reach the server between two simulation steps can still register once.

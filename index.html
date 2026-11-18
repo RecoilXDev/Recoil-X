@@ -784,6 +784,31 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
   position:absolute;left:var(--z2-x);top:var(--z2-y);right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:7;margin:0
 }
 #mobileControls.z2-custom-touch .touchbtn{width:clamp(32px,8vw,57px);height:clamp(32px,8vw,57px);font-size:clamp(9px,2vw,13px)}
+#missionBoard{max-width:760px;text-align:start}
+.mission-layout{display:grid;grid-template-columns:minmax(125px,1fr) minmax(0,2.3fr);gap:14px;align-items:start}
+#missionList{display:grid;gap:5px}
+#missionList button{margin:0;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:start;text-transform:none;letter-spacing:0;min-height:40px;padding:7px 9px;background:#19232c;color:#dce7ed;border:1px solid #48616d}
+#missionList button[aria-pressed=true]{border-color:#6ce4ef;background:#173943;color:#fff}
+#missionList small{white-space:nowrap;color:#ffcc75;font-size:10px}
+#missionBrief h3{margin:0;color:#fff0d7;font-size:clamp(18px,3vw,27px)}
+.mission-route{display:grid;grid-template-columns:minmax(88px,140px) minmax(0,1fr);gap:12px;align-items:center}
+#missionMap{width:100%;height:auto;aspect-ratio:1;border:1px solid #44606c;border-radius:5px;background:#102029}
+#missionSequence,#missionSplits{padding-inline-start:1.6em;margin:3px 0;font-size:12px;line-height:1.55;color:#dce4e8}
+.mission-options,.mission-act{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin-block:10px}
+.mission-options label{display:grid;gap:3px;flex:1 1 100px;font-size:11px;color:#e9cea4}
+.mission-options select{width:100%;min-width:0;max-width:100%;padding:6px}
+#missionHud{position:absolute;top:max(7px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(45vw,390px);padding:6px 9px;background:#101e27e8;border:1px solid #6295a2;border-radius:7px;color:#edf5f5;text-align:start;pointer-events:none;font-size:clamp(10px,1.5vw,13px);line-height:1.25}
+#missionHud .mission-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+#missionClock{font-variant-numeric:tabular-nums;color:#ffcf80;direction:ltr}
+#missionHud strong,#missionHud small{display:block}#missionBearing{color:#8be5ea;font-variant-numeric:tabular-nums}#missionKeys{color:#ead29d}
+.mission-meter{height:3px;background:#34444b;margin-block:4px}.mission-meter i{display:block;height:100%;background:#67dce1}
+#missionButtons{display:none}.touch-selected .mission-playing #missionButtons{position:absolute;top:32%;inset-inline-start:max(5px,env(safe-area-inset-left));z-index:34;display:grid;gap:4px;pointer-events:auto}
+#missionButtons button{min-height:36px;max-width:25vw;line-height:1.05;padding:4px 7px;font-size:11px;touch-action:manipulation}
+.mission-playing :is(.hud-center,#rx2HudStatus,#x4Live,#x5Live,#x5Secondary,#x4TouchAction,#x4TouchPeek,#x4TouchVision,#x5TouchGrapple,#x5TouchGadget,#x5TouchSwap,#x5TouchUse){display:none!important}
+#missionDebrief{padding:9px;border:1px solid #52676f;border-radius:7px;text-align:start;margin:8px auto;background:#15232c}
+#missionDebrief h3{margin:4px 0;color:#ffcf80}#missionDebrief p{margin:5px 0}
+@media(max-width:520px){.mission-layout{grid-template-columns:1fr;gap:9px}#missionList{grid-template-columns:repeat(2,minmax(0,1fr))}.mission-route{grid-template-columns:94px 1fr}}
+@media(max-height:470px){#missionHud{padding:3px 6px;font-size:10px}#missionList button{min-height:33px}.mission-route{grid-template-columns:88px 1fr}}
 </style>
 </head>
 <body>
@@ -5719,6 +5744,11 @@ function crownBuildArena(a) {
       addObstacle(x,z,1.48,1.48,1.18,a.cover);
       putBox(staticVerts,x,1.18,z,1.56,.10,1.56,a.accent.map(c=>c*.67));
     }
+  }else if(a.kind==='mission'){
+    for(const x of [-9,9])for(const z of [-8,8])addObstacle(x,z,3,2,1.5,a.cover);
+    for(const x of [-19,19])for(const z of [-11,11])addObstacle(x,z,2,2,2.5,a.wall);
+    crownZone(staticVerts,0,0,38,1.4,a.accent.map(v=>v*.33),-.025);
+    for(const x of [-17,17])crownZone(staticVerts,x,0,2.7,3.9,a.accent.map(v=>v*.48),-.012);
   }else if(a.kind==='kingdom'){
     for(const s of [-1,1]){
       for(const [x,z,l] of [[9,9,3.3],[14,-6,3.2],[22,4,2.55]])
@@ -7649,9 +7679,9 @@ const Z1_MODE_NAMES={
   royale:'Recoil Royale',titanraid:'Titan Raid',faction:'Faction Wars',sabotage:'Sabotage',
   gungame:'Gun Game',realm:'Hidden Realm',zvehicles:'Vehicle Assault',ztournament:'Tournament',
   zundercover:'Undercover',z1drive:'Jeep Rally','crown-duel':'Crown Trials','crown-contract':'Scrap Contract',
-  'crown-holiday':'Holiday Mission','z-online':'Dedicated Server'
+  'crown-holiday':'Holiday Mission','crown-mission':'Mission Mode','z-online':'Dedicated Server'
 };
-const Z1_SOLO_SEAT_MODES=new Set(['duel','mystery','crown-duel','z-online']);
+const Z1_SOLO_SEAT_MODES=new Set(['duel','mystery','crown-duel','crown-mission','z-online']);
 const Z1_PVP_MODES=new Set(['solo','chaos','custom','royale','gungame']);
 const z1ModeName=value=>Z1_MODE_NAMES[value]||'RECOIL X';
 const z1Competitive=value=>Z1_PVP_MODES.has(value);
@@ -8082,7 +8112,7 @@ function z1PartyObjective(){
 }
 
 function z1SafeWorldArena(data){
-  if(!data||!['chess','holiday','kingdom','rally'].includes(data.kind))return null;
+  if(!data||!['chess','holiday','kingdom','rally','mission'].includes(data.kind))return null;
   const rgb=t=>Array.isArray(t)&&t.length===3&&t.every(Number.isFinite)?t.map(v=>clamp(v,0,1)):[.24,.28,.3];
   return {kind:data.kind,id:'z1-'+data.kind,name:String(data.name||'Arena').slice(0,90),
     sky:rgb(data.sky),ground:rgb(data.ground),cover:rgb(data.cover),wall:rgb(data.wall),accent:rgb(data.accent),
@@ -8380,6 +8410,7 @@ function z1MenuPlay(){
     ['Private Room','Join with a room code',()=>$('roomBtn').click()]
   ]);
   z1MenuGroup(p,'Missions',[
+    [missionText('mode'),missionText('tagline'),missionOpen,'missionAccess'],
     ['Crown Trials','Kingdom bosses, Chess, and Scrap Contracts',()=>zzOpenSpecial('kingdom'),'z1CrownAccess'],
     ['Operation Blackout','Six campaign missions',()=>x5Play('campaign')],
     ['Stealth Heist','Recover the loot',()=>x5Play('heist')],
@@ -9267,6 +9298,7 @@ const Z2_MARKERS=['checkpoint','botspawn'];
 const z2PointForCell=v=>({x:(v.gx-6.5)*8,z:(v.gz-6.5)*8});
 
 function z2ResetLocalRun(){
+  missionResetView();
   if(z2LocalFrames.length>1){z2LastClip=z2LocalFrames.slice();z2LocalFrames.length=0;}
   z2LastSample=0;z2GhostRun=null;z2Dual=null;z2Daily=null;
   $('z2LocalHud')?.classList.add('hide');
@@ -9335,6 +9367,10 @@ crownDamageBot=function(bot,damage){
 };
 const z2BaseKillBot=killBot;
 killBot=function(bot,killer){
+  if(missionRun&&bot.missionGuard){
+    if(!bot.alive)return;
+    const result=z2BaseKillBot(bot,killer);bot.respawn=Infinity;return result;
+  }
   if(mode!=='crown-dual'||!z2Dual||![z2Dual.fire,z2Dual.ice].includes(bot))return z2BaseKillBot(bot,killer);
   if(!bot.alive)return;
   bot.hp=0;bot.alive=false;bot.respawn=Infinity;
@@ -9343,6 +9379,7 @@ killBot=function(bot,killer){
 const z2BaseHurt=hurt;
 hurt=function(damage){
   const result=z2BaseHurt(damage);
+  if(missionRun&&!pl.alive&&phase==='playing'){clearDeathTimers();missionEnd(false);}
   if(mode==='crown-dual'&&z2Dual&&!pl.alive&&phase==='playing'){
     crownResult={heading:'Double Crown failed',detail:'Return and defeat both monarchs.',won:false,type:'dual'};
     finish();
@@ -9486,6 +9523,7 @@ function z2FinishDaily(trial){
 }
 function z2LocalTick(dt,now){
   if(phase!=='playing'||paused)return;
+  if(missionRun){missionTick(dt);return;}
   if(mode==='crown-dual'&&z2Dual){z2TickDual(dt,now);return;}
   if(mode==='z2-daily'&&z2Daily){
     const run=z2Daily;run.time+=dt;
@@ -9508,6 +9546,7 @@ function z2LocalTick(dt,now){
 }
 function z2DrawLocalExtras(out,now){
   if(phase!=='playing')return;
+  if(missionRun){missionDraw(out,now);return;}
   if(z2Dual?.attack&&mode==='crown-dual'){
     const a=z2Dual.attack,tint=a.source===z2Dual.fire?[1,.37,.19]:[.35,.83,1];
     crownOutline(out,a,tint,a.done ? .16 : .06);
@@ -9530,6 +9569,7 @@ function z2DrawLocalExtras(out,now){
 const z2FinishBase=finish;
 finish=function(){
   if(z2IsMatch())return;
+  if(missionRun){missionEnd(false);return;}
   const completed=phase==='playing';
   const result=z2FinishBase();
   if(completed&&phase==='end'){
@@ -9890,6 +9930,539 @@ function z2MountMatch(){
   });
 }
 
+// Mission Mode uses the existing local arena simulation, controls and renderer.
+const MISSION_COPY={
+  mode:['Mission Mode','وضع المهمات','Modo misiones','Mode missions','Görev modu'],
+  tagline:['Four solo operations · saved checkpoints','أربع عمليات فردية مع حفظ التقدم','Cuatro operaciones en solitario con guardado','Quatre opérations solo avec sauvegarde','Kayıt noktalı dört tek kişilik operasyon'],
+  deadAir:['Dead Air','انقطاع الإشارة','Sin señal','Silence radio','Sinyal Kesintisi'],
+  blackBox:['Black Box','الصندوق الأسود','Caja negra','Boîte noire','Kara Kutu'],
+  wayHome:['Long Way Home','طريق العودة','Camino a casa','Le chemin du retour','Eve Dönüş'],
+  lastLight:['Last Light','الضوء الأخير','Última luz','Dernière lueur','Son Işık'],
+  briefAir:['Find the silent transmitter, then hold the relay until the signal returns.','اعثري على المرسل الصامت ثم احمي محطة الترحيل حتى تعود الإشارة.','Encuentra el transmisor y protege el repetidor hasta recuperar la señal.','Retrouve l’émetteur et protège le relais jusqu’au retour du signal.','Vericiyi bul ve sinyal dönene kadar röleyi koru.'],
+  briefBox:['Power the archive and enter its three-symbol code to recover the black box.','زوّدي الأرشيف بالطاقة وأدخلي رمز القفل لاستعادة الصندوق الأسود.','Alimenta el archivo y resuelve el código para recuperar la caja negra.','Alimente les archives et saisis le code pour récupérer la boîte noire.','Arşive güç ver ve kara kutuyu kurtarmak için kodu gir.'],
+  briefHome:['Wake the repair drone, guide it across the yard and defend its broadcast.','نشّطي مسيّرة الصيانة ورافقيها عبر الساحة واحمي بثها.','Activa el dron, acompáñalo por el patio y defiende su transmisión.','Réactive le drone, escorte-le à travers la cour et défends sa transmission.','Onarım dronunu uyandır, avluda ona eşlik et ve yayınını koru.'],
+  briefLight:['Choose a route to restore the grid, unlock the vault and reach extraction.','اختاري طريقاً لإعادة تشغيل الشبكة وافتحي الخزنة ثم توجهي إلى الإخلاء.','Elige una ruta para restaurar la red, abre la cámara y llega a extracción.','Choisis un itinéraire, rétablis le réseau et ouvre le coffre avant l’extraction.','Bir rota seç, şebekeyi aç, kasanın kilidini çöz ve çıkışa ulaş.'],
+  ahead:['Ahead','أمامك','Delante','Devant','İleri'],aheadRight:['Ahead-right','أمامك يميناً','Delante a la derecha','Devant à droite','Sağ ön'],
+  right:['Right','يميناً','Derecha','À droite','Sağ'],backRight:['Behind-right','خلفك يميناً','Detrás a la derecha','Derrière à droite','Sağ arka'],
+  behind:['Behind','خلفك','Detrás','Derrière','Geri'],backLeft:['Behind-left','خلفك يساراً','Detrás a la izquierda','Derrière à gauche','Sol arka'],
+  left:['Left','يساراً','Izquierda','À gauche','Sol'],aheadLeft:['Ahead-left','أمامك يساراً','Delante a la izquierda','Devant à gauche','Sol ön'],
+  stages:['Objectives','الأهداف','Objetivos','Objectifs','Hedefler'],
+  difficulty:['Difficulty','الصعوبة','Dificultad','Difficulté','Zorluk'],
+  recruit:['Recruit','مبتدئة','Recluta','Recrue','Acemi'],standard:['Standard','عادية','Normal','Normale','Normal'],veteran:['Veteran','محترفة','Veterano','Vétéran','Usta'],
+  kit:['Field kit','عدة الميدان','Equipo','Équipement','Saha kiti'],
+  tech:['Engineer · faster stations','مهندسة · محطات أسرع','Ingeniería · estaciones rápidas','Génie · stations rapides','Mühendis · hızlı istasyonlar'],
+  medic:['Medic · more shield and healing','مسعفة · درع وعلاج إضافيان','Sanidad · más escudo y curación','Secours · bouclier et soins renforcés','Sıhhiyeci · ek kalkan ve iyileştirme'],
+  scout:['Scout · faster radar recharge','كشافة · شحن رادار أسرع','Exploración · recarga rápida del radar','Éclaireur · recharge radar accélérée','İzci · hızlı radar dolumu'],
+  paint:['Signal colour','لون الإشارة','Color de señal','Couleur du signal','Sinyal rengi'],
+  ion:['Ion blue','أزرق أيوني','Azul iónico','Bleu ionique','İyon mavisi'],amber:['Amber','كهرماني','Ámbar','Ambre','Kehribar'],orchid:['Orchid','بنفسجي','Orquídea','Orchidée','Orkide'],
+  daily:['Daily dispatch','مهمة اليوم','Operación diaria','Mission du jour','Günlük görev'],
+  dailyRule:['Oman daily mission · radar recharges twice as fast. Earn one stamp today.','مهمة يومية بتوقيت عُمان · يتجدد الرادار بضعف السرعة. احصلي على ختم اليوم.','Misión diaria de Omán · radar al doble de velocidad. Gana un sello hoy.','Mission du jour en heure d’Oman · recharge radar doublée. Gagne un tampon.','Umman saatine göre günlük görev · radar iki kat hızlı dolar. Günün damgasını kazan.'],
+  stamps:['Recent stamps','الأختام الأخيرة','Sellos recientes','Tampons récents','Son damgalar'],
+  launch:['Start mission','ابدئي المهمة','Iniciar misión','Lancer la mission','Göreve başla'],
+  resume:['Continue checkpoint','متابعة من نقطة الحفظ','Continuar desde el control','Reprendre au point de contrôle','Kayıttan devam et'],
+  restart:['Start over','البدء من جديد','Reiniciar','Recommencer','Baştan başla'],
+  replace:['Restart this mission from the beginning and replace its checkpoint?','هل تريدين إعادة المهمة واستبدال نقطة الحفظ؟','¿Reiniciar esta misión y reemplazar su punto de control?','Recommencer cette mission et remplacer son point de contrôle ?','Bu görevin kayıt noktasını değiştirip baştan başlamak istiyor musun?'],
+  previous:['First complete','أكملي أولاً','Completa primero','Termine d’abord','Önce tamamla'],
+  record:['Best time','أفضل وقت','Mejor tiempo','Meilleur temps','En iyi süre'],par:['Target time','الوقت المستهدف','Tiempo objetivo','Temps cible','Hedef süre'],
+  time:['Time','الوقت','Tiempo','Temps','Süre'],stars:['Stars','النجوم','Estrellas','Étoiles','Yıldız'],
+  rating:['Earn one star for extraction, one for the intel and one for beating the target time.','نجمة للإخلاء ونجمة للمعلومات ونجمة لإنهاء المهمة قبل الوقت المستهدف.','Una estrella por extraer, otra por la información y otra por batir el tiempo objetivo.','Une étoile pour l’extraction, une pour les renseignements et une pour le temps cible.','Tahliye, istihbarat ve hedef süreyi aşmadan bitirme için birer yıldız kazan.'],
+  scan:['Scan the transmitter','امسحي المرسل','Escanea el transmisor','Scanner l’émetteur','Vericiyi tara'],
+  cell:['Deliver the power cell','سلّمي خلية الطاقة','Entrega la célula de energía','Livrer la cellule d’énergie','Güç hücresini teslim et'],
+  defend:['Hold the relay','احمي محطة الترحيل','Defiende el repetidor','Tenir le relais','Röleyi savun'],
+  escort:['Escort the repair drone','رافقي مسيّرة الصيانة','Escolta al dron','Escorter le drone','Onarım dronuna eşlik et'],
+  lock:['Enter the symbol code','أدخلي رمز الأشكال','Introduce el código','Saisir le code','Sembol kodunu gir'],
+  route:['Choose a route','اختاري طريقاً','Elige una ruta','Choisir un itinéraire','Bir rota seç'],
+  branch:['Restore power','أعيدي الطاقة','Restaura la energía','Rétablir le courant','Gücü geri getir'],
+  extract:['Hold the extraction pad','ابقي في منطقة الإخلاء','Mantén la zona de extracción','Tenir la zone d’extraction','Tahliye alanında kal'],
+  stay:['Stay inside the ring','ابقي داخل النطاق','Permanece en la zona','Reste dans la zone','Alan içinde kal'],
+  contested:['Contested · clear nearby guards','الموقع متنازع عليه · أبعدي الحراس','En disputa · despeja los guardias','Zone contestée · repousse les gardes','Çekişmeli · yakındaki muhafızları uzaklaştır'],
+  follow:['Stay close to the drone','ابقي قرب المسيّرة','Mantente cerca del dron','Reste près du drone','Drona yakın kal'],
+  grab:['Pick up the cell','التقطي الخلية','Recoge la célula','Prendre la cellule','Hücreyi al'],
+  socket:['Install the cell','ركّبي الخلية','Instala la célula','Installer la cellule','Hücreyi tak'],
+  safe:['Service route · longer scan','طريق الخدمة · مسح أطول','Ruta de servicio · escaneo largo','Voie de service · scan long','Servis yolu · uzun tarama'],
+  surge:['Surge route · pulse hazard','طريق الجهد · خطر النبضات','Ruta de descarga · pulsos','Voie de surtension · impulsions','Dalga yolu · darbe tehlikesi'],
+  or:['or','أو','o','ou','veya'],wrong:['Wrong symbol · restart the sequence','رمز خاطئ · أعيدي التسلسل','Símbolo incorrecto · reinicia la secuencia','Symbole incorrect · reprends la séquence','Yanlış sembol · diziyi yeniden gir'],
+  intel:['Recover intel','اجمعي المعلومات','Recoge la información','Récupérer les renseignements','İstihbaratı al'],
+  found:['Intel recovered','جُمعت المعلومات','Información recuperada','Renseignements récupérés','İstihbarat alındı'],
+  supply:['Open supply locker','افتحي خزانة الإمداد','Abre el armario de suministros','Ouvrir la réserve','İkmal dolabını aç'],
+  supplied:['Health, shield and ammo restored','تم تزويدك بالصحة والدرع والذخيرة','Salud, escudo y munición repuestos','Santé, bouclier et munitions récupérés','Can, kalkan ve cephane yenilendi'],
+  warning:['Pulse charging · leave the marked zone','النبضة تُشحن · ابتعدي عن المنطقة','Pulso en carga · sal de la zona','Impulsion en charge · quitte la zone','Darbe yükleniyor · alandan çık'],
+  pulse:['Radar','الرادار','Radar','Radar','Radar'],use:['Use','تفاعل','Usar','Utiliser','Kullan'],
+  controls:['E to interact · Y for radar','E للتفاعل · Y للرادار','E para interactuar · Y para radar','E pour interagir · Y pour le radar','E etkileşim · Y radar'],
+  touch:['Use and Radar are on screen','زرا التفاعل والرادار على الشاشة','Usar y Radar están en pantalla','Utiliser et Radar sont à l’écran','Kullan ve Radar ekranda'],
+  complete:['Mission complete','اكتملت المهمة','Misión completada','Mission accomplie','Görev tamamlandı'],
+  failed:['Mission failed','فشلت المهمة','Misión fallida','Mission échouée','Görev başarısız'],
+  checkpoint:['Checkpoint','نقطة الحفظ','Punto de control','Point de contrôle','Kayıt noktası'],
+  board:['Mission board','لوحة المهمات','Tablón de misiones','Tableau des missions','Görev panosu'],
+  next:['Next mission','المهمة التالية','Siguiente misión','Mission suivante','Sonraki görev'],
+  splits:['Objective times','أزمنة الأهداف','Tiempos por objetivo','Temps par objectif','Hedef süreleri'],
+  stamp:['Dispatch stamp earned','حصلتِ على ختم المهمة','Sello obtenido','Tampon obtenu','Görev damgası kazanıldı'],
+  stored:['Stamp already collected','سبق جمع الختم','Sello ya obtenido','Tampon déjà obtenu','Damga zaten alındı'],
+  locked:['Locked','مقفل','Bloqueado','Verrouillé','Kilitli'],back:['Back','رجوع','Volver','Retour','Geri']
+};
+function missionText(key){const words=MISSION_COPY[key];return words?.[{en:0,ar:1,es:2,fr:3,tr:4}[language]]||words?.[0]||key;}
+const MISSIONS=[
+  {id:'air',title:'deadAir',brief:'briefAir',style:'ice',stages:['scan','defend','extract'],par:61,cache:[19,5],mirror:1},
+  {id:'box',title:'blackBox',brief:'briefBox',style:'darkness',stages:['cell','lock','extract'],par:70,cache:[-21,-17],mirror:-1},
+  {id:'home',title:'wayHome',brief:'briefHome',style:'earth',stages:['scan','escort','defend','extract'],par:88,cache:[7,17],mirror:1},
+  {id:'light',title:'lastLight',brief:'briefLight',style:'lava',stages:['route','branch','lock','extract'],par:77,cache:[-18,-4],mirror:-1}
+];
+const MISSION_DIFFICULTY={
+  recruit:{guards:1,hp:48,limit:220,par:10,damage:12},
+  standard:{guards:2,hp:72,limit:180,par:0,damage:18},
+  veteran:{guards:3,hp:94,limit:145,par:-9,damage:24}
+};
+const MISSION_PAINT={ion:{stars:0,rgb:[.25,.88,.99]},amber:{stars:4,rgb:[1,.65,.20]},orchid:{stars:9,rgb:[.88,.49,1]}};
+const MISSION_SYMBOLS=['▲','■','●'];
+const missionPrefKey='signal_missions_prefs_v1';
+let missionRun=null,missionReport=null,missionSelection=0,missionDaily=false;
+// Keep a playable session when storage is full or disabled. Durable saves still work across tabs.
+const missionSession=new Map();
+function missionRead(key,fallback){
+  return missionSession.has(key)?missionSession.get(key):getStore(key,fallback);
+}
+function missionWrite(key,value){
+  setStore(key,value);
+  if(JSON.stringify(getStore(key,undefined))===JSON.stringify(value))missionSession.delete(key);
+  else missionSession.set(key,value);
+}
+function missionPrefs(){
+  const raw=missionRead(missionPrefKey,{})||{};
+  return {difficulty:Object.hasOwn(MISSION_DIFFICULTY,raw.difficulty)?raw.difficulty:'recruit',
+    kit:['tech','medic','scout'].includes(raw.kit)?raw.kit:'tech',
+    paint:Object.hasOwn(MISSION_PAINT,raw.paint)?raw.paint:'ion'};
+}
+function missionRecord(id,difficulty){
+  const raw=missionRead('signal_record_'+id+'_'+difficulty,{})||{};
+  return {stars:Number.isInteger(raw.stars)?clamp(raw.stars,0,3):0,best:Number.isFinite(raw.best)&&raw.best>0?raw.best:null};
+}
+function missionStars(id){return Math.max(...Object.keys(MISSION_DIFFICULTY).map(d=>missionRecord(id,d).stars));}
+function missionTotal(){return MISSIONS.reduce((sum,m)=>sum+missionStars(m.id),0);}
+function missionUnlocked(i){return MISSIONS.slice(0,i).every(m=>missionStars(m.id)>0);}
+function missionDayIndex(day){
+  return Math.floor(Date.parse(day+'T12:00:00Z')/86400000)%MISSIONS.length;
+}
+function missionStamps(){
+  const raw=missionRead('signal_dispatch_stamps',[]);
+  return Array.isArray(raw)?[...new Set(raw.filter(s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)))].sort().slice(-31):[];
+}
+function missionCheckpointKey(m,d,day){return 'signal_checkpoint_'+(day?'daily':m.id)+'_'+d;}
+function missionCheckpoint(m,d,day){
+  const cp=missionRead(missionCheckpointKey(m,d,day),null);
+  if(!cp||cp.id!==m.id||cp.day!==day||!Number.isInteger(cp.stage)||cp.stage<0||cp.stage>=m.stages.length||
+    !Number.isFinite(cp.time)||cp.time<0||cp.time>=MISSION_DIFFICULTY[d].limit||!Array.isArray(cp.splits)||
+    cp.splits.length!==cp.stage||!cp.splits.every((s,i)=>Number.isFinite(s)&&s>=0&&s<=cp.time&&(!i||s>=cp.splits[i-1]))||
+    !['tech','medic','scout'].includes(cp.kit)||typeof cp.runId!=='string'||
+    !Object.hasOwn(MISSION_PAINT,cp.paint)||(m.id==='light'&&cp.stage>0&&!['safe','surge'].includes(cp.route)))return null;
+  return cp;
+}
+function missionSites(m){
+  const point=(x,z)=>({x:x*m.mirror,z});
+  return {spawn:point(0,18),scan:point(-15,-5),defend:point(0,-15),cell:point(-15,10),socket:point(15,-4),
+    drone:point(-17,0),dock:point(16,0),pads:[point(-7,-17),point(0,-21),point(7,-17)],
+    safe:point(-10,13),surge:point(10,13),cache:point(...m.cache),locker:point(-4,12),
+    extract:point(16,18),hazard:point(0,0),surgeHazard:point(14,-4)};
+}
+function missionKind(r){const k=r.plan.stages[r.stage];return k==='branch'?(r.route==='surge'?'cell':'scan'):k;}
+function missionPar(r){return r.plan.par+MISSION_DIFFICULTY[r.difficulty].par;}
+function missionSaveCheckpoint(r,initial=false){
+  const key=missionCheckpointKey(r.plan,r.difficulty,r.day);
+  if(!initial&&missionRead(key,null)?.runId!==r.runId)return;
+  missionWrite(key,{runId:r.runId,id:r.plan.id,stage:r.stage,day:r.day,time:r.time,splits:r.splits.slice(),route:r.route,
+    kit:r.kit,paint:r.paint,intel:r.intel,used:r.used,x:pl.x,z:pl.z,hp:pl.hp,shield:pl.shield,
+    weapon:pl.weapon,mags:pl.mags.slice(),stocks:pl.stocks.slice()});
+}
+function missionResetView(){
+  missionRun=null;missionReport=null;
+  $('rxStage')?.classList.remove('mission-playing');$('missionHud')?.classList.add('hide');
+  $('missionDebrief')?.classList.add('hide');
+}
+function missionEnterStage(r){
+  r.charge=0;r.carry=false;r.sequence=0;r.drone={...r.sites.drone};r.contested=false;r.hudAt=0;
+  const kind=missionKind(r),level=MISSION_DIFFICULTY[r.difficulty];
+  bots.length=0;
+  if(['defend','escort','cell'].includes(kind)){
+    const target=kind==='defend'?r.sites.defend:kind==='escort'?r.sites.dock:r.sites.socket;
+    for(let i=0;i<level.guards;i++){
+      const p=crownPoint(target.x+(i-1)*3,target.z+2.6,.85);
+      const b=crownSpawn('fighter',level.hp,1.8+i*.24,p.x,p.z,{name:'Relay sentinel'});
+      b.missionGuard=true;
+    }
+  }
+}
+function missionStart(resume=false){
+  if(phase==='playing')return;
+  const day=missionDaily?zToday().dayKey:'',i=day?missionDayIndex(day):missionSelection;
+  const m=MISSIONS[i],prefs=missionPrefs(),d=prefs.difficulty;
+  if(!m||(!day&&!missionUnlocked(i)))return;
+  const cp=resume?missionCheckpoint(m,d,day):null;
+  if(resume&&!cp)return;
+  const style={...CROWN_KINGDOM_STYLE[m.style],arena:missionText(m.title)};
+  if(!crownStartArena(crownArenaStyle(style,'mission'),'mission'))return;
+  const sites=missionSites(m);
+  const r=missionRun={plan:m,difficulty:d,day,sites,kit:cp?.kit||prefs.kit,paint:cp?.paint||prefs.paint,
+    stage:cp?.stage||0,time:cp?.time||0,splits:cp?.splits.slice()||[],route:cp?.route||'',intel:cp?.intel===true,
+    used:cp?.used===true,runId:cp?.runId||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9),
+    radarUntil:-1,radarReady:0,hazardCycle:-1,hudAt:0,notice:'',noticeUntil:0};
+  if(MISSION_PAINT[r.paint].stars>missionTotal())r.paint='ion';
+  const start=cp&&Number.isFinite(cp.x)&&Number.isFinite(cp.z)&&!blocked(cp.x,cp.z,.55)?cp:sites.spawn;
+  Object.assign(pl,{x:start.x,z:start.z,hp:clamp(Number(cp?.hp)||100,1,100),
+    shield:cp&&Number.isFinite(cp.shield)?clamp(cp.shield,0,100):r.kit==='medic'?100:65});
+  if(cp&&Number.isInteger(cp.weapon)&&weapons[cp.weapon]){
+    pl.weapon=cp.weapon;
+    for(const field of ['mags','stocks'])if(Array.isArray(cp[field])&&cp[field].length===weapons.length)
+      pl[field]=cp[field].map((v,j)=>Number.isInteger(v)?clamp(v,0,field==='mags'?weapons[j].max:999):pl[field][j]);
+    drawGunModel(pl.weapon);
+  }
+  missionEnterStage(r);if(!cp)missionSaveCheckpoint(r,true);
+  gameSeconds=MISSION_DIFFICULTY[d].limit-r.time;
+  $('gameModeLabel').textContent=missionText('mode')+' · '+missionText(m.title);
+  $('rxStage').classList.add('mission-playing');$('missionHud').classList.remove('hide');
+  missionHud(r);
+}
+function missionNext(r){
+  r.splits.push(r.time);
+  if(r.stage+1===r.plan.stages.length){missionEnd(true);return;}
+  r.stage++;missionEnterStage(r);missionSaveCheckpoint(r);
+  playSound('hit');missionNotice(r,missionText('checkpoint')+' · '+(r.stage+1));
+}
+function missionEnd(won){
+  const r=missionRun;if(!r||phase!=='playing')return;
+  missionRun=null;
+  const time=Math.max(.01,Math.round(r.time*100)/100),stars=won?1+Number(r.intel)+Number(time<=missionPar(r)):0;
+  let newStamp=false;
+  if(won){
+    const key=missionCheckpointKey(r.plan,r.difficulty,r.day);
+    if(missionRead(key,null)?.runId===r.runId)missionWrite(key,null);
+    if(r.day){
+      const stamps=missionStamps();newStamp=!stamps.includes(r.day);
+      if(newStamp)missionWrite('signal_dispatch_stamps',[...stamps,r.day].sort().slice(-31));
+    }else{
+      const old=missionRecord(r.plan.id,r.difficulty);
+      missionWrite('signal_record_'+r.plan.id+'_'+r.difficulty,{stars:Math.max(stars,old.stars),best:Math.min(time,old.best??Infinity)});
+    }
+  }
+  missionReport={r,won,stars,time,newStamp};clearDeathTimers();
+  $('rxStage').classList.remove('mission-playing');$('missionHud').classList.add('hide');
+  finish();missionShowReport();
+}
+
+const MISSION_CODES=[[2,0,1],[1,2,0],[0,2,1]];
+const missionDistance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+function missionCode(r){return MISSION_CODES[r.day?missionDayIndex(r.day)%3:r.plan.id==='box'?0:1];}
+function missionNotice(r,message){r.notice=message;r.noticeUntil=r.time+2;r.hudAt=0;}
+function missionGoal(r){
+  const s=r.sites;
+  switch(missionKind(r)){
+    case 'cell':return r.carry?s.socket:s.cell;
+    case 'escort':return r.drone;
+    case 'lock':return s.pads[1];
+    case 'route':return missionDistance(pl,s.safe)<missionDistance(pl,s.surge)?s.safe:s.surge;
+    default:return s[missionKind(r)];
+  }
+}
+function missionNearby(r){
+  const k=missionKind(r),s=r.sites,choices=[];
+  if(k==='cell')choices.push([r.carry?'socket':'grab',missionGoal(r)]);
+  if(k==='route')choices.push(['safe',s.safe],['surge',s.surge]);
+  if(k==='lock')s.pads.forEach((p,i)=>choices.push([MISSION_SYMBOLS[i],p,i]));
+  if(!r.intel)choices.push(['intel',s.cache]);
+  if(!r.used)choices.push(['supply',s.locker]);
+  let best=null,range=2.7;
+  for(const choice of choices){
+    const d=missionDistance(pl,choice[1]);
+    if(d<range){best=choice;range=d;}
+  }
+  return best;
+}
+function missionUse(){
+  const r=missionRun;
+  if(!r||paused||phase!=='playing'||!pl.alive)return false;
+  const choice=missionNearby(r);if(!choice)return false;
+  const [action,,pad]=choice;
+  if(Number.isInteger(pad)){
+    if(pad!==missionCode(r)[r.sequence]){
+      r.sequence=0;missionNotice(r,missionText('wrong'));
+    }else if(++r.sequence===3)missionNext(r);
+    else{playSound('hit');r.hudAt=0;}
+  }else if(action==='grab'){r.carry=true;playSound('hit');missionNotice(r,missionText('socket'));}
+  else if(action==='socket')missionNext(r);
+  else if(action==='safe'||action==='surge'){r.route=action;missionNext(r);}
+  else if(action==='intel'){
+    r.intel=true;missionSaveCheckpoint(r);missionNotice(r,missionText('found'));playSound('hit');
+  }else if(action==='supply'){
+    r.used=true;
+    const amount=r.kit==='medic'?65:35;
+    pl.hp=Math.min(100,pl.hp+amount);pl.shield=Math.min(100,pl.shield+amount);
+    pl.stocks=pl.stocks.map((n,i)=>Math.max(n,weapons[i].reserve));updateHUD();
+    missionSaveCheckpoint(r);missionNotice(r,missionText('supplied'));playSound('reload');
+  }
+  if(missionRun===r)missionHud(r);
+  return true;
+}
+function missionRadar(){
+  const r=missionRun;if(!r||phase!=='playing'||paused||!pl.alive||r.time<r.radarReady)return;
+  r.radarUntil=r.time+3.5;r.radarReady=r.time+(r.kit==='scout'?6:12)*(r.day ? .5 : 1);
+  r.hudAt=0;playSound('reload');missionHud(r);
+}
+function missionHazard(r){
+  if(r.plan.id==='air'||(r.plan.id==='light'&&r.route!=='surge'))return null;
+  return r.plan.id==='light'?r.sites.surgeHazard:r.sites.hazard;
+}
+function missionTick(dt){
+  const r=missionRun;if(!r||!pl.alive||paused||phase!=='playing')return;
+  r.time+=dt;
+  const hazard=missionHazard(r),cycle=Math.floor(r.time/7),beat=r.time%7;
+  if(hazard&&beat>=6.25&&r.hazardCycle!==cycle){
+    r.hazardCycle=cycle;
+    if(missionDistance(pl,hazard)<3.5)hurt(MISSION_DIFFICULTY[r.difficulty].damage);
+    if(missionRun!==r)return;
+  }
+  const kind=missionKind(r),goal=missionGoal(r),distance=missionDistance(pl,goal);
+  if(kind==='escort'){
+    if(distance<=5.75){
+      const target=r.sites.dock,remaining=missionDistance(r.drone,target);
+      const step=Math.min(remaining,dt*3.4);
+      if(remaining>.01){r.drone.x+=(target.x-r.drone.x)/remaining*step;r.drone.z+=(target.z-r.drone.z)/remaining*step;}
+      r.charge=1-missionDistance(r.drone,target)/missionDistance(r.sites.drone,target);
+    }
+  }else if(kind==='scan'&&distance<3.5){
+    r.charge+=dt*(r.kit==='tech'?1.35:1)/(r.route==='safe'?10:4);
+  }else if(kind==='defend'){
+    r.contested=bots.some(b=>b.alive&&missionDistance(b,goal)<5);
+    if(!r.contested&&distance<4.5)r.charge+=dt*(r.kit==='tech'?1.35:1)/7;
+  }else if(kind==='extract'){
+    r.charge=distance<3? r.charge+dt/3 : 0;
+  }
+  if(r.charge>=.9999)missionNext(r);
+  if(missionRun===r&&r.time>=r.hudAt)missionHud(r);
+}
+function missionBearing(p){
+  const angle=Math.atan2(p.x-pl.x,pl.z-p.z)-pl.yaw;
+  const direction=['ahead','aheadRight','right','backRight','behind','backLeft','left','aheadLeft'][(Math.round(angle/(Math.PI/4))%8+8)%8];
+  return missionText(direction)+' '+Math.round(missionDistance(pl,p))+' m';
+}
+const missionTime=n=>Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0');
+function missionHud(r){
+  r.hudAt=r.time+.13;
+  const kind=missionKind(r),action=missionNearby(r),hazard=missionHazard(r),radar=r.time<r.radarUntil;
+  const code=missionCode(r),goal=missionGoal(r);
+  let hint=kind==='lock'?code.map((n,i)=>(i<r.sequence?'✓':'')+MISSION_SYMBOLS[n]).join('  '):
+    kind==='cell'?missionText(r.carry?'socket':'grab'):kind==='route'?missionText('safe')+' / '+missionText('surge'):
+    kind==='escort'?missionText('follow'):missionText(r.contested?'contested':'stay');
+  if(r.time<r.noticeUntil)hint=r.notice;
+  if(hazard&&r.time%7>=4.6&&r.time%7<6.25&&missionDistance(pl,hazard)<7)hint=missionText('warning');
+  $('missionObjective').textContent=(r.stage+1)+'/'+r.plan.stages.length+' · '+missionText(kind);
+  $('missionHint').textContent=hint;
+  $('missionClock').textContent=missionTime(Math.max(0,Math.ceil(gameSeconds)));
+  const side=!r.intel?r.sites.cache:!r.used?r.sites.locker:null;
+  $('missionBearing').textContent=missionBearing(goal)+(radar&&side?'   ·   '+missionText(!r.intel?'intel':'supply')+' '+missionBearing(side):'');
+  const fraction=kind==='lock'?r.sequence/3:r.charge;
+  $('missionFill').style.width=clamp(fraction*100,0,100)+'%';
+  const useLabel=action?missionText(action[0]):missionText('use');
+  const radarLabel=missionText('pulse')+(r.radarReady>r.time?' '+Math.ceil(r.radarReady-r.time)+'s':'');
+  $('missionUse').textContent=useLabel;$('missionUse').disabled=!action;
+  $('missionRadar').textContent=radarLabel;$('missionRadar').disabled=r.radarReady>r.time;
+  $('missionKeys').textContent=mobile?'':(action?'E · '+useLabel+'   /   ':'')+'Y · '+radarLabel;
+}
+const MISSION_GOLD=[1,.68,.25],MISSION_GREEN=[.40,.90,.55],MISSION_RED=[1,.32,.17];
+function missionPlate(out,p,r,tint,fill){
+  crownOutline(out,{x:p.x,z:p.z,w:2*r,d:2*r},tint,fill?tint.map(c=>c*.23):null);
+}
+function missionSymbol(out,p,index,tint){
+  const shape=index===0?[[-.6,0],[0,1],[.6,0]]:index===1?[[-.48,0],[-.48,.95],[.48,.95],[.48,0]]:
+    [[-.55,.25],[-.28,0],[.28,0],[.55,.25],[.55,.74],[.28,1],[-.28,1],[-.55,.74]];
+  for(let i=0;i<shape.length;i++){
+    const a=shape[i],b=shape[(i+1)%shape.length];
+    putBeam(out,p.x+a[0],1.25+a[1],p.z,p.x+b[0],1.25+b[1],p.z,.08,tint);
+  }
+}
+function missionDraw(out,now){
+  const r=missionRun,s=r.sites,k=missionKind(r),tint=MISSION_PAINT[r.paint].rgb;
+  const goal=missionGoal(r),pulse=r.time<r.radarUntil;
+  if(k==='lock'){
+    s.pads.forEach((p,i)=>{missionPlate(out,p,1.3,tint);putBox(out,p.x,.02,p.z,.36,1.25,.36,tint);missionSymbol(out,p,i,tint);});
+  }else if(k==='route'){
+    for(const [p,c] of [[s.safe,MISSION_GREEN],[s.surge,MISSION_RED]]){
+      missionPlate(out,p,1.6,c,true);putBox(out,p.x,.05,p.z,.55,1.8,.55,c);
+    }
+  }else if(k==='escort'){
+    const d=r.drone,y=1.25+Math.sin(now*4)*.08;
+    putBox(out,d.x,y,d.z,1.1,.38,.8,tint);
+    for(const sign of [-1,1]){putBox(out,d.x+sign*.69,y+.12,d.z,.46,.14,.88,[.55,.65,.7]);}
+    missionPlate(out,s.dock,2.1,tint);
+  }else{
+    if(k==='cell')missionPlate(out,goal,1.4,tint,true);
+    else{
+      const radius=k==='defend'?4.5:k==='extract'?3:3.5;
+      crownOutline(out,{...goal,r:radius},tint,tint.map(c=>c*.23));
+    }
+    if(k==='cell'&&!r.carry){
+      putBox(out,goal.x,.18+Math.sin(now*3)*.06,goal.z,.75,.94,.65,MISSION_GOLD);
+    }else if(k==='extract'){
+      for(const sign of [-1,1])putBox(out,goal.x+sign*2.3,.02,goal.z,.23,2.65,.23,tint);
+    }else{
+      putBox(out,goal.x,.02,goal.z,1.25,.83,.83,[.25,.31,.40]);
+      putBox(out,goal.x,1,goal.z,.84,.38,.22,tint);
+    }
+  }
+  if(!r.intel){
+    putBox(out,s.cache.x,.05,s.cache.z,.75,.38,.52,MISSION_GOLD);
+    if(pulse){missionPlate(out,s.cache,2,MISSION_GOLD);putBox(out,s.cache.x,1.05,s.cache.z,.15,2.1,.15,MISSION_GOLD);}
+  }
+  if(!r.used){
+    putBox(out,s.locker.x,.02,s.locker.z,1.25,.9,.8,[.16,.39,.28]);
+    putBox(out,s.locker.x,.92,s.locker.z,.65,.08,.17,MISSION_GREEN);
+    putBox(out,s.locker.x,.92,s.locker.z,.17,.08,.60,MISSION_GREEN);
+    if(pulse)missionPlate(out,s.locker,1.6,MISSION_GREEN);
+  }
+  if(pulse)for(const b of bots)if(b.alive&&missionDistance(b,pl)<24)missionPlate(out,b,1,MISSION_RED);
+  const hazard=missionHazard(r),beat=r.time%7;
+  if(hazard&&beat>=4.6&&beat<6.6){
+    const hot=beat>=6.25;
+    crownOutline(out,{...hazard,r:3.5},hot?MISSION_RED:MISSION_GOLD,hot?[.7,.16,.07]:[.29,.18,.08]);
+  }
+}
+
+function missionOptions(select,values,selected,disabled=()=>false){
+  select.replaceChildren();
+  for(const value of values){
+    const option=document.createElement('option');option.value=value;
+    option.textContent=missionText(value)+(disabled(value)?' · '+MISSION_PAINT[value].stars+' ★':'');
+    option.disabled=disabled(value);select.append(option);
+  }
+  select.value=selected;
+}
+function missionPreview(m){
+  const ctx=$('missionMap').getContext('2d');if(!ctx)return;
+  const xy=p=>[100+p.x*3.45,100+p.z*3.45],s=missionSites(m);
+  ctx.fillStyle='#102029';ctx.fillRect(0,0,200,200);
+  ctx.strokeStyle='#263c45';ctx.lineWidth=1;
+  for(let v=10;v<200;v+=18){ctx.beginPath();ctx.moveTo(v,10);ctx.lineTo(v,190);ctx.moveTo(10,v);ctx.lineTo(190,v);ctx.stroke();}
+  ctx.strokeStyle='#718690';ctx.strokeRect(10,10,180,180);
+  ctx.fillStyle='#58616a';
+  for(const x of [-9,9,-19,19])for(const z of Math.abs(x)===9?[-8,8]:[-11,11]){
+    const [a,b]=xy({x,z});ctx.fillRect(a-4,b-3,8,6);
+  }
+  const points=m.stages.map(k=>k==='lock'?s.pads[1]:k==='route'?s.safe:k==='branch'?s.socket:k==='escort'?s.dock:s[k]);
+  ctx.strokeStyle='#5bc2cf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...xy(s.spawn));
+  for(const p of points)ctx.lineTo(...xy(p));ctx.stroke();
+  ctx.fillStyle='#ffcd78';const [sx,sz]=xy(s.spawn);ctx.fillRect(sx-3,sz-3,6,6);
+  points.forEach((p,i)=>{
+    const [x,y]=xy(p);ctx.fillStyle='#7bdeeb';ctx.beginPath();ctx.arc(x,y,7,0,2*Math.PI);ctx.fill();
+    ctx.fillStyle='#12212a';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(String(i+1),x,y+3.5);
+  });
+}
+function missionOpen(){
+  if(phase==='playing')return;
+  showScreen('missionBoard');missionRenderBoard();
+}
+function missionRenderBoard(){
+  const prefs=missionPrefs(),day=missionDaily?zToday().dayKey:'';
+  const i=day?missionDayIndex(day):missionSelection,m=MISSIONS[i],total=missionTotal();
+  const cp=missionCheckpoint(m,prefs.difficulty,day),unlocked=!!day||missionUnlocked(i);
+  $('missionBoard').querySelector('h2').textContent=missionText('mode');
+  $('missionBoard').querySelector('.z1-back').textContent=missionText('back');
+  for(const el of $('missionBoard').querySelectorAll('[data-mission-word]'))el.textContent=missionText(el.dataset.missionWord);
+  const buttons=$('missionList').querySelectorAll('button');
+  for(let j=0;j<buttons.length;j++){
+    const daily=j===MISSIONS.length,operation=MISSIONS[j],button=buttons[j];
+    const status=daily?'':!missionUnlocked(j)?missionText('locked'):('★'.repeat(missionStars(operation.id))||'');
+    button.querySelector('span').textContent=missionText(daily?'daily':operation.title);
+    button.querySelector('small').textContent=status;
+    button.setAttribute('aria-pressed',String(daily?missionDaily:!missionDaily&&i===j));
+  }
+  $('missionName').textContent=missionText(m.title);$('missionStory').textContent=missionText(m.brief);
+  const dailyInfo=$('missionDailyInfo');dailyInfo.classList.toggle('hide',!day);
+  if(day)dailyInfo.textContent=missionText('dailyRule')+' · '+day+' · '+missionText('stamps')+' '+missionStamps().length;
+  const list=$('missionSequence');list.replaceChildren();
+  for(const k of m.stages)z2Text('li',missionText(k),list);
+  missionPreview(m);
+  missionOptions($('missionLevel'),Object.keys(MISSION_DIFFICULTY),prefs.difficulty);
+  missionOptions($('missionKit'),['tech','medic','scout'],prefs.kit);
+  missionOptions($('missionPaint'),Object.keys(MISSION_PAINT),MISSION_PAINT[prefs.paint].stars<=total?prefs.paint:'ion',v=>MISSION_PAINT[v].stars>total);
+  const record=missionRecord(m.id,prefs.difficulty);
+  $('missionStats').textContent=missionText('par')+' '+missionTime(m.par+MISSION_DIFFICULTY[prefs.difficulty].par)+
+    (!day?' · '+missionText('record')+' '+(record.best?missionTime(record.best):'—')+' · '+record.stars+'/3 ★':'');
+  $('missionHelp').textContent=unlocked?missionText('rating')+' '+missionText(mobile?'touch':'controls'):
+    missionText('previous')+' '+missionText(MISSIONS[i-1].title);
+  if(cp)$('missionHelp').textContent+=' · '+missionText('checkpoint')+' '+(cp.stage+1)+' · '+missionText(cp.kit)+' · '+missionText(cp.paint);
+  $('missionLaunch').textContent=missionText(cp?'resume':unlocked?'launch':'locked');$('missionLaunch').disabled=!unlocked;
+  $('missionRestart').classList.toggle('hide',!cp||!unlocked);
+}
+function missionShowReport(){
+  const {r,won,stars,time,newStamp}=missionReport;
+  const area=$('missionDebrief');area.classList.remove('hide');
+  $('endTitle').textContent=missionText(won?'complete':'failed');setMusic(won?'victory':'results');
+  $('missionReportName').textContent=missionText(r.plan.title)+' · '+missionText(r.difficulty);
+  const grade=won?'★'.repeat(stars)+'☆'.repeat(3-stars):missionText('checkpoint')+' '+(r.stage+1);
+  $('missionGrade').textContent=grade+' · '+missionTime(time)+(won&&r.day?' · '+missionText(newStamp?'stamp':'stored'):'');
+  $('missionSplitTitle').textContent=missionText('splits');const list=$('missionSplits');list.replaceChildren();
+  r.splits.forEach((end,i)=>{
+    const k=r.plan.stages[i],name=k==='branch'?(r.route==='safe'?'scan':'cell'):k;
+    z2Text('li',missionText(name)+' · '+(end-(r.splits[i-1]||0)).toFixed(1)+' s',list);
+  });
+  $('missionSplitTitle').classList.toggle('hide',!r.splits.length);
+  $('againBtn').textContent=missionText('board');
+  $('missionNext').classList.toggle('hide',!won||!!r.day||MISSIONS.indexOf(r.plan)===MISSIONS.length-1);
+  $('missionNext').textContent=missionText('next');
+}
+function missionMount(){
+  const panel=z1MakeScreen('missionBoard',missionText('mode'),`
+    <div class="mission-layout"><nav id="missionList"></nav><section id="missionBrief">
+    <h3 id="missionName"></h3><p id="missionStory"></p><p id="missionDailyInfo" class="hide"></p>
+    <div class="mission-route"><canvas id="missionMap" width="200" height="200" aria-hidden="true"></canvas>
+    <div><b data-mission-word="stages"></b><ol id="missionSequence"></ol></div></div></section></div>
+    <div class="mission-options"><label><span data-mission-word="difficulty"></span><select id="missionLevel"></select></label>
+    <label><span data-mission-word="kit"></span><select id="missionKit"></select></label>
+    <label><span data-mission-word="paint"></span><select id="missionPaint"></select></label></div>
+    <p id="missionStats"></p><p id="missionHelp"></p><div class="mission-act"><button type="button" class="primary" id="missionLaunch"></button>
+    <button type="button" class="secondary hide" id="missionRestart" data-mission-word="restart"></button></div>`,'z1PlayMenu');
+  for(let i=0;i<=MISSIONS.length;i++){
+    const b=crownButton('',()=>{missionDaily=i===MISSIONS.length;if(!missionDaily)missionSelection=i;missionRenderBoard();},'secondary','missionOp'+i);
+    b.append(document.createElement('span'),document.createElement('small'));$('missionList').append(b);
+  }
+  for(const [id,key] of [['missionLevel','difficulty'],['missionKit','kit'],['missionPaint','paint']]){
+    $(id).onchange=()=>{const prefs=missionPrefs();prefs[key]=$(id).value;missionWrite(missionPrefKey,prefs);missionRenderBoard();};
+  }
+  $('missionLaunch').onclick=()=>{
+    const day=missionDaily?zToday().dayKey:'',m=MISSIONS[day?missionDayIndex(day):missionSelection];
+    missionStart(!!missionCheckpoint(m,missionPrefs().difficulty,day));
+  };
+  $('missionRestart').onclick=()=>{if(window.confirm(missionText('replace')))missionStart();};
+  const hud=document.createElement('div');hud.id='missionHud';hud.className='hide';
+  hud.innerHTML='<div class="mission-heading"><strong id="missionObjective"></strong><time id="missionClock"></time></div><small id="missionHint"></small><div class="mission-meter"><i id="missionFill"></i></div><span id="missionBearing"></span> <small id="missionKeys"></small>';
+  $('hud').append(hud);
+  const actions=document.createElement('div');actions.id='missionButtons';
+  actions.append(crownButton(missionText('use'),missionUse,'secondary','missionUse'),crownButton(missionText('pulse'),missionRadar,'secondary','missionRadar'));
+  $('mobileControls').append(actions);
+  const summary=document.createElement('section');summary.id='missionDebrief';summary.className='hide';
+  summary.innerHTML='<h3 id="missionReportName"></h3><p id="missionGrade"></p><b id="missionSplitTitle"></b><ol id="missionSplits"></ol><button type="button" id="missionNext" class="secondary hide"></button>';
+  $('endTitle').after(summary);
+  const again=$('againBtn').onclick;
+  $('againBtn').onclick=()=>{if(!missionReport)return again?.();quit();missionOpen();};
+  $('missionNext').onclick=()=>{
+    if(!missionReport?.won||missionReport.r.day)return;
+    const next=MISSIONS.indexOf(missionReport.r.plan)+1;
+    if(next>=MISSIONS.length)return;
+    missionSelection=next;missionDaily=false;quit();missionOpen();
+  };
+  window.addEventListener('keydown',e=>{
+    if(!missionRun||paused||phase!=='playing'||!['KeyE','KeyY'].includes(e.code))return;
+    e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
+    if(e.code==='KeyY')missionRadar();else missionUse();
+  },true);
+  const localize=()=>{
+    $('missionAccess').querySelector('strong').textContent=missionText('mode');
+    $('missionAccess').querySelector('small').textContent=missionText('tagline');
+    if(!panel.parentElement.classList.contains('hide'))missionRenderBoard();
+  };
+  const previousLang=syncLang;
+  syncLang=function(){const result=previousLang();localize();return result;};
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&missionDaily&&!panel.parentElement.classList.contains('hide'))missionRenderBoard();});
+  localize();
+}
+
 crownMountUltra();
 crownMountUI();
 z1MountUI();
@@ -9897,6 +10470,7 @@ z1MountProgress();
 z1MountFriends();
 z1MountJeepUI();
 z2MountUI();
+missionMount();
 runCrownGame();
 
 })();
