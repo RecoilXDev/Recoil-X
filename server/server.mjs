@@ -8,6 +8,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
+import {verifiedBackup,backupSchedule} from './ascension-backup.mjs';
+import {migrateAscension,ascensionStore} from './ascension-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
@@ -94,11 +96,20 @@ async function passwordHash(password, salt) {
 export function createRecoilServer(options = {}) {
   const filename = options.database ?? 'recoil-x.sqlite';
   const existing = filename !== ':memory:' && existsSync(filename);
+  const backupOpts=options.backups??{};
+  if(existing){
+    const prior=new DatabaseSync(filename,{readOnly:true});
+    let due;
+    try{due=!!prior.prepare("SELECT 1 FROM sqlite_master WHERE name='users'").get()&&
+      !prior.prepare("SELECT 1 FROM sqlite_master WHERE name='asc_version'").get();}finally{prior.close();}
+    if(due)verifiedBackup(filename,{...backupOpts,reason:'migration'});
+  }
   const db = openDb(filename);
   try {
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
     migrateMissions(db,filename,existing&&!upgraded);
+    migrateAscension(db);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -107,10 +118,13 @@ export function createRecoilServer(options = {}) {
   const clients = new Map(), rooms = new Map();
   let passwordJobs = 0;
   let lastExpiry = 0;
-  const overdriveData = overdriveStore(db,fail);
+  const ascData=ascensionStore(db,fail);
+  const backup=backupSchedule(filename,backupOpts);
+  const health={since:sqlTime(),disconnects:0,errors:0,rtt:[],pings:new Map()};
+  const overdriveData = overdriveStore(db,fail,ascData);
   const missions = missionStore(db,fail);
   const overdrive = createOverdrive({
-    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
+    client:id=>clients.get(id),send,store:overdriveData,ascStore:ascData,fail,allowed,leaveLegacy:leave,cleanChat,onError:()=>{health.errors++;console.error('RECOIL X match simulation failed.');}
   });
 
   const st = sql => db.prepare(sql);
@@ -162,13 +176,13 @@ export function createRecoilServer(options = {}) {
   }
 
   function send(client, event) {
-    if (client?.socket.readyState !== 1) return;
+    if (client?.socket.readyState !== 1) return false;
     const transport=client.transport;
     const replaceable=event.type==='z2:state'||(event.type==='relay'&&
       (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
-    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
-    if(transport.writableLength>=400000){transport.destroy();return;}
-    client.socket.send(JSON.stringify(event));
+    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return false;
+    if(transport.writableLength>=400000){transport.destroy();return false;}
+    client.socket.send(JSON.stringify(event));return true;
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
 
@@ -296,9 +310,40 @@ export function createRecoilServer(options = {}) {
   async function endpoint(req, path) {
     if ((path === '/register' || path === '/login') && req.method === 'POST')
       return credentials(req,await readJson(req),path === '/register');
+    if(path==='/asc/recover'&&req.method==='POST'){
+      const b=await readJson(req),name=typeof b.name==='string'?canonical(b.name):'',password=b.password;
+      if(!allowed('asc-reset-ip:'+req.socket.remoteAddress,8,60000)||!allowed('asc-reset-name:'+name,5,60000)||passwordJobs>=3)throw fail(429,'Wait before trying again.');
+      if(typeof password!=='string'||password.length<10||password.length>128||typeof b.code!=='string'||b.code.length!==32||name.length>60)throw fail(400,'Recovery details are invalid.');
+      const user=byName.get(name),salt=randomBytes(16).toString('hex');let secret;
+      passwordJobs++;try{secret=await passwordHash(password,salt);}finally{passwordJobs--;}
+      if(!user)throw fail(400,'Recovery details are invalid.');
+      const out=ascData.recover(user.id,b.code,salt,secret);cutConnection(clients.get(user.id),'Sign in with your new password.');return out;
+    }
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
+    if(path.startsWith('/asc/')){
+      if(req.method==='GET'&&path==='/asc/profile')return ascData.profile(user.id,sqlTime());
+      if(req.method==='GET'&&path==='/asc/health'){
+        if(!user.admin)throw fail(403,'Administrator access is required.');
+        const readings=health.rtt.slice().sort((a,b)=>a-b);
+        return {players:clients.size,legacyRooms:rooms.size,...overdrive.stats(),uptimeSeconds:Math.floor((sqlTime()-health.since)/1000),
+          memoryMiB:Math.round(process.memoryUsage().rss/1048576),rttMs:readings.length?readings[Math.floor(readings.length/2)]:null,
+          disconnects:health.disconnects,errors:health.errors,backups:backup.status,movementReviews:ascData.alerts()};
+      }
+      if(req.method==='POST'&&path==='/asc/community'){
+        if(!allowed('asc-social:'+user.id,25,60000))throw fail(429,'Wait before another community action.');
+        return ascData.social(user,body,sqlTime());
+      }
+      if(req.method==='POST'&&path==='/asc/recovery-code'){
+        if(!allowed('asc-issue:'+user.id,4,60000)||passwordJobs>=3)throw fail(429,'Wait before trying again.');
+        if(typeof body.password!=='string'||body.password.length>128)throw fail(400,'Enter the current password.');
+        let digest;passwordJobs++;try{digest=await passwordHash(body.password,user.salt);}finally{passwordJobs--;}
+        if(!timingSafeEqual(Buffer.from(digest,'hex'),Buffer.from(user.secret,'hex'))||byId.get(user.id).secret!==user.secret)throw fail(403,'Current password is incorrect.');
+        return {code:ascData.codes(user.id)};
+      }
+      throw fail(404,'Unknown Ascension service.');
+    }
     if (req.method === 'GET') {
       if (path === '/missions') return missions.read(user.id);
       if (path === '/me') return {user:profile(user)};
@@ -409,6 +454,12 @@ export function createRecoilServer(options = {}) {
       cutConnection(c,'Sign in again.');return;
     }
     if (typeof data.type==='string'&&data.type.startsWith('z2:')) {
+      if(data.type==='z2:clock'){
+        const pending=health.pings.get(c.id);
+        if(pending&&data.n===pending.n){health.pings.delete(c.id);const rtt=sqlTime()-pending.at;if(rtt>=0&&rtt<=10000){health.rtt.push(rtt);if(health.rtt.length>96)health.rtt.shift();}}
+        return;
+      }
+      if(data.type==='z2:echo'&&c.deltaState){const n=randomBytes(8).toString('hex');health.pings.set(c.id,{n,at:sqlTime()});send(c,{type:'z2:clock',n});}
       overdrive.packet(c,current,data);return;
     }
     if (data.type === 'leave') {leave(c);return;}
@@ -480,7 +531,7 @@ export function createRecoilServer(options = {}) {
           const user=authenticate(data.token);
           cutConnection(clients.get(user.id),'Signed in on another device.');
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
-            compactState:data.compactState===1};
+            compactState:data.compactState===1,deltaState:data.deltaState===1&&data.compactState===1};
           clients.set(user.id,connected);clearTimeout(timeout);
           send(connected,{type:'ready',user:profile(user)});
           overdrive.attach(connected,true);
@@ -497,6 +548,7 @@ export function createRecoilServer(options = {}) {
     ws.on('close',()=>{
       clearTimeout(timeout);
       if (connected&&clients.get(connected.id)===connected) {
+        health.disconnects++;health.pings.delete(connected.id);
         leave(connected,'Your friend disconnected.');clients.delete(connected.id);
         overdrive.disconnect(connected);
       }
@@ -510,7 +562,7 @@ export function createRecoilServer(options = {}) {
   },60000);
   cleanup.unref();
   server.on('close',()=>{
-    clearInterval(cleanup);overdrive.close();
+    clearInterval(cleanup);backup.close();overdrive.close();
     for (const c of clients.values()) cutConnection(c,'Game server stopped.');
     db.close();
   });
@@ -528,7 +580,8 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
   } else {
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
-    const server=createRecoilServer({database,origins});
+    const server=createRecoilServer({database,origins,backups:{directory:process.env.RX_PRIVATE_BACKUPS||undefined,
+      keep:Number(process.env.RX_BACKUP_KEEP||7),hours:Number(process.env.RX_BACKUP_HOURS||24)}});
     server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
   }
 }

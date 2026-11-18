@@ -90,7 +90,7 @@ function previousSeason(season) {
   return quarter === 1 ? `${year-1}-Q4` : `${year}-Q${quarter-1}`;
 }
 
-export function overdriveStore(db, fail) {
+export function overdriveStore(db, fail, ascension) {
   const prepare = sql => db.prepare(sql);
   const restriction = prepare('SELECT reason,until FROM rx2_restrictions WHERE account=? AND kind=? AND (until IS NULL OR until>?)');
   const rank = prepare('SELECT points,wins,losses FROM rx2_rank WHERE season=? AND account=?');
@@ -139,7 +139,9 @@ export function overdriveStore(db, fail) {
     const {id,mode,season,winner,reason,players}=persisted;
     return transaction(()=>{
       const insert=resultInsert.run(id,season,mode,JSON.stringify(persisted),now);
-      if (!insert.changes||winner==null) return {};
+      if(!insert.changes)return {};
+      ascension?.settle(result,now);
+      if(winner==null)return {};
       const deltas={};
       const real=players.filter(p=>p.id>0);
       const before=new Map(real.map(p=>[p.id,rating(p.id,season)]));
