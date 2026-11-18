@@ -7,6 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { setTimeout as wait } from 'node:timers/promises';
 import { test } from 'node:test';
 import { createRecoilServer } from '../server/server.mjs';
+import harness from './helpers/dom-harness.cjs';
 
 const password='test-browser-password';
 function last(wire,type){return wire.events.findLast(e=>e.type===type);}
@@ -24,6 +25,7 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
   const directory=mkdtempSync(join(tmpdir(),'recoil-z2-network-')),database=join(directory,'local.sqlite');
   const server=createRecoilServer({database,origins:['https://recoilxdev.github.io']});
   const sockets=[];
+  const {api:game}=harness.makeHarness({},undefined,null,'globalThis.crownTest={decode:z2UnpackState};');
   server.listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   const api=async (path,body,token,headers={})=>{
@@ -38,11 +40,11 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
     const socket=new WebSocket(origin.replace('http:','ws:')+'/rx-live');
     const wire={socket,events:[],stateBytes:0,account,send(data){socket.send(JSON.stringify(data));}};
     socket.addEventListener('message',event=>{
-      const data=JSON.parse(event.data);wire.events.push(data);
+      const data=JSON.parse(event.data);wire.events.push(data.type==='z2:state'?game.decode(data):data);
       if(data.type==='z2:state')wire.stateBytes+=Buffer.byteLength(event.data);
     });
     sockets.push(wire);
-    await once(socket,'open');wire.send({type:'auth',token:account.token});
+    await once(socket,'open');wire.send({type:'auth',token:account.token,compactState:account.user.id%2?1:undefined});
     await until(()=>last(wire,'ready'),'Account socket ready');
     return wire;
   }

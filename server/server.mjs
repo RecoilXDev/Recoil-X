@@ -151,8 +151,13 @@ export function createRecoilServer(options = {}) {
   }
 
   function send(client, event) {
-    if (client?.socket.readyState === 1 && client.socket.bufferedAmount < (event.type==='z2:state'?96000:400000))
-      client.socket.send(JSON.stringify(event));
+    if (client?.socket.readyState !== 1) return;
+    const transport=client.transport;
+    const replaceable=event.type==='z2:state'||(event.type==='relay'&&
+      (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
+    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
+    if(transport.writableLength>=400000){transport.destroy();return;}
+    client.socket.send(JSON.stringify(event));
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
 
@@ -441,7 +446,8 @@ export function createRecoilServer(options = {}) {
           if (data.type!=='auth') throw fail(401,'Sign in first.');
           const user=authenticate(data.token);
           cutConnection(clients.get(user.id),'Signed in on another device.');
-          connected={id:user.id,tokenHash:user.token_hash,socket:ws,room:null};
+          connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
+            compactState:data.compactState===1};
           clients.set(user.id,connected);clearTimeout(timeout);
           send(connected,{type:'ready',user:profile(user)});
           overdrive.attach(connected,true);
