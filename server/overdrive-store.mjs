@@ -1,19 +1,19 @@
 import { chmodSync, mkdirSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 
+export function backupBeforeMigration(db, filename, label) {
+  const absolute = resolve(filename);
+  const directory = resolve(dirname(absolute), '.recoil-backups');
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  chmodSync(directory, 0o700);
+  const snapshot = resolve(directory, `${basename(absolute)}-before-${label}-${Date.now()}-${process.pid}.sqlite`);
+  db.prepare('VACUUM main INTO ?').run(snapshot);
+  chmodSync(snapshot, 0o600);
+}
+
 export function migrateOverdrive(db, filename, existing) {
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx2_schema'").get()) return;
-
-  // SQLite makes a consistent snapshot even when the previous release used WAL.
-  if (existing && filename !== ':memory:') {
-    const absolute = resolve(filename);
-    const directory = resolve(dirname(absolute), '.recoil-backups');
-    mkdirSync(directory, { recursive: true, mode: 0o700 });
-    chmodSync(directory, 0o700);
-    const snapshot = resolve(directory, `${basename(absolute)}-before-z2-${Date.now()}-${process.pid}.sqlite`);
-    db.prepare('VACUUM main INTO ?').run(snapshot);
-    chmodSync(snapshot, 0o600);
-  }
+  if (existing && filename !== ':memory:') backupBeforeMigration(db, filename, 'z2');
   db.exec('BEGIN IMMEDIATE');
   try {
     db.exec(`

@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
+import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
@@ -90,7 +91,12 @@ export function createRecoilServer(options = {}) {
   const filename = options.database ?? 'recoil-x.sqlite';
   const existing = filename !== ':memory:' && existsSync(filename);
   const db = openDb(filename);
-  try {migrateOverdrive(db,filename,existing);}
+  try {
+    const wasOverdrive=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx2_schema'").get();
+    migrateOverdrive(db,filename,existing);
+    // A direct upgrade from Z.1 already took its pre-migration snapshot above.
+    migrateMissions(db,filename,existing&&wasOverdrive);
+  }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
@@ -98,6 +104,7 @@ export function createRecoilServer(options = {}) {
   let passwordJobs = 0;
   let lastExpiry = 0;
   const overdriveData = overdriveStore(db,fail);
+  const missions = missionStore(db,fail);
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
   });
@@ -289,6 +296,7 @@ export function createRecoilServer(options = {}) {
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (path === '/missions') return missions.read(user.id);
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
@@ -311,6 +319,10 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if (path === '/missions') {
+        if(!allowed('mission-save:'+user.id,160,60000))throw fail(429,'Mission saves are busy. Retry shortly.');
+        return missions.write(user.id,body);
+      }
       if (path === '/friends') return doFriend(user,body);
       if (path === '/messages') return directMessage(user,contact(user,body.name),body.body);
       if (path === '/ban') {
@@ -359,7 +371,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.2',protocol:1,overdrive:1} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.2',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
