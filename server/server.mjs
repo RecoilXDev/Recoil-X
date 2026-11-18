@@ -104,8 +104,13 @@ export function createRecoilServer(options = {}) {
   if(existing){
     const prior=new DatabaseSync(filename,{readOnly:true});
     let due;
-    try{due=!!prior.prepare("SELECT 1 FROM sqlite_master WHERE name='users'").get()&&
-      ['asc_version','rx3_maps','rx_mission_save'].some(table=>!prior.prepare('SELECT 1 FROM sqlite_master WHERE name=?').get(table));}finally{prior.close();}
+    try{
+      const table=prior.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+      const hasUsers=!!table.get('users');
+      if(!hasUsers&&prior.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").get())
+        throw Error('Existing database has no RECOIL X account table. Verify the private database path.');
+      due=hasUsers&&['asc_version','rx3_maps','rx_mission_save'].some(name=>!table.get(name));
+    }finally{prior.close();}
     if(due)verifiedBackup(filename,{...backupOpts,reason:'migration'});
   }
   const db = openDb(filename);

@@ -6,7 +6,9 @@ const bridge=`globalThis.crownTest={
   play:ascAcademy,pad:ascPadMenus,device:ascCurrentDevice,quit:()=>quit(),run:()=>z3Run,hit:bot=>killBot(bot,pl),
   step:(dt,now)=>simulate(dt,now),fire:()=>fire(),copy:ascCopy,diag:ascDiagnostics,decode:ascDecode,
   edit:ascEditMap,route:ascHasRoute,clean:ascCleanCells,pack:ascPackVerts,load:ascLoadChunk,trim:ascTrimChunks,
-  setGL:fake=>{gl=fake;},access:z3AccessApply,render:ascWorldDraw,weapon:ascDrawHeld,rooms:ascRooms,
+  editions:RXSE_EDITIONS,seasonOpen:rxseIsActive,clock:t=>{vxClockUnix=t;vxClockPerf=performance.now();vxClockStatus='verified';},
+  balance:()=>coins,buyPass:buyPassTier,tier:()=>passTier,price:()=>passCost(passTier+1),caseCost:V8_CASE_COST,finishes:()=>v8Owned,
+  gpuTargets:p=>{crownUltraPipeline=p;crownDropUltra();},setGL:fake=>{gl=fake;},access:z3AccessApply,render:ascWorldDraw,weapon:ascDrawHeld,rooms:ascRooms,
   controls:z2Simulate,bindSocket:socket=>{z1Socket=socket;z1SocketReady=true;},begin:z2Begin,packet:z2Packet,actor:(profile)=>{z1Account=profile;},shot:z2Shot,profile:ascProfile,
   setupDisplay:(map,rules,status)=>{z2Live.match={field:map,ascRules:rules,mode:'payload',names:new Map()};z2Live.snapshot={asc:status,t:100};},
 };`;
@@ -68,6 +70,9 @@ test('A49 packed geometry halves retained bytes, uploads on demand and deletes o
   const chunks=Array.from({length:15},()=>({packed,buffer:null,used:0}));assert.equal(count,0);
   chunks.forEach((c,i)=>a.load(c,100+i));assert(Math.abs(uploaded[1]-source[1])<.016);a.load(chunks.at(-1),200);assert.equal(count,15);
   a.trim(chunks,300);assert.equal(deleted,3);a.trim(chunks,2000);assert.equal(deleted,15);
+  const calls={};a.setGL({isContextLost:()=>false,...Object.fromEntries(['deleteTexture','deleteFramebuffer','deleteProgram','deleteRenderbuffer','deleteBuffer'].map(k=>[k,()=>{calls[k]=(calls[k]||0)+1;}]))});
+  a.gpuTargets({scene:1,light:2,sceneFbo:3,lightFbo:4,depth:5,quad:6,bright:{program:7},composite:{program:8}});
+  assert.deepEqual(calls,{deleteTexture:2,deleteFramebuffer:2,deleteRenderbuffer:1,deleteBuffer:1,deleteProgram:2});
   t.diagnostic('90 mesh scalars: '+source.byteLength+' bytes before packing, '+packed.byteLength+' retained; 12 resident GPU chunks after eviction.');
 });
 test('Home reaches ranked, armory and all ten new match types; a touch player sees the interaction control',()=>{
@@ -99,4 +104,30 @@ test('A47 controller axes, triggers, parry and jump reach the multiplayer input 
   g.perf(1050);a.pad(1050);a.controls(.05,1.05);
   assert.equal(a.device(),'controller');assert(captured.some(p=>p.type==='z2:tool'&&p.kind==='parry'));
   const input=captured.find(p=>p.type==='z2:input');assert(input);assert(input.f>.7);assert(input.s>.3);assert(input.fire&&input.use&&input.jump);
+});
+test('legacy seasonal editions open and close on their configured dates through 2031',()=>{
+  const g=make(),a=g.api;assert(a.editions.length>=20);assert.equal(Math.max(...a.editions.map(e=>e.year)),2031);
+  for(const e of a.editions){a.clock(e.startMs-1);assert.equal(a.seasonOpen(e),false);
+    a.clock(e.startMs);assert(a.seasonOpen(e));a.clock(e.endMs);assert.equal(a.seasonOpen(e),false);}
+});
+test('legacy earned coins, Battle Pass claim and weapon case survive a browser reload',()=>{
+  const g=makeHarness({zone90v2_coins:'10000',zone90v2_z1Progress:JSON.stringify({xp:1000})},undefined,null,bridge),a=g.api;a.choose(false);
+  a.buyPass();assert.equal(a.tier(),1);assert(a.balance()>10000);
+  const balance=a.balance();el(g,'v8GunBtn').click();el(g,'v8GunCases').querySelector('button').click();assert.equal(a.balance(),balance-a.caseCost);assert(a.finishes().length);
+  const snapshot={};for(let i=0;i<g.local.length;i++){const key=g.local.key(i);snapshot[key]=g.local.getItem(key);}
+  const again=makeHarness(snapshot,undefined,null,bridge).api;assert.equal(again.balance(),a.balance());assert.equal(again.tier(),1);assert.deepEqual(plain(again.finishes()),plain(a.finishes()));
+});
+test('rejoining the same match accepts frame one from a new socket after a higher old frame',async()=>{
+  const {makeMatch,snapshot}=await import('../server/overdrive-match.mjs');
+  const g=make(),a=g.api;a.choose(false);a.actor({id:1,name:'Pilot'});
+  const roster=[{id:1,name:'Pilot',team:0},{id:2,name:'Wing',team:1}],m=makeMatch({id:'resume',mode:'flags',rules:{},limit:3,players:roster,now:1000});
+  const info={id:m.id,team:0,mode:m.mode,field:m.field,roster,ascRules:m.asc.rules};
+  a.begin(info);a.packet({...snapshot(m,1,1000),frame:84});assert.equal(a.client.frame,84);
+  a.begin(info);a.packet({...snapshot(m,1,1200),frame:1});assert.equal(a.live.snapshot.t,1200);assert.equal(a.client.frame,1);
+});
+test('A11 paired pistol view draws two finite models and changes pose with the firing hand',()=>{
+  const g=make(),a=g.api;a.choose(false);a.setupDisplay({id:'bastion'},{},{self:{dual:true,parry:0}});
+  const pose={x:0,y:1.6,z:0,yaw:0,pitch:0},finish={rarity:'common',base:'#887766'};
+  const out=[];assert.equal(a.weapon(out,pose,0,finish,true,2),true);assert(out.every(Number.isFinite));assert(out.length>2*36*9);
+  const xs=out.filter((_,i)=>i%9===0);assert(Math.min(...xs)<0&&Math.max(...xs)>0);
 });

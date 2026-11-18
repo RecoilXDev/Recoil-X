@@ -197,7 +197,7 @@ function finish(m,winner,reason,now) {
   recordLead(m,now);
   markEvent(m,now,'end',reason==='remake'?'Match voided after an early disconnect':'Match ended');
   const players=[...m.players.values()].map(({id,name,team,kills,deaths,damage,revives,inputs,forfeited,shots,hits,asc})=>
-    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited,shots,hits,...(asc?{earned:{weaponKills:asc.weaponKills,opponents:asc.opponents,
+    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited,shots,hits,...(asc?{earned:{weaponKills:asc.weaponKills,opponents:asc.opponents,opponentWeapons:asc.opponentWeapons,
       bounty:asc.reward,bank:asc.bank,vault:asc.found,race:asc.finish}}:{})}));
   const candidates=players.filter(p=>!p.forfeited).sort((a,b)=>
     (b.kills*120+b.damage+b.revives*80)-(a.kills*120+a.damage+a.revives*80)||a.deaths-b.deaths||a.id-b.id);
@@ -206,7 +206,7 @@ function finish(m,winner,reason,now) {
     field:m.field.name,timeline:m.timeline.slice(),...(m.asc?{war:m.asc.war,race:m.asc.scores,worldDamage:m.asc.worldDamage}:{})};
 }
 
-function eliminate(m,victim,killer,now) {
+function eliminate(m,victim,killer,now,method='weapon') {
   victim.hp=0;victim.down=null;victim.deaths++;victim.spawnAt=now+2700;
   dropRelic(m,victim,now);
   if(!killer||killer.team===victim.team||killer.forfeited){if(m.asc)modeKill(m,victim,null,now,{finish});return;}
@@ -219,7 +219,7 @@ function eliminate(m,victim,killer,now) {
   m.finalKill=highlight;
   m.events.push({type:'z2:kill',killer:killer.name,victim:victim.name},
     {type:'z2:killcam',only:victim.id,replay:highlight});
-  if(modeKill(m,victim,killer,now,{finish}))return;
+  if(modeKill(m,victim,killer,now,{finish},method))return;
   if(['elimination','budget','props'].includes(m.mode))victim.spawnAt=0;
   if(m.mode==='relic'||m.rule)return;
   m.score[killer.team]++;
@@ -227,7 +227,7 @@ function eliminate(m,victim,killer,now) {
   else if(m.mode==='chess')m.roundAt=now+2200;
 }
 
-function hit(m,shooter,victim,damage,now) {
+function hit(m,shooter,victim,damage,now,method='weapon') {
   if(victim.shieldUntil>now||victim.hp<=0)return;
   const amount=Math.min(victim.hp,damage);
   victim.hp-=amount;shooter.damage+=amount;
@@ -237,7 +237,7 @@ function hit(m,shooter,victim,damage,now) {
   if(m.mode==='rescue'){
     victim.down={by:shooter.id,until:now+8500,helper:null,healing:0};dropRelic(m,victim,now);
     m.events.push({type:'z2:notice',team:victim.team,message:`${victim.name} is down. Hold Use nearby to drag and revive.`});
-  }else eliminate(m,victim,shooter,now);
+  }else eliminate(m,victim,shooter,now,method);
 }
 
 function fire(m,p,now) {

@@ -119,7 +119,7 @@ export function ascensionStore(db,fail){
     for(const p of result.players){
       if(!p.earned||p.forfeited||p.inputs<5)continue;
       const e=p.earned;
-      let eligible=0,eligibleOpponents=0;
+      let eligible=0,eligibleOpponents=0;const weaponCredits=[0,0,0,0];
       const cooperative=['volcano','titan','worldboss','invasion'].includes(result.mode);
       for(const other of result.players.filter(q=>q.team!==p.team&&!q.forfeited&&q.inputs>=5)){
         const opp=other.id,n=Math.min(e.opponents[opp]||0,4);
@@ -127,19 +127,21 @@ export function ascensionStore(db,fail){
         if(last!=null&&now-last<600000)continue;
         q('INSERT INTO asc_pair VALUES(?,?,?,?,?) ON CONFLICT(account,opponent) DO UPDATE SET wins=wins+excluded.wins,kills=kills+excluded.kills,last=excluded.last')
           .run(p.id,opp,Number(p.team===result.winner),n,now);eligible+=n;eligibleOpponents++;
+        let remaining=n;for(let w=0;w<4;w++){const accepted=Math.min(remaining,e.opponentWeapons?.[opp]?.[w]||0);weaponCredits[w]+=accepted;remaining-=accepted;}
       }
       if(!cooperative&&!eligibleOpponents)continue;
       q('INSERT INTO asc_day VALUES(?,?,1,?) ON CONFLICT(account,day) DO UPDATE SET completed=completed+1,kills=kills+excluded.kills').run(p.id,day(now),eligible);
-      let credits=eligible;
-      for(let weapon=0;weapon<4;weapon++){const n=Math.min(credits,e.weaponKills[weapon]||0);if(n){
-        q('INSERT INTO asc_mastery VALUES(?,?,?) ON CONFLICT(account,weapon) DO UPDATE SET kills=kills+excluded.kills').run(p.id,weapon,n);credits-=n;}}
+      for(let weapon=0;weapon<4;weapon++){const n=weaponCredits[weapon];if(n){
+        q('INSERT INTO asc_mastery VALUES(?,?,?) ON CONFLICT(account,weapon) DO UPDATE SET kills=kills+excluded.kills').run(p.id,weapon,n);}}
       if(e.vault)award(p.id,'vault:'+result.field,6);
       const marks=Math.min(eligible*2,e.bounty)+Math.min(e.bank,5)+(p.team===result.winner?3:0);
       if(marks)award(p.id,'match:'+result.id,marks);
       if(e.race)q('INSERT INTO asc_race VALUES(?,?,?) ON CONFLICT(account,course) DO UPDATE SET time=MIN(time,excluded.time)').run(p.id,result.field,e.race);
-      if(result.mode==='worldboss'&&worldWeekend(now)){
-        q('INSERT INTO asc_world VALUES(?,?,?) ON CONFLICT(period,account) DO UPDATE SET damage=damage+excluded.damage').run(weekendDay(now),p.id,Math.min(3000,p.damage));
-        if(board(p.id,now).raid>=6000)for(const row of q('SELECT account FROM asc_world WHERE period=? AND damage>0').all(weekendDay(now)))award(row.account,'world:'+weekendDay(now),25);
+      const began=now-result.duration;
+      if(result.mode==='worldboss'&&worldWeekend(began)){
+        const weekend=weekendDay(began);
+        q('INSERT INTO asc_world VALUES(?,?,?) ON CONFLICT(period,account) DO UPDATE SET damage=damage+excluded.damage').run(weekend,p.id,Math.min(3000,p.damage));
+        if(q('SELECT SUM(damage) n FROM asc_world WHERE period=?').get(weekend).n>=6000)for(const row of q('SELECT account FROM asc_world WHERE period=? AND damage>0').all(weekend))award(row.account,'world:'+weekend,25);
       }
     }
   }

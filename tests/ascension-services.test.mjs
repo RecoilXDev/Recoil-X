@@ -26,7 +26,7 @@ function makeDb(t){
 function result(a=1,b=2,weapon=0,kills=3){
   function stats(id,team,n,opp){const weaponKills=[0,0,0,0];weaponKills[weapon]=n;
     return {id,team,name:'User'+id,damage:n*50,kills:n,deaths:0,hits:n,shots:n,inputs:14,forfeited:false,
-      earned:{opponents:n?{[opp]:n}:{},weaponKills,bank:0,bounty:n,vault:false,race:null}};}
+      earned:{opponents:n?{[opp]:n}:{},opponentWeapons:n?{[opp]:weaponKills}:{},weaponKills,bank:0,bounty:n,vault:false,race:null}};}
   return {id:randomUUID(),field:'Beacon Citadel',mode:'bounty',duration:50000,season:null,winner:0,reason:'score',
     score:[kills,0],mvp:'User'+a,players:[stats(a,0,kills,b),stats(b,1,0,a)],timeline:[]};
 }
@@ -163,4 +163,19 @@ test('A50 health endpoint requires a persisted admin role and returns only opera
   const {s,v}=await api('/asc/health',undefined,a.token);assert.equal(s,200);
   for(const k of ['players','rooms','uptimeSeconds','memoryMiB','disconnects','errors'])assert.equal(typeof v[k],'number',k);
   assert('rttMs' in v);assert('backups' in v);assert(!/password|secret|token|environment|sqlite/i.test(JSON.stringify(Object.keys(v))));
+});
+test('A16 mastery ignores an ineligible opponent while crediting a different weapon against a fresh opponent',t=>{
+  const {asc,matches}=makeDb(t);matches.settle(result(1,2,0),start);
+  const mixed=result(1,3,3,1),extra=result(1,2).players[1];mixed.players.push(extra);
+  mixed.players[0].earned.opponents[2]=3;mixed.players[0].earned.opponentWeapons[2]=[3,0,0,0];
+  matches.settle(mixed,start+3000);
+  const mastery=asc.profile(1,start).mastery;assert.equal(mastery.find(v=>v.weapon===0).kills,3);assert.equal(mastery.find(v=>v.weapon===3).kills,1);
+});
+test('an existing unrecognized database is preserved and startup stops before schema creation',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'asc-db-guard-')),file=join(dir,'foreign.sqlite');
+  try{const original=new DatabaseSync(file);original.exec('CREATE TABLE example(value TEXT); INSERT INTO example VALUES (\'preserved\')');original.close();
+    assert.throws(()=>createRecoilServer({database:file}),/account table/);
+    const check=new DatabaseSync(file,{readOnly:true});try{assert.equal(check.prepare('SELECT value FROM example').get().value,'preserved');
+      assert.equal(check.prepare("SELECT name FROM sqlite_master WHERE name='users'").get(),undefined);}finally{check.close();}
+  }finally{rmSync(dir,{force:true,recursive:true});}
 });

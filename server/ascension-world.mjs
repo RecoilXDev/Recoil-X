@@ -42,7 +42,7 @@ export function initWorld(m,rules,now){
   for(const c of m.field.cover)if(c.material==='breakable')s.coverHp[c.id]=70;
   for(const p of m.players.values()){
     p.asc={stage:0,lives:3,bag:0,bank:0,bounty:1,reward:0,vault:0,found:false,gate:0,lastGate:null,
-      finish:null,weaponKills:[0,0,0,0],opponents:{},dual:false,heat:0,locked:false,parry:0,parryReady:0,
+      finish:null,weaponKills:[0,0,0,0],opponents:{},opponentWeapons:{},dual:false,heat:0,locked:false,parry:0,parryReady:0,
       stunned:0,emp:0,empReady:0,shieldReady:0,meleeAt:0,actionSeq:-1,oxygen:12,vx:0,vz:0,hold:0,
       spawnMode:m.mode,baseHealth:m.mode==='hardcore'?35:rules.health,fieldHalf:m.field.half};
     p.asc.weapon=rules.order[0];ascSpawn(p);
@@ -66,7 +66,7 @@ export function heldWeapon(m,p,input){
   if(['gunrun','roulette','chamber'].includes(m.mode))return p.asc.weapon;
   return m.asc.rules.order.includes(input.weapon)?input.weapon:m.asc.rules.order[0];
 }
-export function modeKill(m,v,k,now,h){
+export function modeKill(m,v,k,now,h,method='weapon'){
   if(!m.asc)return false;
   const a=v.asc,s=m.asc;
   if(m.mode==='search'||m.mode==='roulette')v.spawnAt=0;
@@ -75,7 +75,8 @@ export function modeKill(m,v,k,now,h){
   for(const f of s.flags)if(f.holder===v.id){f.holder=null;f.x=v.x;f.z=v.z;f.returnAt=now+15000;}
   if(m.mode==='extraction'){if(a.bag&&s.loot.length<12)s.loot.push({x:v.x,z:v.z,id:++s.phaseIndex+10});a.bag=0;}
   if(!k||k.id===v.id||k.team===v.team)return true;
-  k.asc.weaponKills[k.weapon]++;k.asc.opponents[v.id]=(k.asc.opponents[v.id]||0)+1;
+  if(method==='weapon'){k.asc.weaponKills[k.weapon]++;(k.asc.opponentWeapons[v.id]??=[0,0,0,0])[k.weapon]++;}
+  k.asc.opponents[v.id]=(k.asc.opponents[v.id]||0)+1;
   if(m.mode==='gunrun'){k.asc.stage++;m.score[k.team]=Math.max(m.score[k.team],k.asc.stage);if(k.asc.stage>=s.rules.order.length)h.finish(m,k.team,'final weapon',now);else k.asc.weapon=s.rules.order[k.asc.stage];}
   if(m.mode==='chamber')k.ammo[k.asc.weapon]++;
   if(m.mode==='bounty'){

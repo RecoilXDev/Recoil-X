@@ -20,8 +20,8 @@ export function combatAction(m,p,body,now,{hit,canSee}){
       if(!target)return true;
       const forward=(target.x-p.x)*Math.sin(p.yaw)-(target.z-p.z)*Math.cos(p.yaw);
       if(forward<gap(p,target)*.28)return true;
-      if(target.asc.parry>=now){a.stunned=now+600;hit(m,target,p,30,now);}
-      else hit(m,p,target,38,now);
+      if(target.asc.parry>=now){a.stunned=now+600;hit(m,target,p,30,now,'melee');}
+      else hit(m,p,target,38,now,'melee');
       return true;
     }
     case 'emp':{

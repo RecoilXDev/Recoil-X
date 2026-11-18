@@ -8944,7 +8944,8 @@ function z2DrawRemoteMotion(dt,elapsed){
 }
 function z2Begin(event){
   const resumed=z2Live.match?.id===event.id;
-  if(!resumed){ascClient.geom=-1;ascClient.full=null;ascClient.frame=0;ascClient.id=event.id;ascClient.sequence=0;}
+  ascClient.geom=-1;ascClient.full=null;ascClient.frame=0;ascClient.id=event.id;
+  if(!resumed){ascClient.sequence=0;ascClient.gaps=0;ascClient.samples=0;}
   if(event.ascRules)event.field.ascOriginal=event.field.cover.map(c=>({...c}));
   const match={...event,names:new Map(event.roster.map(p=>[p.id,p]))};
   if(!resumed){
@@ -9027,6 +9028,10 @@ function z2Hud(){
   $('reserve').textContent='∞';
   if(!z2ScoreOpen)return;
   const root=$('z2MatchBoard');root.replaceChildren();
+  if(z2Live.match.mode==='gunrun'){
+    const standings=snap.roster.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]);
+    z2Table(root,['Place','Player','Weapon stage','K','D'],standings.map((row,index)=>[index+1,z2Live.match.names.get(row[0])?.name,Math.min(row[1]+1,z2Live.match.ascRules.order.length),row[1],row[2]]));return;
+  }
   z2Table(root,['Player','Team','K','D','Revives','Connection'],snap.roster.map(row=>{
     const name=z2Live.match.names.get(row[0]);
     return [name?.name,z2Name(name?.team),row[1],row[2],row[3],row[4]?'Reconnecting':'Online'];
@@ -11771,7 +11776,7 @@ function ascSendTool(kind){
   if(!z2Live.match?.ascRules||z2Live.match.team==null||!pl.alive||paused)return;
   z2Send('tool',{kind,seq:++ascClient.sequence},true);
 }
-function ascCurrentDevice(){return ascClient.padConnected||x4Input.active?'controller':mobile?'touch':'keyboard';}
+function ascCurrentDevice(){return ascClient.lastDevice||(mobile?'touch':'keyboard');}
 function ascRoomRules(){
   return {map:$('ascMap').value,health:Number($('ascHealth').value),gravity:$('ascGravity').value,
     order:$('ascOrder').value.split(',').map(Number),draft:$('ascDraft').checked,heat:$('ascHeat').checked};
@@ -11820,6 +11825,10 @@ function ascState(event){
   if(!s)return;
   const a=s.self;
   const local=event.rows.find(r=>r[0]===z1Account?.id);
+  if(local&&local[12]>event.t&&ascClient.reloadUntil!==local[12]){
+    const time=performance.now()/1000;rx3ReloadStart(time,time+(local[12]-event.t)/1000);ascClient.reloadUntil=local[12];
+  }
+  if(local&&!local[12])ascClient.reloadUntil=0;
   if(local&&['roulette','gunrun','chamber'].includes(m.mode)&&local[14]!==pl.weapon)switchGunWithAnimation(local[14]);
   let hint=ascHint(m.mode,s);
   if(a&&m.field.ascOriginal?.some(c=>c.material==='vault')){const sites=m.field.id==='train'?[[-3,-10],[2,-15],[-4,-12]]:[[-13,-10],[-12,-16],[-18,-12]];const v=sites[a.vault];
@@ -11835,7 +11844,14 @@ function ascState(event){
 function ascWorldDraw(out,now){
   const m=z2Live.match,s=z2Live.snapshot?.asc;if(!m||!s)return;
   const blue=[.18,.82,.93],amber=[1,.62,.18],violet=[.64,.44,.95],red=[.96,.23,.2];
-  const ring=(x,z,r,c)=>crownOutline(out,{x,z,r},c,.13);
+  function ring(x,z,r,c){
+    const segments=ascLowMemory()?12:20,thickness=.15;
+    for(let i=0;i<segments;i++){
+      const a=2*Math.PI*i/segments,b=2*Math.PI*(i+1)/segments;
+      const vertices=[a,b].flatMap(t=>[r-thickness,r].map(radius=>[x+Math.cos(t)*radius,.04,z+Math.sin(t)*radius,...c,0,1,0]));
+      for(const point of [0,1,2,2,1,3])out.push(...vertices[point]);
+    }
+  }
   if(m.mode==='payload'){const z=-17+34*s.progress;putBox(out,0,.4,z,2.8,1.7,3.8,amber);for(const x of [-1.45,1.45])for(const dz of [-1.2,1.2])putBox(out,x,.07,z+dz,.45,.7,.7,[.15,.17,.21]);ring(0,z,4,blue);}
   if(m.mode==='search'){const z=s.attacker?-12:12;ring(0,z,2.5,amber);putBox(out,0,0,z,.8,s.armed?1.5:.6,.8,s.armed?red:amber);}
   for(const f of s.flags||[]){putBox(out,f.x,.05,f.z,.12,2.2,.12,amber);putBox(out,f.x+.4,1.35,f.z,.85,.65,.1,Z2_TEAM[f.team]);ring(0,f.team?21:-21,2.4,Z2_TEAM[f.team]);}
@@ -11887,6 +11903,8 @@ function ascAccessibility(){
   r.classList.toggle('asc-reduced',ascPrefs.reduced);
 }
 function ascMount(){
+  window.addEventListener('pointerdown',e=>{ascClient.lastDevice=e.pointerType==='touch'?'touch':'keyboard';},{passive:true});
+  window.addEventListener('keydown',()=>{ascClient.lastDevice='keyboard';});
   const home=$('z1Home');
   const hubLink=crownButton('Project Ascension',ascOpen,'secondary','ascHubLink');home.append(hubLink);
   const hub=z1MakeScreen('ascHub','Project Ascension','','mainMenu');
@@ -12068,7 +12086,7 @@ function ascTrimChunks(chunks,now){
 function ascPadMenus(now){
   if(!navigator.getGamepads||!$('ascHub'))return;
   let pad;try{pad=Array.from(navigator.getGamepads()).find(p=>p?.connected);}catch{return;}ascClient.padConnected=!!pad;if(!pad){ascClient.pad=null;ascClient.padMask=0;return;}
-  ascClient.pad=pad;const buttons=pad.buttons,pressed=n=>!!buttons[n]?.pressed,mask=[0,1,2,3,4,5,12,13,14,15].reduce((v,n)=>v|(pressed(n)?1<<n:0),0),
+  ascClient.pad=pad;if(pad.axes.some(v=>Math.abs(v)>.2)||pad.buttons.some(b=>b.pressed))ascClient.lastDevice='controller';const buttons=pad.buttons,pressed=n=>!!buttons[n]?.pressed,mask=[0,1,2,3,4,5,12,13,14,15].reduce((v,n)=>v|(pressed(n)?1<<n:0),0),
     previous=ascClient.padMask||0,edge=n=>!!(mask&(1<<n))&&!(previous&(1<<n));ascClient.padMask=mask;
   if(phase==='playing'&&!paused){
     if(z2IsMatch()&&z2Live.match.ascRules){if(edge(4))ascSendTool('parry');if(edge(5))ascSendTool('melee');if(edge(12))ascSendTool('shield');if(edge(13))ascSendTool('emp');if(edge(14))ascSendTool('dual');if(edge(15))switchGunWithAnimation((pl.weapon+1)%4);if(edge(2))z2Live.reload=true;}

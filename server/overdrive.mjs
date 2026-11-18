@@ -116,7 +116,7 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
     const allowed=[...match.players.values()].filter(p=>p.team===0&&!p.forfeited);
     const live=allowed.filter(p=>p.hp>0&&!p.offlineAt);
     return live.find(p=>p.id===member.camera)||live.find(p=>match.focus?.id===p.id&&match.focus.until>now)||
-      live[Math.floor((now-match.started)/5000)%Math.max(1,live.length)]||allowed[0];
+      live[Math.floor((now-match.started)/5000)%Math.max(1,live.length)];
   }
   function sendView(c,match,member,now,frame){
     const anchor=member.spectator?broadcastAnchor(match,member,now):null;
