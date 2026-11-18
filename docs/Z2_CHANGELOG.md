@@ -2,6 +2,10 @@
 
 The update builds on Z.1 Crown Trials at commit `6b2726bfb5fc7c853bdd6419ae619eaf6f284757`. Open **Operation Overdrive** from the home screen or Play menu. Use your Friends account for online matches. **Local challenges** opens the offline additions.
 
+## Mission levels and account saves, 18 November 2026
+
+Mission Mode now goes from Level 1 to Level 500 in 50 chapters. The original four operations open the campaign. Later levels use reproducible routes and objective placements, with **The Last Beacon** at 500. An existing Friends account saves mission progress across devices. The board can also import a previous guest save. See the [mission guide, tests and rollback plan](MISSION_MODE.md).
+
 ## Mission Mode, 18 November 2026
 
 Four new solo operations are available from **Play → Missions → Mission Mode**. See [the 20 updates, controls, testing instructions and rollback plan](MISSION_MODE.md).

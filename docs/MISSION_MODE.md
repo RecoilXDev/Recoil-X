@@ -1,6 +1,14 @@
-# Mission Mode
+# Mission Mode · Levels 1–500
 
-Open **Play → Missions → Mission Mode**, choose **Dead Air**, then select **Start mission**. A clear unlocks the next story operation at every difficulty. **Daily dispatch** is open immediately. Each run uses the existing solo arena and can be played without signing into Friends. After the game page has loaded, the mission simulation runs on the device.
+Open **Play → Missions → Mission Mode**. Each successful story extraction unlocks the next numbered level. The board opens at your first unfinished level. Browse the 50 chapters of ten levels or select **Current level** to jump back. Within a level, **Recruit**, **Standard** and **Veteran** have separate stars, best times and checkpoints.
+
+| Levels | What you play |
+| --- | --- |
+| 1–4 | The four original operations below. Their existing save identifiers carry forward. |
+| 5–499 | Seeded operations vary target positions, arena colours, vault codes and objective order. Later tiers add tougher guards, and each tenth level has a branching route. The same level number reproduces the same mission on another device. |
+| 500 | **The Last Beacon**. Choose a route to restore power, escort the drone, defend the relay, unlock the vault and extract to complete the campaign. |
+
+**Daily dispatch** continues to rotate through the original four missions on Oman time. It has separate stamps and checkpoints. The single-player simulation runs on the player's device.
 
 | Operation | What to do |
 | --- | --- |
@@ -26,7 +34,7 @@ Open **Play → Missions → Mission Mode**, choose **Dead Air**, then select **
 | 11 | Supply lockers | Each operation has one use of its locker. It restores health, shield and reserve ammunition. |
 | 12 | Timed extraction | Stay inside the extraction circle for three continuous seconds. Leaving the circle restarts the countdown. |
 | 13 | Three difficulty levels | Recruit, Standard and Veteran adjust guard count and health, pulse damage, the mission clock and the time-star target. |
-| 14 | Local checkpoints | The current objective, equipment, health, ammo and collected items are saved. Select **Continue checkpoint** after leaving, reloading or failing. **Start over** uses your current kit selection. |
+| 14 | Checkpoints | The current objective, equipment, health, ammo and collected items are saved. Select **Continue checkpoint** after leaving, reloading or failing. **Start over** uses your current kit selection. |
 | 15 | Three-star grades | Earn a star for extracting, a second for collecting intel, and a third for meeting the displayed time target. |
 | 16 | Personal bests | The board keeps your fastest clear and highest star grade for each story operation at each difficulty. |
 | 17 | Signal colours | Ion blue is available immediately. Amber unlocks at four total stars, Orchid at nine. Colours apply to mission markers and the repair drone. Each operation contributes its highest grade across difficulties. |
@@ -34,9 +42,17 @@ Open **Play → Missions → Mission Mode**, choose **Dead Air**, then select **
 | 19 | Objective navigation and controls | The HUD gives direction and distance. On keyboard, use **E** to interact and **Y** for radar. Touch players get on-screen **Use** and **Radar** buttons. |
 | 20 | After-action splits | The debrief shows the time spent on each completed objective. Replay the operation or jump to the next unlocked briefing. |
 
-## Saves and replay
+## Account saves and guest progress
 
-Story checkpoints and records belong to the browser, site and device you use. Alwaysdata and GitHub Pages each have their own browser storage. Daily dispatches have separate checkpoints. An active daily run keeps its original date even if you finish after midnight. If browser storage is full or disabled, progress lasts for that play session. A checkpoint resumes at the current objective, with its scan, lock or escort restarted. You can select a different difficulty for a separate checkpoint.
+1. Open **Sign in to save** on the mission board, or sign in from **Friends** with your existing RECOIL X account. The board shows the account name and save status.
+2. Play normally. Level clears, stars, best times, active checkpoints, field-kit preferences, signal colour and daily stamps save automatically. **Account synced** confirms the current changes reached the server.
+3. Sign in to the same account on another browser or device and open **Mission Mode**. **Current level** opens the first unfinished level. **Continue checkpoint** resumes a saved objective with its loadout, health, ammo and collected items.
+
+Each guest keeps progress in the current browser and site. To carry an older save forward, open the site and browser where you played it, sign in, and choose **Import guest progress**. This merges the better results and fills available checkpoint slots. The guest copy remains available. Alwaysdata and GitHub Pages use the same account server by default, while each site has its own guest storage.
+
+If a connection drops after loading your account, the game keeps playing and queues changes locally. The board shows **Account sync pending** and retries when the connection returns. Before switching devices, wait for **Account synced**. Pending saves belong to the originating account, including after signing out and signing back in. With browser storage disabled, guest progress and pending uploads last for the current session. Keep the tab open until account sync completes.
+
+A checkpoint restarts the current objective. A fresh run replaces only the selected level and difficulty checkpoint. The server merges the highest star grade and fastest time, and compares checkpoint revisions so an older device cannot roll back a newer restart.
 
 ## Testing
 
@@ -44,7 +60,7 @@ Run the following from the repository root using Node.js 24 or later and the dep
 
 ```sh
 cd server
-npm ci
+npm install --omit=dev --no-audit
 cd ..
 node --test --test-concurrency=2
 ```
@@ -53,7 +69,7 @@ The dedicated mission tests are in [mission-mode.test.cjs](../tests/mission-mode
 
 For a manual playthrough, start Dead Air, use radar, collect the intel and complete the scan. Leave and return with **Continue checkpoint**. Eliminate the guards at the relay, step off the extraction pad before three seconds, then re-enter and finish. Check the last split and star grade on the debrief. Repeat with the touch control scheme. For a device-performance check, record the device, graphics preset and observed frame rate during the escort and the surge route.
 
-### Verification on 18 November 2026
+### Original four-operation release verification
 
 | Check | Observed result |
 | --- | --- |
@@ -64,6 +80,18 @@ For a manual playthrough, start Dead Air, use radar, collect the intel and compl
 | Multiplayer regression | Local server tests passed at 2, 4, 6 and 10 simultaneous clients. The 2- and 10-player latency simulations also passed at 130 and 276 ms. |
 | Device performance | Physical phone and TV frame rates and the user's internet ping were not measured in this release. |
 
-## Release and rollback
+## 500-level release verification
 
-The runtime change is in `index.html`. This release uses the existing automatic deployment workflow and has no server migration. To roll back just this release, revert its merge commit on a branch and merge the revert into `main`. The previous release was [the multiplayer connection update](https://github.com/RecoilXDev/Recoil-X/commit/01e2a7eb6b4624016ae7813fe270f3cc7982521e). Verify the Alwaysdata deployment job and open the Play menu after the revert. Mission progress uses dedicated `zone90v2_signal_` browser keys. Keep those keys for a later roll-forward. No production database restore or account reset is part of the rollback.
+The campaign tests check all 500 objective layouts against the arena's walkable grid, the full drone route, deterministic generation and the chapter selector. A simulated playthrough completed all 500 levels in order, from the first briefing through **The Last Beacon**, and logged 2,139 completed objectives. The harness drives the normal objective logic, moves the test player to the targets and clears guards programmatically. The last debrief ends the campaign. A separate store test advances an account through all 500 clear records.
+
+Two independent game clients use temporary accounts and the real local HTTP and SQLite services in the transfer test. It checks guest import, cross-device checkpoint and equipment restoration, a lost connection, replay of pending changes, signing into a different account, and reopening from a clean browser profile. The database test verifies the snapshot, restarts the server and reads back the saved grade. See [mission gameplay and transfer tests](../tests/mission-mode.test.cjs) and [mission store and backup tests](../tests/mission-store.test.mjs).
+
+For a manual account check, clear Level 1, begin Level 2, collect the cell and reach the next objective. Return to the board and wait for **Account synced**. Sign into that account on a second device and resume **Black Box** at the vault code. Physical-device frame rates require a separate hardware playtest.
+
+## Deployment, backup and rollback
+
+The existing GitHub Actions workflow publishes the client and server. On the first startup with an existing Z.2 database, the server uses SQLite to make a consistent backup at `.recoil-backups/<database>-before-mission-levels-<time>-<pid>.sqlite` before creating `rx_mission_save`. A direct upgrade from Z.1 uses its pre-Z.2 snapshot for both migrations. If backup creation fails, startup stops before creating the mission table. Subsequent startups reuse the table. [SQLite backup semantics](https://sqlite.org/lang_vacuum.html#vacuuminto)
+
+The save API uses the existing authenticated session for every read and write. Each row belongs to its account and contains mission data only. Ranked results use their separate server settlement path. The health route advertises `missionLevels: 500` in a running release.
+
+To roll back, revert this update's merge on a branch and merge the revert into `main`. The earlier game and server remain available at [the original Mission Mode release](https://github.com/RecoilXDev/Recoil-X/tree/80b6cc55ed9bffe5487f69aa21be0728de0c44df). Keep the current database and browser storage. The older server ignores the additional table, and those saves are available again after a roll-forward. Use a validated snapshot for database recovery only, because restoring it also restores all accounts to their state at the time of the snapshot.
