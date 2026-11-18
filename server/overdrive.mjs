@@ -39,9 +39,10 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
 
   function lobby(room) {
     const tournament=room.tournament;
+    const veto=room.veto&&{...room.veto,remaining:Math.max(0,room.veto.deadline-clock())};
     return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
       limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
-      password:!!room.secret,expires:room.expires,phase:room.phase,veto:room.veto,squad:room.squad,
+      password:!!room.secret,expires:room.expires,phase:room.phase,veto,squad:room.squad,
       members:[...room.members.values()].map(({id,name,team,spectator,draft,away,ready})=>
         ({id,name,team,spectator,draft,away:!!away,ready:!!ready})),
       votes:[...room.votes],tournament:tournament&&{

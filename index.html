@@ -1644,7 +1644,7 @@ if(running){pl.sprintUsed=Math.min(10,pl.sprintUsed+dt*(1-.14*(x4Data.skills.sta
 if(pl.sprintLockedUntil&&now>=pl.sprintLockedUntil){pl.sprintLockedUntil=0;pl.sprintUsed=0;toast('⚡ '+tr('sprintReady'),900);}
 let speed=(pl.crouched?2.65:running?8.7:5.7)*(equippedPet==='fox'?1.10:1)*(now<vxSpeedUntil?1.25:1)*(mode==='chaos'&&rxChaosType==='superspeed'?1.75:1);let dx=(Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*r)*speed*dt,dz=(-Math.cos(pl.yaw)*f+Math.sin(pl.yaw)*r)*speed*dt;
 rx2MovePlayer(dx,dz,dt,running);pl.walk+=Math.hypot(dx,dz)*8;
-if(!pl.crouched&&(keys.Space||keys.Jump)&&pl.jump<=.001){pl.vy=mode==='chaos'&&rxChaosType==='lowgravity'?9.6:6.6;pl.jump=.01;playSound('jump');}
+if(!pl.crouched&&jumpPressed()&&pl.jump<=.001){pl.vy=mode==='chaos'&&rxChaosType==='lowgravity'?9.6:6.6;pl.jump=.01;playSound('jump');}
 if(pl.jump>0||pl.vy>0){pl.jump+=pl.vy*dt;pl.vy-=(mode==='chaos'&&rxChaosType==='lowgravity'?9.4:17.9)*dt;if(pl.jump<0){pl.jump=0;pl.vy=0;}}
 pl.y=(1.63-.58*rx3CrouchBlend)+pl.jump+rx3LandVisual+((mag>.1&&pl.jump===0)?Math.sin(pl.walk)*(pl.crouched?.016:.047):0);$('weaponArt').classList.toggle('sneaking',pl.crouched);$('touchcrouch').classList.toggle('active',pl.crouched);$('touchsprint').classList.toggle('active',running);
 if(mouseDown||mobileFire)fire(now);if(mode==='mystery'&&vxRole==='murderer'&&keys.KeyE&&!keys.vxThrowLatch){if(now>=vxMysteryNextThrow)vxMysteryThrow(pl,now);keys.vxThrowLatch=true;}if(!keys.KeyE)keys.vxThrowLatch=false;
@@ -2358,8 +2358,43 @@ $('socialShell').addEventListener('pointerdown',e=>{if(e.target===$('socialShell
 // Touch: move on left stick, look by swiping right half, and shoot/reload/jump.
 {const base=$('joybase'),stick=$('joystick');base.addEventListener('pointerdown',e=>{joyTouchId=e.pointerId;base.setPointerCapture(e.pointerId);joyMove(e)});base.addEventListener('pointermove',e=>{if(e.pointerId===joyTouchId)joyMove(e)});for(const ev of ['pointerup','pointercancel'])base.addEventListener(ev,e=>{if(e.pointerId===joyTouchId){joyTouchId=null;if(rx31StickTouchIdentifier===null){moveJoy={x:0,y:0};stick.style.transform='translate(0,0)'}}});function joyMove(e){let r=base.getBoundingClientRect(),x=rxRotated()?e.clientY-r.top-r.height/2:e.clientX-r.left-r.width/2,y=rxRotated()?r.left+r.width/2-e.clientX:e.clientY-r.top-r.height/2,d=Math.max(1,Math.hypot(x,y)),fac=Math.min(45,d)/d;moveJoy={x:x*fac/45,y:y*fac/45};stick.style.transform=`translate(${x*fac}px,${y*fac}px)`;}
 let prev=null;const swipe=$('touchswipe');swipe.addEventListener('pointerdown',e=>{prev={...rxClientPoint(e),id:e.pointerId};swipe.setPointerCapture(e.pointerId)});swipe.addEventListener('pointermove',e=>{if(!prev||e.pointerId!==prev.id)return;const pt=rxClientPoint(e);pl.yaw+=(pt.x-prev.x)*.008;pl.pitch=clamp(pl.pitch-(pt.y-prev.y)*.008,-1.2,1.2);prev.x=pt.x;prev.y=pt.y;});swipe.addEventListener('pointerup',()=>prev=null);
-$('touchfire').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true;fire(performance.now()/1000)});for(const ev of ['pointerup','pointercancel','pointerleave'])$('touchfire').addEventListener(ev,()=>mobileFire=false);$('touchchest').onclick=()=>openNearbyChest();$('touchreload').onclick=()=>reload();$('touchjump').onclick=()=>{keys.Jump=true;setTimeout(()=>keys.Jump=false,160)};$('touchweapon').onclick=()=>changeWeapon((pl.weapon+1)%weapons.length);$('touchcrouch').onclick=()=>{mobileCrouch=!mobileCrouch;};const sprint=$('touchsprint');sprint.addEventListener('pointerdown',e=>{e.preventDefault();mobileSprint=true;sprint.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(ev,()=>mobileSprint=false);}
-window.addEventListener('blur',()=>{mouseDown=false;mobileFire=false;mobileSprint=false;for(const k in keys)keys[k]=false;});
+$('touchfire').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true;fire(performance.now()/1000)});for(const ev of ['pointerup','pointercancel','pointerleave'])$('touchfire').addEventListener(ev,()=>mobileFire=false);$('touchchest').onclick=()=>openNearbyChest();$('touchreload').onclick=()=>reload();$('touchweapon').onclick=()=>changeWeapon((pl.weapon+1)%weapons.length);$('touchcrouch').onclick=()=>{mobileCrouch=!mobileCrouch;};const sprint=$('touchsprint');sprint.addEventListener('pointerdown',e=>{e.preventDefault();mobileSprint=true;sprint.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(ev,()=>mobileSprint=false);}
+const touchJump=$('touchjump');
+let touchJumpPointer=null,touchJumpUntil=0;
+
+function jumpPressed(){
+  return !!keys.Space||touchJumpPointer!==null||performance.now()<touchJumpUntil;
+}
+
+function resetTouchJump(){
+  touchJumpPointer=null;
+  touchJumpUntil=0;
+}
+
+touchJump.addEventListener('pointerdown',event=>{
+  if(event.button!==0||touchJumpPointer!==null)return;
+  event.preventDefault();
+  touchJumpPointer=event.pointerId;
+  touchJumpUntil=performance.now()+160;
+  touchJump.setPointerCapture(event.pointerId);
+});
+touchJump.addEventListener('pointerup',event=>{
+  if(event.pointerId===touchJumpPointer)touchJumpPointer=null;
+});
+for(const type of ['pointercancel','lostpointercapture']){
+  touchJump.addEventListener(type,event=>{
+    if(event.pointerId===touchJumpPointer)resetTouchJump();
+  });
+}
+touchJump.onclick=event=>{
+  // Keyboard and assistive clicks do not have an active pointer.
+  if(event.detail===0)touchJumpUntil=performance.now()+160;
+};
+
+window.addEventListener('blur',()=>{
+  mouseDown=false;mobileFire=false;mobileSprint=false;resetTouchJump();
+  for(const key in keys)keys[key]=false;
+});
 
 // -------- V8 LOCK-LOAD-DOMINATE: ORIGINAL MM2-COLOR-TIER WEAPON FINISHES --------
 const V8_RARITY_COLORS={common:'#858585',uncommon:'#01deeb',rare:'#00c703',legendary:'#db0106',godly:'#fa03b0',silver:'#b7c9e3',golden:'#efc63d'};
@@ -7599,7 +7634,7 @@ function z1DriveTick(dt,now){
   const throttle=clamp(Number(!!(keys.KeyW||keys.ArrowUp))-Number(!!(keys.KeyS||keys.ArrowDown))-(mobile?moveJoy.y:0),-1,1);
   const steer=clamp(Number(!!(keys.KeyD||keys.ArrowRight))-Number(!!(keys.KeyA||keys.ArrowLeft))+(mobile?moveJoy.x:0),-1,1);
   v.steer+=(steer-v.steer)*Math.min(1,dt*8.5);
-  const brake=!!(keys.Space||keys.Jump||keys.KeyC||mobileCrouch);
+  const brake=jumpPressed()||!!keys.KeyC||mobileCrouch;
   const target=brake?0:throttle*(throttle<0?6.6:16.4);
   const rate=(brake?24:throttle?9.6:5.5)*dt;
   v.speed+=clamp(target-v.speed,-rate,rate);
@@ -8637,7 +8672,7 @@ const Z2_MODES={
 };
 const Z2_TEAM=[[.19,.80,.93],[.95,.37,.24]];
 const Z2_PINGS=['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
-const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,sendAt:0,stateAt:0,
+const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,sendAt:0,stateAt:0,vetoEnds:0,
   echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
 const z2IsMatch=()=>mode==='crown-overdrive'&&!!z2Live.match;
 const z2Online=()=>z1SocketReady&&z1Socket?.readyState===1;
@@ -8900,7 +8935,7 @@ function z2Simulate(dt,now){
     z2Live.sendAt=now+.049;
     if(z2Send('input',{seq:++z2Live.sequence,f,s,yaw:pl.yaw,pitch:pl.pitch,weapon:pl.weapon,
       fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire),reload:!uiOpen&&z2Live.reload,
-      jump:!uiOpen&&!!(keys.Space||keys.Jump),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
+      jump:!uiOpen&&jumpPressed(),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
       ability:!uiOpen&&!!(keys.KeyF||z2Live.ability)},true)){
       z2Live.reload=false;z2Live.ability=false;
     }
@@ -8951,6 +8986,8 @@ function z2Packet(event){
     case 'z2:error':z2Say(event.message,true);break;
     case 'z2:lobby':
       if(z2Live.room?.code!==event.code){z2Live.chat=[];z2RenderChat();}
+      z2Live.vetoEnds=event.veto?performance.now()+
+        clamp(event.veto.remaining??(event.veto.deadline-Date.now()),0,18000):0;
       z2Live.room=event;z2Say(z2Live.queue?'Searching for a ranked match…':'');z2RenderLobby();
       if(event.veto){
         if(mode==='crown-z3-warmup')z3LeaveWarm();
@@ -10047,7 +10084,7 @@ function z2MountMatch(){
     }
   },true);
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){z2Live.use=false;z2Live.ability=false;}
+    if(document.hidden){z2Live.use=false;z2Live.ability=false;resetTouchJump();}
   });
 }
 
@@ -10065,7 +10102,7 @@ const Z3_ACCESS_PRESETS={
 const z3Access={...Z3_ACCESS_DEFAULT,...getStore('recoil_z3_access',{})};
 const z3Camera={auto:true,id:null,next:0};
 let z3Run=null,z3InstallEvent=null,z3OfflineReady=false;
-let z3LocalHudKey='';
+let z3LocalHudKey='',z3VetoTimer=0;
 const z3Clock=ms=>{
   const seconds=Math.max(0,Math.floor(ms/1000));
   return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
@@ -10079,18 +10116,30 @@ function z3Invite(root,room){
   }));
 }
 
+function z3RefreshVetoTimer(){
+  clearTimeout(z3VetoTimer);
+  const label=$('z3VetoClock');
+  if(!label||!z2Live.room?.veto)return;
+  const remaining=Math.max(0,z2Live.vetoEnds-performance.now());
+  const seconds=Math.ceil(remaining/1000);
+  label.textContent=seconds?seconds+' s to ban':'Selecting an arena…';
+  if(seconds)z3VetoTimer=setTimeout(z3RefreshVetoTimer,Math.max(50,remaining-(seconds-1)*1000));
+}
+
 function z3Lobby(root,room){
   if(room.veto){
     const v=room.veto,captain=room.members.find(p=>p.id===v.captains[v.turn]);
+    const myTurn=z1Account?.id===v.captains[v.turn];
     z2Text('h3','Ranked map veto',root);
-    z2Text('p',z2Name(v.turn)+' captain '+(captain?.name||'')+' chooses the next ban.',root);
+    z2Text('p',myTurn?'Your turn to ban an arena.':(captain?.name||z2Name(v.turn)+' captain')+' chooses the next ban.',root);
+    z2Text('p','',root).id='z3VetoClock';
+    z3RefreshVetoTimer();
     const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
     for(const arena of v.pool){
       const button=z2SmallButton('Ban '+arena.name,()=>z2Send('veto',{map:arena.id}));
-      button.disabled=z1Account?.id!==v.captains[v.turn];actions.append(button);
+      button.disabled=!myTurn;actions.append(button);
     }
     if(v.banned.length)z2Text('p','Banned '+v.banned.map(a=>a.name).join(' · '),root);
-    z2Text('p','A turn times out after 18 seconds. The last arena is played.',root);
     actions.append(z2SmallButton('Leave ranked lobby',z2Leave));
     return true;
   }
@@ -10362,15 +10411,32 @@ function z3LocalHint(value){
   z3LocalHudKey=value;z2LocalHint(value);
 }
 
+function z3ParkourMedal(course,time){
+  return ['Gold','Silver','Bronze'][course.medals.findIndex(limit=>time<=limit)]||'Finished';
+}
+
+function z3ShowParkourRecords(){
+  const records=getStore('recoil_z3_parkour',{});
+  for(const [id,course] of Object.entries(Z3_COURSES)){
+    const label=$('z3ParkourRecord-'+id),best=records?.[id];
+    if(!label)continue;
+    const recorded=Number.isFinite(best)&&best>0;
+    label.textContent=recorded?'Best '+best.toFixed(2)+' s · '+z3ParkourMedal(course,best):'';
+    label.classList.toggle('hide',!recorded);
+  }
+}
+
 function z3LocalFinished(run,success){
   if(phase!=='playing'||z3Run!==run)return;
   const title=run.kind==='parkour'?run.course.name:run.trial.name;
   let summary=success?'Drill cleared':'Try again';
   if(success&&run.kind==='parkour'){
-    const medals=['Gold','Silver','Bronze'], award=medals[run.course.medals.findIndex(t=>run.time<=t)]||'Finished';
-    const best=getStore('recoil_z3_parkour',{}),time=Math.round(run.time*100)/100;
-    if(!best[run.id]||time<best[run.id])setStore('recoil_z3_parkour',{...best,[run.id]:time});
-    summary=award+' · '+time.toFixed(2)+' s · Best '+Math.min(time,best[run.id]||time).toFixed(2)+' s';
+    const records=getStore('recoil_z3_parkour',{}),prior=records?.[run.id];
+    const time=Math.round(run.time*100)/100;
+    const best=Number.isFinite(prior)&&prior>0?Math.min(prior,time):time;
+    if(best!==prior)setStore('recoil_z3_parkour',{...records,[run.id]:best});
+    summary=z3ParkourMedal(run.course,time)+' · '+time.toFixed(2)+' s · Best '+best.toFixed(2)+' s';
+    z3ShowParkourRecords();
   }
   finish();
   $('endTitle').textContent=title+' · '+summary;
@@ -10408,7 +10474,7 @@ function z3TickLocal(dt,now){
       completed=true;
     }
   }
-  if(near&&gate.kind==='wall'&&(keys.Space||keys.Jump)&&
+  if(near&&gate.kind==='wall'&&jumpPressed()&&
     (keys.KeyW||keys.ArrowUp||moveJoy.y<-.18)&&Math.abs(pl.x-gate.x)<1.2){
     pl.jump=Math.max(pl.jump,.56);pl.vy=Math.max(pl.vy,0);
     slide(pl,0,-dt*5,.42);run.wall+=dt;
@@ -10543,8 +10609,14 @@ function z3MountUI(){
   const courses=document.createElement('details');courses.className='z2-block';
   z2Text('summary','Parkour Courses',courses);
   const courseButtons=document.createElement('div');courseButtons.className='z2-actions';courses.append(courseButtons);
-  for(const [id,course] of Object.entries(Z3_COURSES))courseButtons.append(z2SmallButton(course.name,()=>z3StartParkour(id)));
+  for(const [id,course] of Object.entries(Z3_COURSES)){
+    const row=document.createElement('div');
+    row.append(z2SmallButton(course.name,()=>z3StartParkour(id)));
+    z2Text('p','',row).id='z3ParkourRecord-'+id;
+    courseButtons.append(row);
+  }
   practice.append(drills,courses);
+  z3ShowParkourRecords();
 
   const toolRow=$('x5HubMenu').querySelector('.x5-choices');
   for(const [id,[label]] of Object.entries(Z3_TRIGGER_TOOLS)){

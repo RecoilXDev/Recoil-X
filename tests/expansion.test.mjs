@@ -125,6 +125,10 @@ test('Jeep Relay swaps drivers at gates and records the winning crew',()=>{
   const car=m.rule.cars[0],start=car.z;
   step(m,300,{2:{f:1}});
   assert.equal(car.z,start);
+  step(m,300,{1:{f:1}});
+  assert(car.speed>2);
+  step(m,300,{1:{f:1,jump:true}});
+  assert(car.speed<.01);
   for(let gate=0;gate<4;gate++){
     Object.assign(car,vehicleGate(car));
     step(m,50);
@@ -197,6 +201,7 @@ test('ready squads stay together through a ranked captain veto',async()=>{
     clock+=1100;await wait(150);
     let lobby=recent(1,'lobby');
     assert.equal(lobby.phase,'veto');
+    assert.equal(lobby.veto.remaining,18000);
     assert.equal(lobby.members.find(p=>p.id===1).team,lobby.members.find(p=>p.id===2).team);
     assert.equal(lobby.members.find(p=>p.id===3).team,lobby.members.find(p=>p.id===4).team);
     assert.notEqual(lobby.members.find(p=>p.id===1).team,lobby.members.find(p=>p.id===3).team);
@@ -262,14 +267,17 @@ test('offline files are served and the worker caches only its scoped game shell'
     assert.equal(icon.headers.get('content-type'),'image/png');
     assert.equal(new DataView(await icon.arrayBuffer()).getUint32(16),192);
   }finally{await new Promise(resolve=>server.close(resolve));}
-  const listeners=new Map(),cached=new Set(),deleted=[];
+  const listeners=new Map(),cached=new Map(),deleted=[];
+  let network=null;
   runInNewContext(readFileSync(new URL('../sw.js',import.meta.url),'utf8'),{
     self:{registration:{scope:'https://example.test/Recoil-X/'},clients:{claim:async()=>{}},
       addEventListener:(type,listener)=>listeners.set(type,listener)},Request,Response,URL,
-    caches:{open:async()=>({addAll:async entries=>entries.forEach(r=>cached.add(r.url)),
-      match:async url=>cached.has(url)?new Response('cached game'):null}),
+    caches:{open:async()=>({
+      addAll:async entries=>entries.forEach(r=>cached.set(r.url,new Response('cached game'))),
+      put:async (url,response)=>cached.set(url,response),
+      match:async url=>cached.get(url)?.clone()}),
       keys:async()=>['other-app','recoil-x-shell:/Recoil-X/:old'],delete:async key=>deleted.push(key)},
-    fetch:async()=>{throw new TypeError('offline');}
+    fetch:async()=>{if(network)return network.clone();throw new TypeError('offline');}
   });
   let job;
   listeners.get('install')({waitUntil:value=>job=value});
@@ -279,8 +287,22 @@ test('offline files are served and the worker caches only its scoped game shell'
   await job;
   assert.deepEqual(deleted,['recoil-x-shell:/Recoil-X/:old']);
   const request={method:'GET',mode:'navigate',url:'https://example.test/Recoil-X/'};
-  listeners.get('fetch')({request,respondWith:value=>job=value});
-  assert.equal(await (await job).text(),'cached game');
+  async function visit(url=request.url){
+    let reply,background;
+    listeners.get('fetch')({request:{...request,url},respondWith:value=>reply=value,waitUntil:value=>background=value});
+    const response=await reply;
+    await background;
+    return response.text();
+  }
+  assert.equal(await visit(),'cached game');
+  network=new Response('new game',{headers:{'Content-Type':'text/html; charset=utf-8'}});
+  assert.equal(await visit(),'new game');
+  network=new Response('query view',{headers:{'Content-Type':'text/html'}});
+  assert.equal(await visit(request.url+'?alternate=1'),'query view');
+  network=new Response('temporarily unavailable',{status:503});
+  assert.equal(await visit(),'new game');
+  network=null;
+  assert.equal(await visit(),'new game');
   for(const url of ['https://example.test/rx-api/me','https://elsewhere.test/'])listeners.get('fetch')({
     request:{...request,url},respondWith:()=>assert.fail('a non-shell request was intercepted')});
 });

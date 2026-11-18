@@ -11,6 +11,7 @@ globalThis.crownTest={
   phase:()=>phase,mode:()=>mode,hurt:damage=>hurt(damage),
   step:(dt,now)=>simulate(dt,now),draw:now=>draw(now),kill:b=>killBot(b,pl),
   tickParkour:(dt,now)=>z3TickLocal(dt,now),
+  jumpPressed,forward:value=>{moveJoy.y=-value;},vetoTimer:z3RefreshVetoTimer,
   mission:()=>x5Run,receive:z2Packet,ready:()=>z1SocketReady,clear:()=>z1ClearAccount(),
   restore:z1RestoreSession,
   builder:blocks=>{x5Data.builder=blocks;x5Play('builder');},
@@ -98,6 +99,36 @@ test('Clutch Lab finishes on a clear or death and Parkour tracks a medal and per
   assert.equal(api.phase(),'end');
   assert.match(el(game,'endTitle').textContent,/Gold.*Best/);
   assert(read(game,'recoil_z3_parkour').depot>0);
+  assert.match(el(game,'z3ParkourRecord-depot').textContent,/Best .* Gold/);
+  assert.deepEqual(game.log,[]);
+});
+
+test('touch Jump handles taps, holds through a wall-run and clears on cancellation',()=>{
+  const game=makeHarness({},undefined,null,bridge),{api}=game;
+  api.chooseDevice(true);playLocal(game,'Depot Steps');
+  const run=api.run(),button=el(game,'touchjump');
+  const touch=(type,pointerId)=>button.dispatchEvent({type,pointerId,button:0,preventDefault(){}});
+  game.perf(1000);
+  touch('pointerdown',7);touch('pointerup',7);
+  assert(api.jumpPressed());
+  game.perf(1200);assert(!api.jumpPressed());
+
+  for(const gate of run.course.gates.slice(0,2)){
+    Object.assign(api.pl,{x:gate.x,z:gate.z+(gate.kind==='climb'?1:0),jump:.6});
+    api.tickParkour(.1,1.3);
+  }
+  assert.equal(run.gate,2);
+  Object.assign(api.pl,run.course.gates[2]);
+  api.forward(1);touch('pointerdown',8);
+  for(let i=0;i<5;i++){
+    game.perf(1300+i*100);
+    assert(api.jumpPressed());
+    api.tickParkour(.1,1.3+i*.1);
+  }
+  assert.equal(run.gate,3);
+  touch('pointerup',8);assert(!api.jumpPressed());
+  touch('pointerdown',9);touch('pointercancel',9);assert(!api.jumpPressed());
+  touch('pointerdown',10);touch('lostpointercapture',10);assert(!api.jumpPressed());
   assert.deepEqual(game.log,[]);
 });
 
@@ -168,6 +199,9 @@ test('game clients share maps, join a ranked veto from warm-up and open a linked
     submitQueue(second);
     await next(()=>both.every(g=>g.api.live.room?.veto),'Ranked veto arrived');
     assert(active(first,'z2Menu'));assert(!first.api.run());
+    assert.match(el(first,'z3VetoClock').textContent,/^18 s/);
+    first.perf(2250);first.api.vetoTimer();
+    assert.match(el(first,'z3VetoClock').textContent,/^17 s/);
     for(let i=0;i<2;i++){
       const veto=first.api.live.room.veto;
       const captain=both.find(g=>g.api.account().id===veto.captains[veto.turn]);
