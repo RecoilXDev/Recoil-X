@@ -4,6 +4,8 @@ import {
   setOffline, restorePlayer, updateMatch, prepareSnapshot, snapshot, tacticalPing, canSee
 } from './overdrive-match.mjs';
 import { seasonAt } from './overdrive-store.mjs';
+import { draftBudget, propSelection } from './expansion-modes.mjs';
+import { pairRanked, makeVeto, banField } from './expansion-ranked.mjs';
 
 const letters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const idleTime = 15 * 60 * 1000;
@@ -27,20 +29,22 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return result;
   }
 
-  function capacity(room) { return room.size*(room.tournament?.teams||2); }
+  function teamCount(room) {return room.squad||room.mode==='raid'?1:room.tournament?.teams||2;}
+  function capacity(room) { return room.size*teamCount(room); }
   function players(room) { return [...room.members.values()].filter(p=>!p.spectator); }
   function filled(room) {
-    return Array.from({length:room.tournament?.teams||2},(_,i)=>
+    return Array.from({length:teamCount(room)},(_,i)=>
       players(room).filter(p=>p.team===i).length===room.size).every(Boolean);
   }
 
   function lobby(room) {
     const tournament=room.tournament;
+    const veto=room.veto&&{...room.veto,remaining:Math.max(0,room.veto.deadline-clock())};
     return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
       limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
-      password:!!room.secret,expires:room.expires,phase:room.phase,
-      members:[...room.members.values()].map(({id,name,team,spectator,draft,away})=>
-        ({id,name,team,spectator,draft,away:!!away})),
+      password:!!room.secret,expires:room.expires,phase:room.phase,veto,squad:room.squad,
+      members:[...room.members.values()].map(({id,name,team,spectator,draft,away,ready})=>
+        ({id,name,team,spectator,draft,away:!!away,ready:!!ready})),
       votes:[...room.votes],tournament:tournament&&{
         teams:tournament.teams,matches:tournament.bracket.map(({a,b,winner,mvp,score})=>({a,b,winner,mvp,score})),
         index:tournament.index,champion:tournament.champion
@@ -51,6 +55,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   }
   function publish(room) {broadcast(room,'lobby',lobby(room));}
   function clearRoom(room,reason) {
+    if(room.squad)cancelEntry(queue.get('s:'+room.code),reason);
     rooms.delete(room.code);
     for(const id of room.members.keys()){
       if(membership.get(id)===room)membership.delete(id);
@@ -62,7 +67,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return players(room).filter(p=>p.team===team&&p.id!==ignore).length<room.size;
   }
   function availableTeam(room,id) {
-    const teams=Array.from({length:room.tournament?.teams||2},(_,i)=>i);
+    const teams=Array.from({length:teamCount(room)},(_,i)=>i);
     return teams.filter(t=>space(room,t,id)).sort((a,b)=>
       players(room).filter(p=>p.team===a).length-players(room).filter(p=>p.team===b).length)[0];
   }
@@ -71,28 +76,31 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(queue.delete(id))emit(id,'queue',{waiting:false});
     const room=roomFor(id);
     if(!room)return;
+    if(room.squad)cancelEntry(queue.get('s:'+room.code),'The squad changed. Ready up to search again.');
     membership.delete(id);
     room.members.delete(id);
     room.votes.delete(id);
     setOffline(room.match,id,now,true);
     if(room.host===id)room.host=players(room)[0]?.id??null;
     emit(id,'left',{reason});
-    if(!room.members.size&&!room.match)clearRoom(room,reason);
+    if(room.phase==='veto')clearRoom(room,'Ranked lobby closed before the match started.');
+    else if(!room.members.size&&!room.match)clearRoom(room,reason);
     else publish(room);
   }
 
   function add(room,c,user,team,spectator=false) {
     leaveLegacy(c);
     queue.delete(c.id);
-    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0};
+    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0,ready:false};
     room.members.set(c.id,member);
     membership.set(c.id,room);
     return member;
   }
 
-  function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null},now) {
+  function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null,squad=null,modern=false},now) {
     const room={code:code(),phase:'lobby',host,mode,size,limit,ranked,tournament,secret,
-      locked:false,expires:now+idleTime,members:new Map(),votes:new Set(),match:null,result:null};
+      locked:false,expires:now+idleTime,members:new Map(),votes:new Set(),match:null,result:null,
+      squad,modern,field:FIELD,veto:null};
     rooms.set(room.code,room);
     return room;
   }
@@ -103,7 +111,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const self=match.players.get(member.id);
     emit(member.id,'begin',{id:match.id,mode:match.mode,ranked:!!match.season,team:self?.team??null,
       roster:[...match.players.values()].map(({id,name,team,draft})=>({id,name,team,draft})),
-      field:FIELD,limit:match.limit,match:room.tournament?.index??null});
+      field:match.field,limit:match.limit,match:room.tournament?.index??null});
     const connection=client(member.id);
     if(connection)send(connection,snapshot(match,member.id,clock(),connection.compactState));
   }
@@ -111,9 +119,9 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function start(room,now,contestants) {
     const seats=contestants||players(room);
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
-      limit:room.limit,players:seats,now,tournament:!!room.tournament});
+      limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern});
     for(const p of seats)if(p.away)setOffline(room.match,p.id,p.away);
-    room.phase='playing';room.result=null;room.votes.clear();
+    room.phase='playing';room.result=null;room.votes.clear();room.veto=null;
     publish(room);
     for(const member of room.members.values())announceMatch(room,member);
   }
@@ -163,10 +171,11 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function create(c,user,data,now) {
     demand(rooms.size<maxRooms,503,'All lobby slots are in use.');
     const tournament=[4,8].includes(data.teams)?{teams:data.teams,bracket:[],index:0,champion:null,next:0}:null;
-    const mode=tournament?'arena':data.mode;
+    const squad=data.squad===true&&!tournament?{queued:false}:null;
+    const mode=tournament||squad?'arena':data.mode;
     demand(MODES.includes(mode),400,'Choose a supported match mode.');
-    let size=mode==='chess'?1:data.size;
-    const sizes=tournament?[1,2]:mode==='rescue'?[2,3,5]:TEAM_SIZES;
+    const size=mode==='chess'?1:mode==='jeep'?2:data.size;
+    const sizes=tournament?[1,2]:mode==='raid'?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
     demand(sizes.includes(size),400,'Choose a supported team size.');
     const limit=data.limit??15;
     demand(Number.isInteger(limit)&&limit>=1&&limit<=50,400,'Choose a kill limit from 1 to 50.');
@@ -174,9 +183,9 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     demand(!data.password||password.length>=4,400,'Use a room password of 4–64 characters.');
     const salt=password?randomBytes(16):null;
     const secret=password?{salt,key:passwordKey(password,salt)}:null;
-    demand(roomFor(c.id)?.phase!=='playing',409,'Leave your active match first.');
+    demand(!['playing','veto'].includes(roomFor(c.id)?.phase),409,'Leave your active match first.');
     drop(c.id,now);
-    const room=buildRoom({host:c.id,mode,size,limit,tournament,secret},now);
+    const room=buildRoom({host:c.id,mode,size,limit,tournament,secret,squad},now);
     add(room,c,user,0);
     publish(room);
   }
@@ -188,7 +197,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     demand(room&&!room.ranked&&room.expires>now,404,'That match code is unavailable.');
     if(room===roomFor(c.id)){publish(room);return;}
     const spectator=data.spectate===true;
-    demand(!room.locked&&(room.phase==='lobby'||(spectator&&room.tournament)),409,'This lobby is closed to new players.');
+    demand(!room.locked&&!room.squad?.queued&&(room.phase==='lobby'||(spectator&&room.tournament)),409,'This lobby is closed to new players.');
     if(room.secret){
       const pass=readPassword(data.password);
       demand(timingSafeEqual(passwordKey(pass,room.secret.salt),room.secret.key),403,'Incorrect match password.');
@@ -196,7 +205,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     demand(!spectator||room.tournament,400,'Spectating is available in tournaments.');
     const team=spectator?null:availableTeam(room,c.id);
     demand(spectator?room.members.size-players(room).length<6:team!==undefined,409,'This lobby is full.');
-    demand(roomFor(c.id)?.phase!=='playing',409,'Leave your active match first.');
+    demand(!['playing','veto'].includes(roomFor(c.id)?.phase),409,'Leave your active match first.');
     drop(c.id,now);
     const member=add(room,c,user,team,spectator);
     room.expires=now+idleTime;
@@ -205,42 +214,61 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(room.phase==='results'&&room.result)emit(c.id,'result',room.result);
   }
 
+  function cancelEntry(entry,reason) {
+    if(!entry||!queue.delete(entry.id))return;
+    for(const member of entry.members)emit(member.id,'queue',{waiting:false,reason});
+    if(entry.room){entry.room.squad.queued=false;publish(entry.room);}
+  }
+
   function matchmaking(now) {
     if(now<nextMatchmaking)return;
     nextMatchmaking=now+1000;
     const season=seasonAt(now);
-    for(const [id,p] of queue)if(now-p.since>600000||!client(id)){
-      queue.delete(id);emit(id,'queue',{waiting:false,reason:'Queue timed out.'});
-    }
+    for(const entry of queue.values())if(now-entry.since>600000||entry.members.some(p=>!client(p.id)))
+      cancelEntry(entry,'Ranked search ended. Ready up to search again.');
     for(const size of TEAM_SIZES){
-      const list=[...queue.values()].filter(p=>p.size===size);
-      while(list.length>=size*2&&rooms.size<maxRooms){
-        const anchor=list.shift(),base=store.rating(anchor.id,season).points;
-        const radius=Math.min(950,120+(now-anchor.since)/100);
-        const compatible=list.filter(other=>Math.abs(store.rating(other.id,season).points-base)<=radius);
-        if(compatible.length<size*2-1)continue;
-        const group=[anchor,...compatible.slice(0,size*2-1)]
-          .sort((a,b)=>store.rating(b.id,season).points-store.rating(a.id,season).points);
-        const room=buildRoom({mode:'arena',size,limit:size===1?10:25,ranked:true},now);
-        for(let i=0;i<group.length;i++){
-          const p=group[i], team=i%4===0||i%4===3?0:1;
-          const j=list.indexOf(p);
-          if(j>=0)list.splice(j,1);
-          add(room,client(p.id),p,team);
-          emit(p.id,'queue',{waiting:false});
+      let list=[...queue.values()].filter(p=>p.size===size);
+      const ratings=new Map();
+      const points=id=>{if(!ratings.has(id))ratings.set(id,store.rating(id,season).points);return ratings.get(id);};
+      while(list.reduce((sum,e)=>sum+e.members.length,0)>=size*2&&rooms.size<maxRooms){
+        const pairing=pairRanked(list,size,now,points);
+        if(!pairing){list.shift();continue;}
+        const modern=pairing.entries.every(entry=>entry.modern);
+        const room=buildRoom({mode:'arena',size,limit:size===1?10:25,ranked:true,modern},now);
+        for(const entry of pairing.entries){
+          queue.delete(entry.id);
+          if(entry.room)rooms.delete(entry.room.code);
         }
-        start(room,now);
+        pairing.sides.forEach((side,team)=>side.forEach(p=>{
+          add(room,client(p.id),p,team);emit(p.id,'queue',{waiting:false});
+        }));
+        list=list.filter(entry=>!pairing.entries.includes(entry));
+        if(modern){
+          room.veto=makeVeto(players(room),now);room.phase='veto';publish(room);
+        }else start(room,now);
       }
     }
   }
 
   function queuePlayer(c,user,data,now) {
-    if(data.join===false){queue.delete(c.id);emit(c.id,'queue',{waiting:false});return;}
+    if(data.join===false){
+      const room=roomFor(c.id);
+      if(room?.squad?.queued){cancelEntry(queue.get('s:'+room.code),'Squad search cancelled.');return;}
+      queue.delete(c.id);emit(c.id,'queue',{waiting:false});return;
+    }
     demand(TEAM_SIZES.includes(data.size),400,'Choose a ranked team size.');
     demand(!roomFor(c.id),409,'Leave your lobby before joining ranked.');
     demand(queue.has(c.id)||queue.size<maxQueue,503,'The ranked queue is full.');
-    if(queue.get(c.id)?.size!==data.size)queue.set(c.id,{id:c.id,name:user.name,size:data.size,since:now});
+    if(queue.get(c.id)?.size!==data.size)queue.set(c.id,{id:c.id,members:[{id:c.id,name:user.name}],
+      size:data.size,since:now,modern:data.revision===3});
     emit(c.id,'queue',{waiting:true,size:data.size});
+  }
+
+  function submitVeto(room,map,now) {
+    const choice=banField(room.veto,map,now);
+    demand(choice,400,'Choose an available arena.');
+    if(choice.field){room.field=choice.field;start(room,now);}
+    else publish(room);
   }
 
   function packet(c,user,data) {
@@ -258,6 +286,32 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(action==='resync'){attach(c);return;}
     demand(room,404,'Join a multiplayer lobby first.');
     const member=room.members.get(c.id);
+    if(action==='veto'){
+      demand(room.phase==='veto'&&now<room.veto.deadline&&room.veto.captains[room.veto.turn]===c.id,
+        403,'Wait for your captain’s turn.');
+      submitVeto(room,data.map,now);return;
+    }
+    if(action==='squad-ready'){
+      demand(room.squad&&!room.squad.queued,409,'The ready check is unavailable during matchmaking.');
+      member.ready=data.ready===true;publish(room);return;
+    }
+    if(action==='squad-queue'){
+      demand(room.squad&&room.host===c.id,403,'Only the squad leader can start a search.');
+      demand(filled(room)&&players(room).every(p=>p.ready&&!p.away),409,'Fill the squad and have everyone ready up.');
+      const id='s:'+room.code;
+      demand(queue.has(id)||queue.size<maxQueue,503,'The ranked queue is full.');
+      if(!queue.has(id))queue.set(id,{id,room,members:players(room),size:room.size,since:now,modern:true});
+      room.squad.queued=true;
+      for(const p of players(room))emit(p.id,'queue',{waiting:true,size:room.size});
+      publish(room);return;
+    }
+    if(action==='budget'||action==='prop'){
+      const match=room.match,p=match?.players.get(c.id);
+      const saved=room.phase==='playing'&&(action==='budget'
+        ? draftBudget(match,p,data.weapon,now):propSelection(match,p,data.prop));
+      demand(saved,409,action==='budget'?'That weapon exceeds the team budget or the draft is closed.':'Choose a disguise during hiding time.');
+      return;
+    }
     if(action==='ping'){
       const message=room.phase==='playing'&&tacticalPing(room.match,c.id,data.kind,now);
       if(message)broadcast(room,'ping',message,p=>room.match.players.get(p.id)?.team===message.team);
@@ -282,7 +336,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(action==='team'){
       demand(room.phase==='lobby'&&!room.ranked&&!member.spectator,409,'Teams are locked.');
       const team=data.team;
-      demand(Number.isInteger(team)&&team>=0&&team<(room.tournament?.teams||2)&&space(room,team,c.id),
+      demand(Number.isInteger(team)&&team>=0&&team<teamCount(room)&&space(room,team,c.id),
         409,'That team is unavailable.');
       member.team=team;room.expires=now+idleTime;publish(room);return;
     }
@@ -293,6 +347,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       drop(data.id,now,'The host removed you from this lobby.');return;
     }
     if(action==='start'){
+      demand(!room.squad,409,'Use the squad ranked search.');
       demand(room.phase==='lobby'&&filled(room)&&players(room).every(p=>!p.away),409,'Fill all team seats before starting.');
       if(room.tournament)startTournament(room,now);else start(room,now);
       return;
@@ -309,7 +364,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
         if(only!=null)return member.id===only;
         if(type==='z2:shot'){
           return !match.season||recipient?.team===team||
-            (recipient&&canSee(recipient,match.players.get(body.origin)));
+            (recipient&&canSee(recipient,match.players.get(body.origin),match.field));
         }
         return team==null||recipient?.team===team;
       });
@@ -338,6 +393,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
         }
         if(!rooms.has(room.code))continue;
         if(room.phase!=='playing'&&room.expires<=now){clearRoom(room,'This match code expired.');continue;}
+        if(room.phase==='veto'&&room.veto.deadline<=now)submitVeto(room,room.veto.pool[0].id,now);
         if(room.tournament?.next&&room.tournament.next<=now){room.tournament.next=0;advanceTournament(room,now);}
         if(room.phase!=='playing')continue;
         const match=room.match;
@@ -375,6 +431,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const room=roomFor(c.id), member=room?.members.get(c.id);
     if(!member)return;
     member.away=clock();
+    if(room.squad){member.ready=false;cancelEntry(queue.get('s:'+room.code),'A squad member disconnected.');}
     setOffline(room.match,c.id,member.away);
     publish(room);
   }

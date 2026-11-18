@@ -24,6 +24,7 @@ globalThis.crownTest={
 const active=(game,id)=>!game.ui.getElementById(id).classList.contains('hide');
 const el=(game,id)=>game.ui.getElementById(id);
 const press=(game,id)=>{assert(el(game,id),id);el(game,id).click();};
+const submit=(game,id)=>el(game,id).dispatchEvent({type:'submit',preventDefault(){}});
 function tick(game,now,dt=.05){game.perf(now*1000);game.api.step(dt,now);}
 function positions(point){return {x:point.x,z:point.z};}
 function read(game,key){return JSON.parse(game.local.getItem('zone90v2_'+key)||'null');}
@@ -32,7 +33,19 @@ test('Z.2 menus, ghost, dual boss, ordered mission gates, daily course, avatar a
   const game=makeHarness({},'2026-11-17T12:00:00Z',null,bridge),api=game.api;
   game.api.chooseDevice(false);
   assert(active(game,'mainMenu'));
-  press(game,'z2HomeAccess');assert(active(game,'z2Menu'));
+  assert.deepEqual(el(game,'z1PlayBtn').parentElement.children.map(button=>button.id),['z1PlayBtn','z2HomeAccess','z1FriendsBtn']);
+  press(game,'z1PlayBtn');
+  assert(active(game,'z1QuickTabPanel')&&!active(game,'z1MissionsTabPanel'));
+  el(game,'z1QuickTab').dispatchEvent({type:'keydown',key:'ArrowRight',preventDefault(){},stopPropagation(){}});
+  assert(active(game,'z1MissionsTabPanel')&&!active(game,'z1QuickTabPanel'));
+  assert.equal(el(game,'z1MissionsTab').getAttribute('aria-selected'),'true');
+  assert.equal(el(game,'z1QuickTab').getAttribute('tabindex'),'-1');
+  press(game,'z1OverdriveTab');
+  press(game,'z2PlayAccess');assert(active(game,'z2Menu'));
+  assert(!active(game,'z2LobbyForm')&&active(game,'z2LocalAccess'));
+  assert(!active(game,'z2RankSection')&&!active(game,'z2ReportSection'));
+  press(game,'z2SignIn');assert(active(game,'z1FriendsMenu'));
+  api.show('mainMenu');press(game,'z2HomeAccess');assert(active(game,'z2Menu'));
   press(game,'z2LocalAccess');assert(active(game,'z2Local'));
   press(game,'z2AvatarOpen');assert(active(game,'z2Avatar'));
   assert(api.portrait('fighter','sandstorm','victory').vert.length>1000);
@@ -112,11 +125,27 @@ test('two game clients run Overdrive UI against the real local server',async()=>
     await touch.api.signIn('BrowserTestB','browser-password-456');
     await next(()=>both.every(g=>g.api.ready()),'Both clients authenticated');
     for(const g of both)press(g,'z2HomeAccess');
-    desktop.api.send('create',{mode:'arena',size:1,limit:1});
+    assert(active(desktop,'z2LobbyForm')&&active(desktop,'z2Join')&&!active(desktop,'z2Create'));
+    el(desktop,'z2Code').value='ABC123';
+    press(desktop,'z2RankedTab');
+    assert(active(desktop,'z2Queue')&&!active(desktop,'z2Join'));
+    submit(desktop,'z2Queue');
+    await next(()=>active(desktop,'z2RankStop'),'Cancel button appears while queued');
+    press(desktop,'z2JoinTab');
+    assert.equal(el(desktop,'z2Code').value,'ABC123');
+    assert(active(desktop,'z2RankStop'));
+    press(desktop,'z2RankStop');
+    await next(()=>!active(desktop,'z2RankStop'),'Cancel button clears the queue');
+    press(desktop,'z2HostTab');
+    assert(active(desktop,'z2Create')&&!active(desktop,'z2Queue'));
+    submit(desktop,'z2Create');
     await next(()=>desktop.api.live.room?.code,'Private lobby exists');
-    touch.api.send('join',{code:desktop.api.live.room.code});
+    el(touch,'z2Code').value=desktop.api.live.room.code;
+    submit(touch,'z2Join');
     await next(()=>desktop.api.live.room?.members.length===2,'Both clients in lobby');
+    assert(!active(desktop,'z2LobbyForm')&&!active(touch,'z2LobbyForm'));
     assert.match(el(desktop,'z2Room').textContent,/BrowserTestB/);
+    assert.match(el(desktop,'z2Room').querySelector('.z2-host-controls').textContent,/Remove BrowserTestB/);
     desktop.api.send('start');
     await next(()=>both.every(g=>g.api.live.match&&g.api.live.snapshot),'Both clients receive match state');
     assert(both.every(g=>g.api.match().mode==='crown-overdrive'&&g.api.match().alive));
@@ -125,6 +154,21 @@ test('two game clients run Overdrive UI against the real local server',async()=>
     assert.equal(desktop.api.match().arena.field.cover.length,8);
     for(const game of both){tick(game,1.35);game.api.draw(1.35);}
     assert(active(desktop,'z2MatchHud')&&active(touch,'z2MatchHud'));
+    assert(!active(desktop,'z2MatchOptions')&&!active(desktop,'z2PingButtons'));
+    press(desktop,'z2ShowMatchOptions');
+    assert(active(desktop,'z2MatchOptions'));
+    press(desktop,'z2TogglePings');
+    assert(!active(desktop,'z2MatchOptions')&&active(desktop,'z2PingButtons'));
+    press(desktop,'z2ShowMatchOptions');
+    press(desktop,'z2LiveBoard');
+    assert(active(desktop,'z2MatchBoard')&&!active(desktop,'z2MatchOptions'));
+    press(desktop,'z2ShowMatchOptions');
+    press(desktop,'z2LiveBoard');
+    assert(!active(desktop,'z2MatchBoard'));
+    press(desktop,'z2ChatOpen');
+    assert(active(desktop,'z2LiveChat')&&!active(desktop,'z2MatchOptions'));
+    press(desktop,'z2ChatClose');
+    press(desktop,'z2ShowMatchOptions');
     press(desktop,'z2LiveLeave');
     assert(active(desktop,'z2Menu'));
     assert.equal(desktop.api.match().phase,'playing');
@@ -132,6 +176,7 @@ test('two game clients run Overdrive UI against the real local server',async()=>
     assert(el(desktop,'overlay').classList.contains('hidden'));
     assert(el(desktop,'hud').classList.contains('active'));
     assert.equal(desktop.api.match().phase,'playing');
+    assert(!active(desktop,'z2MatchOptions'));
     desktop.api.send('chat',{body:'Local UI match check'});
     await next(()=>el(touch,'z2LiveLog').textContent.includes('Local UI match check'),'Chat renders in the UI');
     touch.api.send('leave');

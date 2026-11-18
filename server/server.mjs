@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
@@ -19,6 +19,10 @@ const canonical = value => typeof value === 'string' ? value.trim().normalize('N
 const sqlTime = () => Date.now();
 const dummySalt = randomBytes(16).toString('hex');
 const fail = (status, message) => Object.assign(new Error(message), { status });
+const offlineAssets = new Map([
+  ['/manifest.webmanifest','application/manifest+json'], ['/sw.js','text/javascript; charset=utf-8'],
+  ['/recoil-icon-192.png','image/png'], ['/recoil-icon-512.png','image/png']
+]);
 
 function roomPair(a, b) {
   return a < b ? [a, b] : [b, a];
@@ -92,14 +96,14 @@ export function createRecoilServer(options = {}) {
   const existing = filename !== ':memory:' && existsSync(filename);
   const db = openDb(filename);
   try {
-    const wasOverdrive=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx2_schema'").get();
-    migrateOverdrive(db,filename,existing);
-    // A direct upgrade from Z.1 already took its pre-migration snapshot above.
-    migrateMissions(db,filename,existing&&wasOverdrive);
+    const upgraded=migrateOverdrive(db,filename,existing);
+    // One consistent backup covers every migration in this startup.
+    migrateMissions(db,filename,existing&&!upgraded);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
+  const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
   let passwordJobs = 0;
   let lastExpiry = 0;
@@ -300,6 +304,10 @@ export function createRecoilServer(options = {}) {
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
+      if (path === '/z3/map') {
+        if(!allowed('shared-map-read:'+user.id,30,60000))throw fail(429,'Wait before opening more maps.');
+        return overdriveData.loadMap(new URL(req.url,'http://localhost').searchParams.get('code'));
+      }
       if (path === '/friends') {
         const friends = roster.all(user.id,user.id,user.id).filter(row=>!overdriveData.banned(row.id,sqlTime())).map(row=>({
           name:row.name, status:row.accepted?'friend':row.requester===user.id?'sent':'incoming',
@@ -331,6 +339,10 @@ export function createRecoilServer(options = {}) {
       }
       if (path === '/z2/admin/action') return moderate(user,body);
       if (path === '/z2/report') return overdriveData.report(user,body,sqlTime());
+      if (path === '/z3/map') {
+        if(!allowed('shared-map-write:'+user.id,6,60000))throw fail(429,'Wait before sharing more maps.');
+        return overdriveData.shareMap(user,body,sqlTime());
+      }
       if (path === '/logout') {
         st('DELETE FROM sessions WHERE token_hash=?').run(user.token_hash);
         const active = clients.get(user.id);
@@ -355,6 +367,15 @@ export function createRecoilServer(options = {}) {
   const server = createServer(async (req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     const path = new URL(req.url,'http://localhost').pathname;
+    if(offlineAssets.has(path)){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{
+        const data=readFileSync(resolve(assetDirectory,path.slice(1)));
+        res.writeHead(200,{'Content-Type':offlineAssets.get(path),'Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:data);
+      }catch{res.writeHead(404).end();}
+      return;
+    }
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
@@ -371,7 +392,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.2',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.3',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
@@ -508,6 +529,6 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
     const server=createRecoilServer({database,origins});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.2 listening on port '+port));
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
   }
 }

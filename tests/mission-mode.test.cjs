@@ -24,6 +24,8 @@ function gameAt(save={}, mobile=false, date='2026-11-18T12:00:00Z',network=null)
   game.api.choose(mobile);
   game.api.lang('en');
   click(game,'z1PlayBtn');
+  click(game,'z1MissionsTab');
+  assert.equal(el(game,'z1MissionsTab').getAttribute('aria-selected'),'true');
   click(game,'missionAccess');
   return game;
 }
@@ -77,7 +79,7 @@ function finishStages(g, route='safe') {
   assert.equal(g.api.report().won,true);
 }
 function openAfterQuit(g) {
-  g.api.quit();click(g,'z1PlayBtn');click(g,'missionAccess');
+  g.api.quit();click(g,'z1PlayBtn');click(g,'z1MissionsTab');click(g,'missionAccess');
 }
 
 test('the Play menu launches all four operations in order, with valid geometry, stars, paints and debrief splits',()=>{

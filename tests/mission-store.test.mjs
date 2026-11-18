@@ -71,3 +71,50 @@ test('an existing Overdrive database is backed up before mission migration and a
     assert.deepEqual(rows[0].value,{stars:3,best:58});assert.deepEqual(readdirSync(folder),backups);
   }finally{if(server)await new Promise(resolve=>server.close(resolve));rmSync(directory,{recursive:true,force:true});}
 });
+
+test('the Z.3 upgrade snapshots an existing campaign, friends and rank once and preserves them across restarts',async()=>{
+  const directory=mkdtempSync(join(tmpdir(),'rx-z3-campaign-')),path=join(directory,'game.sqlite');
+  const old=new DatabaseSync(path);
+  let server;
+  try{
+    old.exec('PRAGMA journal_mode=WAL;'+users);
+    old.exec(`INSERT INTO users VALUES (1,'Owner','owner','fixture','fixture',1,0,1),(2,'Friend','friend','fixture','fixture',0,0,1);
+      CREATE TABLE rx2_schema(version INTEGER PRIMARY KEY); INSERT INTO rx2_schema VALUES (1);
+      CREATE TABLE rx2_rank(season TEXT,account INTEGER,points INTEGER,wins INTEGER,losses INTEGER,PRIMARY KEY(season,account));
+      INSERT INTO rx2_rank VALUES ('2026-Q4',1,710,5,2);
+      CREATE TABLE friends(lo INTEGER,hi INTEGER,requester INTEGER,accepted INTEGER,PRIMARY KEY(lo,hi));
+      INSERT INTO friends VALUES (1,2,1,1);
+      CREATE TABLE messages(id INTEGER PRIMARY KEY,lo INTEGER,hi INTEGER,sender INTEGER,body TEXT,sent INTEGER);
+      INSERT INTO messages VALUES (1,1,2,2,'See you in the next mission',123);`);
+    migrateMissions(old,path,false);
+    const saved=missionStore(old,fail);
+    const expected=checkpoint('existing-account-run',2);
+    saved.write(1,{changes:[change(record(1),{stars:3,best:64}),change('signal_checkpoint_air_recruit',expected)]});
+    const folder=join(directory,'.recoil-backups');
+    async function restart(){
+      server=createRecoilServer({database:path});server.listen(0,'127.0.0.1');await once(server,'listening');
+      await new Promise(resolve=>server.close(resolve));server=null;
+    }
+    await restart();
+    const backups=readdirSync(folder);assert.equal(backups.length,1);assert.match(backups[0],/before-z3/);
+    for(const file of [path,join(folder,backups[0])]){
+      const db=new DatabaseSync(file,{readOnly:true});
+      try{
+        assert.equal(db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
+        assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE name='rx3_maps'").get().n,file===path?1:0);
+        assert.equal(db.prepare("SELECT points FROM rx2_rank WHERE account=1").get().points,710);
+        assert.equal(db.prepare('SELECT accepted FROM friends WHERE lo=1 AND hi=2').get().accepted,1);
+        assert.equal(db.prepare('SELECT body FROM messages WHERE id=1').get().body,'See you in the next mission');
+        const read=db.prepare('SELECT revision,value FROM rx_mission_save WHERE account=1 AND key=?');
+        assert.equal(read.get(record(1)).revision,1);
+        assert.deepEqual(JSON.parse(read.get(record(1)).value),{stars:3,best:64});
+        assert.deepEqual(JSON.parse(read.get('signal_checkpoint_air_recruit').value),expected);
+      }finally{db.close();}
+    }
+    await restart();assert.deepEqual(readdirSync(folder),backups);
+  }finally{
+    old.close();
+    if(server)await new Promise(resolve=>server.close(resolve));
+    rmSync(directory,{recursive:true,force:true});
+  }
+});

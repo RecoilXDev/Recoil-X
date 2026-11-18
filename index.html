@@ -4,7 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X Z.2 · Operation Overdrive</title>
+<title>RECOIL X Z.3 · Operation Overdrive</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
 <meta name="color-scheme" content="dark" />
 <style>
@@ -669,12 +671,14 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 .z1-career-track{height:5px;width:100px;overflow:hidden;border-radius:12px;background:#4e3c32}
 #z1CareerBar{display:block;height:100%;background:#f0b35d;border-radius:12px}
 .z1-home-front,.z1-home-shortcuts{display:grid;gap:8px}
-.z1-home-front{grid-template-columns:1.4fr 1fr;margin-bottom:8px}
+.z1-home-front{grid-template-columns:repeat(auto-fit,minmax(min(148px,100%),1fr));margin-bottom:8px}
 .z1-home-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))}
 #z1Home button:not(#zzLiveEventTab){width:100%;min-width:0;letter-spacing:.2px;padding:11px 6px}
 #z1Home button strong{display:block;font-size:13px}
-#z1Home .z1-home-front button strong{font-size:21px;letter-spacing:.3px}
-#z1Home .z1-home-front button{min-height:62px}
+#z1Home .z1-home-front button strong{font-size:clamp(15px,2.8vw,20px);letter-spacing:.2px;overflow-wrap:anywhere}
+#z1Home .z1-home-front button{min-height:62px;text-transform:none}
+#z1Home #z2HomeAccess{margin:0;background:#3d3025;border-color:#a88358;color:#ffe1a6}
+#z1Home #z2HomeAccess:hover{background:#503928}
 #z1Home small{display:block;margin-top:4px;font-weight:600;line-height:1.25;font-size:11px;text-transform:none;letter-spacing:0}
 #z1Home .z1-home-shortcuts button{min-height:49px}
 #z1Home #zzLiveEventTab{margin:8px 0 0}
@@ -691,6 +695,12 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 .z1-menu-tile strong,.z1-menu-tile small{display:block;overflow-wrap:anywhere}
 .z1-menu-tile strong{font-size:13px}
 .z1-menu-tile small{margin-top:3px}
+.rx-menu-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin:0 0 12px;padding:4px;background:#261e18;border:1px solid #896b4b;border-radius:10px}
+.rx-menu-tabs .rx-menu-tab{min-width:0;min-height:44px;padding:6px 4px;margin:0;border:1px solid transparent;border-radius:7px;background:transparent;color:#ebd8b7;box-shadow:none;font-size:clamp(.69rem,1.9vw,.88rem);letter-spacing:0;line-height:1.16;text-transform:none}
+.rx-menu-tabs .rx-menu-tab:hover{background:#413021;color:#fff2d7}
+.rx-menu-tabs .rx-menu-tab[aria-selected="true"]{background:#e4b676;color:#231810;border-color:#f1ca94}
+.rx-menu-pane>h3{display:none}
+#z1Home button:focus-visible,.z1-new-screen :is(button,input,select,textarea,summary):focus-visible,.z2-match-hud button:focus-visible{outline:2px solid #ffe0a4;outline-offset:2px}
 .z1-new-screen button,.z1-form input{touch-action:manipulation}
 .z1-new-screen form{margin:9px 0 13px}
 .z1-new-screen label{display:block;font-size:12px;color:#f7d7a5}
@@ -757,15 +767,44 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 #z2Celebration figure{margin:0;text-align:center;color:#f2d6a4}
 #z2Celebration canvas{width:min(94px,14vw);height:auto;display:block}
 .z2-preview{display:block;max-width:100%;max-height:50vh;width:auto;height:auto;margin:0 auto;border:1px solid #a8c6db45;border-radius:9px;background:#101d2d}
-#z2HomeAccess{margin:7px 0 10px}
+.z2-panel #z2Status:empty,.z2-panel #z2Room:empty{display:none}
+#z2Status.z1-error{color:#ffb6a2}
+.z2-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.z2-toolbar .z2-actions{margin:0}
+.z2-panel form.z2-lobby-fields{grid-template-columns:repeat(auto-fit,minmax(min(185px,100%),1fr));gap:12px;align-items:end;margin:0}
+.z2-lobby-fields .primary{grid-column:1/-1;justify-self:start;min-height:44px}
+.z2-lobby-fields p{align-self:center;margin:0}
+.z2-panel .z2-host-controls{padding:7px 10px;margin-top:8px}
 .z2-match-hud,.z2-local-hud{position:absolute;z-index:9;inset:8px auto auto 50%;transform:translateX(-50%);pointer-events:none;text-align:center;color:#f8fcff;width:min(430px,76%);font-size:12px}
 .z2-local-hud{inset:14% auto auto 50%;width:max-content;max-width:70%;background:#091826d9;border:1px solid #a6cbe154;border-radius:8px;padding:7px 10px}
 .z2-match-hud p{margin:4px 0;color:#d5e6f0;text-shadow:0 2px 5px #000;line-height:1.2}
-.z2-live-status{display:flex;justify-content:center;align-items:center;gap:10px;background:#0b1a28e8;border:1px solid #a6cbe154;border-radius:10px;padding:5px 8px}
+.z2-match-hud p:empty{display:none}
+.z2-live-status{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;width:fit-content;max-width:100%;margin:auto;background:#0b1a28e8;border:1px solid #a6cbe154;border-radius:9px;padding:5px 9px}
 #z2Latency{color:#8ee8f0;font-variant-numeric:tabular-nums}
 #z2MatchPing{color:#ffe57d}#z2Down{color:#ffb78f;font-weight:700}
-.z2-match-hud button{pointer-events:auto;margin:1px;font-size:10px;padding:5px 6px;touch-action:none}
+.z2-match-hud button{pointer-events:auto;margin:0;font-size:11px;min-height:30px;padding:4px 8px;touch-action:manipulation}
 .z2-live-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:3px}
+.z2-live-status p{flex:1 0 100%;margin:0}
+.z2-live-drawer{width:fit-content;max-width:100%;margin:5px auto 0;padding:5px;background:#081725f5;border:1px solid #9abbda62;border-radius:9px}
+.touch-selected .z2-match-hud button{min-height:36px}
+#z2Use{touch-action:none}
+.z2-playing.z2-raid #z2Use{display:block!important}
+.z3-disguised #weaponArt,.z3-driving #weaponArt,.z3-driving #muzzle{display:none!important}
+.z3-settings{margin:9px 0;padding:10px;background:#1d2630;border:1px solid #7b6956;border-radius:9px}
+.z3-settings summary{cursor:pointer;color:#ffe0a4;font-weight:bold}
+.z3-settings label{display:block;margin:7px 0}
+.z3-settings input[type="number"],.z3-settings input:not([type]){max-width:100%;background:#151c25;color:white;border:1px solid #8e7863;padding:5px;border-radius:5px}
+#z3MapStatus:empty{display:none}
+#z3WarmExit{position:absolute;right:12px;top:15%;z-index:9;min-height:36px}
+#z3DraftHud button[aria-pressed="true"]{background:#e4b676;color:#231810}
+#z3ResultTimeline{max-height:14rem;overflow:auto;margin:6px 0 0;padding-inline-start:22px;color:#d9e5ef}
+#z3ResultTimeline li{margin-bottom:4px}
+.z3-contrast .z2-live-status,.z3-contrast .hud-panel,.z3-contrast .z2-match-board{
+  background:#070a10;color:#fff;border-color:#efdd9f
+}
+.z3-contrast .z2-match-hud p,.z3-contrast #z2Latency{color:#fff}
+.z3-reduced-flashes :is(#muzzle,#hurtfx,#rx3HurtRing,#rx3HitText,#rx2HitFx){display:none!important}
+.z3-reduced-flashes #weaponArt{transition:none!important;animation:none!important}
 #z2MatchBoard,.z2-layer,.z2-killcam{background:#081725f5;border:1px solid #9abbda62;border-radius:10px;color:white}
 .z2-match-board{padding:5px 8px;max-height:42vh;overflow:auto;pointer-events:auto}
 .z2-layer{position:absolute;z-index:19;inset:18% auto auto 50%;transform:translateX(-50%);width:min(470px,85%);padding:12px}
@@ -1642,7 +1681,7 @@ if(running){pl.sprintUsed=Math.min(10,pl.sprintUsed+dt*(1-.14*(x4Data.skills.sta
 if(pl.sprintLockedUntil&&now>=pl.sprintLockedUntil){pl.sprintLockedUntil=0;pl.sprintUsed=0;toast('⚡ '+tr('sprintReady'),900);}
 let speed=(pl.crouched?2.65:running?8.7:5.7)*(equippedPet==='fox'?1.10:1)*(now<vxSpeedUntil?1.25:1)*(mode==='chaos'&&rxChaosType==='superspeed'?1.75:1);let dx=(Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*r)*speed*dt,dz=(-Math.cos(pl.yaw)*f+Math.sin(pl.yaw)*r)*speed*dt;
 rx2MovePlayer(dx,dz,dt,running);pl.walk+=Math.hypot(dx,dz)*8;
-if(!pl.crouched&&(keys.Space||keys.Jump)&&pl.jump<=.001){pl.vy=mode==='chaos'&&rxChaosType==='lowgravity'?9.6:6.6;pl.jump=.01;playSound('jump');}
+if(!pl.crouched&&jumpPressed()&&pl.jump<=.001){pl.vy=mode==='chaos'&&rxChaosType==='lowgravity'?9.6:6.6;pl.jump=.01;playSound('jump');}
 if(pl.jump>0||pl.vy>0){pl.jump+=pl.vy*dt;pl.vy-=(mode==='chaos'&&rxChaosType==='lowgravity'?9.4:17.9)*dt;if(pl.jump<0){pl.jump=0;pl.vy=0;}}
 pl.y=(1.63-.58*rx3CrouchBlend)+pl.jump+rx3LandVisual+((mag>.1&&pl.jump===0)?Math.sin(pl.walk)*(pl.crouched?.016:.047):0);$('weaponArt').classList.toggle('sneaking',pl.crouched);$('touchcrouch').classList.toggle('active',pl.crouched);$('touchsprint').classList.toggle('active',running);
 if(mouseDown||mobileFire)fire(now);if(mode==='mystery'&&vxRole==='murderer'&&keys.KeyE&&!keys.vxThrowLatch){if(now>=vxMysteryNextThrow)vxMysteryThrow(pl,now);keys.vxThrowLatch=true;}if(!keys.KeyE)keys.vxThrowLatch=false;
@@ -2135,7 +2174,10 @@ if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
  },{capture:true,passive:false});
  document.addEventListener('touchcancel',()=>press=null,{passive:true});
 }
-window.addEventListener('keydown',e=>{if($('socialShell').classList.contains('visible')){if(e.code==='Escape'){socialHide();e.preventDefault();}return;}if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.code==='KeyV'&&phase==='playing'&&!paused&&!e.repeat&&!spectating){v8ToggleCamera();e.preventDefault();}if(spectating){if(e.code==='ArrowLeft'||e.code==='KeyQ')cycleSpectator(-1);if(e.code==='ArrowRight'||e.code==='KeyE')cycleSpectator(1);if(e.code==='Escape')exitSpectator();return;}if(e.code==='Escape'&&phase==='playing'&&!paused){paused=true;if(document.pointerLockElement)document.exitPointerLock();showScreen('pauseMenu');$('pauseRoomCode').textContent=roomCode?'رمز الغرفة: '+roomCode:'';}if(e.code==='Tab'&&phase==='playing'){$('scoreBoard').classList.add('active');refreshScores();}if(phase!=='playing'||paused||e.repeat)return;if(e.code==='KeyE'&&mode!=='mystery')openNearbyChest();if(e.code==='KeyR'&&mode!=='mystery')reload();if(mode!=='mystery'&&/^Digit[1-4]$/.test(e.code))changeWeapon(+e.code.slice(-1)-1);});
+window.addEventListener('keydown',e=>{if($('socialShell').classList.contains('visible')){if(e.code==='Escape'){socialHide();e.preventDefault();}return;}if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)){
+  if(!$('overlay').classList.contains('hidden')||!document.pointerLockElement&&e.target?.closest?.('#z2MatchHud button'))return;
+  e.preventDefault();
+}keys[e.code]=true;if(e.code==='KeyV'&&phase==='playing'&&!paused&&!e.repeat&&!spectating){v8ToggleCamera();e.preventDefault();}if(spectating){if(e.code==='ArrowLeft'||e.code==='KeyQ')cycleSpectator(-1);if(e.code==='ArrowRight'||e.code==='KeyE')cycleSpectator(1);if(e.code==='Escape')exitSpectator();return;}if(e.code==='Escape'&&phase==='playing'&&!paused){paused=true;if(document.pointerLockElement)document.exitPointerLock();showScreen('pauseMenu');$('pauseRoomCode').textContent=roomCode?'رمز الغرفة: '+roomCode:'';}if(e.code==='Tab'&&phase==='playing'){$('scoreBoard').classList.add('active');refreshScores();}if(phase!=='playing'||paused||e.repeat)return;if(e.code==='KeyE'&&mode!=='mystery')openNearbyChest();if(e.code==='KeyR'&&mode!=='mystery')reload();if(mode!=='mystery'&&/^Digit[1-4]$/.test(e.code))changeWeapon(+e.code.slice(-1)-1);});
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')$('scoreBoard').classList.remove('active')});
 canvas.addEventListener('click',()=>{if(phase==='playing'&&!paused)capturePointer()});
 window.addEventListener('mousedown',e=>{if(phase==='playing'&&!paused&&e.button===0){mouseDown=true;fire(performance.now()/1000);}else if(phase==='playing'&&!paused&&e.button===2){if(mode==='mystery'&&vxRole==='murderer'){let n=performance.now()/1000;if(n>=vxMysteryNextThrow)vxMysteryThrow(pl,n);}else isScope=true;}});
@@ -2353,8 +2395,43 @@ $('socialShell').addEventListener('pointerdown',e=>{if(e.target===$('socialShell
 // Touch: move on left stick, look by swiping right half, and shoot/reload/jump.
 {const base=$('joybase'),stick=$('joystick');base.addEventListener('pointerdown',e=>{joyTouchId=e.pointerId;base.setPointerCapture(e.pointerId);joyMove(e)});base.addEventListener('pointermove',e=>{if(e.pointerId===joyTouchId)joyMove(e)});for(const ev of ['pointerup','pointercancel'])base.addEventListener(ev,e=>{if(e.pointerId===joyTouchId){joyTouchId=null;if(rx31StickTouchIdentifier===null){moveJoy={x:0,y:0};stick.style.transform='translate(0,0)'}}});function joyMove(e){let r=base.getBoundingClientRect(),x=rxRotated()?e.clientY-r.top-r.height/2:e.clientX-r.left-r.width/2,y=rxRotated()?r.left+r.width/2-e.clientX:e.clientY-r.top-r.height/2,d=Math.max(1,Math.hypot(x,y)),fac=Math.min(45,d)/d;moveJoy={x:x*fac/45,y:y*fac/45};stick.style.transform=`translate(${x*fac}px,${y*fac}px)`;}
 let prev=null;const swipe=$('touchswipe');swipe.addEventListener('pointerdown',e=>{prev={...rxClientPoint(e),id:e.pointerId};swipe.setPointerCapture(e.pointerId)});swipe.addEventListener('pointermove',e=>{if(!prev||e.pointerId!==prev.id)return;const pt=rxClientPoint(e);pl.yaw+=(pt.x-prev.x)*.008;pl.pitch=clamp(pl.pitch-(pt.y-prev.y)*.008,-1.2,1.2);prev.x=pt.x;prev.y=pt.y;});swipe.addEventListener('pointerup',()=>prev=null);
-$('touchfire').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true;fire(performance.now()/1000)});for(const ev of ['pointerup','pointercancel','pointerleave'])$('touchfire').addEventListener(ev,()=>mobileFire=false);$('touchchest').onclick=()=>openNearbyChest();$('touchreload').onclick=()=>reload();$('touchjump').onclick=()=>{keys.Jump=true;setTimeout(()=>keys.Jump=false,160)};$('touchweapon').onclick=()=>changeWeapon((pl.weapon+1)%weapons.length);$('touchcrouch').onclick=()=>{mobileCrouch=!mobileCrouch;};const sprint=$('touchsprint');sprint.addEventListener('pointerdown',e=>{e.preventDefault();mobileSprint=true;sprint.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(ev,()=>mobileSprint=false);}
-window.addEventListener('blur',()=>{mouseDown=false;mobileFire=false;mobileSprint=false;for(const k in keys)keys[k]=false;});
+$('touchfire').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true;fire(performance.now()/1000)});for(const ev of ['pointerup','pointercancel','pointerleave'])$('touchfire').addEventListener(ev,()=>mobileFire=false);$('touchchest').onclick=()=>openNearbyChest();$('touchreload').onclick=()=>reload();$('touchweapon').onclick=()=>changeWeapon((pl.weapon+1)%weapons.length);$('touchcrouch').onclick=()=>{mobileCrouch=!mobileCrouch;};const sprint=$('touchsprint');sprint.addEventListener('pointerdown',e=>{e.preventDefault();mobileSprint=true;sprint.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(ev,()=>mobileSprint=false);}
+const touchJump=$('touchjump');
+let touchJumpPointer=null,touchJumpUntil=0;
+
+function jumpPressed(){
+  return !!keys.Space||touchJumpPointer!==null||performance.now()<touchJumpUntil;
+}
+
+function resetTouchJump(){
+  touchJumpPointer=null;
+  touchJumpUntil=0;
+}
+
+touchJump.addEventListener('pointerdown',event=>{
+  if(event.button!==0||touchJumpPointer!==null)return;
+  event.preventDefault();
+  touchJumpPointer=event.pointerId;
+  touchJumpUntil=performance.now()+160;
+  touchJump.setPointerCapture(event.pointerId);
+});
+touchJump.addEventListener('pointerup',event=>{
+  if(event.pointerId===touchJumpPointer)touchJumpPointer=null;
+});
+for(const type of ['pointercancel','lostpointercapture']){
+  touchJump.addEventListener(type,event=>{
+    if(event.pointerId===touchJumpPointer)resetTouchJump();
+  });
+}
+touchJump.onclick=event=>{
+  // Keyboard and assistive clicks do not have an active pointer.
+  if(event.detail===0)touchJumpUntil=performance.now()+160;
+};
+
+window.addEventListener('blur',()=>{
+  mouseDown=false;mobileFire=false;mobileSprint=false;resetTouchJump();
+  for(const key in keys)keys[key]=false;
+});
 
 // -------- V8 LOCK-LOAD-DOMINATE: ORIGINAL MM2-COLOR-TIER WEAPON FINISHES --------
 const V8_RARITY_COLORS={common:'#858585',uncommon:'#01deeb',rare:'#00c703',legendary:'#db0106',godly:'#fa03b0',silver:'#b7c9e3',golden:'#efc63d'};
@@ -3049,7 +3126,7 @@ const muzzle=index===2?1.58:index===1?1.04:index===3?.79:1.2;
  else if(st==='blades'){for(const x of [-.25,.25])line([x,.09,.3],[x*1.45,.35,.75],.07,light);}
  else if(st==='rail'||st==='tactical'){part(0,.23,.40,.27,.10,.48,light);part(.18,.02,.5,.06,.12,.45,dark);}
  if(['godly','silver','golden'].includes(finish.rarity)){for(let j=0;j<3;j++)part((j-1)*.14,.15,.5,.055,.055,.23,light);}
- if(first&&fire>.15){line([0,.07,muzzle+.08],[0,.07,muzzle+.35+fire*.15],.09,[1,.78,.35]);}
+ if(first&&fire>.15&&!z3Access.reducedFlashes){line([0,.07,muzzle+.08],[0,.07,muzzle+.35+fire*.15],.09,[1,.78,.35]);}
 }
 for(const lang of Object.keys(I18N))Object.assign(I18N[lang],({
  en:{v8GunBox:'Gun boxes',v8ArmoryTitle:'LOCK-LOAD-DOMINATE',v8ArmorySubtitle:'Distinct 3D weapon models • original godlies • earned coins only',v8Cases:'OPEN A WEAPON CASE',v8CaseNote:'350 earned coins per case · every case has the displayed rarity odds · weapon finishes are cosmetic.',v8Collection:'YOUR WEAPON FINISHES'},
@@ -3913,7 +3990,7 @@ function x5Hud(){const el=x5P('x5Live');if(!el)return;el.classList.toggle('hide'
 function x5ClearBuilder(){for(const o of x5BuildObjects){const i=obstacles.indexOf(o);if(i!==-1)obstacles.splice(i,1);}x5BuildObjects=[];}
 function x5ApplyBuilder(){x5ClearBuilder();const blocks=(x5Data.builder||[]).slice(0,110);for(const item of blocks){if(!item||!Number.isInteger(item.gx)||!Number.isInteger(item.gz)||item.gx<0||item.gx>13||item.gz<0||item.gz>13||item.type==='spawn'||item.type==='objective')continue;const x=(item.gx-6.5)*8,z=(item.gz-6.5)*8;const o={x,z,w:item.type==='tower'?5.6:6,d:item.type==='cover'?3:6,h:item.type==='cover'?1.5:item.type==='tower'?7:3.4,color:item.type==='tower'?[.34,.49,.61]:item.type==='cover'?[.46,.59,.46]:[.59,.41,.28]};if(blocked(x,z,3))continue;obstacles.push(o);x5BuildObjects.push(o);}const sp=(x5Data.builder||[]).find(v=>v.type==='spawn');if(sp){const x=(sp.gx-6.5)*8,z=(sp.gz-6.5)*8;if(!blocked(x,z,1)){pl.x=x;pl.z=z;}}const op=(x5Data.builder||[]).find(v=>v.type==='objective');if(op&&x5Run)x5Run.point={x:(op.gx-6.5)*8,z:(op.gz-6.5)*8};}
 function x5EditCanvas(){const cn=x5P('x5BuilderCanvas'),ctx=cn.getContext('2d');if(!ctx)return;const sz=cn.width/14;ctx.fillStyle='#14202a';ctx.fillRect(0,0,cn.width,cn.height);const cs={wall:'#dca36c',cover:'#6bd9a2',tower:'#68b9e7',spawn:'#ffe675',objective:'#da86ff'};for(let z=0;z<14;z++)for(let x=0;x<14;x++){const item=x5Data.builder.find(o=>o.gx===x&&o.gz===z);ctx.fillStyle=item?cs[item.type]:'#253d4a';ctx.fillRect(x*sz+1,z*sz+1,sz-2,sz-2);}ctx.fillStyle='#fff';ctx.font='11px sans-serif';ctx.fillText('TOP-DOWN GRID • TAP TO PLACE / ERASE',8,13);}
-function x5BuilderPlace(ev){const c=x5P('x5BuilderCanvas'),r=c.getBoundingClientRect(),x=Math.min(13,Math.max(0,Math.floor((ev.clientX-r.left)/r.width*14))),z=Math.min(13,Math.max(0,Math.floor((ev.clientY-r.top)/r.height*14)));x5Data.builder=x5Data.builder.filter(v=>!(v.gx===x&&v.gz===z));if(x5Editing!=='erase'){if(['spawn','objective'].includes(x5Editing))x5Data.builder=x5Data.builder.filter(v=>v.type!==x5Editing);x5Data.builder.push({gx:x,gz:z,type:x5Editing});}x5Data.builder=x5Data.builder.slice(-110);x5Save();x5EditCanvas();}
+function x5BuilderPlace(ev){const c=x5P('x5BuilderCanvas'),r=c.getBoundingClientRect(),x=Math.min(13,Math.max(0,Math.floor((ev.clientX-r.left)/r.width*14))),z=Math.min(13,Math.max(0,Math.floor((ev.clientY-r.top)/r.height*14)));x5Data.builder=x5Data.builder.filter(v=>!(v.gx===x&&v.gz===z));if(x5Editing!=='erase'){if(['spawn','objective'].includes(x5Editing))x5Data.builder=x5Data.builder.filter(v=>v.type!==x5Editing);x5Data.builder.push({gx:x,gz:z,type:x5Editing,...z3TriggerCell(x5Editing)});}x5Data.builder=x5Data.builder.slice(-110);x5Save();x5EditCanvas();}
 function x5ExportMap(){const json=JSON.stringify({format:'RECOIL_X_X5_MAP',version:1,blocks:x5Data.builder.slice(0,110)},null,2);const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='RECOIL_X_CUSTOM_MAP.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function x5ImportMap(file){if(!file||file.size>80000)return x5Message('MAP FILE TOO LARGE');try{const obj=JSON.parse(await file.text());if(obj.format!=='RECOIL_X_X5_MAP'||!Array.isArray(obj.blocks))throw Error('invalid');const cleaned=obj.blocks.slice(0,110).filter(v=>v&&Number.isInteger(v.gx)&&Number.isInteger(v.gz)&&v.gx>=0&&v.gx<14&&v.gz>=0&&v.gz<14&&['wall','cover','tower','spawn','objective'].includes(v.type)).map(v=>({gx:v.gx,gz:v.gz,type:v.type}));x5Data.builder=cleaned;x5Save();x5EditCanvas();x5Message('✅ MAP IMPORTED');}catch(e){x5Message('❌ INVALID MAP FILE');}}
 function x5MasteryUI(){const e=x5P('x5Mastery');if(!e)return;e.replaceChildren();for(const w of weapons){const a=x5Data.mastery[w.id]||{kills:0,level:0,prestige:0};const block=document.createElement('div');block.className='x5-stat';const t=document.createElement('strong');t.textContent=w.name+' · LV '+(a.level||0)+'/50 · '+(a.kills||0)+' KILLS · PRESTIGE '+(a.prestige||0);block.append(t);if((a.level||0)>=50){const b=document.createElement('button');b.className='secondary';b.textContent='PRESTIGE (RESET MASTERY · +750 COINS)';b.onclick=()=>{a.level=0;a.kills=0;a.prestige=(a.prestige||0)+1;x5Data.mastery[w.id]=a;x5Reward(750);x5Save();x5MasteryUI();};block.append(b);}e.append(block);}}
@@ -5418,9 +5495,12 @@ function crownDrawCharacters(out,eye,center,now,menu) {
     for(const p of remotePlayers.values()){
       if(p.spectating||p.alive===false||p.hp<=0)continue;
       const d=Math.hypot(p.x-eye[0],p.z-eye[2]);
-      if(visible(p,d))crownDrawActor(out,p,d,now,'remote');
+      if(!visible(p,d)||z2IsMatch()&&z2Live.match.mode==='jeep')continue;
+      if(z2IsMatch()&&z2Live.match.mode==='props'&&p.prop>=0)z3DrawProp(out,p.x,p.z,p.prop,p.jump);
+      else crownDrawActor(out,p,d,now,'remote');
     }
   }
+  if(z2IsMatch()&&(z2Live.match.mode==='jeep'||$('rxStage').classList.contains('z3-disguised')))return;
   if(menu||spectating||!pl.alive||z1Vehicle)return;
   if(v8ThirdPerson){
     crownDrawActor(out,pl,Math.hypot(pl.x-eye[0],pl.z-eye[2]),now,'player');
@@ -7596,7 +7676,7 @@ function z1DriveTick(dt,now){
   const throttle=clamp(Number(!!(keys.KeyW||keys.ArrowUp))-Number(!!(keys.KeyS||keys.ArrowDown))-(mobile?moveJoy.y:0),-1,1);
   const steer=clamp(Number(!!(keys.KeyD||keys.ArrowRight))-Number(!!(keys.KeyA||keys.ArrowLeft))+(mobile?moveJoy.x:0),-1,1);
   v.steer+=(steer-v.steer)*Math.min(1,dt*8.5);
-  const brake=!!(keys.Space||keys.Jump||keys.KeyC||mobileCrouch);
+  const brake=jumpPressed()||!!keys.KeyC||mobileCrouch;
   const target=brake?0:throttle*(throttle<0?6.6:16.4);
   const rate=(brake?24:throttle?9.6:5.5)*dt;
   v.speed+=clamp(target-v.speed,-rate,rate);
@@ -7743,16 +7823,15 @@ function z1StoreSession(){
   }catch{}
 }
 function z1RestoreSession(){
+  if(z1Account)return;
   let saved;
   try{saved=JSON.parse(sessionStorage.getItem(z1SessionKey)||'null');}catch{}
   if(!saved||typeof saved.token!=='string')return;
   try{if(saved.root!==z1ServerRoot(z1ApiRoot))return;}catch{return;}
   z1Token=saved.token;
-  const matching=()=>z1Token===saved.token&&z1ServerRoot(z1ApiRoot)===saved.root;
-  z1Fetch('/me').then(data=>{if(matching())z1UseAccount(data.user);}).catch(error=>{
-    if(!matching())return;
-    if(error.status===401||error.status===403){z1Token='';z1StoreSession();return;}
-    window.addEventListener('online',()=>{if(!z1Account&&matching())z1RestoreSession();},{once:true});
+  const matching=()=>!z1Account&&z1Token===saved.token&&z1ServerRoot(z1ApiRoot)===saved.root;
+  return z1Fetch('/me').then(data=>{if(matching())z1UseAccount(data.user);}).catch(error=>{
+    if(matching()&&(error.status===401||error.status===403)){z1Token='';z1StoreSession();}
   });
 }
 
@@ -8341,6 +8420,7 @@ function z1MountFriends(){
     }
   },true);
   setInterval(()=>{if(z1Account&&z1FriendsOpen())z1RefreshFriends();},9500);
+  window.addEventListener('online',z1RestoreSession);
   z1RestoreSession();
 }
 
@@ -8414,11 +8494,42 @@ function z1MenuGroup(root,label,entries){
     grid.append(tile);
   }
   group.append(heading,grid);root.append(group);
+  return group;
+}
+
+function mountMenuTabs(label,tabs){
+  const rail=document.createElement('div');
+  rail.className='rx-menu-tabs';rail.setAttribute('role','tablist');rail.setAttribute('aria-label',label);
+  const buttons=tabs.map(([title,id,panel],index)=>{
+    const tab=crownButton(title,()=>select(index),'rx-menu-tab',id);
+    if(!panel.id)panel.id=id+'Panel';
+    panel.classList.add('rx-menu-pane');
+    panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',id);
+    tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panel.id);
+    tab.addEventListener('keydown',event=>{
+      const last=tabs.length-1;
+      const next={ArrowLeft:index===0?last:index-1,ArrowRight:index===last?0:index+1,Home:0,End:last}[event.key];
+      if(next===undefined)return;
+      event.preventDefault();event.stopPropagation();
+      select(next);buttons[next].focus();
+    });
+    rail.append(tab);
+    return tab;
+  });
+  function select(active){
+    tabs.forEach(([, ,panel],index)=>{
+      const selected=index===active;
+      buttons[index].setAttribute('aria-selected',String(selected));
+      buttons[index].setAttribute('tabindex',selected?'0':'-1');
+      panel.classList.toggle('hide',!selected);
+    });
+  }
+  tabs[0][2].before(rail);select(0);
 }
 
 function z1MenuPlay(){
   const p=z1MakeScreen('z1PlayMenu','Play','<p id="z1PlayParty" class="hide"></p>');
-  z1MenuGroup(p,'Quick play',[
+  const quick=z1MenuGroup(p,'Quick play',[
     ['Bot Arena','Vote for a battleground',showVoteSolo,'z1PlaySolo'],
     ['Jeep Rally','Five gates at Wadi Rally',z1StartRally,'z1PlayJeep'],
     ['Murder Mystery','Random roles with bots',vxShowMysteryMenu,'z1PlayMystery'],
@@ -8428,7 +8539,7 @@ function z1MenuPlay(){
     ['Chaos Rounds','Random round modifiers',()=>$('rxChaosBtn').click()],
     ['Private Room','Join with a room code',()=>$('roomBtn').click()]
   ]);
-  z1MenuGroup(p,'Missions',[
+  const missions=z1MenuGroup(p,'Missions',[
     [missionText('mode'),missionText('tagline'),missionOpen,'missionAccess'],
     ['Crown Trials','Kingdom bosses, Chess, and Scrap Contracts',()=>zzOpenSpecial('kingdom'),'z1CrownAccess'],
     ['Operation Blackout','Six campaign missions',()=>x5Play('campaign')],
@@ -8441,10 +8552,18 @@ function z1MenuPlay(){
     ['Ranked Challenges','Offline ranked matches',()=>x4Start('ranked')],
     ...Z_MODES.map(([id,,title,desc])=>[title,desc,()=>zPlay(id)])
   ]);
-  z1MenuGroup(p,'Training and custom maps',[
+  const training=z1MenuGroup(p,'Training and custom maps',[
     ['Training Range','Practice and adjust match rules',rx2Open,'z1RangeAccess'],
     ['Map Creator','Build an arena and track weapon mastery',x5Open,'z1MapCreatorAccess'],
     ['Operators','Classes, exosuits, HQ, and replays',zOpenHub,'z1OperatorAccess']
+  ]);
+  const overdrive=z1MenuGroup(p,'Operation Overdrive',[
+    ['Online matches','Join, host, or queue for ranked',z2Open,'z2PlayAccess'],
+    ['Local challenges','Clutch Lab, Parkour Courses, and time trials',z2OpenOffline]
+  ]);
+  mountMenuTabs('Play modes',[
+    ['Quick play','z1QuickTab',quick],['Missions','z1MissionsTab',missions],
+    ['Training','z1TrainingTab',training],['Overdrive','z1OverdriveTab',overdrive]
   ]);
 }
 
@@ -8593,11 +8712,12 @@ function z1MountUI(){
 // Z.2 uses the existing Friends account and renderer, with a separate match protocol.
 const Z2_MODES={
   arena:'Competitive Arena',overcharge:'Overcharge',relic:'Relic Relay',
-  chess:'Chess Draft Duels',rescue:'Squad Rescue'
+  chess:'Chess Draft Duels',rescue:'Squad Rescue',escort:'Core Escort',hotzone:'Moving Hot Zone',
+  elimination:'Elimination Rounds',budget:'Weapon Budget Draft',props:'Prop Hunt',jeep:'Jeep Relay',raid:'Co-op Crown Raids'
 };
 const Z2_TEAM=[[.19,.80,.93],[.95,.37,.24]];
 const Z2_PINGS=['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
-const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,lastInput:null,stateAt:0,
+const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,lastInput:null,stateAt:0,vetoEnds:0,
   renderAt:null,jitter:0,fireUntil:0,echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
 const z2IsMatch=()=>mode==='crown-overdrive'&&!!z2Live.match;
 const z2Online=()=>z1SocketReady&&z1Socket?.readyState===1;
@@ -8612,7 +8732,9 @@ function z2Send(action,data={},quiet=false){
   return ok;
 }
 function z2Name(team,tournament=false){
-  return tournament?'Team '+(team+1):team===0?'Blue':'Orange';
+  if(tournament)return 'Team '+(team+1);
+  if(z3Access.teamSymbols)return team===0?'◆ Blue':'▲ Gold';
+  return team===0?'Blue':'Orange';
 }
 function z2Text(tag,value,parent){
   const element=document.createElement(tag);element.textContent=value;
@@ -8647,22 +8769,30 @@ function z2Profile(){
 }
 function z2Open(){
   showScreen('z2Menu');z2RenderLobby();z2Profile();
-  if(!z1Account)z2Say('Sign in through Friends to play online.');
-  else if(!z2Online())z2Say('Connecting to the game server…');
+  if(!z1Account)z2Say('');
 }
 function z2RenderLobby(){
-  const root=$('z2Room'),form=$('z2LobbyForm'),room=z2Live.room;
+  const root=$('z2Room'),room=z2Live.room,signedIn=!!z1Account;
   if(!root)return;
-  $('z2Account').textContent=z1Account?z1Account.name+(z2Online()?' · Online':' · Connecting'):'Sign in with your Friends account';
+  $('z2Account').textContent=signedIn?z1Account.name+(z2Online()?' · Online':' · Connecting…'):'';
+  $('z2Account').classList.toggle('hide',!signedIn);
+  $('z2SignIn').textContent=signedIn?'Friends account':'Sign in through Friends';
   $('z2AdminAccess').classList.toggle('hide',!z1Account?.admin);
   $('z2RankStop').classList.toggle('hide',!z2Live.queue);
-  form.classList.toggle('hide',!!room);
+  $('z3QueueWarm').classList.toggle('hide',!z2Live.queue);
+  $('z2LobbyForm').classList.toggle('hide',!!room||!signedIn);
+  $('z2RankSection').classList.toggle('hide',!signedIn);
+  $('z2ReportSection').classList.toggle('hide',!signedIn);
+  const controlsOpen=root.querySelector('.z2-host-controls')?.open;
   root.replaceChildren();
   if(!room)return;
+  if(z3Lobby(root,room))return;
   const owner=z1Account?.id===room.host,isTournament=!!room.tournament;
   z2Text('h3',isTournament?'Overdrive Cup':Z2_MODES[room.mode]+(room.ranked?' · Ranked':''),root);
-  z2Text('p',room.size+'v'+room.size+' · '+room.phase.toUpperCase()+
-    (room.mode==='relic'?' · 3 captures':room.mode==='chess'?' · best of 3':' · '+room.limit+' eliminations'),root);
+  const details={relic:'3 captures',chess:'Best of 3',escort:'Switch sides at halftime',hotzone:'60 control points',
+    elimination:'First to 3 rounds',budget:'First to 3 rounds',props:'Switch sides at halftime',jeep:'4 gates',raid:'Two seals'};
+  z2Text('p',(room.mode==='raid'?room.size+' players':room.size+'v'+room.size)+' · '+room.phase.toUpperCase()+
+    ' · '+(details[room.mode]||room.limit+' eliminations'),root);
   if(room.code){
     const code=z2Text('strong','Invite code '+room.code+(room.password?' · Password required':''),root);
     code.className='z2-code';
@@ -8671,14 +8801,14 @@ function z2RenderLobby(){
       catch{z2Say('Invite code '+room.code);}
     }));
   }
-  const list=room.members.map(p=>[p.name,p.spectator?'Spectator':z2Name(p.team,isTournament),
+  const list=room.members.map(p=>[p.name,p.spectator?'Spectator':room.mode==='raid'?'Raid party':z2Name(p.team,isTournament),
     p.away?'Reconnecting':p.id===room.host?'Host':'Ready',
     room.mode==='chess'?p.draft:room.votes.includes(p.id)?'Voted rematch':'']);
   z2Table(root,['Player','Team','Status',room.mode==='chess'?'Draft':'Vote'],list);
   const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
   if(room.phase==='lobby'&&!room.ranked){
     const me=room.members.find(p=>p.id===z1Account?.id);
-    if(me&&!me.spectator){
+    if(me&&!me.spectator&&room.mode!=='raid'){
       for(let i=0;i<(room.tournament?.teams||2);i++){
         const b=z2SmallButton(z2Name(i,isTournament),()=>z2Send('team',{team:i}));
         b.disabled=i===me.team||room.members.filter(p=>!p.spectator&&p.team===i).length>=room.size;
@@ -8688,10 +8818,16 @@ function z2RenderLobby(){
     if(owner){
       const start=crownButton('Start match',()=>z2Send('start'),'primary');
       start.disabled=room.members.filter(p=>!p.spectator&&!p.away).length<room.capacity;
-      actions.append(start,z2SmallButton(room.locked?'Unlock':'Lock lobby',()=>z2Send('lock',{locked:!room.locked})));
+      actions.append(start);
+      const manage=document.createElement('details');manage.className='z2-block z2-host-controls';
+      manage.open=!!controlsOpen;
+      z2Text('summary','Lobby settings',manage);
+      const controls=document.createElement('div');controls.className='z2-actions';manage.append(controls);
+      controls.append(z2SmallButton(room.locked?'Unlock lobby':'Lock lobby',()=>z2Send('lock',{locked:!room.locked})));
       for(const p of room.members.filter(p=>p.id!==room.host)){
-        actions.append(z2SmallButton('Remove '+p.name,()=>z2Send('remove',{id:p.id})));
+        controls.append(z2SmallButton('Remove '+p.name,()=>z2Send('remove',{id:p.id})));
       }
+      root.append(manage);
     }
   }
   if(room.mode==='chess'&&room.phase!=='playing'){
@@ -8726,8 +8862,12 @@ function z2Leave(){
 function z2EndView(){
   const inMatch=z2IsMatch();
   z2Live.match=null;z2Live.snapshot=null;z2Live.ping=null;
-  $('rxStage').classList.remove('z2-playing','z2-watching','z2-rescue','z2-relic','z2-chess');
-  for(const id of ['z2MatchHud','z2MatchBoard','z2LiveChat','z2Killcam','z2PingButtons'])$(id)?.classList.add('hide');
+  $('rxStage').classList.remove('z2-playing','z2-watching','z2-rescue','z2-relic','z2-chess','z2-raid','z3-driving','z3-disguised');
+  for(const id of ['z2MatchHud','z2MatchBoard','z2LiveChat','z2Killcam'])$(id)?.classList.add('hide');
+  z2MatchActions();
+  $('z3DraftHud')?.classList.add('hide');$('z3Director')?.classList.add('hide');
+  z3Camera.id=null;z3Camera.auto=true;z3Camera.next=0;
+  if($('z3Director'))$('z3Director').textContent='Auto camera on';
   z2ScoreOpen=false;z2Live.reload=false;z2Live.use=false;z2Live.ability=false;
   if(inMatch){z1BaseQuit();mode='solo';}
 }
@@ -8735,7 +8875,7 @@ function z2UnpackState(event){
   if(event.packed!==1)return event;
   const rows=event.rows.map(packed=>{
     // Must match the server's format 1 defaults. Every row can be decoded independently.
-    const row=[packed[0],0,0,0,0,100,1,0,0,0,0,0,0,0,0,-1,0,0];
+    const row=[packed[0],0,0,0,0,100,1,0,0,0,0,0,0,0,0,-1,0,0,-1,1];
     for(let i=1,j=2;i<row.length;i++)if(packed[1]&(1<<(i-1)))row[i]=packed[j++];
     return row;
   });
@@ -8752,7 +8892,7 @@ function z2AimActor(row,actor={},time){
   }else if(last.t===time)poses.pop();
   poses.push(pose);if(poses.length>6)poses.shift();
   return Object.assign(actor,{id:row[0],tx:pose.x,tz:pose.z,hp:row[5],alive:row[6]===1,
-    down:row[6]===2,team:row[7],kills:row[8],deaths:row[9],weapon:row[14]});
+    down:row[6]===2,team:row[7],kills:row[8],deaths:row[9],weapon:row[14],prop:row[18]??-1});
 }
 
 function z2DrawRemoteMotion(dt,elapsed){
@@ -8776,11 +8916,12 @@ function z2Begin(event){
   const resumed=z2Live.match?.id===event.id;
   const match={...event,names:new Map(event.roster.map(p=>[p.id,p]))};
   if(!resumed){
+    if(mode==='crown-z3-warmup')z2ResetLocalRun();
     z2EndView();
     z1DropRoom();
     if(phase==='playing'||peer)z1BaseQuit();
     crownRun=null;crownResult=null;
-    const style={arena:'Overdrive Arena',sky:[.06,.12,.19],floor:[.105,.176,.216],accent:[.24,.88,.94]};
+    const style={arena:event.field.name||'Overdrive Arena',sky:[.06,.12,.19],floor:[.105,.176,.216],accent:[.24,.88,.94]};
     const arena=crownArenaStyle(style,'overdrive');arena.half=event.field.half;arena.field=event.field;
     z2Live.match=match;
     z2Live.snapshot=null;z2Live.result=null;z2Live.stateAt=performance.now();
@@ -8794,7 +8935,7 @@ function z2Begin(event){
   z2Live.renderAt=null;z2Live.jitter=0;z2Live.echoAt=0;remotePlayers.clear();
   $('rxStage').classList.add('z2-playing');
   $('rxStage').classList.toggle('z2-watching',event.team==null);
-  for(const kind of ['rescue','relic','chess'])$('rxStage').classList.toggle('z2-'+kind,event.mode===kind);
+  for(const kind of ['rescue','relic','chess','raid'])$('rxStage').classList.toggle('z2-'+kind,event.mode===kind);
   $('z2MatchHud').classList.remove('hide');
   $('z2ReadyAim').classList.toggle('hide',mobile||!!document.pointerLockElement||event.team==null);
   $('z2MatchHint').textContent=event.team==null?'Spectating':
@@ -8827,22 +8968,25 @@ function z2ApplyState(event){
   for(const id of remotePlayers.keys())if(!present.has(id))remotePlayers.delete(id);
   gameSeconds=event.remaining/1000;
   if(local){
-    const spawned=(local[6]===1&&!pl.alive)||!match.hasSpawn;
+    const spawned=(local[6]===1&&!pl.alive)||!match.hasSpawn||local[19]!==match.spawnSeq;
     if(spawned){
       Object.assign(pl,{x:local[1],z:local[2],yaw:local[3],pitch:0,walk:0});
-      match.hasSpawn=true;
+      match.hasSpawn=true;match.spawnSeq=local[19];
     }
     Object.assign(pl,{hp:local[5],shield:0,alive:local[6]===1,kills:local[8],deaths:local[9]});
     pl.jump=local[4];pl.y=1.63+pl.jump;
     if(local[14]===pl.weapon)pl.mags[pl.weapon]=local[11];
-    $('z2Down').textContent=local[6]===2?'DOWNED · Waiting for a teammate':local[6]===0?'Respawning…':'';
+    $('z2Down').textContent=local[6]===2?'DOWNED · Waiting for a teammate':local[6]===0?
+      (['elimination','budget','props'].includes(match.mode)?'Out until the next round':'Respawning…'):'';
   }
+  z3MatchView(event);
   z2Hud();
 }
 function z2Hud(){
   if(!z2IsMatch()||!z2Live.snapshot)return;
   const snap=z2Live.snapshot;
-  $('z2MatchScore').textContent='BLUE '+snap.score[0]+'  ·  '+snap.score[1]+' ORANGE';
+  $('z2MatchScore').textContent=z2Live.match.mode==='raid'?'Crown · '+(snap.objective?.boss.hp??0)+' HP':
+    z2Name(0).toUpperCase()+' '+snap.score[0]+'  ·  '+snap.score[1]+' '+z2Name(1).toUpperCase();
   z2LatencyLabel(z2Online());
   $('z2MatchPing').textContent=z2Live.ping?.until>performance.now()?z2Live.ping.message:'';
   $('z2MatchPing').classList.toggle('hide',!$('z2MatchPing').textContent);
@@ -8900,10 +9044,13 @@ function z2Simulate(dt,now){
     z2SendControls(now,{f:Math.round(f*1000)/1000,s:Math.round(s*1000)/1000,
       yaw:Math.round(pl.yaw*1000)/1000,pitch:Math.round(pl.pitch*1000)/1000,weapon:pl.weapon,
       fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire||z2Live.fireUntil>now),reload:!uiOpen&&z2Live.reload,
-      jump:!uiOpen&&!!(keys.Space||keys.Jump),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
+      jump:!uiOpen&&jumpPressed(),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
       ability:!uiOpen&&!!(keys.KeyF||z2Live.ability)});
   }
-  if(local&&pl.alive){
+  const rules=z2Live.snapshot?.objective;
+  const waiting=z2Live.snapshot?.waitingEarly||match.mode==='budget'&&rules?.phase!=='fight'||
+    match.mode==='props'&&rules?.phase==='hide'&&match.team!==rules.hiders;
+  if(local&&pl.alive&&match.mode!=='jeep'&&!waiting){
     const carrying=z2Live.snapshot.relics?.some(r=>r[3]===z1Account?.id);
     const dragging=match.mode==='rescue'&&use&&[...remotePlayers.values()]
       .some(a=>a.team===match.team&&a.down&&Math.hypot(a.x-pl.x,a.z-pl.z)<2.32);
@@ -8932,7 +9079,7 @@ function z2Shot(event){
   tracers.push({a:{x:ax,y:ay,z:az},b:{x:bx,y:by,z:bz},t:.10,color:Z2_TEAM[z2Live.match.names.get(event.origin)?.team??0]});
   if(tracers.length>32)tracers.shift();
   if(event.origin===z1Account?.id){
-    const now=performance.now()/1000;v8GunFireAt=now;flashUntil=now+.055;
+    const now=performance.now()/1000;v8GunFireAt=now;if(!z3Access.reducedFlashes)flashUntil=now+.055;
     animateGun('shoot',95);playSound(weapons[pl.weapon].id==='sniper'?'sniper':weapons[pl.weapon].id==='shot'?'shotgun':'gun');
   }else if(len2(pl.x-ax,pl.z-az)<25)rx2SoundAt('enemy-shot',ax,az);
 }
@@ -8941,9 +9088,17 @@ function z2Packet(event){
     case 'z2:error':z2Say(event.message,true);break;
     case 'z2:lobby':
       if(z2Live.room?.code!==event.code){z2Live.chat=[];z2RenderChat();}
-      z2Live.room=event;z2Say('');z2RenderLobby();break;
+      z2Live.vetoEnds=event.veto?performance.now()+
+        clamp(event.veto.remaining??(event.veto.deadline-Date.now()),0,18000):0;
+      z2Live.room=event;z2Say(z2Live.queue?'Searching for a ranked match…':'');z2RenderLobby();
+      if(event.veto){
+        if(mode==='crown-z3-warmup')z3LeaveWarm();
+        showScreen('z2Menu');
+      }
+      break;
     case 'z2:queue':
       z2Live.queue=event.waiting;z2RenderLobby();
+      if(!event.waiting&&mode==='crown-z3-warmup')z3LeaveWarm();
       z2Say(event.waiting?'Searching for a '+event.size+'v'+event.size+' ranked match…':event.reason||'');
       break;
     case 'z2:left':
@@ -9008,6 +9163,7 @@ crownBuildArena=function(arena){
     crownZone(staticVerts,0,sign*(h-2),h*2-2,.22,Z2_TEAM[+(sign>0)],0);
   }
   for(const c of arena.field.cover)addObstacle(c.x,c.z,c.w,c.d,c.h,arena.cover);
+  for(const [x,z,kind] of arena.field.scenery||[])z3DrawProp(staticVerts,x,z,kind);
   if(gl&&program)v91RebuildStaticGPU();
 };
 const z2DrawWorldBase=crownDrawGameplay;
@@ -9030,19 +9186,24 @@ crownDrawGameplay=function(out,now){
       putBox(out,ping.x,.08,ping.z,.11,2.8,.11,[1,.87,.31]);
       crownOutline(out,{x:ping.x,z:ping.z,r:1.02},[1,.87,.31]);
     }
+    z3MatchWorld(out,now);
   }
   z2DrawLocalExtras(out,now);
+  z3DrawLocal(out);
 };
 
 const z2OldCamera=v8Camera;
 v8Camera=function(){
   if(!z2IsMatch())return z2OldCamera();
   if(z2Live.match.team==null){
-    const actor=[...remotePlayers.values()].filter(p=>p.alive)[z2WatchIndex]||
+    const focused=z3Camera.auto&&remotePlayers.get(z3Camera.id);
+    const actor=(focused?.alive?focused:null)||[...remotePlayers.values()].filter(p=>p.alive)[z2WatchIndex]||
       [...remotePlayers.values()].find(p=>p.alive);
     if(actor)return {eye:[actor.x-Math.sin(actor.yaw)*4,3.3,actor.z+Math.cos(actor.yaw)*4],center:[actor.x,1.2,actor.z]};
     return {eye:[22,17,23],center:[0,0,0]};
   }
+  const alternate=z3MatchViewCamera();
+  if(alternate)return alternate;
   const dir=aimVector(pl.yaw,pl.pitch);
   return {eye:[pl.x,pl.y,pl.z],center:[pl.x+dir.x,pl.y+dir.y,pl.z+dir.z]};
 };
@@ -9060,18 +9221,20 @@ simulate=function(dt,now){
     if(mode==='z2-daily')equippedPet='starter';
     try{z2LegacySim(dt,now);}finally{equippedPet=pet;}
     z2LocalTick(dt,now);
+    z3TickLocal(dt,now);
   }
   z2CaptureFrame(now);
 };
 startGame=function(which){
   if(which!=='crown-overdrive'){
-    if(z2Live.room){z2Send('leave',{},true);z2EndView();z2Live.room=null;}
+    if(z2Live.room&&which!=='crown-z3-warmup'){z2Send('leave',{},true);z2EndView();z2Live.room=null;}
     z2ResetLocalRun();
   }
   return z2LegacyStart(which);
 };
 quit=function(){
   if(z2IsMatch()||mode==='crown-overdrive'){z2Leave();return;}
+  if(mode==='crown-z3-warmup'){z3LeaveWarm();return;}
   z2ResetLocalRun();
   return z2LegacyQuit();
 };
@@ -9105,7 +9268,7 @@ function z2MatchResult(result){
   z2ReplayJob++;z2KillcamJob++;
   $('z2Killcam').classList.add('hide');$('z2MatchHud').classList.add('hide');
   $('z2LiveChat').classList.add('hide');
-  $('rxStage').classList.remove('z2-playing','z2-watching','z2-rescue','z2-relic','z2-chess');
+  $('rxStage').classList.remove('z2-playing','z2-watching','z2-rescue','z2-relic','z2-chess','z2-raid','z3-driving','z3-disguised');
   z2ScoreOpen=false;$('z2MatchBoard').classList.add('hide');
   mouseDown=false;mobileFire=false;z2Live.use=false;z2Live.ability=false;
   if(document.pointerLockElement)document.exitPointerLock();
@@ -9116,7 +9279,7 @@ function z2MatchResult(result){
   $('z2ResultTitle').textContent=winning==null?'Match drawn':match?.team==null?z2Name(winning)+' wins':won?'Victory':'Defeat';
   const delta=result.deltas?.[z1Account?.id];
   $('z2ResultScore').textContent=result.score.join(' – ')+' · '+(result.mvp?'MVP '+result.mvp:'Match finished')+
-    (delta==null?'':(' · '+(delta>0?'+':'')+delta+' RP'));
+    (result.field?' · '+result.field:'')+(delta==null?'':(' · '+(delta>0?'+':'')+delta+' RP'));
   const root=$('z2ResultBoard');root.replaceChildren();
   z2Table(root,['Player','Team','K','D','Damage','Revives'],result.players.map(p=>[
     p.name,z2Name(p.team),p.kills,p.deaths,p.damage,p.revives]));
@@ -9124,6 +9287,7 @@ function z2MatchResult(result){
   $('z2Rematch').classList.toggle('hide',!!(result.season||z2Live.room?.tournament));
   $('z2FinalReplay').classList.toggle('hide',!result.highlight?.frames?.length);
   $('z2ResultClip').classList.toggle('hide',z2LocalFrames.length<2);
+  z3ResultView(result);
   const celebration=$('z2Celebration');celebration.replaceChildren();
   const winners=result.players.filter(p=>p.team===winning&&!p.forfeited).slice(0,5);
   const cards=winners.map(p=>{
@@ -9276,13 +9440,22 @@ function z2ToggleChat(open){
   panel.classList.toggle('hide',!open);
   mouseDown=false;mobileFire=false;
   if(open){
+    z2MatchActions();
     if(document.pointerLockElement)document.exitPointerLock();
     $('z2LiveInput').focus();
   }else if(phase==='playing'&&!paused)capturePointer();
 }
 function z2ToggleBoard(open){
   z2ScoreOpen=open;$('z2MatchBoard').classList.toggle('hide',!open);
-  if(open)z2Hud();
+  if(open){z2MatchActions();z2Hud();}
+}
+
+function z2MatchActions(open){
+  for(const [name,trigger,panel] of [['match','z2ShowMatchOptions','z2MatchOptions'],['ping','z2TogglePings','z2PingButtons']]){
+    const selected=open===name;
+    $(trigger)?.setAttribute('aria-expanded',String(selected));
+    $(panel)?.classList.toggle('hide',!selected);
+  }
 }
 function z2AdminStatus(message){$('z2AdminStatus').textContent=message;}
 async function z2AdminRead(){
@@ -9296,6 +9469,10 @@ async function z2AdminRead(){
       const item=document.createElement('article');
       z2Text('strong',r.reporter+' reported '+r.target,item);
       z2Text('p',r.reason+' · '+time(r.created),item);
+      if(r.matchId){
+        z2Text('p','Match '+r.matchId+' · '+z3Clock(r.at),item);
+        for(const event of r.timeline||[])z2Text('small',z3Clock(event.at)+' · '+event.text,item);
+      }
       if(r.resolved_at)z2Text('small','Resolved '+time(r.resolved_at),item);
       else item.append(z2SmallButton('Mark reviewed',()=>z2AdminAct({action:'resolve',reportId:r.id})));
       reports.append(item);
@@ -9313,11 +9490,12 @@ async function z2AdminAct(data){
 let z2LastClip=[],z2GhostRun=null,z2Dual=null,z2Daily=null;
 const Z2_BEST_GHOST='recoil_z2_rally_ghost';
 const Z2_TRIAL_BEST='recoil_z2_daily_pbs';
-const Z2_MARKERS=['checkpoint','botspawn'];
+const Z2_MARKERS=['checkpoint','botspawn','doortrigger','wavetrigger','routetrigger'];
 const z2PointForCell=v=>({x:(v.gx-6.5)*8,z:(v.gz-6.5)*8});
 
 function z2ResetLocalRun(){
   missionResetView();
+  z3Run=null;z3LocalHudKey='';$('z3WarmExit')?.classList.add('hide');
   if(z2LocalFrames.length>1){z2LastClip=z2LocalFrames.slice();z2LocalFrames.length=0;}
   z2LastSample=0;z2GhostRun=null;z2Dual=null;z2Daily=null;
   $('z2LocalHud')?.classList.add('hide');
@@ -9386,7 +9564,11 @@ crownDamageBot=function(bot,damage){
 };
 const z2BaseKillBot=killBot;
 killBot=function(bot,killer){
-  if(missionRun&&bot.missionGuard){
+  if(z3Run?.kind==='warmup'&&bot.z3Still){
+    if(bot.alive){bot.alive=false;bot.hp=0;bot.z3Reset=performance.now()/1000+.8;pl.kills++;playSound('hit');}
+    return;
+  }
+  if(bot.z3Practice||(missionRun&&bot.missionGuard)){
     if(!bot.alive)return;
     const result=z2BaseKillBot(bot,killer);bot.respawn=Infinity;return result;
   }
@@ -9403,6 +9585,7 @@ hurt=function(damage){
     crownResult={heading:'Double Crown failed',detail:'Return and defeat both monarchs.',won:false,type:'dual'};
     finish();
   }
+  if(z3Run?.kind==='clutch'&&!pl.alive&&phase==='playing')z3LocalFinished(z3Run,false);
   return result;
 };
 function z2TickDual(dt,now){
@@ -9450,6 +9633,7 @@ x5ApplyBuilder=function(){
   const run=x5Run,waypoints=all.filter(v=>v.type==='checkpoint').map(z2PointForCell);
   if(waypoints.length&&run){
     run.z2Route=waypoints;run.z2Next=0;run.z2Exit=run.point;run.point=null;
+    z3PrepareTriggers(run,all);
   }
   const spawnPoints=all.filter(v=>v.type==='botspawn').slice(0,mobile?6:10);
   if(spawnPoints.length){
@@ -9471,10 +9655,11 @@ x5EditCanvas=function(){
   for(const tile of x5Data.builder){
     if(!Z2_MARKERS.includes(tile.type))continue;
     const x=tile.gx*size,z=tile.gz*size;
-    ctx.fillStyle=tile.type==='checkpoint'?'#33c9dd':'#ee8267';
+    ctx.fillStyle=tile.type==='checkpoint'?'#33c9dd':Z3_TRIGGER_TOOLS[tile.type]?.[1]||'#ee8267';
     ctx.fillRect(x+1,z+1,size-2,size-2);
     ctx.fillStyle='#0b1821';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
-    ctx.fillText(tile.type==='checkpoint'?String(++checkpoint):'B',x+size/2,z+size*.68);
+    ctx.fillText(tile.type==='checkpoint'?String(++checkpoint):Z3_TRIGGER_TOOLS[tile.type]?
+      Z3_TRIGGER_TOOLS[tile.type][0][0]+tile.step:'B',x+size/2,z+size*.68);
   }
   ctx.textAlign='start';
 };
@@ -9491,7 +9676,9 @@ x5ImportMap=async function(file){
       const key=item.gx+','+item.gz, unique=item.type==='spawn'||item.type==='objective';
       if(cells.has(key)||(unique&&single.has(item.type)))continue;
       cells.add(key);if(unique)single.add(item.type);
-      cleaned.push({gx:item.gx,gz:item.gz,type:item.type});
+      const marker={gx:item.gx,gz:item.gz,type:item.type};
+      if(Z3_TRIGGER_TOOLS[item.type])marker.step=Number.isInteger(item.step)?clamp(item.step,1,110):1;
+      cleaned.push(marker);
     }
     x5Data.builder=cleaned;x5Save();x5EditCanvas();x5Message('Map imported');
   }catch{x5Message('Invalid map file');}
@@ -9555,10 +9742,12 @@ function z2LocalTick(dt,now){
   }
   const mission=mode==='builder'&&x5Run;
   if(mission?.z2Route){
+    if(z3MissionWaiting(mission))return;
     const gate=mission.z2Route[mission.z2Next];
     if(gate&&Math.hypot(gate.x-pl.x,gate.z-pl.z)<3.2){
       mission.z2Next++;playSound('hit');
-      if(mission.z2Next===mission.z2Route.length)mission.point=mission.z2Exit;
+      z3ActivateTriggers(mission,mission.z2Next);
+      if(!mission.z3Wave&&mission.z2Next===mission.z2Route.length)mission.point=mission.z2Exit;
     }
     z2LocalHint(mission.point?'Reach the finish marker':'Checkpoint '+(mission.z2Next+1)+' / '+mission.z2Route.length);
   }
@@ -9581,7 +9770,18 @@ function z2DrawLocalExtras(out,now){
     for(const s of [-1,1])putBox(out,x+s*2.4,.02,z,.21,2.25,.21,tint);
   }
   if(z2IsMatch())for(const p of remotePlayers.values()){
-    if(p.hp>0)putBox(out,p.x,2.23+p.jump,p.z,.54,.08,.19,Z2_TEAM[p.team]);
+    if(p.hp>0&&z2Live.match.mode!=='jeep'&&!(z2Live.match.mode==='props'&&p.prop>=0)){
+      const y=2.23+p.jump,tint=Z2_TEAM[p.team];
+      if(z3Access.teamSymbols&&p.team===0){
+        putBox(out,p.x,y,p.z,.17,.15,.17,tint);
+        putBox(out,p.x,y-.12,p.z,.30,.12,.30,tint);
+        putBox(out,p.x,y-.24,p.z,.17,.12,.17,tint);
+      }else if(z3Access.teamSymbols){
+        putBox(out,p.x,y,p.z,.13,.14,.13,tint);
+        putBox(out,p.x,y-.12,p.z,.28,.12,.28,tint);
+        putBox(out,p.x,y-.24,p.z,.43,.12,.43,tint);
+      }else putBox(out,p.x,y,p.z,.54,.08,.19,tint);
+    }
     if(p.down)crownOutline(out,{x:p.x,z:p.z,r:1.12},Z2_TEAM[p.team]);
   }
 }
@@ -9592,6 +9792,7 @@ finish=function(){
   const completed=phase==='playing';
   const result=z2FinishBase();
   if(completed&&phase==='end'){
+    $('z3WarmExit')?.classList.add('hide');
     $('z2LocalHud')?.classList.add('hide');
     if(z2LocalFrames.length>1)z2LastClip=z2LocalFrames.slice();
     $('z2EndClip')?.classList.toggle('hide',z2LastClip.length<2);
@@ -9684,41 +9885,48 @@ function z2MountUI(){
   const createOptions=Object.entries(Z2_MODES).map(([id,title])=>'<option value="'+id+'">'+title+'</option>').join('');
   const countOptions=[1,2,3,5].map(n=>'<option value="'+n+'">'+n+'v'+n+'</option>').join('');
   const menu=z1MakeScreen('z2Menu','Operation Overdrive',`
+    <div class="z2-toolbar">
+      <div class="z2-actions"><strong id="z2Account"></strong><button id="z2SignIn" type="button">Friends account</button></div>
+      <div class="z2-actions"><button id="z2LocalAccess" type="button">Local challenges</button>
+        <button id="z2AdminAccess" class="hide" type="button">Admin panel</button>
+        <button id="z3QueueWarm" class="hide" type="button">Warm up</button>
+        <button id="z2RankStop" class="hide" type="button">Cancel ranked search</button></div>
+    </div>
     <p id="z2Status" role="status"></p>
-    <div class="z2-actions"><strong id="z2Account"></strong><button id="z2SignIn" type="button">Friends account</button>
-      <button id="z2LocalAccess" type="button">Local challenges</button><button id="z2AdminAccess" class="hide" type="button">Admin panel</button></div>
     <div id="z2Room"></div>
-    <div id="z2LobbyForm" class="z2-form-grid">
-      <form id="z2Create" class="z2-block">
-        <h3>Create private lobby</h3>
+    <div id="z2LobbyForm">
+      <form id="z2Join" class="z2-block z2-lobby-fields">
+        <label>Invite code<input id="z2Code" required minlength="6" maxlength="6" autocomplete="off" autocapitalize="characters"></label>
+        <label>Room password (if required)<input id="z2JoinPass" type="password" maxlength="64" autocomplete="off"></label>
+        <label class="z2-check"><input id="z2Spectate" type="checkbox"> Spectate a tournament</label>
+        <button class="primary" type="submit">Join lobby</button>
+      </form>
+      <form id="z2Create" class="z2-block z2-lobby-fields">
         <label>Mode<select id="z2GameMode">${createOptions}</select></label>
         <label>Size<select id="z2TeamSize">${countOptions}</select></label>
-        <label>Kill limit<input id="z2KillLimit" type="number" min="1" max="50" value="15" required></label>
+        <label id="z3LimitField">Kill limit<input id="z2KillLimit" type="number" min="1" max="50" value="15" required></label>
         <label>Room password (optional)<input id="z2CreatePass" type="password" minlength="4" maxlength="64" autocomplete="off"></label>
         <label>Tournament<select id="z2Tournament"><option value="0">None</option><option value="4">4 teams</option><option value="8">8 teams</option></select></label>
         <button class="primary" type="submit">Create lobby</button>
       </form>
-      <form id="z2Join" class="z2-block">
-        <h3>Join by code</h3>
-        <label>Invite code<input id="z2Code" required minlength="6" maxlength="6" autocomplete="off" autocapitalize="characters"></label>
-        <label>Room password<input id="z2JoinPass" type="password" maxlength="64" autocomplete="off"></label>
-        <label class="z2-check"><input id="z2Spectate" type="checkbox"> Spectate a tournament</label>
-        <button class="primary" type="submit">Join</button>
-      </form>
-      <form id="z2Queue" class="z2-block">
-        <h3>Ranked queue</h3>
+      <form id="z2Queue" class="z2-block z2-lobby-fields">
         <label>Size<select id="z2RankSize">${countOptions}</select></label>
-        <p>Queue matches players in the same format and expands the rating range as you wait.</p>
+        <p>Search expands to more ratings as you wait.</p>
         <button class="primary" type="submit">Find ranked match</button>
-        <button id="z2RankStop" class="hide" type="button">Cancel search</button>
+        <button id="z3OpenSquad" class="secondary" type="button">Create ranked squad</button>
       </form>
     </div>
-    <details class="z2-block" id="z2RankSection"><summary>Ranked profile and leaderboard</summary><div id="z2RankStats">Sign in to view your profile.</div></details>
-    <details class="z2-block"><summary>Report a player</summary><form id="z2Report" class="z2-block">
+    <details class="z2-block" id="z2RankSection"><summary>Ranked profile and leaderboard</summary><div id="z2RankStats"></div></details>
+    <details class="z2-block" id="z2ReportSection"><summary>Report a player</summary><form id="z2Report" class="z2-block">
       <label>Account name<input id="z2ReportName" required maxlength="18"></label>
       <label>Reason<textarea id="z2ReportReason" minlength="5" maxlength="240" required></textarea></label>
+      <label>Match ID (optional)<input id="z3ReportMatch" maxlength="36"></label>
+      <label>Match time in seconds<input id="z3ReportTime" type="number" min="0" step="1"></label>
       <button type="submit">Submit report</button><p id="z2ReportStatus" role="status"></p></form></details>`, 'z1PlayMenu');
   menu.classList.add('z2-panel');
+  mountMenuTabs('Online play',[
+    ['Join','z2JoinTab',$('z2Join')],['Host','z2HostTab',$('z2Create')],['Ranked','z2RankedTab',$('z2Queue')]
+  ]);
   const admin=z1MakeScreen('z2Admin','Admin Panel 2.0',`
     <form id="z2AdminForm" class="z2-block z2-form-grid">
       <label>Account name<input id="z2AdminName" required maxlength="18"></label>
@@ -9734,8 +9942,10 @@ function z2MountUI(){
   const results=z1MakeScreen('z2Results','Match results',`
     <h3 id="z2ResultTitle"></h3><p id="z2ResultScore"></p><div id="z2Celebration" aria-label="Winning team"></div>
     <div id="z2ResultBoard"></div>
+    <details class="z2-block hide"><summary>Match timeline</summary><ol id="z3ResultTimeline"></ol></details>
     <div class="z2-actions"><button class="primary" id="z2Rematch">Vote rematch</button>
       <button id="z2FinalReplay">Final elimination replay</button><button id="z2ResultClip">Last 15 seconds</button>
+      <button id="z3ReportMoment" class="hide">Report a moment</button><button id="z3FindAgain" class="hide">Queue again</button>
       <button id="z2ReturnLobby">Lobby and bracket</button><button id="z2LeaveResult">Leave match</button></div>`, 'z2Menu');
   results.classList.add('z2-panel');
   const local=z1MakeScreen('z2Local','Overdrive challenges',`
@@ -9773,14 +9983,11 @@ function z2MountUI(){
     <button id="z2TouchReset">Reset to default</button></div>`, 'z2Local');
   touch.classList.add('z2-panel');
 
-  z1MenuGroup($('z1PlayMenu').querySelector('.z1-screen-body'),'Operation Overdrive',[
-    ['Competitive multiplayer','Private matches, ranked queue and tournaments',z2Open,'z2PlayAccess'],
-    ['Local challenges','Double Crown, Daily Time Trial and Rally Ghosts',z2OpenOffline]
-  ]);
-  const link=crownButton('Operation Overdrive',z2Open,'primary full','z2HomeAccess');
-  $('z1Home').prepend(link);
-  $('mainMenu').querySelector('.brandchip').textContent='Z.2 · OPERATION OVERDRIVE';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · Z.2';
+  const link=crownButton('',z2Open,'secondary','z2HomeAccess');
+  z2Text('strong','Operation Overdrive',link);
+  $('z1PlayBtn').after(link);
+  $('mainMenu').querySelector('.brandchip').textContent='Z.3';
+  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · Z.3';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');
@@ -9807,12 +10014,13 @@ function z2MountUI(){
   };
   const setTeamOptions=()=>{
     const mode=$('z2GameMode').value,tourney=Number($('z2Tournament').value),select=$('z2TeamSize');
-    const sizes=tourney?[1,2]:mode==='chess'?[1]:mode==='rescue'?[2,3,5]:[1,2,3,5];
+    const sizes=tourney?[1,2]:mode==='chess'?[1]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:mode==='raid'?[2,3,4]:[1,2,3,5];
     const chosen=Number(select.value);
-    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',n+'v'+n);o.value=String(n);return o;}));
+    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&mode==='raid'?n+' players':n+'v'+n);o.value=String(n);return o;}));
     select.value=String(sizes.includes(chosen)?chosen:sizes[0]);
     $('z2GameMode').disabled=!!tourney;
-    $('z2KillLimit').disabled=!tourney&&(mode==='chess'||mode==='relic');
+    const fixed=!tourney&&!['arena','overcharge','rescue'].includes(mode);
+    $('z2KillLimit').disabled=fixed;$('z3LimitField').classList.toggle('hide',fixed);
   };
   $('z2GameMode').onchange=setTeamOptions;$('z2Tournament').onchange=setTeamOptions;
   $('z2Join').onsubmit=event=>{
@@ -9820,12 +10028,24 @@ function z2MountUI(){
     if(z2Send('join',{code:z2InputValue('z2Code'),password:$('z2JoinPass').value,spectate:$('z2Spectate').checked}))
       $('z2JoinPass').value='';
   };
-  $('z2Queue').onsubmit=event=>{event.preventDefault();z2Send('queue',{size:Number($('z2RankSize').value)});};
+  $('z2Queue').onsubmit=event=>{event.preventDefault();z2Send('queue',{size:Number($('z2RankSize').value),revision:3});};
   $('z2RankStop').onclick=()=>z2Send('queue',{join:false});
+  $('z3QueueWarm').onclick=z3StartWarm;
+  $('z3OpenSquad').onclick=()=>{
+    const size=Number($('z2RankSize').value);
+    if(size===1){z2Say('Choose 2v2, 3v3 or 5v5 to create a squad.',true);return;}
+    z2Send('create',{mode:'arena',size,squad:true});
+  };
   $('z2Report').onsubmit=async event=>{
     event.preventDefault();const message=$('z2ReportStatus');
     try{
-      await z1Fetch('/z2/report',{name:z2InputValue('z2ReportName'),reason:z2InputValue('z2ReportReason')});
+      const matchId=z2InputValue('z3ReportMatch'),seconds=z2InputValue('z3ReportTime');
+      const body={name:z2InputValue('z2ReportName'),reason:z2InputValue('z2ReportReason')};
+      if(matchId||seconds){
+        if(!matchId||!seconds)throw Error('Enter both the match ID and the time in seconds.');
+        Object.assign(body,{matchId,at:Number(seconds)*1000});
+      }
+      await z1Fetch('/z2/report',body);
       message.textContent='Report sent.';event.target.reset();
     }catch(error){message.textContent=error.message;}
   };
@@ -9844,6 +10064,7 @@ function z2MountUI(){
   };
   $('z2ResultClip').onclick=()=>z2OpenReplay(z2LocalFrames,'Match highlight','z2Results');
   $('z2ReturnLobby').onclick=z2Open;$('z2LeaveResult').onclick=z2Leave;
+  $('z3ReportMoment').onclick=z3ReportMoment;$('z3FindAgain').onclick=z3FindAgain;
   $('z2Rally').onclick=z1StartRally;$('z2Dual').onclick=z2DoubleCrown;$('z2Trial').onclick=z2DailyStart;
   $('z2Builder').onclick=x5Open;$('z2AvatarOpen').onclick=z2OpenAvatar;$('z2TouchOpen').onclick=z2TouchEdit;
   $('z2OfflineReplay').onclick=()=>z2OpenReplay(z2LastClip,'Last match highlight','z2Local');
@@ -9866,7 +10087,7 @@ function z2MountUI(){
   const oldShow=showScreen;
   showScreen=function(id){
     if(z2IsMatch()&&id==='pauseMenu'){
-      z2ToggleBoard(false);$('z2LiveChat').classList.add('hide');
+      z2ToggleBoard(false);z2MatchActions();$('z2LiveChat').classList.add('hide');
     }
     return oldShow(id);
   };
@@ -9876,16 +10097,23 @@ function z2MountUI(){
 function z2MountMatch(){
   const status=document.createElement('section');status.className='z2-match-hud hide';status.id='z2MatchHud';
   status.innerHTML=`
-    <div class="z2-live-status"><strong id="z2MatchScore"></strong><span id="z2Latency"></span></div>
-    <p id="z2MatchHint"></p><p id="z2Down"></p><p id="z2MatchPing" class="hide" role="status"></p>
-    <button id="z2ReadyAim" class="hide" type="button">Capture mouse</button>
-    <div class="z2-live-actions" id="z2LiveActions">
-      <button id="z2TogglePings" type="button">Ping</button><button id="z2LiveBoard" type="button">Scores</button>
-      <button id="z2ChatOpen" type="button">Chat</button><button id="z2Use" type="button">Hold Use</button>
+    <div class="z2-live-status">
+      <strong id="z2MatchScore"></strong><span id="z2Latency">… ms</span>
+      <button id="z2TogglePings" type="button" aria-controls="z2PingButtons" aria-expanded="false">Ping</button>
+      <button id="z2ShowMatchOptions" type="button" aria-controls="z2MatchOptions" aria-expanded="false">Match</button>
+      <button id="z2Use" type="button">Hold Use</button>
       <button id="z2Ability" type="button">Ability</button><button id="z2Watch" type="button">Next player</button>
+      <button id="z3Director" type="button" class="hide">Auto camera on</button>
+      <button id="z2ReadyAim" class="hide" type="button">Capture mouse</button>
+      <p id="z2MatchHint"></p><p id="z2Down"></p><p id="z2MatchPing" class="hide" role="status"></p>
+    </div>
+    <div id="z2MatchOptions" class="z2-live-actions z2-live-drawer hide">
+      <button id="z2LiveBoard" type="button" aria-controls="z2MatchBoard">Scores</button>
+      <button id="z2ChatOpen" type="button" aria-controls="z2LiveChat">Chat</button>
       <button id="z2LiveLeave" type="button">Lobby</button>
     </div>
-    <div id="z2PingButtons" class="z2-live-actions hide"></div>
+    <div id="z2PingButtons" class="z2-live-actions z2-live-drawer hide"></div>
+    <div id="z3DraftHud" class="z2-live-actions z2-live-drawer hide"></div>
     <div class="z2-match-board hide" id="z2MatchBoard"></div>`;
   const stage=$('rxStage');
   stage.append(status);
@@ -9896,19 +10124,28 @@ function z2MountMatch(){
   const replay=document.createElement('section');replay.id='z2Killcam';replay.className='z2-killcam hide';
   replay.innerHTML='<strong>Elimination replay</strong><canvas id="z2KillcamCanvas" width="330" height="225"></canvas>';
   const hint=z2Text('p','',stage);hint.id='z2LocalHud';hint.className='z2-local-hud hide';
-  stage.append(chat,replay);
+  stage.append(chat,replay,crownButton('Return to queue',z3LeaveWarm,'secondary hide','z3WarmExit'));
   $('z2ReadyAim').onclick=()=>{capturePointer();$('z2ReadyAim').classList.add('hide');};
   const pingMenu=$('z2PingButtons');
   const choosePing=kind=>{
-    z2Send('ping',{kind});pingMenu.classList.add('hide');
+    z2Send('ping',{kind});z2MatchActions();
   };
   for(const [kind,label] of Z2_PINGS.entries())pingMenu.append(z2SmallButton(label,()=>choosePing(kind)));
-  $('z2TogglePings').onclick=()=>pingMenu.classList.toggle('hide');
+  $('z2TogglePings').onclick=()=>z2MatchActions(pingMenu.classList.contains('hide')?'ping':undefined);
+  $('z2ShowMatchOptions').onclick=()=>z2MatchActions($('z2MatchOptions').classList.contains('hide')?'match':undefined);
   $('z2LiveBoard').onclick=()=>z2ToggleBoard(!z2ScoreOpen);
   $('z2ChatOpen').onclick=()=>z2ToggleChat(true);$('z2ChatClose').onclick=()=>z2ToggleChat(false);
-  $('z2Watch').onclick=()=>{z2WatchIndex=(z2WatchIndex+1)%Math.max(1,[...remotePlayers.values()].filter(p=>p.alive).length);};
+  $('z2Watch').onclick=()=>{
+    z3Camera.auto=false;$('z3Director').textContent='Auto camera off';
+    z2WatchIndex=(z2WatchIndex+1)%Math.max(1,[...remotePlayers.values()].filter(p=>p.alive).length);
+  };
+  $('z3Director').onclick=()=>{
+    z3Camera.auto=!z3Camera.auto;z3Camera.next=0;
+    $('z3Director').textContent=z3Camera.auto?'Auto camera on':'Auto camera off';
+  };
   $('z2Ability').onclick=()=>{z2Live.ability=true;};
   $('z2LiveLeave').onclick=()=>{
+    z2MatchActions();
     paused=true;
     if(document.pointerLockElement)document.exitPointerLock();
     showScreen('z2Menu');z2RenderLobby();
@@ -9936,17 +10173,579 @@ function z2MountMatch(){
       return;
     }
     if(paused||event.repeat)return;
+    if(/^Digit[1-4]$/.test(event.code)&&z3Pick(Number(event.code.slice(-1))-1)){
+      event.preventDefault();event.stopImmediatePropagation();return;
+    }
+    if(event.code==='Escape'){
+      const trigger=['z2ShowMatchOptions','z2TogglePings'].map($).find(button=>button.getAttribute('aria-expanded')==='true');
+      if(trigger){
+        event.preventDefault();event.stopImmediatePropagation();
+        z2MatchActions();trigger.focus();return;
+      }
+    }
+    if(!document.pointerLockElement&&event.target?.closest?.('#z2MatchHud button'))return;
     const shortcuts={KeyG:()=>choosePing(0),KeyB:()=>choosePing(1),KeyN:()=>choosePing(2),KeyM:()=>choosePing(3),
       Tab:()=>z2ToggleBoard(true),Enter:()=>z2ToggleChat(true),Slash:()=>z2ToggleChat(true)};
     const action=shortcuts[event.code];
     if(action){event.preventDefault();event.stopImmediatePropagation();action();}
   },true);
   window.addEventListener('keyup',event=>{
-    if(z2IsMatch()&&event.code==='Tab'){event.stopImmediatePropagation();z2ToggleBoard(false);}
+    if(z2IsMatch()&&event.code==='Tab'&&!event.target?.closest?.('#z2MatchHud button')){
+      event.stopImmediatePropagation();z2ToggleBoard(false);
+    }
   },true);
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){z2Live.use=false;z2Live.ability=false;}
+    if(document.hidden){z2Live.use=false;z2Live.ability=false;resetTouchJump();}
   });
+}
+
+// Z.3 screens use the existing game, renderer, and authenticated Overdrive connection.
+const Z3_WEAPON_LABELS=['Rifle · 3','Shotgun · 5','Sniper · 6','SMG · 1'];
+const Z3_PROP_LABELS=['Crate','Barrel','Beacon'];
+const Z3_LOCAL_FIELD={half:28,cover:[]};
+const Z3_ACCESS_DEFAULT={teamSymbols:false,contrast:false,reducedFlashes:false};
+const Z3_ACCESS_PRESETS={
+  default:Z3_ACCESS_DEFAULT,
+  visibility:{...Z3_ACCESS_DEFAULT,teamSymbols:true,contrast:true},
+  reduced:{...Z3_ACCESS_DEFAULT,reducedFlashes:true},
+  both:{teamSymbols:true,contrast:true,reducedFlashes:true}
+};
+const z3Access={...Z3_ACCESS_DEFAULT,...getStore('recoil_z3_access',{})};
+const z3Camera={auto:true,id:null,next:0};
+let z3Run=null,z3InstallEvent=null,z3OfflineReady=false;
+let z3LocalHudKey='',z3VetoTimer=0;
+const z3Clock=ms=>{
+  const seconds=Math.max(0,Math.floor(ms/1000));
+  return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+};
+
+function z3Invite(root,room){
+  const text=z2Text('strong','Invite code '+room.code,root);text.className='z2-code';
+  root.append(z2SmallButton('Copy code',async()=>{
+    try{await navigator.clipboard.writeText(room.code);z2Say('Invite code copied.');}
+    catch{z2Say('Invite code '+room.code);}
+  }));
+}
+
+function z3RefreshVetoTimer(){
+  clearTimeout(z3VetoTimer);
+  const label=$('z3VetoClock');
+  if(!label||!z2Live.room?.veto)return;
+  const remaining=Math.max(0,z2Live.vetoEnds-performance.now());
+  const seconds=Math.ceil(remaining/1000);
+  label.textContent=seconds?seconds+' s to ban':'Selecting an arena…';
+  if(seconds)z3VetoTimer=setTimeout(z3RefreshVetoTimer,Math.max(50,remaining-(seconds-1)*1000));
+}
+
+function z3Lobby(root,room){
+  if(room.veto){
+    const v=room.veto,captain=room.members.find(p=>p.id===v.captains[v.turn]);
+    const myTurn=z1Account?.id===v.captains[v.turn];
+    z2Text('h3','Ranked map veto',root);
+    z2Text('p',myTurn?'Your turn to ban an arena.':(captain?.name||z2Name(v.turn)+' captain')+' chooses the next ban.',root);
+    z2Text('p','',root).id='z3VetoClock';
+    z3RefreshVetoTimer();
+    const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
+    for(const arena of v.pool){
+      const button=z2SmallButton('Ban '+arena.name,()=>z2Send('veto',{map:arena.id}));
+      button.disabled=!myTurn;actions.append(button);
+    }
+    if(v.banned.length)z2Text('p','Banned '+v.banned.map(a=>a.name).join(' · '),root);
+    actions.append(z2SmallButton('Leave ranked lobby',z2Leave));
+    return true;
+  }
+  if(!room.squad)return false;
+  z2Text('h3','Ranked squad · '+room.members.length+'/'+room.capacity,root);
+  z3Invite(root,room);
+  z2Table(root,['Player','Ready check'],room.members.map(p=>[p.name,p.away?'Reconnecting':p.ready?'Ready':'Waiting']));
+  const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
+  const mine=room.members.find(p=>p.id===z1Account?.id);
+  const ready=z2SmallButton(mine?.ready?'Unready':'Ready',()=>z2Send('squad-ready',{ready:!mine?.ready}));
+  ready.disabled=room.squad.queued;actions.append(ready);
+  if(room.host===z1Account?.id){
+    const start=crownButton('Find ranked match',()=>z2Send('squad-queue'),'primary');
+    start.disabled=room.squad.queued||room.members.length!==room.capacity||room.members.some(p=>!p.ready||p.away);
+    actions.append(start);
+  }
+  actions.append(z2SmallButton('Leave squad',z2Leave));
+  return true;
+}
+
+function z3Pick(key){
+  const match=z2Live.match,s=z2Live.snapshot?.objective;
+  if(!match||!s)return false;
+  if(match.mode==='budget'){
+    if(s.phase==='draft')z2Send('budget',{weapon:key});
+    return true;
+  }
+  if(match.mode==='props'&&match.team===s.hiders&&key<3){
+    if(s.phase==='hide')z2Send('prop',{prop:key});
+    return true;
+  }
+  return false;
+}
+
+function z3MatchView(event){
+  const match=z2Live.match, s=event.objective;
+  const draw=$('z3DraftHud');
+  if(!match||!draw)return;
+  const local=event.rows.find(row=>row[0]===z1Account?.id);
+  const spectator=match.team==null;
+  $('z3Director').classList.toggle('hide',!spectator||match.match==null);
+  if(spectator&&z3Camera.auto&&event.camera!=null&&
+    (performance.now()>=z3Camera.next||!remotePlayers.get(z3Camera.id)?.alive)){
+    z3Camera.id=event.camera;z3Camera.next=performance.now()+1700;
+  }
+  const costume=match.mode==='props'&&match.team===s?.hiders;
+  $('rxStage').classList.toggle('z3-disguised',costume);
+  $('rxStage').classList.toggle('z3-driving',match.mode==='jeep');
+  if(match.mode==='budget'&&local&&local[14]!==pl.weapon)switchGunWithAnimation(local[14]);
+  if(match.mode==='jeep'&&local)Object.assign(pl,{x:local[1],z:local[2],yaw:local[3]});
+  if(!s){
+    draw.classList.add('hide');
+    if(event.waitingEarly)$('z2MatchHint').textContent='Match paused · Waiting for a player to reconnect';
+    else if(match.ranked)$('z2MatchHint').textContent='Ranked · '+z2Name(match.team)+' team';
+    return;
+  }
+  const seconds=s.deadline!=null?' · '+Math.max(0,Math.ceil((s.deadline-event.t)/1000))+' s':'';
+  let hint='',type='';
+  switch(match.mode){
+    case 'escort':
+      hint='Half '+(s.half+1)+' · '+z2Name(s.half)+' escort'+seconds;break;
+    case 'hotzone':
+      hint='Site '+s.site+' · '+(s.control==null?'Contested or empty':z2Name(s.control)+' controls')+seconds;break;
+    case 'elimination':
+    case 'budget':
+      hint='Round '+s.round+' · '+(s.phase==='break'?'Next round':s.phase==='draft'?'Team budget '+s.spent+'/'+s.budget:'One life')+seconds;
+      if(!spectator&&s.phase==='draft')type='budget';
+      break;
+    case 'props':
+      hint=(costume?'Hide as a '+(Z3_PROP_LABELS[s.prop]||'prop'):'Find the disguised players')+seconds;
+      if(costume&&s.phase==='hide')type='prop';
+      if(!costume&&s.phase==='hide')hint='Search starts'+seconds;
+      break;
+    case 'jeep': {
+      const car=s.cars.find(c=>c.team===match.team);
+      hint=car?(car.driver===z1Account?.id?'Drive with movement · Jump brakes':'Passenger · Your turn at the next gate')+' · Gate '+(car.gate+1)+'/4':'Jeep Relay';break;
+    }
+    case 'raid':
+      hint='Crown '+s.boss.hp+'/'+s.boss.max+' HP · '+(s.shield?'Hold Use on both seals':'Shield open · attack the Crown');break;
+  }
+  if(hint&&$('z2MatchHint').textContent!==hint)$('z2MatchHint').textContent=hint;
+  draw.classList.toggle('hide',!type);
+  if(type&&draw.dataset.kind!==type){
+    draw.dataset.kind=type;
+    draw.replaceChildren(...(type==='budget'?Z3_WEAPON_LABELS:Z3_PROP_LABELS).map((label,i)=>z2SmallButton(label,()=>z3Pick(i))));
+  }
+  if(type)Array.from(draw.children).forEach((button,i)=>button.setAttribute('aria-pressed',String(i===(type==='budget'?s.loadout:s.prop))));
+}
+
+function z3DrawProp(out,x,z,kind,y=0) {
+  const colors=[[.39,.33,.27],[.34,.46,.48],[.62,.35,.21]];
+  const tint=colors[kind]||colors[0];
+  const [width,height]=[[1.1,1.05],[.80,1.23],[.64,1.4]][kind]||[1.1,1.05];
+  putBox(out,x,y,z,width,height,width,tint);
+  if(kind===0){
+    putBox(out,x,y+.15,z,width+.04,.10,width+.04,[.60,.47,.32]);
+    putBox(out,x,y+.79,z,width+.04,.10,width+.04,[.60,.47,.32]);
+  }else if(kind===1){
+    putBox(out,x,y+.23,z,width+.07,.12,width+.07,[.21,.27,.30]);
+    putBox(out,x,y+.89,z,width+.07,.12,width+.07,[.21,.27,.30]);
+  }else putBox(out,x,y+1.14,z,.58,.24,.58,[.87,.65,.32]);
+}
+
+function z3MatchWorld(out,now){
+  const m=z2Live.match,s=z2Live.snapshot?.objective;
+  if(!m||!s)return;
+  if(m.mode==='escort'){
+    putBox(out,s.x,.25,s.z,2.05,1.6,2.3,Z2_TEAM[s.half]);
+    crownOutline(out,{x:s.x,z:s.z,r:5},Z2_TEAM[s.half],.08);
+  }
+  if(m.mode==='hotzone')crownOutline(out,{x:s.x,z:s.z,r:5},Z2_TEAM[s.control]||[.93,.80,.37],.1);
+  if(m.mode==='jeep')for(const car of s.cars){
+    z1DrawJeep(out,car,now,Math.hypot(car.x-pl.x,car.z-pl.z));
+    if(car.next)crownOutline(out,{...car.next,r:3.25},Z2_TEAM[car.team],.08);
+  }
+  if(m.mode==='props'&&m.team===s.hiders&&pl.alive)z3DrawProp(out,pl.x,pl.z,s.prop,pl.jump);
+  if(m.mode==='raid'){
+    if(s.boss.hp>0){
+      const boss={...s.boss,id:-1,crownModel:'earth',alive:true,crownUnarmed:true,yaw:Math.atan2(pl.x-s.boss.x,s.boss.z-pl.z)};
+      crownDrawActor(out,boss,Math.hypot(boss.x-pl.x,boss.z-pl.z),now);
+      if(s.shield)crownOutline(out,{x:boss.x,z:boss.z,r:3},[.39,.84,.93],.08);
+    }
+    for(const pad of s.pads)crownOutline(out,{x:pad.x,z:pad.z,r:2.4},pad.active?[.33,.96,.55]:[.78,.63,.28],.11);
+    if(s.windup)crownOutline(out,s.windup,[1,.43,.23],.17);
+  }
+}
+
+function z3MatchViewCamera(){
+  const m=z2Live.match,s=z2Live.snapshot?.objective;
+  const car=s?.cars?.find(c=>c.team===m.team);
+  if(car){
+    const yaw=car.yaw,x=car.x,z=car.z;
+    return {eye:[x-Math.sin(yaw)*6,4.8,z+Math.cos(yaw)*6],center:[x+Math.sin(yaw)*4,.85,z-Math.cos(yaw)*4]};
+  }
+  if(m.team!=null&&m.mode==='props'&&m.team===s?.hiders){
+    const eye=[pl.x-Math.sin(pl.yaw)*2.7,2.2+pl.jump,pl.z+Math.cos(pl.yaw)*2.7];
+    return {eye,center:[pl.x+Math.sin(pl.yaw)*3,.47+pl.jump,pl.z-Math.cos(pl.yaw)*3]};
+  }
+  return null;
+}
+
+function z3ResultView(result){
+  const list=$('z3ResultTimeline');
+  list.replaceChildren();
+  for(const item of result.timeline||[])z2Text('li',z3Clock(item.at)+' · '+item.text,list);
+  list.parentElement.classList.toggle('hide',!list.children.length);
+  $('z3ReportMoment').classList.toggle('hide',!result.players.some(p=>p.id===z1Account?.id));
+  $('z3FindAgain').classList.toggle('hide',result.reason!=='remake');
+  if(result.reason==='remake')$('z2ResultTitle').textContent='Match voided · Early disconnect';
+}
+
+function z3ReportMoment(){
+  const result=z2Live.result;
+  if(!result?.players.some(p=>p.id===z1Account?.id))return;
+  z2Open();
+  const details=$('z2ReportSection');details.open=true;
+  $('z3ReportMatch').value=result.id;
+  $('z3ReportTime').value=Math.floor(result.duration/1000);
+  $('z3ReportTime').max=String(Math.floor(result.duration/1000));
+  $('z2ReportName').focus();
+}
+
+function z3FindAgain(){
+  const size=z2Live.room?.size??1;
+  if(z2Send('leave'))z2Send('queue',{size,revision:3});
+}
+
+function z3AccessApply(){
+  $('rxStage').classList.toggle('z3-contrast',z3Access.contrast);
+  $('rxStage').classList.toggle('z3-reduced-flashes',z3Access.reducedFlashes);
+  Z2_TEAM[1]=z3Access.teamSymbols?[.98,.73,.24]:[.95,.37,.24];
+}
+
+function z3InstallStatus(text){const node=$('z3InstallStatus');if(node)node.textContent=text;}
+function z3MountInstall(){
+  if(!navigator.serviceWorker||!/^https?:$/.test(location.protocol)||!window.isSecureContext)return;
+  navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'})
+    .then(()=>navigator.serviceWorker.ready)
+    .then(()=>{z3OfflineReady=true;z3InstallStatus('Offline bot matches are saved on this device.');})
+    .catch(()=>z3InstallStatus('Offline setup could not finish. Reload while connected to try again.'));
+  window.addEventListener('beforeinstallprompt',event=>{
+    event.preventDefault();z3InstallEvent=event;
+  });
+  window.addEventListener('appinstalled',()=>{z3InstallEvent=null;z3InstallStatus('RECOIL X was installed.');});
+}
+async function z3Install(){
+  if(z3InstallEvent){
+    const install=z3InstallEvent;z3InstallEvent=null;
+    await install.prompt();
+    const response=await install.userChoice;
+    if(response.outcome==='accepted')z3InstallStatus('RECOIL X was installed.');
+  }else z3InstallStatus((z3OfflineReady?'Offline bot matches are ready. ':'')+
+    'Open your browser’s menu and choose Install or Add to Home Screen.');
+}
+
+const Z3_CLUTCH={
+  duel:{name:'1v2 Clutch',hp:100,spots:[[-6,-11],[8,-17]]},
+  last:{name:'Last Stand',hp:24,spots:[[5,-12]]},
+  retake:{name:'Objective Retake',hp:85,spots:[[-8,-12],[11,-16]],goal:{x:0,z:-19}}
+};
+const Z3_COURSES={
+  depot:{name:'Depot Steps',medals:[17,26,39],gates:[
+    {kind:'jump',x:-7,z:9},{kind:'climb',x:-4,z:0},{kind:'wall',x:8,z:-11},{kind:'finish',x:9,z:-23}
+  ]},
+  rift:{name:'Rift Walk',medals:[22,32,46],gates:[
+    {kind:'climb',x:7,z:12},{kind:'jump',x:-5,z:2},{kind:'wall',x:-9,z:-10},{kind:'jump',x:2,z:-16},{kind:'finish',x:4,z:-23}
+  ]}
+};
+
+function z3PracticeArena(name,kind,cover=[]){
+  const style={arena:name,sky:[.08,.13,.19],floor:[.125,.15,.18],accent:[.88,.63,.35]};
+  const arena=crownArenaStyle(style,'overdrive');
+  arena.field={...Z3_LOCAL_FIELD,cover};arena.half=28;
+  crownRun=null;
+  return crownStartArena(arena,'z3-'+kind);
+}
+
+function z3PracticeBot(x,z,hp,still=false){
+  const bot=crownSpawn('fighter',hp,still?0:2.3,x,z,{name:still?'Practice target':'Training rival',
+    noWander:still,unarmed:still});
+  bot.z3Practice=true;bot.z3Still=still;
+  if(still)bot.nextShot=Infinity;
+  return bot;
+}
+
+function z3StartClutch(id){
+  const trial=Z3_CLUTCH[id];
+  if(!trial||phase==='playing'||!z3PracticeArena(trial.name,'clutch',
+    [{x:1,z:-4,w:5,d:2,h:1.5},{x:13,z:4,w:2,d:5,h:2.4}]))return;
+  z3Run={kind:'clutch',id,trial};
+  Object.assign(pl,{hp:trial.hp,shield:0,z:17});
+  for(const [x,z] of trial.spots)z3PracticeBot(x,z,76);
+  gameSeconds=55;
+  $('gameModeLabel').textContent=trial.name;
+  z3LocalHint('Clear the rivals'+(trial.goal?' and secure the objective':''));
+}
+
+function z3StartParkour(id){
+  const course=Z3_COURSES[id];
+  if(!course||phase==='playing')return;
+  const cover=course.gates.flatMap(p=>p.kind==='climb'?[{x:p.x,z:p.z,w:4,d:1.05,h:.9}]:
+    p.kind==='wall'?[{x:p.x+1.3,z:p.z,w:1.1,d:9,h:3.8}]:[]);
+  if(!z3PracticeArena(course.name,'parkour',cover))return;
+  const first=course.gates[0];
+  Object.assign(pl,{x:first.x,z:21});
+  z3Run={kind:'parkour',id,course,gate:0,time:0,wall:0};
+  gameSeconds=100;
+  $('gameModeLabel').textContent=course.name;
+  z3LocalHint('Reach the first gate');
+}
+
+function z3StartWarm(){
+  if(!z2Live.queue||phase==='playing'||!z3PracticeArena('Queue Warm-Up','warmup'))return;
+  z3Run={kind:'warmup'};gameSeconds=180;
+  const span=mobile?3:5;
+  for(let i=0;i<span;i++)z3PracticeBot((i-(span-1)/2)*5.5,-9-(i%2)*7,60,true);
+  $('gameModeLabel').textContent='Queue Warm-Up';
+  $('z3WarmExit').classList.remove('hide');
+  z3LocalHint('Practice while we find your match.');
+}
+
+function z3LeaveWarm(){
+  if(mode!=='crown-z3-warmup')return;
+  z2ResetLocalRun();z2LegacyQuit();showScreen('z2Menu');z2RenderLobby();
+}
+
+function z3LocalHint(value){
+  if(value===z3LocalHudKey)return;
+  z3LocalHudKey=value;z2LocalHint(value);
+}
+
+function z3ParkourMedal(course,time){
+  return ['Gold','Silver','Bronze'][course.medals.findIndex(limit=>time<=limit)]||'Finished';
+}
+
+function z3ShowParkourRecords(){
+  const records=getStore('recoil_z3_parkour',{});
+  for(const [id,course] of Object.entries(Z3_COURSES)){
+    const label=$('z3ParkourRecord-'+id),best=records?.[id];
+    if(!label)continue;
+    const recorded=Number.isFinite(best)&&best>0;
+    label.textContent=recorded?'Best '+best.toFixed(2)+' s · '+z3ParkourMedal(course,best):'';
+    label.classList.toggle('hide',!recorded);
+  }
+}
+
+function z3LocalFinished(run,success){
+  if(phase!=='playing'||z3Run!==run)return;
+  const title=run.kind==='parkour'?run.course.name:run.trial.name;
+  let summary=success?'Drill cleared':'Try again';
+  if(success&&run.kind==='parkour'){
+    const records=getStore('recoil_z3_parkour',{}),prior=records?.[run.id];
+    const time=Math.round(run.time*100)/100;
+    const best=Number.isFinite(prior)&&prior>0?Math.min(prior,time):time;
+    if(best!==prior)setStore('recoil_z3_parkour',{...records,[run.id]:best});
+    summary=z3ParkourMedal(run.course,time)+' · '+time.toFixed(2)+' s · Best '+best.toFixed(2)+' s';
+    z3ShowParkourRecords();
+  }
+  finish();
+  $('endTitle').textContent=title+' · '+summary;
+  const retry=$('z2EndAction');retry.classList.remove('hide');retry.textContent='Try again';
+  retry.onclick=()=>run.kind==='parkour'?z3StartParkour(run.id):z3StartClutch(run.id);
+}
+
+function z3TickLocal(dt,now){
+  const run=z3Run;
+  if(!run||phase!=='playing'||paused)return;
+  if(run.kind==='warmup'){
+    if(!z2Live.queue||gameSeconds<=1){z3LeaveWarm();return;}
+    for(const b of bots)if(b.z3Still&&!b.alive&&b.z3Reset<=now){b.hp=b.maxHp;b.alive=true;b.respawn=Infinity;}
+    z3LocalHint('Practice targets · '+pl.kills+' hits · Searching');
+    return;
+  }
+  if(run.kind==='clutch'){
+    if(!pl.alive||gameSeconds<=1){z3LocalFinished(run,false);return;}
+    const remaining=bots.filter(b=>b.z3Practice&&b.alive).length,goal=run.trial.goal;
+    if(!remaining&&(!goal||Math.hypot(pl.x-goal.x,pl.z-goal.z)<3)){z3LocalFinished(run,true);return;}
+    z3LocalHint(remaining?remaining+' rivals remaining':'Move into the objective circle');
+    return;
+  }
+  if(run.kind!=='parkour')return;
+  if(gameSeconds<=1){z3LocalFinished(run,false);return;}
+  run.time+=dt;
+  const gate=run.course.gates[run.gate];
+  if(!gate)return;
+  const near=Math.hypot(pl.x-gate.x,pl.z-gate.z)<(gate.kind==='wall'?4.8:2.65);
+  let completed=near&&(gate.kind==='finish'||gate.kind==='jump'&&pl.jump>.35);
+  if(near&&gate.kind==='climb'&&pl.jump>.16&&Math.abs(pl.x-gate.x)<1.8){
+    const other=gate.z+(pl.z>=gate.z?-1.3:1.3);
+    if(!blocked(gate.x,other,.45)){
+      Object.assign(pl,{x:gate.x,z:other,jump:Math.max(.58,pl.jump)});
+      completed=true;
+    }
+  }
+  if(near&&gate.kind==='wall'&&jumpPressed()&&
+    (keys.KeyW||keys.ArrowUp||moveJoy.y<-.18)&&Math.abs(pl.x-gate.x)<1.2){
+    pl.jump=Math.max(pl.jump,.56);pl.vy=Math.max(pl.vy,0);
+    slide(pl,0,-dt*5,.42);run.wall+=dt;
+    completed=run.wall>=.45;
+  }else if(gate.kind==='wall')run.wall=0;
+  if(completed){
+    run.gate++;run.wall=0;playSound('hit');
+    if(run.gate===run.course.gates.length){z3LocalFinished(run,true);return;}
+  }
+  const next=run.course.gates[run.gate],instruction={jump:'Jump through the gate',climb:'Jump at the barrier to climb',
+    wall:'Hold Jump and Forward beside the wall',finish:'Cross the finish gate'}[next.kind];
+  z3LocalHint((run.gate+1)+'/'+run.course.gates.length+' · '+instruction+' · '+run.time.toFixed(1)+' s');
+}
+
+function z3DrawLocal(out){
+  if(phase!=='playing'||!z3Run)return;
+  const run=z3Run;
+  const gate=run.kind==='parkour'?run.course.gates[run.gate]:run.kind==='clutch'?run.trial.goal:null;
+  if(!gate)return;
+  crownOutline(out,{x:gate.x,z:gate.z,r:3},[.95,.73,.34],.09);
+  if(run.kind==='parkour'){
+    for(const side of [-1,1])putBox(out,gate.x+side*2.4,.02,gate.z,.20,2.65,.20,[.91,.73,.35]);
+  }
+}
+
+const Z3_TRIGGER_TOOLS={doortrigger:['Door','#e2b170'],wavetrigger:['Wave','#e47363'],routetrigger:['Route lock','#ae8adb']};
+function z3TriggerCell(type){
+  if(!Z3_TRIGGER_TOOLS[type])return {};
+  const max=x5Data.builder.filter(b=>b.type==='checkpoint').length;
+  const step=clamp(Number($('z3TriggerStep')?.value)||1,1,Math.max(1,max));
+  return {step:Math.floor(step)};
+}
+
+function z3PrepareTriggers(run,tiles) {
+  if(!run?.z2Route)return;
+  run.z3Triggers=tiles.filter(b=>Z3_TRIGGER_TOOLS[b.type]&&Number.isInteger(b.step)&&b.step<=run.z2Route.length)
+    .map(b=>{
+      const p=z2PointForCell(b);
+      if(b.type==='wavetrigger')return {...b,...p,object:null};
+      const object={...p,w:b.type==='doortrigger'?4.5:7.4,d:1.0,h:2.65,color:b.type==='doortrigger'?[.69,.41,.2]:[.5,.37,.72]};
+      obstacles.push(object);x5BuildObjects.push(object);
+      return {...b,...p,object};
+    });
+}
+
+function z3ActivateTriggers(run,step){
+  if(!run.z3Triggers?.length)return;
+  const wave=[];
+  for(const trigger of run.z3Triggers.filter(b=>b.step===step).slice(0,18)){
+    if(trigger.object){
+      for(const list of [obstacles,x5BuildObjects]){
+        const i=list.indexOf(trigger.object);if(i>=0)list.splice(i,1);
+      }
+    }else if(wave.length<(mobile?4:8)){
+      for(const side of [-1,1]){
+        const spot=z2TrialPoint(trigger.x+side*2.7,trigger.z);
+        const bot=spawnBot(bots.length);
+        Object.assign(bot,spot,{hp:66,maxHp:66,respawn:Infinity,z3Practice:true});
+        bots.push(bot);wave.push(bot);
+      }
+    }
+  }
+  if(wave.length)run.z3Wave=wave;
+}
+
+function z3MissionWaiting(run){
+  if(!run.z3Wave)return false;
+  const remaining=run.z3Wave.filter(b=>b.alive).length;
+  if(remaining){z3LocalHint('Clear the wave · '+remaining+' remaining');return true;}
+  run.z3Wave=null;
+  if(run.z2Next===run.z2Route.length)run.point=run.z2Exit;
+  return false;
+}
+
+async function z3ShareMap(){
+  const status=$('z3MapStatus');
+  try{
+    const result=await z1Fetch('/z3/map',{title:z2InputValue('z3MapTitle'),blocks:x5Data.builder});
+    $('z3MapCode').value=result.code;status.textContent='Share code '+result.code;
+  }catch(error){status.textContent=error.message;}
+}
+
+async function z3LoadMap(){
+  const status=$('z3MapStatus'),code=z2InputValue('z3MapCode');
+  try{
+    const map=await z1Fetch('/z3/map?code='+encodeURIComponent(code));
+    const content=JSON.stringify({format:'RECOIL_X_X5_MAP',version:1,blocks:map.blocks});
+    await x5ImportMap({size:content.length,text:async()=>content});
+    $('z3MapTitle').value=map.title;status.textContent='Loaded '+map.title+' into the editor.';
+  }catch(error){status.textContent=error.message;}
+}
+
+function z3MountUI(){
+  const settings=$('z1SettingsMenu').querySelector('.z1-screen-body');
+  const controls=document.createElement('details');controls.className='z3-settings';
+  controls.innerHTML='<summary>Accessibility</summary>'+
+    '<label>Preset <select id="z3AccessPreset"><option value="default">Default</option>'+
+    '<option value="visibility">High visibility</option><option value="reduced">Reduced flashes</option>'+
+    '<option value="both">High visibility and reduced flashes</option><option value="custom" disabled>Custom</option></select></label>'+
+    '<label><input id="z3TeamSymbols" type="checkbox"> Team symbols and blue / gold colors</label>'+
+    '<label><input id="z3Contrast" type="checkbox"> High contrast HUD text and panels</label>'+
+    '<label><input id="z3Flashes" type="checkbox"> Reduce flashes</label>';
+  settings.append(controls);
+  const options=[['z3TeamSymbols','teamSymbols'],['z3Contrast','contrast'],['z3Flashes','reducedFlashes']];
+  const preset=$('z3AccessPreset');
+  const sync=()=>{
+    for(const [id,key] of options)$(id).checked=!!z3Access[key];
+    preset.value=Object.keys(Z3_ACCESS_PRESETS).find(id=>
+      options.every(([,key])=>Z3_ACCESS_PRESETS[id][key]===z3Access[key]))||'custom';
+    z3AccessApply();
+  };
+  preset.onchange=()=>{
+    Object.assign(z3Access,Z3_ACCESS_PRESETS[preset.value]);
+    sync();setStore('recoil_z3_access',z3Access);
+  };
+  for(const [id,key] of options){
+    const input=$(id);
+    input.onchange=()=>{z3Access[key]=input.checked;sync();setStore('recoil_z3_access',z3Access);};
+  }
+  sync();
+  const install=document.createElement('details');install.className='z3-settings';
+  install.innerHTML='<summary>Offline play</summary><p id="z3InstallStatus" role="status">Open RECOIL X while connected first.</p>'+
+    '<button id="z3Install" class="secondary" type="button">Install RECOIL X</button>';
+  settings.append(install);$('z3Install').onclick=()=>z3Install().catch(()=>z3InstallStatus('Use your browser’s Add to Home Screen option.'));
+  z3MountInstall();
+
+  const practice=$('z2Local').querySelector('.z1-screen-body');
+  const drills=document.createElement('details');drills.className='z2-block';
+  z2Text('summary','Clutch Lab',drills);
+  const drillButtons=document.createElement('div');drillButtons.className='z2-actions';drills.append(drillButtons);
+  for(const [id,drill] of Object.entries(Z3_CLUTCH))drillButtons.append(z2SmallButton(drill.name,()=>z3StartClutch(id)));
+  const courses=document.createElement('details');courses.className='z2-block';
+  z2Text('summary','Parkour Courses',courses);
+  const courseButtons=document.createElement('div');courseButtons.className='z2-actions';courses.append(courseButtons);
+  for(const [id,course] of Object.entries(Z3_COURSES)){
+    const row=document.createElement('div');
+    row.append(z2SmallButton(course.name,()=>z3StartParkour(id)));
+    z2Text('p','',row).id='z3ParkourRecord-'+id;
+    courseButtons.append(row);
+  }
+  practice.append(drills,courses);
+  z3ShowParkourRecords();
+
+  const toolRow=$('x5HubMenu').querySelector('.x5-choices');
+  for(const [id,[label]] of Object.entries(Z3_TRIGGER_TOOLS)){
+    const tool=z2SmallButton(label,()=>{
+      x5Editing=id;
+      for(const b of toolRow.querySelectorAll('button'))b.classList.toggle('x5-selected',b===tool);
+    });
+    tool.dataset.x5tool=id;toolRow.append(tool);
+  }
+  const builder=document.createElement('details');builder.className='z3-settings';
+  builder.innerHTML='<summary>Mission triggers and sharing</summary>'+
+    '<label>Trigger checkpoint <input id="z3TriggerStep" type="number" min="1" max="110" value="1"></label>'+
+    '<p>Choose a checkpoint number before placing a Door, Wave, or Route lock.</p>'+
+    '<label>Map title <input id="z3MapTitle" maxlength="42"></label>'+
+    '<label>Map code <input id="z3MapCode" maxlength="7" autocapitalize="characters"></label>'+
+    '<div class="z2-actions"><button id="z3ShareMap" class="secondary" type="button">Share current map</button>'+
+    '<button id="z3LoadMap" class="secondary" type="button">Load into editor</button></div><p id="z3MapStatus" role="status"></p>';
+  toolRow.after(builder);$('z3ShareMap').onclick=z3ShareMap;$('z3LoadMap').onclick=z3LoadMap;
 }
 
 // Mission Mode uses the existing local arena simulation, controls and renderer.
@@ -10834,6 +11633,7 @@ z1MountProgress();
 z1MountFriends();
 z1MountJeepUI();
 z2MountUI();
+z3MountUI();
 missionMount();
 runCrownGame();
 
