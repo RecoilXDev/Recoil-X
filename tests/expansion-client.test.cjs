@@ -58,6 +58,7 @@ test('queue warm-up respawns targets and returns to the lobby when the queue end
   api.chooseDevice(false);api.show('z2Menu');api.receive({type:'z2:queue',waiting:true,size:1});
   assert(active(game,'z3QueueWarm'));press(game,'z3QueueWarm');
   assert.equal(api.run().kind,'warmup');
+  assert(el(game,'rxStage').classList.contains('z3-practice'));
   const target=api.bots[0];
   assert(target.z3Still);
   api.kill(target);
@@ -66,6 +67,7 @@ test('queue warm-up respawns targets and returns to the lobby when the queue end
   assert(target.alive);
   assert.equal(api.pl.kills,1);
   press(game,'z3WarmExit');
+  assert(!el(game,'rxStage').classList.contains('z3-practice'));
   assert(active(game,'z2Menu'));assert(api.live.queue);
   press(game,'z3QueueWarm');api.receive({type:'z2:queue',waiting:false});
   assert(active(game,'z2Menu'));assert(!api.run());assert(!api.live.queue);
@@ -75,6 +77,7 @@ test('queue warm-up respawns targets and returns to the lobby when the queue end
 test('Clutch Lab finishes on a clear or death and Parkour tracks a medal and personal best',()=>{
   const game=makeHarness({},undefined,null,bridge),{api}=game;
   api.chooseDevice(false);playLocal(game,'Objective Retake');
+  assert(el(game,'rxStage').classList.contains('z3-practice'));
   assert.equal(api.bots.length,2);
   for(const bot of api.bots)api.kill(bot);
   tick(game,2);
@@ -82,6 +85,7 @@ test('Clutch Lab finishes on a clear or death and Parkour tracks a medal and per
   Object.assign(api.pl,api.run().trial.goal);tick(game,2.1);
   assert.equal(api.phase(),'end');
   assert.match(el(game,'endTitle').textContent,/Drill cleared/);
+  assert(!el(game,'rxStage').classList.contains('z3-practice'));
   press(game,'z2EndAction');
   assert.equal(api.bots.length,2);
   api.pl.spawnProtectedUntil=0;api.hurt(200);
@@ -106,6 +110,7 @@ test('Clutch Lab finishes on a clear or death and Parkour tracks a medal and per
 test('touch Jump handles taps, holds through a wall-run and clears on cancellation',()=>{
   const game=makeHarness({},undefined,null,bridge),{api}=game;
   api.chooseDevice(true);playLocal(game,'Depot Steps');
+  assert(el(game,'rxStage').classList.contains('z3-practice'));
   const run=api.run(),button=el(game,'touchjump');
   const touch=(type,pointerId)=>button.dispatchEvent({type,pointerId,button:0,preventDefault(){}});
   game.perf(1000);

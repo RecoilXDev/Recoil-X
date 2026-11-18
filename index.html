@@ -790,6 +790,12 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 #z2Use{touch-action:none}
 .z2-playing.z2-raid #z2Use{display:block!important}
 .z3-disguised #weaponArt,.z3-driving #weaponArt,.z3-driving #muzzle{display:none!important}
+/* Practice uses the course timer and its own objective prompt. */
+.z3-practice :is(#rx2Hud,#x4Live,#x5Live,#x5Secondary){display:none!important}
+.z3-practice #z2LocalHud{top:clamp(84px,14%,128px)}
+@media(min-width:701px) and (min-height:480px){
+  .z3-practice #v8ViewBtn{bottom:clamp(134px,16vh,152px)}
+}
 .z3-settings{margin:9px 0;padding:10px;background:#1d2630;border:1px solid #7b6956;border-radius:9px}
 .z3-settings summary{cursor:pointer;color:#ffe0a4;font-weight:bold}
 .z3-settings label{display:block;margin:7px 0}
@@ -869,7 +875,7 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">V9.2 • FANCY</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">Z.3</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -2011,7 +2017,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='VERSION X • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='Z.3 • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -9230,7 +9236,9 @@ startGame=function(which){
     if(z2Live.room&&which!=='crown-z3-warmup'){z2Send('leave',{},true);z2EndView();z2Live.room=null;}
     z2ResetLocalRun();
   }
-  return z2LegacyStart(which);
+  const result=z2LegacyStart(which);
+  $('rxStage').classList.toggle('z3-practice',phase==='playing'&&typeof which==='string'&&which.startsWith('crown-z3-'));
+  return result;
 };
 quit=function(){
   if(z2IsMatch()||mode==='crown-overdrive'){z2Leave();return;}
@@ -9494,6 +9502,7 @@ const Z2_MARKERS=['checkpoint','botspawn','doortrigger','wavetrigger','routetrig
 const z2PointForCell=v=>({x:(v.gx-6.5)*8,z:(v.gz-6.5)*8});
 
 function z2ResetLocalRun(){
+  $('rxStage').classList.remove('z3-practice');
   missionResetView();
   z3Run=null;z3LocalHudKey='';$('z3WarmExit')?.classList.add('hide');
   if(z2LocalFrames.length>1){z2LastClip=z2LocalFrames.slice();z2LocalFrames.length=0;}
@@ -9792,6 +9801,7 @@ finish=function(){
   const completed=phase==='playing';
   const result=z2FinishBase();
   if(completed&&phase==='end'){
+    $('rxStage').classList.remove('z3-practice');
     $('z3WarmExit')?.classList.add('hide');
     $('z2LocalHud')?.classList.add('hide');
     if(z2LocalFrames.length>1)z2LastClip=z2LocalFrames.slice();
