@@ -2,6 +2,8 @@ import {randomBytes,createHash} from 'node:crypto';
 import {worldWeekend} from './ascension-world.mjs';
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const day=t=>new Date(t+14400000).toISOString().slice(0,10);
+const weekendDay=t=>day(t-(new Date(t+14400000).getUTCDay()===6?86400000:0));
+const goals=[[2,3],[3,2],[2,5]];
 const emblems=['sun','falcon','crown','wave'];
 const moment=Date.now;
 export function migrateAscension(db){
@@ -38,8 +40,9 @@ export function ascensionStore(db,fail){
   const leadership=(id,owner=false)=>{const m=member(id);check(m&& (m.role==='leader'||!owner&&m.role==='officer'),403,'A clan leader or officer is required.');return m;};
   function board(id,now){
     const d=day(now),stat=q('SELECT completed,kills FROM asc_day WHERE account=? AND day=?').get(id,d)||{completed:0,kills:0};
-    const raid=q('SELECT COALESCE(SUM(damage),0) n FROM asc_world WHERE period=?').get(d).n;
-    return {day:d,...stat,weekend:worldWeekend(now),raid,goal:6000,claimed:!!q('SELECT 1 FROM asc_reward WHERE account=? AND source=?').get(id,'daily:'+d),
+    const raid=q('SELECT COALESCE(SUM(damage),0) n FROM asc_world WHERE period=?').get(weekendDay(now)).n;
+    const [matchesGoal,killsGoal]=goals[Math.floor((now+14400000)/86400000)%goals.length];
+    return {day:d,...stat,matchesGoal,killsGoal,weekend:worldWeekend(now),raid,goal:6000,claimed:!!q('SELECT 1 FROM asc_reward WHERE account=? AND source=?').get(id,'daily:'+d),
       clanLeaders:q("SELECT c.name,COUNT(w.id) wins FROM asc_clan c LEFT JOIN asc_war w ON c.id=w.winner GROUP BY c.id ORDER BY wins DESC,c.id LIMIT 20").all(),
       races:q('SELECT u.name,r.course,r.time FROM asc_race r JOIN users u ON u.id=r.account ORDER BY r.time LIMIT 20').all()};
   }
@@ -91,7 +94,7 @@ export function ascensionStore(db,fail){
       }else if(kind==='accept-war'){
         const m=leadership(id);check(Number.isSafeInteger(b.war)&&q("UPDATE asc_war SET state='accepted' WHERE id=? AND away=? AND state='offered' AND starts>?").run(b.war,m.clan,now-600000).changes,409,'War offer unavailable.');
       }else if(kind==='claim'){
-        const d=board(id,now);check(d.completed>=2&&d.kills>=3&&!d.claimed,409,'Complete two eligible matches and three eliminations for today.');
+        const d=board(id,now);check(d.completed>=d.matchesGoal&&d.kills>=d.killsGoal&&!d.claimed,409,'Complete today’s match and elimination objectives.');
         award(id,'daily:'+d.day,20);
       }else throw fail(400,'Unknown community action.');
       return profile(id,now);
@@ -109,19 +112,24 @@ export function ascensionStore(db,fail){
   }
   function settle(result,now){
     if(!result.players.some(p=>p.earned))return;
-    if(result.war)q("UPDATE asc_war SET state='finished',winner=CASE ? WHEN 0 THEN home WHEN 1 THEN away ELSE NULL END WHERE id=? AND match=? AND state='playing'").run(result.winner,result.war,result.id);
+    const eligibleWar=result.duration>=20000&&!['forfeit','remake'].includes(result.reason)&&result.players.every(p=>p.inputs>=5);
+    if(result.war&&!eligibleWar)q("UPDATE asc_war SET state='accepted',match=NULL WHERE id=? AND match=? AND state='playing'").run(result.war,result.id);
+    if(result.war&&eligibleWar)q("UPDATE asc_war SET state='finished',winner=CASE ? WHEN 0 THEN home WHEN 1 THEN away ELSE NULL END WHERE id=? AND match=? AND state='playing'").run(result.winner,result.war,result.id);
     if(result.duration<20000||['forfeit','remake'].includes(result.reason))return;
     for(const p of result.players){
       if(!p.earned||p.forfeited||p.inputs<5)continue;
       const e=p.earned;
-      q('INSERT INTO asc_day VALUES(?,?,1,?) ON CONFLICT(account,day) DO UPDATE SET completed=completed+1,kills=kills+excluded.kills').run(p.id,day(now),p.kills);
-      let eligible=0;
-      for(const [name,n] of Object.entries(e.opponents)){
-        const opp=Number(name),last=q('SELECT last FROM asc_pair WHERE account=? AND opponent=?').get(p.id,opp)?.last;
+      let eligible=0,eligibleOpponents=0;
+      const cooperative=['volcano','titan','worldboss','invasion'].includes(result.mode);
+      for(const other of result.players.filter(q=>q.team!==p.team&&!q.forfeited&&q.inputs>=5)){
+        const opp=other.id,n=Math.min(e.opponents[opp]||0,4);
+        const last=q('SELECT last FROM asc_pair WHERE account=? AND opponent=?').get(p.id,opp)?.last;
         if(last!=null&&now-last<600000)continue;
         q('INSERT INTO asc_pair VALUES(?,?,?,?,?) ON CONFLICT(account,opponent) DO UPDATE SET wins=wins+excluded.wins,kills=kills+excluded.kills,last=excluded.last')
-          .run(p.id,opp,Number(p.team===result.winner),Math.min(n,4),now);eligible+=Math.min(n,4);
+          .run(p.id,opp,Number(p.team===result.winner),n,now);eligible+=n;eligibleOpponents++;
       }
+      if(!cooperative&&!eligibleOpponents)continue;
+      q('INSERT INTO asc_day VALUES(?,?,1,?) ON CONFLICT(account,day) DO UPDATE SET completed=completed+1,kills=kills+excluded.kills').run(p.id,day(now),eligible);
       let credits=eligible;
       for(let weapon=0;weapon<4;weapon++){const n=Math.min(credits,e.weaponKills[weapon]||0);if(n){
         q('INSERT INTO asc_mastery VALUES(?,?,?) ON CONFLICT(account,weapon) DO UPDATE SET kills=kills+excluded.kills').run(p.id,weapon,n);credits-=n;}}
@@ -130,8 +138,8 @@ export function ascensionStore(db,fail){
       if(marks)award(p.id,'match:'+result.id,marks);
       if(e.race)q('INSERT INTO asc_race VALUES(?,?,?) ON CONFLICT(account,course) DO UPDATE SET time=MIN(time,excluded.time)').run(p.id,result.field,e.race);
       if(result.mode==='worldboss'&&worldWeekend(now)){
-        q('INSERT INTO asc_world VALUES(?,?,?) ON CONFLICT(period,account) DO UPDATE SET damage=damage+excluded.damage').run(day(now),p.id,Math.min(3000,p.damage));
-        if(board(p.id,now).raid>=6000)for(const row of q('SELECT account FROM asc_world WHERE period=? AND damage>0').all(day(now)))award(row.account,'world:'+day(now),25);
+        q('INSERT INTO asc_world VALUES(?,?,?) ON CONFLICT(period,account) DO UPDATE SET damage=damage+excluded.damage').run(weekendDay(now),p.id,Math.min(3000,p.damage));
+        if(board(p.id,now).raid>=6000)for(const row of q('SELECT account FROM asc_world WHERE period=? AND damage>0').all(weekendDay(now)))award(row.account,'world:'+weekendDay(now),25);
       }
     }
   }
@@ -141,6 +149,7 @@ export function ascensionStore(db,fail){
     q('UPDATE users SET salt=?,secret=? WHERE id=?').run(salt,secret,id);q('DELETE FROM sessions WHERE account=?').run(id);return {ok:true};
   });}
   return {profile,social,settle,warTeam,startWar,codes,recover,member,
+    resumeWars:now=>q("UPDATE asc_war SET state=CASE WHEN starts>? THEN 'accepted' ELSE 'expired' END, match=NULL WHERE state='playing'").run(now-1800000),
     matchCode:(id,name,code,now)=>{const t=target(name);check(t&&t.id!==id,404,'Rival unavailable.');
       q('INSERT INTO asc_challenge VALUES(?,?,?,?) ON CONFLICT(account,opponent) DO UPDATE SET code=excluded.code,until=excluded.until').run(id,t.id,code,now+600000);},
     review:(id,kind,now)=>{const old=q('SELECT created FROM asc_alert WHERE account=? ORDER BY id DESC LIMIT 1').get(id);

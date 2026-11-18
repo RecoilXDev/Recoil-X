@@ -7,11 +7,12 @@ const near=(a,b,r)=>Math.hypot(a.x-b.x,a.z-b.z)<=r;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rounded=n=>Math.round(n*100)/100;
 const box=(id,x,z,w,d,h,material='stone')=>({id,x,z,w,d,h,material});
+const vaultWalls=x=>[box('vault-west',x-2.3,-18,0.55,4.4,2.4),box('vault-east',x+2.3,-18,0.55,4.4,2.4),box('vault-rear',x,-20.2,5,.55,2.4)];
 const MAPS={
-  bastion:{name:'Beacon Citadel',cover:[box('barrier',-5,0,3,2,1.6,'breakable'),box('panel',7,0,1,8,3,'metal'),box('vault',-18,-16,4,1,2,'vault')]},
-  train:{name:'Ironline Express',cover:[...[-18,-6,6,18].flatMap((z,i)=>[box('l'+i,-7,z,1,8,2,'metal'),box('r'+i,7,z,1,8,2,'metal')]),box('cargo',3,6,2,3,2,'breakable'),box('vault',-4,-16,3,1,2,'vault')]},
-  lab:{name:'Flooded Laboratory',cover:[box('tank',-7,2,4,6,2.6,'metal'),box('glass',7,-4,4,2,2,'breakable'),box('labwall',12,8,1,10,3),box('vault',-18,-16,4,1,2,'vault')]},
-  orbit:{name:'Orbital Slipstream',cover:[box('ring1',-9,-5,3,3,2,'metal'),box('ring2',8,5,3,3,2,'metal'),box('crystal',-5,12,3,2,1.8,'breakable'),box('vault',-18,-16,4,1,2,'vault')]}
+  bastion:{name:'Beacon Citadel',cover:[box('barrier',-5,0,3,2,1.6,'breakable'),box('panel',7,0,1,8,3,'metal'),box('vault',-18,-16,4,1,2,'vault'),...vaultWalls(-18)]},
+  train:{name:'Ironline Express',cover:[...[-18,-6,6,18].flatMap((z,i)=>[box('l'+i,-7,z,1,8,2,'metal'),box('r'+i,7,z,1,8,2,'metal')]),box('cargo',3,6,2,3,2,'breakable'),box('vault',-4,-16,4,1,2,'vault'),...vaultWalls(-4)]},
+  lab:{name:'Flooded Laboratory',cover:[box('tank',-7,2,4,6,2.6,'metal'),box('glass',7,-4,4,2,2,'breakable'),box('labwall',12,8,1,10,3),box('airlock',-12,8,1,10,3),box('pipe',12,-12,1,8,3,'metal'),box('console',-10,-10,5,1,1.6),box('vault',-18,-16,4,1,2,'vault'),...vaultWalls(-18)]},
+  orbit:{name:'Orbital Slipstream',cover:[box('ring1',-9,-5,3,3,2,'metal'),box('ring2',8,5,3,3,2,'metal'),box('crystal',-5,12,3,2,1.8,'breakable'),box('vault',-18,-16,4,1,2,'vault'),...vaultWalls(-18)]}
 };
 export const GATES=[{x:-4,z:13},{x:4,z:4},{x:-4,z:-7},{x:4,z:-19}];
 export const FLAGS=[{x:0,z:-21},{x:0,z:21}];
@@ -46,7 +47,7 @@ export function initWorld(m,rules,now){
       spawnMode:m.mode,baseHealth:m.mode==='hardcore'?35:rules.health,fieldHalf:m.field.half};
     p.asc.weapon=rules.order[0];ascSpawn(p);
   }
-  if(m.mode==='roulette')roundWeapon(m);
+  if(m.mode==='roulette'){roundWeapon(m);s.deadline=now+30000;}
   if(m.mode==='volcano')s.deadline=now+55000;
   if(m.mode==='race')m.end=now+180000;
   if(m.mode==='extraction')m.end=now+150000;
@@ -101,7 +102,7 @@ function roundWin(m,team,now,h){
   if(team!=null&&m.score[team]>=3){h.finish(m,team,'rounds',now);return;}
   s.round++;s.armed=false;s.carrier=null;s.channel=0;s.attacker=1-s.attacker;s.deadline=now+75000;
   for(const p of m.players.values())if(!p.forfeited){p.reversed=!!s.attacker;h.spawn(p,now);}
-  if(m.mode==='roulette')roundWeapon(m);
+  if(m.mode==='roulette'){roundWeapon(m);s.deadline=now+30000;}
 }
 function wave(m,now){
   const s=m.asc;s.wave++;const players=m.players.size;
@@ -130,7 +131,8 @@ export function tickWorld(m,now,dt,h){
     const a=p.asc;a.heat=Math.max(0,a.heat-dt*13);if(a.heat<=20)a.locked=false;
     if(m.field.id==='lab'){a.oxygen=clamp(a.oxygen+(Math.abs(p.z)<9?-dt:3*dt),0,12);if(!a.oxygen)kill(p,dt*11);}
     if(m.field.id==='train'&&Math.abs(p.x)>9)kill(p,dt*18);
-    const expected=VAULT[a.vault];
+    const runes=m.field.id==='train'?[{x:-3,z:-10},{x:2,z:-15},{x:-4,z:-12}]:VAULT;
+    const expected=runes[a.vault];
     if(expected&&use(p,expected,1.8)&&a.vaultReady!==false){
       a.vault++;a.vaultReady=false;
       if(a.vault===3&&m.field.cover.some(c=>c.material==='vault')){
@@ -197,7 +199,7 @@ export function tickWorld(m,now,dt,h){
     case 'volcano':{
       const radius=Math.max(3,9-((now-m.started)/1000)*.08),step=Math.floor((now-m.started)/10000);
       const pos=[{x:0,z:4},{x:8,z:3},{x:-6,z:-3}][step%3];
-      s.safe={...pos,r:rounded(radius),next:m.started+(step+1)*10000};
+      s.safe={...pos,r:rounded(radius),level:rounded(Math.min(.75,(now-m.started)/75000)),next:m.started+(step+1)*10000};
       if(now-m.started>5000)for(const p of alive)if(!near(p,pos,radius))kill(p,dt*(3+step));
       if(now>=s.deadline&&alive.some(p=>p.hp>0)){m.score[0]=1;h.finish(m,0,'eruption survived',now);}break;
     }
@@ -206,7 +208,7 @@ export function tickWorld(m,now,dt,h){
       const boss=s.enemies.find(e=>e.kind==='titan');
       if(boss&&m.mode!=='invasion'){
         const pads=[{x:-5,z:5},{x:5,z:5}];s.pads=pads.map(v=>alive.some(p=>use(p,v,2.5)));
-        if(s.pads.every(Boolean)){s.channel+=dt;if(s.channel>=1.5)boss.shieldUntil=0;}
+        if(s.pads.every(Boolean)){s.channel+=dt;if(s.channel>=1.5)boss.shieldUntil=0;}else s.channel=0;
       }
       for(const e of s.enemies.filter(e=>e.hp>0&&e.kind!=='titan')){
         const target=alive.reduce((a,p)=>near(p,e,Math.hypot(a.x-e.x,a.z-e.z))?p:a,alive[0]);if(!target)continue;

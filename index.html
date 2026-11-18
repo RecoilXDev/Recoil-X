@@ -874,6 +874,9 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 #z2MatchHud,#missionHud,#z2LocalHud{scale:var(--asc-hud,1);transform-origin:0 0}
 .asc-match #z2Use{display:inline-block!important}.asc-hardcore :is(#minimap,#nameplates,#z2MatchPing,#z2TogglePings,.hud-kills){display:none!important}
 .asc-reduced :is(#weaponArt,.z1-new-screen,.hud-panel,#v9Atmosphere){animation:none!important;transition:none!important}#ascDiag{display:block;color:#c9d9df}
+#ascLeavePractice{display:none}.asc-local #ascLeavePractice{display:block;position:absolute;right:12px;top:10px;z-index:12;width:auto;min-height:36px}
+.asc-local :is(.hud-center,#petHud,#vxStreakHud,#x4TouchAction,#x4TouchPeek,#x4TouchVision,#x5TouchGrapple,#x5TouchGadget,#x5TouchSwap,#x5TouchUse,#rx2TouchGadget,#rx2TouchSlide,#v8TouchView,#rxShiftLockBtn,#rxTvAimBtn,#v8ViewBtn,#rxInspectBtn){display:none!important}
+.asc-local #z2LocalHud{top:clamp(12px,3vh,26px);max-width:48vw}.asc-local #z2LocalHud:empty{display:none}
 </style>
 </head>
 <body>
@@ -1763,14 +1766,15 @@ function v91RebuildStaticGPU(){
 let v92EyeForward=[0,0,-1];
 function v91DrawStatic(eye){
  const radius=v91RenderDistance(),bonus=24,now=performance.now();
- let streaming=false;
+ const streaming=v91StaticChunks.some(ch=>ch.packed),visible=[];
  for(const ch of v91StaticChunks){
   const x=ch.x-eye[0],z=ch.z-eye[2],d=Math.hypot(x,z);
   if(!ch.giant&&d>radius+bonus)continue;
   if(v92Active()&&!ch.giant&&d>32&&(x*v92EyeForward[0]+z*v92EyeForward[2])<-d*.15)continue;
-  if(ch.packed){ascLoadChunk(ch,now);streaming=true;}
+  if(streaming&&ch.packed){visible.push({ch,d});continue;}
   v91BindGeometry(ch.buffer);gl.drawArrays(gl.TRIANGLES,0,ch.count);
  }
+ if(streaming){visible.sort((a,b)=>a.d-b.d);for(const {ch} of visible.slice(0,12)){ascLoadChunk(ch,now);v91BindGeometry(ch.buffer);gl.drawArrays(gl.TRIANGLES,0,ch.count);}}
  if(streaming&&now>=(ascClient.trimAt||0)){ascTrimChunks(v91StaticChunks,now);ascClient.trimAt=now+500;}
 }
 function v91DrawDynamic(){
@@ -6390,6 +6394,7 @@ const crownNativeHud=updateHUD;
 updateHUD=function crownHUD(){crownNativeHud();if(crownRun)crownUpdateHud();};
 
 function crownOutline(out,p,color,fill) {
+  if(typeof fill==='number')fill=color.map(v=>v*fill);
   if(p.r){
     const count=24,inside=p.r-.10;
     for(let i=0;i<count;i++){
@@ -7858,6 +7863,7 @@ function z1RestoreSession(){
 
 function z1UseAccount(profile){
   z1Account=profile;
+  if($('ascHub'))ascReload().catch(()=>{});
   missionSetAccount();
   z1StoreSession();
   z1ConnectLive();
@@ -8940,7 +8946,6 @@ function z2Begin(event){
   const resumed=z2Live.match?.id===event.id;
   if(!resumed){ascClient.geom=-1;ascClient.full=null;ascClient.frame=0;ascClient.id=event.id;ascClient.sequence=0;}
   if(event.ascRules)event.field.ascOriginal=event.field.cover.map(c=>({...c}));
-  $('rxStage').classList.toggle('asc-match',!!event.ascRules);
   const match={...event,names:new Map(event.roster.map(p=>[p.id,p]))};
   if(!resumed){
     if(mode==='crown-z3-warmup')z2ResetLocalRun();
@@ -8960,7 +8965,7 @@ function z2Begin(event){
   }
   z2Live.match=match;z2Live.lastInput=null;z2Live.fireUntil=0;z2Live.snapshot=null;
   z2Live.renderAt=null;z2Live.jitter=0;z2Live.echoAt=0;remotePlayers.clear();
-  $('rxStage').classList.add('z2-playing');
+  $('rxStage').classList.add('z2-playing');$('rxStage').classList.toggle('asc-match',!!event.ascRules);
   $('rxStage').classList.toggle('z2-watching',event.team==null);
   for(const kind of ['rescue','relic','chess','raid'])$('rxStage').classList.toggle('z2-'+kind,event.mode===kind);
   $('z2MatchHud').classList.remove('hide');
@@ -9004,7 +9009,7 @@ function z2ApplyState(event){
     pl.jump=local[4];pl.y=1.63+pl.jump;
     if(local[14]===pl.weapon)pl.mags[pl.weapon]=local[11];
     $('z2Down').textContent=local[6]===2?'DOWNED · Waiting for a teammate':local[6]===0?
-      (['elimination','budget','props'].includes(match.mode)?'Out until the next round':'Respawning…'):'';
+      (['elimination','budget','props','roulette','search'].includes(match.mode)?'Out until the next round':'Respawning…'):'';
   }
   z3MatchView(event);ascState(event);
   z2Hud();
@@ -9066,18 +9071,20 @@ function z2Simulate(dt,now){
   }
   if(ascClient.captionUntil&&performance.now()>ascClient.captionUntil){$('ascSound').textContent='';ascClient.captionUntil=0;}
   z2LatencyLabel(connected);
+  const pad=ascClient.pad,axis=n=>Math.abs(pad?.axes[n]||0)>.16?pad.axes[n]:0,button=n=>!!pad?.buttons[n]?.pressed;
   let f=0,s=0;
   if(!uiOpen&&pl.alive&&connected){
-    f=Number(!!(keys.KeyW||keys.ArrowUp))-Number(!!(keys.KeyS||keys.ArrowDown))-(mobile?moveJoy.y:0);
-    s=Number(!!(keys.KeyD||keys.ArrowRight))-Number(!!(keys.KeyA||keys.ArrowLeft))+(mobile?moveJoy.x:0);
+    pl.yaw+=axis(2)*dt*2.8;pl.pitch=clamp(pl.pitch-axis(3)*dt*2,-1.3,1.3);
+    f=Number(!!(keys.KeyW||keys.ArrowUp))-Number(!!(keys.KeyS||keys.ArrowDown))-(mobile?moveJoy.y:0)-axis(1);
+    s=Number(!!(keys.KeyD||keys.ArrowRight))-Number(!!(keys.KeyA||keys.ArrowLeft))+(mobile?moveJoy.x:0)+axis(0);
     const mag=Math.max(1,Math.hypot(f,s));f/=mag;s/=mag;
   }
-  const sprint=!!(keys.ShiftLeft||keys.ShiftRight||mobileSprint),use=!!(keys.KeyE||z2Live.use);
+  const sprint=!!(keys.ShiftLeft||keys.ShiftRight||mobileSprint),use=!!(keys.KeyE||z2Live.use||button(6));
   if(match.team!=null&&z2Online()){
     z2SendControls(now,{f:Math.round(f*1000)/1000,s:Math.round(s*1000)/1000,
       yaw:Math.round(pl.yaw*1000)/1000,pitch:Math.round(pl.pitch*1000)/1000,weapon:pl.weapon,
-      fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire||z2Live.fireUntil>now),reload:!uiOpen&&z2Live.reload,
-      jump:!uiOpen&&jumpPressed(),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
+      fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire||button(7)||z2Live.fireUntil>now),reload:!uiOpen&&z2Live.reload,
+      jump:!uiOpen&&(jumpPressed()||button(0)),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
       ability:!uiOpen&&!!(keys.KeyF||z2Live.ability)});
   }
   const rules=z2Live.snapshot?.objective;
@@ -9146,7 +9153,7 @@ function z2Packet(event){
     case 'z2:state':{const view=ascDecode(event);if(view)z2ApplyState(z2UnpackState(view));break;}
     case 'z2:rooms':ascRooms(event.list);break;
     case 'z2:clock':z2Send('clock',{n:event.n},true);break;
-    case 'z2:echo':z2Live.rtt=Math.max(0,Math.round(performance.now()-event.value));break;
+    case 'z2:echo':z2Live.rtt=Math.max(0,Math.round(performance.now()-event.value));if($('ascLinkInfo'))$('ascLinkInfo').textContent='Connected · server round trip '+z2Live.rtt+' ms';break;
     case 'z2:kill':addFeed(event.killer+' eliminated '+event.victim);break;
     case 'z2:shot':z2Shot(event);break;
     case 'z2:notice':z2Say(event.message);break;
@@ -9199,7 +9206,16 @@ crownBuildArena=function(arena){
     addObstacle(0,sign*(h+.5),2*h+2,1,3.5,arena.wall);
     crownZone(staticVerts,0,sign*(h-2),h*2-2,.22,Z2_TEAM[+(sign>0)],0);
   }
-  for(const c of arena.field.cover)addObstacle(c.x,c.z,c.w,c.d,c.h,arena.cover);
+  const palette={metal:[.28,.44,.53],breakable:[.67,.42,.24],shield:[.18,.57,.70],vault:[.49,.35,.64],rift:[.58,.37,.25]};
+  const map=arena.field.id;
+  if(map==='train'){
+    for(const z of [-18,-6,6,18]){putBox(staticVerts,0,-.22,z,16,.32,11.4,[.25,.30,.31]);for(const side of [-1,1])crownZone(staticVerts,side*6.25,z,.18,10.7,[.91,.64,.28],.025);}
+    for(const z of [-12,0,12])putBox(staticVerts,0,-.20,z,7,.26,1.3,[.43,.40,.32]);
+  }
+  if(map==='lab')for(const z of [-13,13]){crownZone(staticVerts,0,z,20,6,[.16,.38,.40],.01);
+    for(const x of [-10,10])putBox(staticVerts,x,2.8,z,.42,.22,5,[.43,.92,.89]);}
+  if(map==='orbit')for(const x of [-18,18])for(const z of [-18,18]){putBox(staticVerts,x,0,z,2,5,2,[.26,.25,.43]);putBox(staticVerts,x,4.8,z,2.4,.22,2.4,[.45,.57,.91]);}
+  for(const c of arena.field.cover)addObstacle(c.x,c.z,c.w,c.d,c.h,palette[c.material]||arena.cover);
   for(const [x,z,kind] of arena.field.scenery||[])z3DrawProp(staticVerts,x,z,kind);
   if(gl&&program)v91RebuildStaticGPU();
 };
@@ -9274,6 +9290,7 @@ startGame=function(which){
   }
   const result=z2LegacyStart(which);
   $('rxStage').classList.toggle('z3-practice',phase==='playing'&&typeof which==='string'&&which.startsWith('crown-z3-'));
+  $('rxStage').classList.toggle('asc-local',phase==='playing'&&['crown-z3-academy','crown-z3-builderlite'].includes(which));
   return result;
 };
 quit=function(){
@@ -9539,7 +9556,7 @@ const z2PointForCell=v=>({x:(v.gx-6.5)*8,z:(v.gz-6.5)*8});
 
 function z2ResetLocalRun(){
   if(typeof ascStreamSetting==='string'&&ascLowMemory()&&crownUltraPipeline)crownDropUltra();
-  $('rxStage').classList.remove('z3-practice');
+  $('rxStage').classList.remove('z3-practice','asc-local');
   missionResetView();
   z3Run=null;z3LocalHudKey='';$('z3WarmExit')?.classList.add('hide');
   if(z2LocalFrames.length>1){z2LastClip=z2LocalFrames.slice();z2LocalFrames.length=0;}
@@ -9843,7 +9860,7 @@ finish=function(){
   const completed=phase==='playing';
   const result=z2FinishBase();
   if(completed&&phase==='end'){
-    $('rxStage').classList.remove('z3-practice');
+    $('rxStage').classList.remove('z3-practice','asc-local');
     $('z3WarmExit')?.classList.add('hide');
     $('z2LocalHud')?.classList.add('hide');
     if(z2LocalFrames.length>1)z2LastClip=z2LocalFrames.slice();
@@ -9950,7 +9967,7 @@ function z2MountUI(){
       <form id="z2Join" class="z2-block z2-lobby-fields">
         <label>Invite code<input id="z2Code" required minlength="6" maxlength="6" autocomplete="off" autocapitalize="characters"></label>
         <label>Room password (if required)<input id="z2JoinPass" type="password" maxlength="64" autocomplete="off"></label>
-        <label class="z2-check"><input id="z2Spectate" type="checkbox"> Spectate a tournament</label>
+        <label class="z2-check"><input id="z2Spectate" type="checkbox"> Spectate an Ascension match or tournament</label>
         <button class="primary" type="submit">Join lobby</button>
       </form>
       <form id="z2Create" class="z2-block z2-lobby-fields">
@@ -10068,7 +10085,7 @@ function z2MountUI(){
     const mode=$('z2GameMode').value,tourney=Number($('z2Tournament').value),select=$('z2TeamSize');
     const sizes=tourney?[1,2]:mode==='chess'||mode==='roulette'?[1]:['titan','worldboss'].includes(mode)?[2,3,4]:ASC_COOP.includes(mode)?[1,2,3,4]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:mode==='raid'?[2,3,4]:[1,2,3,5];
     const chosen=Number(select.value);
-    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&mode==='raid'?n+' players':n+'v'+n);o.value=String(n);return o;}));
+    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&(mode==='raid'||ASC_COOP.includes(mode))?n+' players':n+'v'+n);o.value=String(n);return o;}));
     select.value=String(sizes.includes(chosen)?chosen:sizes[0]);
     $('z2GameMode').disabled=!!tourney;
     const fixed=!tourney&&!['arena','overcharge','rescue','hardcore','fracture','bounty'].includes(mode);
@@ -10080,7 +10097,7 @@ function z2MountUI(){
     if(z2Send('join',{code:z2InputValue('z2Code'),password:$('z2JoinPass').value,spectate:$('z2Spectate').checked}))
       $('z2JoinPass').value='';
   };
-  $('z2Queue').onsubmit=event=>{event.preventDefault();z2Send('queue',{size:Number($('z2RankSize').value),revision:3,input:ascPrefs.input});};
+  $('z2Queue').onsubmit=event=>{event.preventDefault();z2Send('queue',{size:Number($('z2RankSize').value),revision:3,input:ascPrefs.input,device:ascCurrentDevice()});};
   $('z2RankStop').onclick=()=>z2Send('queue',{join:false});
   $('z3QueueWarm').onclick=z3StartWarm;
   $('z3OpenSquad').onclick=()=>{
@@ -10194,7 +10211,7 @@ function z2MountMatch(){
     if(seats[z2WatchIndex]){z3Camera.id=seats[z2WatchIndex].id;z2Send('camera',{id:z3Camera.id});}
   };
   $('z3Director').onclick=()=>{
-    z3Camera.auto=!z3Camera.auto;z3Camera.next=0;
+    z3Camera.auto=!z3Camera.auto;z3Camera.next=0;if(z3Camera.auto&&z2IsMatch())z2Send('camera',{id:0},true);
     $('z3Director').textContent=z3Camera.auto?'Auto camera on':'Auto camera off';
   };
   $('z2Ability').onclick=()=>{z2Live.ability=true;};
@@ -11728,8 +11745,8 @@ function ascRenderCommunity(){
   for(const c of d.invites)ascButton(root,'Join '+c.name,()=>ascRequest(()=>ascSocial('accept',{clan:c.id})));
   for(const r of d.duels)ascButton(root,'Duel '+r.name,()=>{z2Open();z2Send('join',{code:r.code});});
   const b=d.board;
-  ascEl('p',b.day+' · Daily challenge: complete 2 matches and earn 3 eliminations · '+b.completed+'/2 matches, '+b.kills+'/3 eliminations',root);
-  if(!b.claimed&&b.completed>=2&&b.kills>=3)ascButton(root,'Claim 20 marks',()=>ascRequest(()=>ascSocial('claim')));
+  ascEl('p',b.day+' · Daily challenge · '+b.completed+'/'+b.matchesGoal+' eligible matches · '+b.kills+'/'+b.killsGoal+' eliminations',root);
+  if(!b.claimed&&b.completed>=b.matchesGoal&&b.kills>=b.killsGoal)ascButton(root,'Claim 20 marks',()=>ascRequest(()=>ascSocial('claim')));
   if(b.claimed)ascEl('p','Daily reward claimed',root);
   ascEl('p',b.weekend?'World boss open · community damage '+b.raid+' / '+b.goal:'World Boss Weekends · Friday and Saturday in Oman',root);
   ascEl('p','Mastery unlocks weapon finishes at 3, 10 and 25 credited eliminations.',root);
@@ -11744,16 +11761,17 @@ function ascDecode(event){
   if(ascClient.frame&&event.frame<=ascClient.frame)return null;
   if(ascClient.frame)ascClient.gaps+=Math.max(0,event.frame-ascClient.frame-1);
   ascClient.samples++;ascClient.frame=event.frame;
-  if(!event.base){ascClient.full={seq:event.frame,rows:event.rows};return event;}
+  if(!event.base){ascClient.full={seq:event.frame,rows:event.rows,asc:event.asc};return event;}
   if(ascClient.full?.seq!==event.base){z2Send('resync',{},true);return null;}
   const rows=new Map(ascClient.full.rows.map(r=>[r[0],r]));
   for(const id of event.gone||[])rows.delete(id);for(const r of event.rows)rows.set(r[0],r);
-  return {...event,rows:[...rows.values()]};
+  return {...event,...(event.sameWorld?{asc:ascClient.full.asc}:{}),rows:[...rows.values()]};
 }
 function ascSendTool(kind){
   if(!z2Live.match?.ascRules||z2Live.match.team==null||!pl.alive||paused)return;
   z2Send('tool',{kind,seq:++ascClient.sequence},true);
 }
+function ascCurrentDevice(){return ascClient.padConnected||x4Input.active?'controller':mobile?'touch':'keyboard';}
 function ascRoomRules(){
   return {map:$('ascMap').value,health:Number($('ascHealth').value),gravity:$('ascGravity').value,
     order:$('ascOrder').value.split(',').map(Number),draft:$('ascDraft').checked,heat:$('ascHeat').checked};
@@ -11803,7 +11821,10 @@ function ascState(event){
   const a=s.self;
   const local=event.rows.find(r=>r[0]===z1Account?.id);
   if(local&&['roulette','gunrun','chamber'].includes(m.mode)&&local[14]!==pl.weapon)switchGunWithAnimation(local[14]);
-  const hint=ascHint(m.mode,s);
+  let hint=ascHint(m.mode,s);
+  if(a&&m.field.ascOriginal?.some(c=>c.material==='vault')){const sites=m.field.id==='train'?[[-3,-10],[2,-15],[-4,-12]]:[[-13,-10],[-12,-16],[-18,-12]];const v=sites[a.vault];
+    if(v&&Math.hypot(pl.x-v[0],pl.z-v[1])<6)hint+=' · Hold Use at violet rune '+(a.vault+1)+'/3';
+    else if(s.vaultOpen&&!a.found)hint+=' · Vault open: collect the relic with Use';}
   $('z2MatchHint').textContent=hint+(a&&a.heat?' · Heat '+a.heat+'%':'')+(m.field.id==='lab'&&a?' · Air '+a.oxygen+'s':'');
   if(ascClient.geom!==s.geometry&&m.field.ascOriginal){
     m.field.cover=m.field.ascOriginal.filter(c=>!s.broken.includes(c.id)&&c.material!=='rift'&&c.material!=='shield').concat(s.shields||[],s.rifts||[]);
@@ -11821,7 +11842,12 @@ function ascWorldDraw(out,now){
   for(const c of s.loot||[])putBox(out,c.x,.2,c.z,.85,.7,.85,amber);
   if(m.mode==='extraction')for(const team of [0,1])ring(0,team?21:-21,3,Z2_TEAM[team]);
   if(m.mode==='race')for(const [i,g] of s.gates.entries()){const c=i===(s.self?.gate||0)?amber:blue;ring(g.x,g.z,1.7,c);for(const side of [-1,1])putBox(out,g.x+side*1.7,0,g.z,.2,2.3,.2,c);putBox(out,g.x,.38,g.z,3.35,.19,.2,c);}
-  if(s.safe){ring(s.safe.x,s.safe.z,s.safe.r,blue);crownZone(out,0,0,52,52,[.53,.18,.06],.012);}
+  if(s.safe){
+    const n=20,h=s.safe.level||.02,c=[.78,.26,.06];ring(s.safe.x,s.safe.z,s.safe.r,blue);
+    for(let i=0;i<n;i++){const a=2*Math.PI*i/n,b=2*Math.PI*(i+1)/n;
+      const points=[a,b].flatMap(angle=>[s.safe.r,75].map(r=>[s.safe.x+Math.cos(angle)*r,h,s.safe.z+Math.sin(angle)*r,...c,0,1,0]));
+      for(const j of [0,1,2,2,1,3])out.push(...points[j]);}
+  }
   if(s.pads)for(const [i,x] of [-5,5].entries())ring(x,5,2,s.pads[i]?blue:amber);
   for(const e of s.enemies||[])if(e.hp>0){
     const boss=e.kind==='titan',w=boss?2:.7,y=boss?1.35:.55,c=e.kind==='scout'?violet:boss?amber:blue;
@@ -11838,7 +11864,7 @@ function ascWorldDraw(out,now){
   if(m.field.id==='orbit')for(const x of [-12,12])for(const z of [-12,12])putBox(out,x,3,z,1,1.1,1,violet);
   if(m.mode==='fracture')for(const x of [-13,13])putBox(out,x,0,0,1,s.era?3:6,1,s.era?amber:blue);
   if(s.self&&!s.vaultOpen&&m.field.ascOriginal?.some(c=>c.material==='vault')){
-    const station=[[-13,-10],[-12,-16],[-18,-12]][s.self.vault];if(station)ring(station[0],station[1],1.6,violet);
+    const station=(m.field.id==='train'?[[-3,-10],[2,-15],[-4,-12]]:[[-13,-10],[-12,-16],[-18,-12]])[s.self.vault];if(station)ring(station[0],station[1],1.6,violet);
   }
   if(s.vaultOpen)ring(m.field.id==='train'?-4:-18,-18,1.5,amber);
 }
@@ -11854,6 +11880,7 @@ function ascDiagnostics(){
   const total=ascClient.samples+ascClient.gaps,ratio=total?Math.round(ascClient.gaps*100/total):0;
   diag.textContent='Jitter '+Math.round(z2Live.jitter||0)+' ms · estimated snapshot gaps '+ratio+'% · disconnects '+ascClient.disconnects;
 }
+function ascLeavePractice(){if(z3Run&&['academy','builderlite'].includes(z3Run.kind)){quit();ascOpen();}}
 function ascAccessibility(){
   ascStreamSetting=ascPrefs.stream;
   const r=$('rxStage');r.style.setProperty('--asc-hud',String(ascPrefs.hud/100));r.style.setProperty('--asc-text',ascPrefs.text+'%');
@@ -11864,15 +11891,15 @@ function ascMount(){
   const hubLink=crownButton('Project Ascension',ascOpen,'secondary','ascHubLink');home.append(hubLink);
   const hub=z1MakeScreen('ascHub','Project Ascension','','mainMenu');
   const nav=ascEl('div','',hub);nav.className='asc-links';
-  for(const [label,open] of [['Multiplayer',z2Open],['Ranked',()=>{z2Open();$('z2RankTab')?.click();}],['Missions',missionOpen],
-    ['Armory',()=>showScreen('z1CollectionMenu')],['Inventory',()=>showScreen('z1CollectionMenu')],['Battle Pass',()=>$('z1HomePass').click()],
+  for(const [label,open] of [['Play',()=>showScreen('z1PlayMenu')],['Multiplayer',z2Open],['Ranked',()=>{z2Open();$('z2RankedTab').click();}],['Missions',missionOpen],
+    ['Armory',()=>$('v8GunBtn').click()],['Inventory',()=>showScreen('z1CollectionMenu')],['Battle Pass',()=>$('z1HomePass').click()],
     ['Friends',()=>{$('z1FriendsBtn').click();}],['Settings',()=>showScreen('z1SettingsMenu')],['Events',z1OpenLiveEvents]])ascButton(nav,label,open);
   const practice=ascDetails(hub,'Training and private maps');
   for(const [key,name] of [['moving','Moving targets'],['reflex','Reflex drill'],['accuracy','Accuracy test']])ascButton(practice,name,()=>ascAcademy(key));
   ascButton(practice,'Map Builder Lite',ascOpenBuilder);
   const browse=ascDetails(hub,'Server browser');ascSelect(browse,'Mode','ascFilter',[['','All modes'],...Object.entries(Z2_MODES)]);
-  ascButton(browse,'Refresh open rooms',()=>{if(!z1Account){ascMsg('Sign in through Friends first.');return;}z2Send('rooms',{mode:$('ascFilter').value});});
-  const rooms=ascEl('div','',browse);rooms.id='ascRooms';
+  ascButton(browse,'Refresh open rooms',()=>{if(!z1Account){ascMsg('Sign in through Friends first.');return;}z2Send('echo',{value:performance.now()},true);z2Send('rooms',{mode:$('ascFilter').value});});
+  ascEl('p','',browse).id='ascLinkInfo';const rooms=ascEl('div','',browse);rooms.id='ascRooms';
   const community=ascDetails(hub,'Clans, rivals and community challenges');const view=ascEl('div','',community);view.id='ascAccountView';
   ascButton(community,'Refresh account board',()=>ascRequest(ascReload));
   const tools=ascEl('div','',community);tools.id='ascMemberTools';
@@ -11889,7 +11916,7 @@ function ascMount(){
       'Backups '+d.backups.state+(d.backups.last?' · '+new Date(d.backups.last).toLocaleString():''),
       ...d.movementReviews.map(a=>a.name+' · '+a.kind+' · '+new Date(a.created).toLocaleString())].join('\n');}));
   const status=ascEl('p','',hub);status.id='ascStatus';status.setAttribute('role','status');
-  const settings=$('z1SettingsMenu').querySelector('.z1-screen-body'),acc=ascDetails(settings,'Ascension accessibility and performance');
+  const settings=$('z1SettingsMenu').querySelector('.z1-screen-body'),acc=$('z3AccessPreset').closest('details')||ascDetails(settings,'Accessibility');
   for(const [id,label,key,opts] of [['ascHudScale','HUD scale','hud',[85,100,115,130]],['ascText','Text size','text',[100,115,130,150]],['ascStream','Low-memory streaming','stream',['auto','on','off']]]){
     const el=ascSelect(acc,label,id,opts.map(v=>[v,String(v)]));el.value=String(ascPrefs[key]);el.onchange=()=>{ascPrefs[key]=typeof opts[0]==='number'?Number(el.value):el.value;ascSave();ascAccessibility();if(key==='stream'&&phase==='playing')buildMap();};
   }
@@ -11913,12 +11940,14 @@ function ascMount(){
   input.value=ascPrefs.input;input.onchange=()=>{ascPrefs.input=input.value;ascSave();};
   const panel=ascDetails($('z2MatchHud'),'Equipment');panel.id='ascTools';panel.classList.add('hide');
   for(const [k,label] of Object.entries(ASC_TOOLS))ascButton(panel,label,()=>ascSendTool(k));
+  ascEl('small','Keyboard V melee, B parry, N dual, G EMP, H shield. Controller: LB parry, RB melee, D-pad up shield, down EMP, left dual, right weapon, LT interact, RT fire.',panel);
   const diag=ascEl('small','',$('z2MatchHud'));diag.id='ascDiag';
   ascEl('small','',$('z2MatchHud')).id='ascSound';
   const recap=ascEl('textarea','',$('z3ResultTimeline').parentElement);recap.id='ascRecap';recap.readOnly=true;recap.classList.add('hide');recap.setAttribute('aria-label','Match recap');
   ascButton($('z3ResultTimeline').parentElement,'Copy match recap',()=>{if(z2Live.result)ascCopy(z2Live.result);});
   window.addEventListener('keydown',e=>{if(e.repeat||!z2IsMatch()||e.target?.closest?.('input,textarea,select'))return;
     const k={KeyV:'melee',KeyB:'parry',KeyN:'dual',KeyG:'emp',KeyH:'shield'}[e.code];if(k){e.preventDefault();ascSendTool(k);}});
+  $('rxStage').append(crownButton('Leave practice',ascLeavePractice,'secondary','ascLeavePractice'));
   ascMountBuilder();ascAccessibility();ascRenderCommunity();
 }
 
@@ -11955,6 +11984,13 @@ function ascCleanCells(raw){
     used.add(b.x+','+b.z);return {kind:b.kind,x:b.x,z:b.z,rot:b.rot};
   });
 }
+function ascHasRoute(cells){
+  const occupied=new Set(cells.map(b=>b.z*9+b.x)),seen=new Set([76]),queue=[76];
+  for(let i=0;i<queue.length;i++){const n=queue[i];if(n===4)return true;
+    for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){const x=n%9+dx,z=Math.floor(n/9)+dz,k=z*9+x;
+      if(x>=0&&x<9&&z>=0&&z<9&&!seen.has(k)&&!occupied.has(k)){seen.add(k);queue.push(k);}}}
+  return false;
+}
 function ascOpenBuilder(){showScreen('ascBuilder');ascPaintBuilder();}
 function ascPaintBuilder(){
   const root=$('ascGrid');if(!root)return;root.replaceChildren();
@@ -11971,11 +12007,11 @@ function ascEditMap(action){
     if(action==='place')next.push({x:ed.x,z:ed.z,rot:0,kind:$('ascBlock').value});
     if(action==='rotate'){if(!b)throw Error('Select a placed module.');next=next.map(v=>v===b?{...v,rot:(v.rot+1)%4}:v);}
     if(action==='remove')next=next.filter(v=>v!==b);
-    if(action==='pick'){if(!b)throw Error('Select a placed module.');ed.selected=b;}
-    if(action==='move'){if(!ed.selected||!next.includes(ed.selected))throw Error('Pick a module, then select its destination.');
-      next=next.map(v=>v===ed.selected?{...v,x:ed.x,z:ed.z}:v);ed.selected=null;}
+    if(action==='pick'){if(!b)throw Error('Select a placed module.');ed.selected={x:b.x,z:b.z};}
+    if(action==='move'){const old=next.find(v=>ed.selected&&v.x===ed.selected.x&&v.z===ed.selected.z);if(!old)throw Error('Pick a module, then select its destination.');
+      next=next.map(v=>v===old?{...v,x:ed.x,z:ed.z}:v);ed.selected=null;}
     if(action==='load')next=getStore(key,[])||[];
-    ed.cells=ascCleanCells(next);if(action==='save')setStore(key,ed.cells);
+    next=ascCleanCells(next);if(['save','load','test'].includes(action)&&!ascHasRoute(next))throw Error('Keep an open route from spawn to exit.');ed.cells=next;if(action==='save')setStore(key,ed.cells);
     if(action==='test'){
       const cover=ed.cells.map(v=>{const w=v.kind==='wall'?4:v.kind==='pillar'?1.3:2,d=v.kind==='wall'?.7:w;
         return {x:(v.x-4)*5,z:(v.z-4)*5,w:v.rot%2?d:w,d:v.rot%2?w:d,h:v.kind==='crate'?1.2:2.25};});
@@ -11994,7 +12030,7 @@ function ascMountBuilder(){
 function ascDrawHeld(out,owner,index,finish,first,now){
   if(!first||!z2Live.match?.ascRules)return false;
   const status=z2Live.snapshot?.asc?.self,learned=ascClient.actor===z1Account?.id?ascClient.profile?.mastery?.find(w=>w.weapon===index)?.tier||0:0;
-  const evolution=finish.rarity==='legendary'?Math.min(learned,ascPrefs.evolution):0;
+  const evolution=Math.min(learned,ascPrefs.evolution,finish.rarity==='legendary'?3:1);
   if(!status?.dual&&!evolution&&!status?.parry)return false;
   const direction=aimVector(owner.yaw||0,owner.pitch||0);
   if(!status.dual&&evolution===0&&!(status.parry>=z2Live.snapshot.t))return false;
@@ -12031,17 +12067,18 @@ function ascTrimChunks(chunks,now){
 }
 function ascPadMenus(now){
   if(!navigator.getGamepads||!$('ascHub'))return;
-  let pad;try{pad=Array.from(navigator.getGamepads()).find(p=>p?.connected);}catch{return;}if(!pad)return;
-  const buttons=pad.buttons,pressed=n=>!!buttons[n]?.pressed,mask=[0,1,4,5,12,13,14,15].reduce((v,n)=>v|(pressed(n)?1<<n:0),0),
-    edge=n=>(mask&(1<<n))&&!(ascClient.padMask&(1<<n));ascClient.padMask=mask;
+  let pad;try{pad=Array.from(navigator.getGamepads()).find(p=>p?.connected);}catch{return;}ascClient.padConnected=!!pad;if(!pad){ascClient.pad=null;ascClient.padMask=0;return;}
+  ascClient.pad=pad;const buttons=pad.buttons,pressed=n=>!!buttons[n]?.pressed,mask=[0,1,2,3,4,5,12,13,14,15].reduce((v,n)=>v|(pressed(n)?1<<n:0),0),
+    previous=ascClient.padMask||0,edge=n=>!!(mask&(1<<n))&&!(previous&(1<<n));ascClient.padMask=mask;
   if(phase==='playing'&&!paused){
-    if(z2IsMatch()&&z2Live.match.ascRules){if(edge(4))ascSendTool('parry');if(edge(5))ascSendTool('melee');}
+    if(z2IsMatch()&&z2Live.match.ascRules){if(edge(4))ascSendTool('parry');if(edge(5))ascSendTool('melee');if(edge(12))ascSendTool('shield');if(edge(13))ascSendTool('emp');if(edge(14))ascSendTool('dual');if(edge(15))switchGunWithAnimation((pl.weapon+1)%4);if(edge(2))z2Live.reload=true;}
     return;
   }
-  const active=[...document.querySelectorAll('.z1-new-screen')].find(n=>!n.classList.contains('hide'));
+  const active=[...document.querySelectorAll('.z1-new-screen')].find(n=>!n.classList.contains('hide'))||['mainMenu','deviceMenu','v8GunMenu'].map($).find(n=>n&&!n.classList.contains('hide'));
   if(!active)return;
   const items=[...active.querySelectorAll('button,summary,select,input')].filter(e=>!e.disabled&&e.getClientRects?.().length>0);
   if(!items.length)return;const i=items.indexOf(document.activeElement);
+  if(i>=0&&items[i].tagName==='SELECT'&&(edge(14)||edge(15))){const el=items[i];el.selectedIndex=(el.selectedIndex+(edge(15)?1:-1)+el.options.length)%el.options.length;el.dispatchEvent(new Event('change'));return;}
   if(edge(12)||edge(14))items[(i-1+items.length)%items.length].focus();
   if(edge(13)||edge(15))items[(i+1)%items.length].focus();
   if(edge(0)&&i>=0)items[i].click();if(edge(1))active.querySelector('.z1-back')?.click();

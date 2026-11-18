@@ -87,6 +87,10 @@ function allowed(key, count, duration) {
   return item.count <= count;
 }
 
+function passwordMatches(derived,stored) {
+  if(typeof stored!=='string'||!/^[0-9a-f]{128}$/i.test(stored))return false;
+  return timingSafeEqual(Buffer.from(derived,'hex'),Buffer.from(stored,'hex'));
+}
 async function passwordHash(password, salt) {
   return (await derive(password, Buffer.from(salt, 'hex'), 64, {
     N: 1 << 17, r: 8, p: 1, maxmem: 160 * 1024 * 1024
@@ -101,14 +105,14 @@ export function createRecoilServer(options = {}) {
     const prior=new DatabaseSync(filename,{readOnly:true});
     let due;
     try{due=!!prior.prepare("SELECT 1 FROM sqlite_master WHERE name='users'").get()&&
-      !prior.prepare("SELECT 1 FROM sqlite_master WHERE name='asc_version'").get();}finally{prior.close();}
+      ['asc_version','rx3_maps','rx_mission_save'].some(table=>!prior.prepare('SELECT 1 FROM sqlite_master WHERE name=?').get(table));}finally{prior.close();}
     if(due)verifiedBackup(filename,{...backupOpts,reason:'migration'});
   }
   const db = openDb(filename);
   try {
-    const upgraded=migrateOverdrive(db,filename,existing);
+    migrateOverdrive(db,filename,false);
     // One consistent backup covers every migration in this startup.
-    migrateMissions(db,filename,existing&&!upgraded);
+    migrateMissions(db,filename,false);
     migrateAscension(db);
   }
   catch(error) {db.close();throw error;}
@@ -118,7 +122,7 @@ export function createRecoilServer(options = {}) {
   const clients = new Map(), rooms = new Map();
   let passwordJobs = 0;
   let lastExpiry = 0;
-  const ascData=ascensionStore(db,fail);
+  const ascData=ascensionStore(db,fail);ascData.resumeWars(sqlTime());
   const backup=backupSchedule(filename,backupOpts);
   const health={since:sqlTime(),disconnects:0,errors:0,rtt:[],pings:new Map()};
   const overdriveData = overdriveStore(db,fail,ascData);
@@ -239,8 +243,10 @@ export function createRecoilServer(options = {}) {
         throw error;
       }
       account = byName.get(handle);
-    } else if (!account || !timingSafeEqual(Buffer.from(secret,'hex'),Buffer.from(account.secret,'hex'))) {
-      throw fail(401, 'Account name or password is incorrect.');
+    } else {
+      // Recovery or moderation can finish while scrypt is running.
+      account = byName.get(handle);
+      if(!account||account.salt!==salt||!passwordMatches(secret,account.secret))throw fail(401,'Account name or password is incorrect.');
     }
     verifyBan(account);
     const token = randomBytes(32).toString('hex');
@@ -339,7 +345,7 @@ export function createRecoilServer(options = {}) {
         if(!allowed('asc-issue:'+user.id,4,60000)||passwordJobs>=3)throw fail(429,'Wait before trying again.');
         if(typeof body.password!=='string'||body.password.length>128)throw fail(400,'Enter the current password.');
         let digest;passwordJobs++;try{digest=await passwordHash(body.password,user.salt);}finally{passwordJobs--;}
-        if(!timingSafeEqual(Buffer.from(digest,'hex'),Buffer.from(user.secret,'hex'))||byId.get(user.id).secret!==user.secret)throw fail(403,'Current password is incorrect.');
+        if(!passwordMatches(digest,user.secret)||byId.get(user.id).secret!==user.secret)throw fail(403,'Current password is incorrect.');
         return {code:ascData.codes(user.id)};
       }
       throw fail(404,'Unknown Ascension service.');
@@ -440,7 +446,7 @@ export function createRecoilServer(options = {}) {
       const result = path==='/rx-api/health' ? {recoil:'Z.3',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
-      if (!error.status) console.error(error);
+      if (!error.status){health.errors++;console.error('RECOIL X request failed.');}
       res.statusCode = error.status || 500;
       res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
     }

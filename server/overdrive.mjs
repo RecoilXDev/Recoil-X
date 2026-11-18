@@ -16,7 +16,7 @@ const readPassword = value => typeof value === 'string' && value.length <= 64 ? 
 
 import {ASC_MODES, COOP, INPUTS, rulesFor, worldWeekend} from './ascension-world.mjs';
 import {ascAction} from './overdrive-match.mjs';
-import {wireSnapshot,delivered,compatibleGroups,movementSignal} from './ascension-network.mjs';
+import {wireSnapshot,delivered,compatibleGroups,movementSignal,checkTravel} from './ascension-network.mjs';
 
 export function createOverdrive({client, send, store, ascStore, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error}) {
   const rooms = new Map();
@@ -112,13 +112,15 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
     return room;
   }
 
+  function broadcastAnchor(match,member,now){
+    const allowed=[...match.players.values()].filter(p=>p.team===0&&!p.forfeited);
+    const live=allowed.filter(p=>p.hp>0&&!p.offlineAt);
+    return live.find(p=>p.id===member.camera)||live.find(p=>match.focus?.id===p.id&&match.focus.until>now)||
+      live[Math.floor((now-match.started)/5000)%Math.max(1,live.length)]||allowed[0];
+  }
   function sendView(c,match,member,now,frame){
-    let anchor=null;
-    if(member.spectator){
-      const allowed=[...match.players.values()].filter(p=>p.team===0&&!p.forfeited);
-      anchor=allowed.find(p=>p.id===member.camera)||allowed.find(p=>p.hp>0)||allowed[0];
-      if(!anchor)return;
-    }
+    const anchor=member.spectator?broadcastAnchor(match,member,now):null;
+    if(member.spectator&&!anchor)return;
     const view=snapshot(match,member.id,now,c.compactState,frame,anchor);
     const packet=wireSnapshot(c,view);
     if(send(c,packet)!==false)delivered(c,packet);
@@ -291,8 +293,10 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
     demand(!roomFor(c.id),409,'Leave your lobby before joining ranked.');
     demand(queue.has(c.id)||queue.size<maxQueue,503,'The ranked queue is full.');
     const pref=INPUTS.includes(data.input)?data.input:'any';
-    if(queue.get(c.id)?.size!==data.size||queue.get(c.id)?.pref!==pref)queue.set(c.id,{id:c.id,members:[{id:c.id,name:user.name}],
-      size:data.size,since:now,pref,modern:data.revision===3});
+    const device=INPUTS.includes(data.device)&&data.device!=='any'?data.device:'unknown';
+    demand(pref==='any'||pref===device,400,'Select your current input or enable cross-input matchmaking.');
+    if(queue.get(c.id)?.size!==data.size||queue.get(c.id)?.pref!==pref||queue.get(c.id)?.device!==device)queue.set(c.id,{id:c.id,members:[{id:c.id,name:user.name}],
+      size:data.size,since:now,pref,device,modern:data.revision===3});
     emit(c.id,'queue',{waiting:true,size:data.size});
   }
 
@@ -324,13 +328,14 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
       if(movementSignal(data,c.movement??={},now))ascStore?.review(c.id,'Repeated out-of-range movement inputs',now);
       inputMatch(room.match,c.id,data,now);
     }return;}
-    if(action==='resync'){attach(c);return;}
+    if(action==='resync'){if(room?.phase==='playing'&&allowed('asc-resync:'+c.id,4,10000)){c.ascKey=null;sendView(c,room.match,room.members.get(c.id),now);}return;}
     demand(room,404,'Join a multiplayer lobby first.');
     const member=room.members.get(c.id);
     if(action==='tool'){
       demand(room.phase==='playing'&&ascAction(room.match,c.id,data,now),409,'Action unavailable or cooling down.');return;
     }
     if(action==='camera'){
+      if(member.spectator&&data.id===0){member.camera=null;return;}
       const actor=room.match?.players.get(data.id);
       demand(member.spectator&&actor?.team===0&&!actor.forfeited,403,'Choose a broadcast teammate.');
       member.camera=data.id;return;
@@ -433,14 +438,15 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
       broadcast(room,type.slice(3),body,member=>{
         const recipient=match.players.get(member.id);
         if(member.spectator&&type==='z2:shot'){
-          const anchor=match.players.get(member.camera)||[...match.players.values()].find(p=>p.team===0&&!p.forfeited);
+          const anchor=broadcastAnchor(match,member,match.last);
           const origin=match.players.get(body.origin);
           return !!(anchor&&origin&&(origin.team===0||canSee(anchor,origin,match.field)));
         }
         if(only!=null)return member.id===only;
         if(type==='z2:shot'){
-          return !match.season||recipient?.team===team||
-            (recipient&&canSee(recipient,match.players.get(body.origin),match.field));
+          const restricted=match.season||match.mode==='hardcore'||match.mode==='search'&&!recipient?.hp;
+          const sight=match.mode==='search'&&!recipient?.hp?[...match.players.values()].find(p=>p.hp&&p.team===recipient?.team):recipient;
+          return !restricted||recipient?.team===team||!!(sight&&canSee(sight,match.players.get(body.origin),match.field));
         }
         return team==null||recipient?.team===team;
       });
@@ -475,6 +481,7 @@ export function createOverdrive({client, send, store, ascStore, fail, allowed, l
         if(room.phase!=='playing')continue;
         const match=room.match;
         updateMatch(match,now);
+        if(match.asc)for(const p of match.players.values())if(checkTravel(p,now))ascStore?.review(p.id,'Repeated movement outside the speed envelope',now);
         routedEvents(room);
         if(match.result){settle(room,now);continue;}
         for(const p of [...room.members.values()])if(p.away&&p.away+ROOM_GRACE<=now)drop(p.id,now);

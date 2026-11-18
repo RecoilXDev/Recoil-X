@@ -113,7 +113,7 @@ export function setOffline(m,id,now,immediate=false) {
 export function restorePlayer(m,id) {
   const p=m?.players.get(id);
   if(!p||p.forfeited) return false;
-  p.offlineAt=0;p.remakeEligible=false;p.seq=-1;p.input=neutral();p.taps=null;
+  p.offlineAt=0;if(p.asc)p.asc.actionSeq=-1;p.remakeEligible=false;p.seq=-1;p.input=neutral();p.taps=null;
   return true;
 }
 
@@ -276,14 +276,16 @@ function fire(m,p,now) {
       if(!end)end=visible;
       if(leg)m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:start.map(v=>round(v,100)),b:visible});
       const damage=(chamber?150:w.damage)*(leg?.55:1)*(dual?.84:1);
-      if(target){const hp=target.hp;hit(m,p,target,Math.ceil(damage),now);connected||=target.hp<hp;break;}
+      if(target){
+        if(!connected&&target.hp>0&&!(target.shieldUntil>now)){p.hits++;connected=true;}
+        hit(m,p,target,Math.ceil(damage),now);break;
+      }
       coverHit(m,wall,damage);
       if(!m.asc||leg||wall?.material!=='metal')break;
       dir=reflectRay(wall,point,dir);start=point.map((v,i)=>v+dir[i]*.03);range=(range-reach)*.65;
       if(range<1)break;
     }
   }
-  if(connected)p.hits++;
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
 }
 
@@ -400,7 +402,7 @@ export function updateMatch(m,now) {
     if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(m,p,now);
     powerOrRelic(m,p,now);
     const weapon=m.mode==='budget'?p.loadout:heldWeapon(m,p,input);
-    if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
+    if(p.weapon!==weapon){if(p.asc&&![0,3].includes(weapon))p.asc.dual=false;p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=(input.fire||taps?.fire)&&!p.asc?.locked&&!(p.asc?.stunned>now)&&m.mode!=='race';
     if(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0))reload(p,now);

@@ -34,8 +34,9 @@ export function verifiedBackup(file,{directory,keep=7,reason='daily',now=Date.no
     }finally{checkDb.close();}
     renameSync(partial,dest);
     if(suffix==='daily'){
-      const old=readdirSync(folder).filter(n=>n.startsWith(prefix)&&n.endsWith('-daily.sqlite')).sort().reverse();
-      for(const item of old.slice(keep))rmSync(join(folder,item));
+      const old=readdirSync(folder).filter(n=>n!==name&&n.startsWith(prefix)&&n.endsWith('-daily.sqlite'))
+        .sort((a,b)=>statSync(join(folder,b)).mtimeMs-statSync(join(folder,a)).mtimeMs||b.localeCompare(a));
+      for(const item of old.slice(keep-1))rmSync(join(folder,item));
     }
     return {time:now,bytes:statSync(dest).size,path:dest};
   }finally{db.close();rmSync(partial,{force:true});}
@@ -51,7 +52,7 @@ export function backupSchedule(file,options={}){
     worker=new Worker(new URL(import.meta.url),{workerData:{file,options}});
     worker.once('message',m=>{
       if(m.ok){status.state='ok';status.last=m.time;status.failedAt=null;}
-      else{status.state='failed';status.failedAt=Date.now();console.error('RECOIL X private database backup failed.');}
+      else{status.state='failed';status.failedAt=Date.now();console.error('RECOIL X private database backup failed:',m.reason);}
     });
     worker.once('error',()=>{status.state='failed';status.failedAt=Date.now();console.error('RECOIL X database backup worker failed.');});
     worker.once('exit',()=>{worker=null;});
@@ -70,5 +71,5 @@ export function backupSchedule(file,options={}){
 }
 if(!isMainThread&&workerData?.file){
   try{const r=verifiedBackup(workerData.file,workerData.options);parentPort.postMessage({ok:true,time:r.time});}
-  catch{parentPort.postMessage({ok:false});}
+  catch(e){parentPort.postMessage({ok:false,reason:e.code||e.name});}
 }

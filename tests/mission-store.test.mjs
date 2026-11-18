@@ -49,11 +49,11 @@ test('an existing Overdrive database is backed up before mission migration and a
   const old=new DatabaseSync(path);old.exec('PRAGMA journal_mode=WAL;'+users);migrateOverdrive(old,path,false);
   old.exec("INSERT INTO users VALUES (15,'Existing','existing','unused','unused',0,0,1)");old.close();
   let server;
-  const start=async()=>{server=createRecoilServer({database:path});server.listen(0,'127.0.0.1');await once(server,'listening');return 'http://127.0.0.1:'+server.address().port+'/rx-api';};
+  const start=async()=>{server=createRecoilServer({database:path,backups:{directory:join(directory,'private-backups')}});server.listen(0,'127.0.0.1');await once(server,'listening');return 'http://127.0.0.1:'+server.address().port+'/rx-api';};
   try{
     let api=await start();
-    const folder=join(directory,'.recoil-backups'),backups=readdirSync(folder);
-    assert.equal(backups.length,1);assert.match(backups[0],/before-mission-levels/);
+    const folder=join(directory,'private-backups'),backups=readdirSync(folder);
+    assert.equal(backups.length,1);assert.match(backups[0],/-migration\.sqlite$/);
     const image=join(folder,backups[0]);if(process.platform!=='win32')assert.equal(statSync(image).mode&0o777,0o600);
     const copy=new DatabaseSync(image,{readOnly:true});
     assert.equal(copy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
@@ -90,13 +90,13 @@ test('the Z.3 upgrade snapshots an existing campaign, friends and rank once and 
     const saved=missionStore(old,fail);
     const expected=checkpoint('existing-account-run',2);
     saved.write(1,{changes:[change(record(1),{stars:3,best:64}),change('signal_checkpoint_air_recruit',expected)]});
-    const folder=join(directory,'.recoil-backups');
+    const folder=join(directory,'private-backups');
     async function restart(){
-      server=createRecoilServer({database:path});server.listen(0,'127.0.0.1');await once(server,'listening');
+      server=createRecoilServer({database:path,backups:{directory:join(directory,'private-backups')}});server.listen(0,'127.0.0.1');await once(server,'listening');
       await new Promise(resolve=>server.close(resolve));server=null;
     }
     await restart();
-    const backups=readdirSync(folder);assert.equal(backups.length,1);assert.match(backups[0],/before-z3/);
+    const backups=readdirSync(folder);assert.equal(backups.length,1);assert.match(backups[0],/-migration\.sqlite$/);
     for(const file of [path,join(folder,backups[0])]){
       const db=new DatabaseSync(file,{readOnly:true});
       try{
