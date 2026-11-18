@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "RECOIL X",
+  "short_name": "RECOIL X",
+  "description": "A browser FPS with offline bot matches and online competition.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#091729",
+  "theme_color": "#291c15",
+  "icons": [
+    { "src": "./recoil-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./recoil-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

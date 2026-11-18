@@ -1,8 +1,15 @@
 import { chmodSync, mkdirSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
+import { randomInt } from 'node:crypto';
+
+const MAP_TYPES=new Set(['wall','cover','tower','spawn','objective','checkpoint','botspawn','doortrigger','wavetrigger','routetrigger']);
+const TRIGGER_TYPES=new Set(['doortrigger','wavetrigger','routetrigger']);
+const MAP_KEYS='23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 export function migrateOverdrive(db, filename, existing) {
-  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx2_schema'").get()) return;
+  const tables=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+  if(tables.get('rx3_maps'))return;
+  const version=tables.get('rx2_schema')?'z3':'z2';
 
   // SQLite makes a consistent snapshot even when the previous release used WAL.
   if (existing && filename !== ':memory:') {
@@ -10,7 +17,7 @@ export function migrateOverdrive(db, filename, existing) {
     const directory = resolve(dirname(absolute), '.recoil-backups');
     mkdirSync(directory, { recursive: true, mode: 0o700 });
     chmodSync(directory, 0o700);
-    const snapshot = resolve(directory, `${basename(absolute)}-before-z2-${Date.now()}-${process.pid}.sqlite`);
+    const snapshot = resolve(directory, `${basename(absolute)}-before-${version}-${Date.now()}-${process.pid}.sqlite`);
     db.prepare('VACUUM main INTO ?').run(snapshot);
     chmodSync(snapshot, 0o600);
   }
@@ -46,6 +53,15 @@ export function migrateOverdrive(db, filename, existing) {
       );
       CREATE TABLE IF NOT EXISTS rx2_schema (version INTEGER PRIMARY KEY);
       INSERT OR IGNORE INTO rx2_schema(version) VALUES (1);
+      CREATE TABLE IF NOT EXISTS rx3_maps (
+        code TEXT PRIMARY KEY, owner INTEGER NOT NULL REFERENCES users(id),
+        title TEXT NOT NULL, blocks TEXT NOT NULL, created INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS rx3_maps_owner ON rx3_maps(owner);
+      CREATE TABLE IF NOT EXISTS rx3_report_context (
+        report INTEGER PRIMARY KEY REFERENCES rx2_reports(id),
+        match TEXT NOT NULL REFERENCES rx2_results(id), at INTEGER NOT NULL
+      );
     `);
     db.exec('COMMIT');
   } catch (error) {
@@ -150,8 +166,62 @@ export function overdriveStore(db, fail) {
     if (reason.length<5) throw fail(400,'Add a reason of at least five characters.');
     const prior=prepare('SELECT COUNT(*) AS count FROM rx2_reports WHERE reporter=? AND created>?').get(user.id,now-86400000);
     if (prior.count>=5) throw fail(429,'Try another report tomorrow.');
-    prepare('INSERT INTO rx2_reports(reporter,target,reason,created) VALUES (?,?,?,?)').run(user.id,target.id,reason,now);
+    let context=null;
+    if(body.matchId!=null||body.at!=null){
+      const key=typeof body.matchId==='string'&&/^[0-9a-f-]{36}$/.test(body.matchId)?body.matchId:null;
+      if(!key||!Number.isSafeInteger(body.at)||body.at<0)throw fail(400,'Choose a completed match and a valid timestamp.');
+      const match=matchResult(key);
+      if(!match||!match.players.some(p=>p.id===user.id)||!match.players.some(p=>p.id===target.id))
+        throw fail(404,'This match is unavailable for this report.');
+      if(body.at>match.duration)throw fail(400,'The report time must be within the match.');
+      context={key,at:body.at};
+    }
+    transaction(()=>{
+      const row=prepare('INSERT INTO rx2_reports(reporter,target,reason,created) VALUES (?,?,?,?)').run(user.id,target.id,reason,now);
+      if(context)prepare('INSERT INTO rx3_report_context VALUES (?,?,?)').run(row.lastInsertRowid,context.key,context.at);
+    });
     return {ok:true};
+  }
+
+  function matchResult(id) {
+    const row=prepare('SELECT result FROM rx2_results WHERE id=?').get(id);
+    return row?JSON.parse(row.result):null;
+  }
+
+  function shareMap(user,body,now) {
+    const title=text(body.title,42)||'Custom arena';
+    if(!Array.isArray(body.blocks)||!body.blocks.length||body.blocks.length>110)throw fail(400,'Choose a map with 1–110 cells.');
+    const used=new Set(),checkpoints=body.blocks.filter(b=>b?.type==='checkpoint').length;
+    const blocks=body.blocks.map(b=>{
+      if(!b||!Number.isInteger(b.gx)||!Number.isInteger(b.gz)||b.gx<0||b.gx>13||b.gz<0||b.gz>13||
+        !MAP_TYPES.has(b.type))throw fail(400,'A map cell is invalid.');
+      const pos=b.gx*14+b.gz;
+      if(used.has(pos))throw fail(400,'A map cell is used twice.');
+      used.add(pos);
+      const clean={gx:b.gx,gz:b.gz,type:b.type};
+      if(TRIGGER_TYPES.has(b.type)){
+        if(!Number.isInteger(b.step)||b.step<1||b.step>checkpoints)throw fail(400,'Link each trigger to an existing checkpoint.');
+        clean.step=b.step;
+      }
+      return clean;
+    });
+    const json=JSON.stringify(blocks);
+    const existing=prepare('SELECT code FROM rx3_maps WHERE owner=? AND title=? AND blocks=?').get(user.id,title,json);
+    if(existing)return {code:existing.code};
+    const count=prepare('SELECT COUNT(*) AS total FROM rx3_maps WHERE owner=?').get(user.id);
+    if(count.total>=30)throw fail(409,'This account has already shared 30 maps.');
+    const lookup=prepare('SELECT code FROM rx3_maps WHERE code=?');
+    let code;
+    do{code=Array.from({length:7},()=>MAP_KEYS[randomInt(MAP_KEYS.length)]).join('');}while(lookup.get(code));
+    prepare('INSERT INTO rx3_maps VALUES (?,?,?,?,?)').run(code,user.id,title,json,now);
+    return {code};
+  }
+
+  function loadMap(code) {
+    const key=typeof code==='string'?code.trim().toUpperCase():'';
+    const row=/^[A-Z2-9]{7}$/.test(key)&&prepare('SELECT title,blocks FROM rx3_maps WHERE code=?').get(key);
+    if(!row)throw fail(404,'That map code is unavailable.');
+    return {title:row.title,blocks:JSON.parse(row.blocks)};
   }
 
   function moderation(user,body,now) {
@@ -199,12 +269,15 @@ export function overdriveStore(db, fail) {
     return {
       actions:prepare(`SELECT a.id,actor.name AS actor,t.name AS target,a.action,a.reason,a.until,a.created
         FROM rx2_audit a JOIN users actor ON actor.id=a.actor JOIN users t ON t.id=a.target ORDER BY a.id DESC LIMIT 50`).all(),
-      reports:prepare(`SELECT r.id,p.name AS reporter,t.name AS target,r.reason,r.created,r.resolved_at
-        FROM rx2_reports r JOIN users p ON p.id=r.reporter JOIN users t ON t.id=r.target ORDER BY r.id DESC LIMIT 50`).all()
+      reports:prepare(`SELECT r.id,p.name AS reporter,t.name AS target,r.reason,r.created,r.resolved_at,
+        c.match AS matchId,c.at FROM rx2_reports r JOIN users p ON p.id=r.reporter
+        JOIN users t ON t.id=r.target LEFT JOIN rx3_report_context c ON c.report=r.id ORDER BY r.id DESC LIMIT 50`).all()
+        .map(row=>row.matchId?{...row,timeline:(matchResult(row.matchId)?.timeline||[])
+          .filter(e=>Math.abs(e.at-row.at)<=12000).slice(-12)}:row)
     };
   }
 
-  return {rating,profile,settle,report,moderation,history,
+  return {rating,profile,settle,report,moderation,history,shareMap,loadMap,
     activeBan:(id,now)=>restriction.get(id,'ban',now),
     banned:(id,now)=>!!hasBan.get(id)?.banned||!!restriction.get(id,'ban',now),
     muted:(id,now)=>!!restriction.get(id,'mute',now),

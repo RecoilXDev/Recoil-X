@@ -49,7 +49,7 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
   const packet=(c,action,props={})=>c.send({type:'z2:'+action,...props});
   try{
     assert.equal((await fetch(origin+'/')).status,200);
-    assert.deepEqual((await api('/health')).value,{recoil:'Z.2',protocol:1,overdrive:1});
+    assert.deepEqual((await api('/health')).value,{recoil:'Z.3',protocol:1,overdrive:1});
     assert.equal((await api('/health',undefined,undefined,{Origin:'https://outside.example'})).status,403);
     assert.equal((await api('/health',undefined,undefined,{Origin:'https://recoilxdev.github.io'})).status,200);
     const accounts=[];
