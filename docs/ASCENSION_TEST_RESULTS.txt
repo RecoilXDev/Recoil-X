@@ -1,0 +1,140 @@
+RECOIL X Project Ascension. Local verification of code commit 036a9d9f14cd9ae41062d49785d2b2cb594c395e.
+Node v24.22.3, node --test --test-concurrency=2, predecessor Git tree 337e70abf80307c4de50309d516bf63d4abf39fe.
+
+✔ A15 three Aim Academy drills launch from the hub, score hits and retain a personal best (4630.160996ms)
+✔ A20 legendary evolution geometry is gated by account mastery and adds no weapon stats (1033.095002ms)
+✔ A29 shareable recap uses public names, score, accuracy, MVP and highlights (843.324024ms)
+✔ A37 private builder places, rotates, moves, validates routes, saves and plays the design (1314.168721ms)
+✔ A44 diagnostics label missing snapshot estimates and jitter, replaying deltas only against their key (810.186359ms)
+✔ A48 accessibility controls apply HUD scale, larger text, motion, team symbols, contrast and captions (1046.698392ms)
+✔ A49 packed geometry halves retained bytes, uploads on demand and deletes old GPU buffers (1005.987508ms)
+ℹ 90 mesh scalars: 360 bytes before packing, 180 retained; 12 resident GPU chunks after eviction.
+✔ Home reaches ranked, armory and all ten new match types; a touch player sees the interaction control (1534.821811ms)
+✔ Objective and environment meshes contain finite coordinates for every map and mode (1038.230599ms)
+✔ A47 controller axes, triggers, parry and jump reach the multiplayer input stream (1086.728638ms)
+✔ legacy seasonal editions open and close on their configured dates through 2031 (874.055074ms)
+✔ legacy earned coins, Battle Pass claim and weapon case survive a browser reload (2123.572563ms)
+✔ rejoining the same match accepts frame one from a new socket after a higher old frame (1385.807115ms)
+✔ A11 paired pistol view draws two finite models and changes pose with the firing hand (949.414247ms)
+✔ A01 payload can be contested, enters overtime and crosses three checkpoints (15.030088ms)
+✔ A02 search plants, defuses, holds eliminated players and switches sides (4.918597ms)
+✔ A03 flags require recovery at home and score three validated captures (0.622956ms)
+✔ A04 gun game advances only on eliminations and counts the winning shot (1.472446ms)
+✔ A05 chamber limits ammunition and lives; legitimate eliminations replenish ammo (1.831791ms)
+✔ A06 bounty values are visible and repeated victim bonuses are capped (2.81912ms)
+✔ A07 hardcore uses lower health and withholds occluded opponents (0.493789ms)
+✔ A08 extraction must hold at the home zone and consumes each cargo once (2.617073ms)
+✔ A09 race requires ordered airborne gates and retains the last checkpoint (2.568529ms)
+✔ A10 roulette assigns identical weapons, resets both players and awards three rounds (0.720544ms)
+✔ A11 paired pistols consume a shared magazine and switching to a sniper holsters them (2.900744ms)
+✔ A12 heat blocks sustained fire and cools; private rooms may switch heat off (4.343594ms)
+✔ A13 simulated shots break cover and remove its collider from both snapshots (1.628032ms)
+✔ A14 a metal surface reflects one attenuated ray with no extra pellet hits (0.482954ms)
+✔ A17 melee parry counters during its window, then enforces cooldown (0.79685ms)
+✔ A18 EMP disables nearby electronic equipment and destroys a nearby shield (0.469593ms)
+✔ A19 shields block movement, refuse overlapping placements and expire (2.356858ms)
+✔ A24 room rules validate map, health, gravity and permitted weapon ladder (0.831372ms)
+✔ A26 broadcast follows its chosen teammate and filters opponents behind metal (0.528873ms)
+✔ A27 rejoin preserves objective inventory, resets input streams and expires deserted seats (0.543715ms)
+✔ A31 train has stable carriage colliders, moving scenery and damage off the deck (0.640823ms)
+✔ A32 submerged lab drains oxygen and health, then replenishes oxygen in air (2.728733ms)
+✔ A33 orbit retains momentum, bounds movement and extends jump time (2.959032ms)
+✔ A34 volcanic hazards move and shrink; an active survivor earns a team victory (7.911751ms)
+✔ A35 Titan shield requires two simultaneous operators and alternates telegraphed attacks (3.078994ms)
+✔ A36 fractured arenas toggle synchronized geometry and restore the original colliders (3.379712ms)
+✔ A38 hidden vault checks ordered interactions and separately records collection (0.400308ms)
+✔ A39 alien waves scale, use two movement types, cap enemies and end on the boss (1.925694ms)
+✔ A40 weekend schedule uses Oman midnight and leaves weekday raids available separately (0.92869ms)
+✔ A41 authoritative timing, ammo, damage and stale input reject duplicate results (0.323231ms)
+✔ published predecessor → populated database copy → Ascension → code-only rollback retains accounts, permissions, friends, chat and 500 saved levels (1935.394216ms)
+ℹ Rehearsed the exact predecessor tree 337e70abf80307c4de50309d516bf63d4abf39fe with two synthetic accounts and all 500 saved levels.
+✔ A16 mastery credits server results once per match and only to the earned weapon (6.897374ms)
+✔ A20 earned evolution tiers persist at 3, 10 and 25 credited eliminations (3.403299ms)
+✔ A21 clans enforce invites, unique names, emblem, roles and earned achievements (4.762993ms)
+✔ A22 war registration checks roster, start time, finished result and standings (2.920688ms)
+✔ A23 rivalry records wins without a kill, caps repeat opponents and expires duel invites (2.591174ms)
+✔ A25 two captains draft six players in balanced order and lock both ready rosters (4.703022ms)
+✔ A28 server browser lists real slots, filters modes and excludes private and locked rooms (3.233996ms)
+✔ A30 server day rolls over at Oman midnight and claims are unique per account (2.546858ms)
+✔ A40 shared weekend damage and rewards survive a store restart and repeated settlement (1.934623ms)
+✔ A42 implausible movement raises a throttled review entry without banning the account (1.682275ms)
+✔ A43 deltas reference a delivered keyframe, omit unchanged players and periodically resynchronize (0.363563ms)
+ℹ 10-row synthetic full 300 B, one changed row plus removal 77 B
+✔ A45 scheduled private SQLite backups verify integrity, retain copies and restore to a fresh path (82.293292ms)
+ℹ Verified WAL restore, private file and directory modes, daily retention and separate backup worker.
+✔ A47 strict input groups admit matching cross-input players and keep mixed groups available (0.74223ms)
+✔ A46 enrolled offline recovery requires the password, consumes the code and revokes old sessions (2028.066623ms)
+✔ A50 health endpoint requires a persisted admin role and returns only operational fields (309.731267ms)
+✔ A16 mastery ignores an ineligible opponent while crediting a different weapon against a fresh opponent (3.244652ms)
+✔ an existing unrecognized database is preserved and startup stops before schema creation (1.192238ms)
+✔ Ascension loopback with 2, 4, 6 and 10 authenticated WebSockets, combat, room chat, deltas and rejoin (5208.906074ms)
+ℹ 2 Ascension clients / 1211 ms / 10668 aggregate state bytes / 24 state frames / 9 deltas.
+ℹ 4 Ascension clients / 1216 ms / 23833 aggregate state bytes / 48 state frames / 19 deltas.
+ℹ 6 Ascension clients / 1216 ms / 37583 aggregate state bytes / 72 state frames / 29 deltas.
+ℹ 10 Ascension clients / 1221 ms / 72897 aggregate state bytes / 120 state frames / 49 deltas.
+✔ opening offline keeps a saved account session until the server rejects it (1121.034327ms)
+✔ queue warm-up respawns targets and returns to the lobby when the queue ends (2098.458031ms)
+✔ Clutch Lab finishes on a clear or death and Parkour tracks a medal and personal best (2373.296927ms)
+✔ touch Jump handles taps, holds through a wall-run and clears on cancellation (1154.591628ms)
+✔ builder checkpoints open doors and delay the exit until a triggered wave is cleared (1732.162332ms)
+✔ game clients share maps, join a ranked veto from warm-up and open a linked report (6108.896504ms)
+✔ escort contest, side swap and delivery winner are recorded (3.718858ms)
+✔ moving hot zone rotates and scores only when held alone (0.973391ms)
+✔ elimination rounds hold dead players out and a spectator can follow the last play (1.082336ms)
+✔ weapon budget accepts only affordable choices and locks that loadout in a round (1.556107ms)
+✔ prop hunt enforces roles and switches hiders at halftime (0.776041ms)
+✔ Jeep Relay swaps drivers at gates and records the winning crew (0.642778ms)
+✔ Crown Raids require two teammates on separate seals (0.888552ms)
+✔ early ranked disconnects wait, can resume and void without rating points (1.183591ms)
+✔ ready squads stay together through a ranked captain veto (153.557116ms)
+✔ map codes and match reports preserve data boundaries and snapshot existing SQLite data (5.42915ms)
+✔ offline files are served and the worker caches only its scoped game shell (29.542757ms)
+✔ the Play menu launches all four operations in order, with valid geometry, stars, paints and debrief splits (11071.888376ms)
+✔ relay contesting, radar cooldown, field kits, supplies and extraction work through touch controls (3287.769404ms)
+✔ checkpoints survive reload, death, and timeout and preserve the loadout and independent difficulty records (14676.870082ms)
+✔ cell delivery and the code require the right interactable, escort waits, and both finale routes can finish (8786.975428ms)
+✔ the Oman daily rotation, faster radar, stamps and five languages are independent of story progress (9170.77339ms)
+✔ a browser without writable storage can resume and unlock the next operation in the current session (3765.516793ms)
+✔ 500 stable levels have reachable objectives, an open escort lane and chapter navigation (2703.22706ms)
+✔ all 500 consecutive campaign unlocks run through their objectives to the final debrief (10064.511332ms)
+ℹ Simulated 500 consecutive clears and 2139 objective completions
+✔ real account saves transfer a guest campaign and checkpoint across clients and recover an interrupted offline save (13292.489834ms)
+✔ account records advance sequentially through 500, merge best results and protect newer checkpoints (17.055522ms)
+✔ an existing Overdrive database is backed up before mission migration and account saves survive a restart (566.37051ms)
+✔ the Z.3 upgrade snapshots an existing campaign, friends and rank once and preserves them across restarts (4.882625ms)
+✔ Z.2 menus, ghost, dual boss, ordered mission gates, daily course, avatar and touch editor (6011.621686ms)
+✔ two game clients run Overdrive UI against the real local server (5024.811694ms)
+✔ independent compact snapshots reproduce the complete permitted view at every team size (883.18551ms)
+ℹ 2 players, same 40 snapshots per player: 20040 → 13943 JSON bytes
+ℹ 4 players, same 40 snapshots per player: 61632 → 36266 JSON bytes
+ℹ 6 players, same 40 snapshots per player: 124896 → 66705 JSON bytes
+ℹ 10 players, same 40 snapshots per player: 316980 → 153095 JSON bytes
+✔ compact clients receive each expansion objective, disguises, round spawns and spectator focus (880.968614ms)
+✔ 2 players play through 130 and 276 ms round trips (5482.089866ms)
+ℹ 5 simulated seconds, 2 players, ping readings 130/276 ms, 32 input packets, largest remote 16 ms step 0.116 game units
+✔ 10 players play through 130 and 276 ms round trips (6071.02371ms)
+ℹ 5 simulated seconds, 10 players, ping readings 130/276 ms, 32 input packets, largest remote 16 ms step 0.116 game units
+✔ press and release within one server tick consume one action and keep the server cooldown (0.468351ms)
+✔ a congested socket skips replaceable states, receives chat, and resumes with one fresh complete state (1471.871698ms)
+✔ authoritative movement, visibility, shot cooldown and replay bounds (4.739546ms)
+✔ reconnect resumes the same seat and stale controls expire (0.733804ms)
+✔ pings are projected by the server and rate limited (0.270661ms)
+✔ Overcharge pickups and Chess moves use cooldowns (0.360047ms)
+✔ Relic Relay captures and Squad Rescue revives and bleed-outs (4.121038ms)
+✔ 4- and 8-team brackets progress to a champion with spectators (8314.987207ms)
+✔ team changes, host controls and idle code expiration (107.155389ms)
+✔ existing accounts, live 2/4/6/10-player matches, private rooms and moderation (12288.414731ms)
+ℹ 2 concurrent WebSockets, 1290 ms of controls, aggregate state payload 6154 bytes
+ℹ 4 concurrent WebSockets, 1272 ms of controls, aggregate state payload 17800 bytes
+ℹ 6 concurrent WebSockets, 1270 ms of controls, aggregate state payload 33462 bytes
+ℹ 10 concurrent WebSockets, 1271 ms of controls, aggregate state payload 80580 bytes
+✔ additive migration preserves WAL-backed accounts, sessions, friends and chat (38.980262ms)
+✔ ranked result deduplication, division boundaries, season rewards and expiry (2.359793ms)
+ℹ tests 110
+ℹ suites 0
+ℹ pass 110
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97012.561974

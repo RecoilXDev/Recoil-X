@@ -41,7 +41,7 @@ Open `http://127.0.0.1:8787/`. Friends registration and sign-in here use the new
 
 ## Automated verification
 
-**110 tests passed, 0 failed, 0 skipped in 97.01 seconds.** All 50 A-numbered feature cases ran on the development checkout, alongside the previous regression coverage. The test runner used two workers. One inline game script and 27 JavaScript server, worker or test files passed syntax checks. The manifest, declared server dependencies, mission store and GitHub Actions workflow matched the baseline byte for byte.
+**110 tests passed, 0 failed, 0 skipped in 97.01 seconds.** [Full test output](ASCENSION_TEST_RESULTS.txt). All 50 A-numbered feature cases ran on the development checkout, alongside the previous regression coverage. The test runner used two workers. One inline game script and 27 JavaScript server, worker or test files passed syntax checks. The manifest, declared server dependencies, mission store and GitHub Actions workflow matched the baseline byte for byte.
 
 | Area | Test evidence |
 |---|---|
