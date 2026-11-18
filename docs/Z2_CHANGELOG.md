@@ -2,6 +2,15 @@
 
 The update builds on Z.1 Crown Trials at commit `6b2726bfb5fc7c853bdd6419ae619eaf6f284757`. Open **Operation Overdrive** from the home screen or Play menu. Use your Friends account for online matches. **Local challenges** opens the offline additions.
 
+## Multiplayer connection update, 18 November 2026
+
+- Overdrive sends movement starts, stops and button changes promptly. Held controls use a regular heartbeat. Short taps that reach the server between two simulation steps can still register once.
+- Overdrive sends smaller, independently decodable match updates. The server prepares player data once per broadcast and filters the visible players for each recipient. Existing clients continue to receive their original format.
+- Remote players move between recent server positions. An opponent disappearing from view is removed immediately, and a respawn starts a fresh movement history.
+- On a congested connection, the server skips obsolete Overdrive positions and Friends party movement frames. Chat, match results and account messages keep their normal delivery path.
+
+See the [testing and rollback notes](Z2_TESTING_AND_ROLLBACK.md#multiplayer-connection-update).
+
 ## Multiplayer and administration
 
 | Feature | What changed |

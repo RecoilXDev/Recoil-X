@@ -7758,7 +7758,11 @@ function z1ClearAccount(){
 
 function z1Send(packet){
   if(!z1SocketReady||z1Socket?.readyState!==1)return false;
-  if(z1Socket.bufferedAmount>220000)return false;
+  let queueLimit=220000;
+  if(packet.type==='z2:input')queueLimit=512;
+  else if(packet.type==='relay'&&(packet.packet?.t==='pos'||
+    (packet.packet?.t==='z1-frame'&&packet.packet.phase==='playing')))queueLimit=8192;
+  if(z1Socket.bufferedAmount>queueLimit)return false;
   z1Socket.send(JSON.stringify(packet));
   return true;
 }
@@ -7775,7 +7779,7 @@ function z1ConnectLive(){
   try{socket=new WebSocket(root.href);}catch{z1Say('Live connection could not start.',true);return;}
   z1Socket=socket;z1SocketReady=false;
   socket.addEventListener('open',()=>{
-    if(z1Socket===socket)socket.send(JSON.stringify({type:'auth',token:z1Token}));
+    if(z1Socket===socket)socket.send(JSON.stringify({type:'auth',token:z1Token,compactState:1}));
   });
   socket.addEventListener('message',event=>{
     if(z1Socket!==socket)return;
@@ -8543,8 +8547,8 @@ const Z2_MODES={
 };
 const Z2_TEAM=[[.19,.80,.93],[.95,.37,.24]];
 const Z2_PINGS=['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
-const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,sendAt:0,stateAt:0,
-  echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
+const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,lastInput:null,stateAt:0,
+  renderAt:null,jitter:0,fireUntil:0,echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
 const z2IsMatch=()=>mode==='crown-overdrive'&&!!z2Live.match;
 const z2Online=()=>z1SocketReady&&z1Socket?.readyState===1;
 function z2Say(message,error=false){
@@ -8677,10 +8681,46 @@ function z2EndView(){
   z2ScoreOpen=false;z2Live.reload=false;z2Live.use=false;z2Live.ability=false;
   if(inMatch){z1BaseQuit();mode='solo';}
 }
-function z2AimActor(row,actor={}){
-  Object.assign(actor,{id:row[0],tx:row[1],tz:row[2],yaw:row[3],jump:row[4],hp:row[5],
-    alive:row[6]===1,down:row[6]===2,team:row[7],kills:row[8],deaths:row[9],weapon:row[14]});
-  return actor;
+function z2UnpackState(event){
+  if(event.packed!==1)return event;
+  const rows=event.rows.map(packed=>{
+    // Must match the server's format 1 defaults. Every row can be decoded independently.
+    const row=[packed[0],0,0,0,0,100,1,0,0,0,0,0,0,0,0,-1,0,0];
+    for(let i=1,j=2;i<row.length;i++)if(packed[1]&(1<<(i-1)))row[i]=packed[j++];
+    return row;
+  });
+  return {...event,rows,roster:event.roster??rows.map(r=>[r[0],r[8],r[9],r[16],r[17]])};
+}
+
+function z2AimActor(row,actor={},time){
+  const poses=actor.poses??=[];
+  const last=poses[poses.length-1];
+  const pose={t:time,x:row[1],z:row[2],yaw:row[3],jump:row[4],life:row[6]};
+  if(!last||time-last.t>450||pose.life!==last.life||Math.hypot(pose.x-last.x,pose.z-last.z)>3.25){
+    poses.length=0;
+    Object.assign(actor,{x:pose.x,z:pose.z,yaw:pose.yaw,jump:pose.jump,verticalOffset:pose.jump,walk:0,skinId:'sandstorm'});
+  }else if(last.t===time)poses.pop();
+  poses.push(pose);if(poses.length>6)poses.shift();
+  return Object.assign(actor,{id:row[0],tx:pose.x,tz:pose.z,hp:row[5],alive:row[6]===1,
+    down:row[6]===2,team:row[7],kills:row[8],deaths:row[9],weapon:row[14]});
+}
+
+function z2DrawRemoteMotion(dt,elapsed){
+  const snapshot=z2Live.snapshot;
+  if(!snapshot)return;
+  const desired=Math.min(snapshot.t,snapshot.t-100-Math.min(70,z2Live.jitter*1.5)+elapsed);
+  z2Live.renderAt+=clamp(desired-z2Live.renderAt,0,dt*1000*1.25);
+  for(const actor of remotePlayers.values()){
+    const poses=actor.poses;
+    if(!poses?.length)continue;
+    while(poses.length>1&&poses[1].t<=z2Live.renderAt)poses.shift();
+    const a=poses[0],b=poses[1]||a;
+    const mix=clamp((z2Live.renderAt-a.t)/Math.max(1,b.t-a.t),0,1);
+    const x=a.x+(b.x-a.x)*mix,z=a.z+(b.z-a.z)*mix;
+    actor.walk+=Math.hypot(x-actor.x,z-actor.z)*8;
+    actor.x=x;actor.z=z;actor.jump=a.jump+(b.jump-a.jump)*mix;actor.verticalOffset=actor.jump;
+    actor.yaw=a.yaw+Math.atan2(Math.sin(b.yaw-a.yaw),Math.cos(b.yaw-a.yaw))*mix;
+  }
 }
 function z2Begin(event){
   const resumed=z2Live.match?.id===event.id;
@@ -8695,13 +8735,13 @@ function z2Begin(event){
     z2Live.match=match;
     z2Live.snapshot=null;z2Live.result=null;z2Live.stateAt=performance.now();
     if(!crownStartArena(arena,'overdrive'))return;
-    remotePlayers.clear();
     pl.alive=false;
     z2Live.ping=null;
     z2LocalFrames.length=0;z2LastSample=0;
     $('nameplates').classList.add('crown-hide-names');
   }
-  z2Live.match=match;z2Live.sendAt=0;
+  z2Live.match=match;z2Live.lastInput=null;z2Live.fireUntil=0;z2Live.snapshot=null;
+  z2Live.renderAt=null;z2Live.jitter=0;z2Live.echoAt=0;remotePlayers.clear();
   $('rxStage').classList.add('z2-playing');
   $('rxStage').classList.toggle('z2-watching',event.team==null);
   for(const kind of ['rescue','relic','chess'])$('rxStage').classList.toggle('z2-'+kind,event.mode===kind);
@@ -8717,15 +8757,21 @@ function z2Begin(event){
 function z2ApplyState(event){
   const match=z2Live.match;
   if(!match||event.id!==match.id)return;
-  z2Live.snapshot=event;z2Live.stateAt=performance.now();
+  const previous=z2Live.snapshot,arrival=performance.now();
+  if(previous&&event.t<previous.t)return;
+  if(!previous||event.t-previous.t>450||arrival-z2Live.stateAt>450){
+    z2Live.renderAt=event.t-100;z2Live.jitter=0;remotePlayers.clear();
+  }else if(event.t>previous.t){
+    const variation=Math.abs((arrival-z2Live.stateAt)-(event.t-previous.t));
+    z2Live.jitter+=(Math.min(150,variation)-z2Live.jitter)*.2;
+  }
+  z2Live.snapshot=event;z2Live.stateAt=arrival;
   const id=z1Account?.id, local=event.rows.find(r=>r[0]===id),present=new Set();
   for(const row of event.rows){
     if(row[0]===id)continue;
     present.add(row[0]);
-    const actor=z2AimActor(row,remotePlayers.get(row[0]));
-    if(!Number.isFinite(actor.x))Object.assign(actor,{x:actor.tx,z:actor.tz,walk:0,skinId:'sandstorm'});
+    const actor=z2AimActor(row,remotePlayers.get(row[0]),event.t);
     actor.name=match.names.get(actor.id)?.name||'Player';
-    actor.verticalOffset=actor.jump;
     remotePlayers.set(actor.id,actor);
   }
   for(const id of remotePlayers.keys())if(!present.has(id))remotePlayers.delete(id);
@@ -8747,7 +8793,7 @@ function z2Hud(){
   if(!z2IsMatch()||!z2Live.snapshot)return;
   const snap=z2Live.snapshot;
   $('z2MatchScore').textContent='BLUE '+snap.score[0]+'  ·  '+snap.score[1]+' ORANGE';
-  $('z2Latency').textContent=!z2Online()?'Reconnecting…':z2Live.rtt==null?'Measuring latency…':z2Live.rtt+' ms';
+  z2LatencyLabel(z2Online());
   $('z2MatchPing').textContent=z2Live.ping?.until>performance.now()?z2Live.ping.message:'';
   $('z2MatchPing').classList.toggle('hide',!$('z2MatchPing').textContent);
   if(!paused)updateHUD();
@@ -8761,6 +8807,28 @@ function z2Hud(){
   }));
 }
 
+function z2LatencyLabel(connected){
+  const label=!connected?'Reconnecting…':z2Live.rtt==null?'Measuring latency…':z2Live.rtt+' ms';
+  const element=$('z2Latency');if(element.textContent!==label)element.textContent=label;
+}
+
+const z2Buttons=['fire','reload','jump','sprint','use','ability'];
+function z2SendControls(now,input){
+  const last=z2Live.lastInput;
+  const moving=input.f!==0||input.s!==0;
+  const edge=!last||moving!==(last.f!==0||last.s!==0)||input.weapon!==last.weapon||
+    z2Buttons.some(key=>input[key]!==last[key]);
+  const age=last?now-last.at:Infinity;
+  if(age<(edge ? .012 : .049))return;
+  if(!edge&&age<.16&&input.f===last.f&&input.s===last.s&&input.yaw===last.yaw&&input.pitch===last.pitch)return;
+  const packet={seq:z2Live.sequence+1,f:input.f,s:input.s,yaw:input.yaw,pitch:input.pitch,weapon:input.weapon};
+  for(const key of z2Buttons)if(input[key])packet[key]=true;
+  if(z2Send('input',packet,true)){
+    z2Live.sequence=packet.seq;z2Live.lastInput={...input,at:now};
+    z2Live.fireUntil=0;z2Live.reload=false;z2Live.ability=false;
+  }
+}
+
 function z2Simulate(dt,now){
   if(phase!=='playing')return;
   if(rxInspectUntil>0)rxInspectTick(now);
@@ -8769,8 +8837,8 @@ function z2Simulate(dt,now){
   if(now>=z2Live.echoAt&&z2Online()){
     z2Live.echoAt=now+3;z2Send('echo',{value:performance.now()},true);
   }
-  const connected=z2Online()&&performance.now()-z2Live.stateAt<4000;
-  $('z2Latency').textContent=!connected?'Reconnecting…':z2Live.rtt==null?'Measuring latency…':z2Live.rtt+' ms';
+  const elapsed=performance.now()-z2Live.stateAt,connected=z2Online()&&elapsed<4000;
+  z2LatencyLabel(connected);
   let f=0,s=0;
   if(!uiOpen&&pl.alive&&connected){
     f=Number(!!(keys.KeyW||keys.ArrowUp))-Number(!!(keys.KeyS||keys.ArrowDown))-(mobile?moveJoy.y:0);
@@ -8778,14 +8846,12 @@ function z2Simulate(dt,now){
     const mag=Math.max(1,Math.hypot(f,s));f/=mag;s/=mag;
   }
   const sprint=!!(keys.ShiftLeft||keys.ShiftRight||mobileSprint),use=!!(keys.KeyE||z2Live.use);
-  if(now>=z2Live.sendAt&&match.team!=null&&z2Online()){
-    z2Live.sendAt=now+.049;
-    if(z2Send('input',{seq:++z2Live.sequence,f,s,yaw:pl.yaw,pitch:pl.pitch,weapon:pl.weapon,
-      fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire),reload:!uiOpen&&z2Live.reload,
+  if(match.team!=null&&z2Online()){
+    z2SendControls(now,{f:Math.round(f*1000)/1000,s:Math.round(s*1000)/1000,
+      yaw:Math.round(pl.yaw*1000)/1000,pitch:Math.round(pl.pitch*1000)/1000,weapon:pl.weapon,
+      fire:!uiOpen&&pl.alive&&(mouseDown||mobileFire||z2Live.fireUntil>now),reload:!uiOpen&&z2Live.reload,
       jump:!uiOpen&&!!(keys.Space||keys.Jump),sprint:!uiOpen&&sprint,use:!uiOpen&&use,
-      ability:!uiOpen&&!!(keys.KeyF||z2Live.ability)},true)){
-      z2Live.reload=false;z2Live.ability=false;
-    }
+      ability:!uiOpen&&!!(keys.KeyF||z2Live.ability)});
   }
   if(local&&pl.alive){
     const carrying=z2Live.snapshot.relics?.some(r=>r[3]===z1Account?.id);
@@ -8803,12 +8869,7 @@ function z2Simulate(dt,now){
     }
     pl.walk+=Math.hypot(dx,dz)*8;
   }
-  for(const actor of remotePlayers.values()){
-    const f=1-Math.exp(-dt*13);
-    const dx=actor.tx-actor.x,dz=actor.tz-actor.z;
-    actor.walk+=Math.min(2,Math.hypot(dx,dz))*f*8;
-    actor.x+=dx*f;actor.z+=dz*f;
-  }
+  z2DrawRemoteMotion(dt,elapsed);
   for(let i=tracers.length-1;i>=0;i--){
     tracers[i].t-=dt;if(tracers[i].t<=0)tracers.splice(i,1);
   }
@@ -8842,7 +8903,7 @@ function z2Packet(event){
       if(event.reason)z2Say(event.reason);
       break;
     case 'z2:begin':z2Begin(event);break;
-    case 'z2:state':z2ApplyState(event);break;
+    case 'z2:state':z2ApplyState(z2UnpackState(event));break;
     case 'z2:echo':z2Live.rtt=Math.max(0,Math.round(performance.now()-event.value));break;
     case 'z2:kill':addFeed(event.killer+' eliminated '+event.victim);break;
     case 'z2:shot':z2Shot(event);break;
@@ -8937,7 +8998,10 @@ v8Camera=function(){
 };
 
 const z2LegacyFire=fire,z2LegacyReload=reload,z2LegacySim=simulate,z2LegacyStart=startGame,z2LegacyQuit=quit;
-fire=function(now){if(!z2IsMatch())return z2LegacyFire(now);};
+fire=function(now){
+  if(!z2IsMatch())return z2LegacyFire(now);
+  if(pl.alive&&phase==='playing'&&!paused)z2Live.fireUntil=performance.now()/1000+.15;
+};
 reload=function(now){if(z2IsMatch()){z2Live.reload=true;return;}return z2LegacyReload(now);};
 simulate=function(dt,now){
   if(z2IsMatch())z2Simulate(dt,now);

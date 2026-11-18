@@ -45,6 +45,25 @@ All 12 automated checks passed on Node 24.22.1. These sample intervals count JSO
 
 Device frame rates, production bandwidth and sustained Alwaysdata capacity remain to be measured.
 
+## Multiplayer connection update
+
+Run `node --test --test-concurrency=2` at the repository root. For the connection-specific tests, run `node --test tests/overdrive-latency.test.mjs`.
+
+The byte counts below compare identical match states in the original and compact wire formats. Each player received 40 state updates during four seconds of simulated movement and firing. The figures count serialized game state and exclude transport headers, shots and chat.
+
+| Match | Original state payload | Compact state payload |
+| --- | ---: | ---: |
+| 1v1 | 19,240 bytes | 13,943 bytes |
+| 2v2 | 58,432 bytes | 36,266 bytes |
+| 3v3 | 117,696 bytes | 66,705 bytes |
+| 5v5 | 296,980 bytes | 153,095 bytes |
+
+In separate five-second 1v1 and 5v5 simulations, the game client saw 130 ms and 276 ms round trips. It sent 32 control updates in each run. The tests checked movement starts and stops, a short click, the latest direction after congestion, remote movement between updates, ranked visibility, respawns and stale snapshots. A local WebSocket match exercised a controlled backlog on one player's TCP socket and verified chat delivery and recovery on the next fresh state.
+
+For a live check, refresh the game on two devices using different connections and play a private match. Compare both ping readings during a spike and check whether movement stays smooth. The local measurements cover simulated connections. Latency from Oman and physical phone performance require a live session.
+
+This patch changes game code and uses the existing schema, dependency list and deployment workflow. To roll it back, revert its merge and let the usual workflow deploy the revert. Keep the current player database. The pre-patch code is available at the [Z.2 release commit](https://github.com/RecoilXDev/Recoil-X/tree/c0323b842a67b6c4d2c635ce86f24c26df1af9cd).
+
 ## Physical browser checks before marking the release ready
 
 1. In Chrome or Edge on PC, sign in, create a password-protected 1v1 and join from another profile. Check aim, shots, reload, scores, chat, four pings, elimination replay and rematch. Repeat disconnect/reconnect with one client.

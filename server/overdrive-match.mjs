@@ -23,11 +23,12 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const round=(v,scale)=>Math.round(v*scale)/scale;
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const neutral=()=>({f:0,s:0,fire:false,reload:false,jump:false,use:false,ability:false,sprint:false,weapon:0});
+const tapActions=['fire','reload','jump','ability'];
 
 function spawn(p, now) {
   Object.assign(p,{x:p.spawnX,z:p.team?23:-23,yaw:p.team?0:Math.PI,pitch:0,
     jumpAt:0,jump:0,hp:100,down:null,spawnAt:0,shieldUntil:now+850,boost:0,readyShot:now+230,
-    weapon:0,ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),inputAt:now});
+    weapon:0,ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),taps:null,inputAt:now});
 }
 
 export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,rng=Math.random}) {
@@ -61,6 +62,8 @@ export function inputMatch(m,id,data,now) {
   p.pitch=clamp(data.pitch,-1.34,1.34);
   p.input={f:f/scale,s:s/scale,weapon:data.weapon,fire:data.fire===true,reload:data.reload===true,
     jump:data.jump===true,use:data.use===true,ability:data.ability===true,sprint:data.sprint===true};
+  // A press and release can arrive together between simulation ticks.
+  for(const key of tapActions)if(p.input[key])(p.taps??={})[key]=true;
   return true;
 }
 
@@ -68,13 +71,13 @@ export function setOffline(m,id,now,immediate=false) {
   const p=m?.players.get(id);
   if(!p||m.result) return;
   p.offlineAt=immediate?now-ROOM_GRACE:now;
-  p.input=neutral();
+  p.input=neutral();p.taps=null;
 }
 
 export function restorePlayer(m,id) {
   const p=m?.players.get(id);
   if(!p||p.forfeited) return false;
-  p.offlineAt=0;p.seq=-1;p.input=neutral();
+  p.offlineAt=0;p.seq=-1;p.input=neutral();p.taps=null;
   return true;
 }
 
@@ -232,7 +235,7 @@ function powerOrRelic(m,p,now) {
 }
 
 function draftMove(p,now) {
-  if(!p.input.ability||p.abilityAt>now||!DRAFTS.includes(p.draft))return;
+  if(p.abilityAt>now||!DRAFTS.includes(p.draft))return;
   p.abilityAt=now+4200;
   const yaw=p.yaw+(p.draft==='bishop'?Math.PI/4:0), thrust=p.draft==='rook'?5.4:3.65;
   if(p.draft==='knight')p.jumpAt=now;
@@ -265,7 +268,7 @@ export function updateMatch(m,now) {
     if(p.offlineAt&&p.offlineAt+ROOM_GRACE<=now&&!p.forfeited){
       p.forfeited=true;p.hp=0;p.down=null;dropRelic(m,p,now);
     }
-    if(p.inputAt+470<now||p.offlineAt)p.input=neutral();
+    if(p.inputAt+470<now||p.offlineAt){p.input=neutral();p.taps=null;}
   }
   const teams=[0,1].map(team=>[...m.players.values()].some(p=>p.team===team&&!p.forfeited));
   if(!teams[0]||!teams[1]){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
@@ -289,6 +292,8 @@ export function updateMatch(m,now) {
   for(const r of m.relics)if(r.returnAt&&r.returnAt<=now)resetRelic(r);
   for(const p of m.players.values()){
     if(m.result||m.roundAt)break;
+    const taps=p.taps;
+    p.taps=null;
     if(p.forfeited||p.offlineAt)continue;
     if(p.down){revive(m,p,now,delta);continue;}
     if(!p.hp){if(p.spawnAt&&p.spawnAt<=now)spawn(p,now);continue;}
@@ -299,27 +304,48 @@ export function updateMatch(m,now) {
     const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
     move(p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
       (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
-    if(input.jump&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
+    if((input.jump||taps?.jump)&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
     p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/680)*Math.PI)*.97):0;
-    if(m.mode==='chess')draftMove(p,now);
+    if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(p,now);
     powerOrRelic(m,p,now);
     if(p.weapon!==input.weapon){p.weapon=input.weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
-    if(input.reload||(input.fire&&p.ammo[p.weapon]===0))reload(p,now);
-    if(input.fire&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result)fire(m,p,now);
+    const firing=input.fire||taps?.fire;
+    if(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0))reload(p,now);
+    if(firing&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result)fire(m,p,now);
   }
 }
 
-export function snapshot(m,id,now) {
-  const p=m.players.get(id);
+// Wire format 1 omits fields equal to these fixed defaults. Each packet stands alone.
+const rowDefaults=[0,0,0,0,0,100,1,0,0,0,0,0,0,0,0,-1,0,0];
+function packRow(row) {
+  const packed=[row[0],0];
+  for(let i=1;i<row.length;i++)if(row[i]!==rowDefaults[i]){
+    packed[1]|=1<<(i-1);
+    packed.push(row[i]);
+  }
+  return packed;
+}
+
+export function prepareSnapshot(m) {
   const full=currentRows(m);
-  const visible=m.season&&p?full.filter(row=>{
-    const target=m.players.get(row[0]);
-    return target.team===p.team||canSee(p,target);
-  }):full;
-  const rows=visible.map(row=>row[0]===id?row:[...row.slice(0,11),0,0,0,row[14],-1,row[16],row[17]]);
+  return {
+    actors:full.map(own=>({own,publicRow:[...own.slice(0,11),0,0,0,own[14],-1,own[16],own[17]]})),
+    roster:full.map(r=>[r[0],r[8],r[9],r[16],r[17]])
+  };
+}
+
+export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
+  const viewer=m.players.get(id);
+  const rows=[];
+  for(const actor of frame.actors){
+    const target=m.players.get(actor.own[0]);
+    if(m.season&&viewer&&target.team!==viewer.team&&!canSee(viewer,target))continue;
+    if(target.id===id)rows.push(packed?(actor.packedOwn??=packRow(actor.own)):actor.own);
+    else rows.push(packed?(actor.packedPublic??=packRow(actor.publicRow)):actor.publicRow);
+  }
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
-    rows,roster:full.map(r=>[r[0],r[8],r[9],r[16],r[17]]),
+    packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
     relics:m.mode==='relic'?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
     power:m.mode==='overcharge'?m.power.map(r=>[r.x,r.z,r.ready<=now]):undefined};
 }

@@ -1,7 +1,7 @@
 import { randomInt, randomUUID, scryptSync, timingSafeEqual, randomBytes } from 'node:crypto';
 import {
   TEAM_SIZES, MODES, DRAFTS, FIELD, ROOM_GRACE, makeMatch, inputMatch,
-  setOffline, restorePlayer, updateMatch, snapshot, tacticalPing, canSee
+  setOffline, restorePlayer, updateMatch, prepareSnapshot, snapshot, tacticalPing, canSee
 } from './overdrive-match.mjs';
 import { seasonAt } from './overdrive-store.mjs';
 
@@ -104,7 +104,8 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     emit(member.id,'begin',{id:match.id,mode:match.mode,ranked:!!match.season,team:self?.team??null,
       roster:[...match.players.values()].map(({id,name,team,draft})=>({id,name,team,draft})),
       field:FIELD,limit:match.limit,match:room.tournament?.index??null});
-    emit(member.id,'state',snapshot(match,member.id,clock()));
+    const connection=client(member.id);
+    if(connection)send(connection,snapshot(match,member.id,clock(),connection.compactState));
   }
 
   function start(room,now,contestants) {
@@ -345,7 +346,11 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
         if(match.result){settle(room,now);continue;}
         for(const p of [...room.members.values()])if(p.away&&p.away+ROOM_GRACE<=now)drop(p.id,now);
         if(match.tick%2===0){
-          for(const p of room.members.values())if(!p.away)send(client(p.id),snapshot(match,p.id,now));
+          const frame=prepareSnapshot(match);
+          for(const p of room.members.values())if(!p.away){
+            const connection=client(p.id);
+            if(connection)send(connection,snapshot(match,p.id,now,connection.compactState,frame));
+          }
         }
       }catch(error){
         onError(error);
