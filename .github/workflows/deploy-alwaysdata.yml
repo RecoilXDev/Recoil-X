@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - 'recoil-icon-*.png'
       - 'server/**'
       - '.github/workflows/deploy-alwaysdata.yml'
   workflow_dispatch:
@@ -51,11 +54,12 @@ jobs:
       - name: Validate server syntax
         run: node --check server/server.mjs
 
-      - name: Upload the game page
+      - name: Upload the game page and offline files
         run: |
           scp -4 -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -i "$HOME/.ssh/id_ed25519" \
-            index.html recoil-x@ssh-recoil-x.alwaysdata.net:/home/recoil-x/index.html
+            index.html manifest.webmanifest sw.js recoil-icon-192.png recoil-icon-512.png \
+            recoil-x@ssh-recoil-x.alwaysdata.net:/home/recoil-x/
 
       - name: Upload server code without deleting the player database
         run: |

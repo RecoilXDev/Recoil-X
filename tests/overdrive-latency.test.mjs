@@ -3,6 +3,7 @@ import {test} from 'node:test';
 import {once} from 'node:events';
 import {setTimeout as wait} from 'node:timers/promises';
 import {FIELD,makeMatch,inputMatch,prepareSnapshot,snapshot,updateMatch} from '../server/overdrive-match.mjs';
+import {EXPANSION_MODES} from '../server/expansion-modes.mjs';
 import {createRecoilServer} from '../server/server.mjs';
 import harness from './helpers/dom-harness.cjs';
 
@@ -61,6 +62,30 @@ test('independent compact snapshots reproduce the complete permitted view at eve
   const hidden=json(snapshot(ranked,1,epoch,true,frame));
   assert.equal(hidden.rows.length,1);assert.equal(hidden.roster.length,2);
   for(const mode of ['relic','overcharge'])compareView(api,arena(2,{mode}),1,epoch);
+});
+
+test('compact clients receive each expansion objective, disguises, round spawns and spectator focus',()=>{
+  const {api}=harness.makeHarness({},undefined,null,bridge);
+  for(const mode of EXPANSION_MODES){
+    const match=arena(4,{mode,tournament:true});
+    const hider=match.players.get(1),seeker=match.players.get(2);
+    Object.assign(hider,{x:2,z:2,prop:2,spawnSeq:3});
+    Object.assign(seeker,{x:3,z:2});
+    match.focus={id:hider.id,until:epoch+1000};
+    const frame=prepareSnapshot(match);
+    for(const id of [hider.id,seeker.id,99]){
+      compareView(api,match,id,epoch,frame);
+      const view=api.decode(snapshot(match,id,epoch,true,frame));
+      assert.ok(view.objective,mode);
+      assert.equal(view.camera,id===99?hider.id:undefined);
+    }
+    if(mode!=='props')continue;
+    const readSeeker=()=>api.decode(snapshot(match,seeker.id,epoch,true));
+    assert.ok(!readSeeker().rows.some(row=>row[0]===hider.id));
+    match.rule.phase='seek';
+    const visible=readSeeker().rows.find(row=>row[0]===hider.id);
+    assert.equal(visible[18],2);assert.equal(visible[19],3);
+  }
 });
 
 for(const count of [2,10])test(count+' players play through 130 and 276 ms round trips',t=>{
