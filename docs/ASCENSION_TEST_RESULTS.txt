@@ -1,0 +1,789 @@
+TAP version 13
+# RECOIL X Z.4 Project Ascension and admin console. 19 November 2026.
+# Node v24.22.3. Two test workers. Generated accounts, real loopback sockets, private test databases.
+# Predecessor tree bc1ba01fcda1c1043d4dc746acaa36901b828c94, published as dbe0165754f79d5e1034d49c1c6f81d3cb613a58.
+# Tested server tree 061ae8f23b11cff20e7148c2726872ba01ad14b2, tests tree 1195c02c4b2e1dd0c0ba929d67b2959af021b86f, index.html blob 83f39502f62445da96746ca408695bb9adf13f17.
+# Command: ASCENSION_BASELINE_REF=bc1ba01fcda1c1043d4dc746acaa36901b828c94 node --test --test-reporter=tap --test-concurrency=2
+# Subtest: A15 three Aim Academy drills launch from the hub, score hits and retain a personal best
+ok 1 - A15 three Aim Academy drills launch from the hub, score hits and retain a personal best
+  ---
+  duration_ms: 10762.497621
+  type: 'test'
+  ...
+# Subtest: A20 legendary evolution geometry is gated by account mastery and adds no weapon stats
+ok 2 - A20 legendary evolution geometry is gated by account mastery and adds no weapon stats
+  ---
+  duration_ms: 1646.218495
+  type: 'test'
+  ...
+# Subtest: A29 shareable recap uses public names, score, accuracy, MVP and highlights
+ok 3 - A29 shareable recap uses public names, score, accuracy, MVP and highlights
+  ---
+  duration_ms: 1631.318852
+  type: 'test'
+  ...
+# Subtest: A37 private builder places, rotates, moves, validates routes, saves and plays the design
+ok 4 - A37 private builder places, rotates, moves, validates routes, saves and plays the design
+  ---
+  duration_ms: 3038.22503
+  type: 'test'
+  ...
+# Subtest: A44 diagnostics label missing snapshot estimates and jitter, replaying deltas only against their key
+ok 5 - A44 diagnostics label missing snapshot estimates and jitter, replaying deltas only against their key
+  ---
+  duration_ms: 2099.257066
+  type: 'test'
+  ...
+# Subtest: A48 accessibility controls apply HUD scale, larger text, motion, team symbols, contrast and captions
+ok 6 - A48 accessibility controls apply HUD scale, larger text, motion, team symbols, contrast and captions
+  ---
+  duration_ms: 2182.942665
+  type: 'test'
+  ...
+# Subtest: A49 packed geometry halves retained bytes, uploads on demand and deletes old GPU buffers
+ok 7 - A49 packed geometry halves retained bytes, uploads on demand and deletes old GPU buffers
+  ---
+  duration_ms: 2028.322308
+  type: 'test'
+  ...
+# 90 mesh scalars: 360 bytes before packing, 180 retained; 12 resident GPU chunks after eviction.
+# Subtest: Home reaches ranked, armory and all ten new match types; a touch player sees the interaction control
+ok 8 - Home reaches ranked, armory and all ten new match types; a touch player sees the interaction control
+  ---
+  duration_ms: 3616.696899
+  type: 'test'
+  ...
+# Subtest: Objective and environment meshes contain finite coordinates for every map and mode
+ok 9 - Objective and environment meshes contain finite coordinates for every map and mode
+  ---
+  duration_ms: 2117.872269
+  type: 'test'
+  ...
+# Subtest: A47 controller axes, triggers, parry and jump reach the multiplayer input stream
+ok 10 - A47 controller axes, triggers, parry and jump reach the multiplayer input stream
+  ---
+  duration_ms: 3370.97286
+  type: 'test'
+  ...
+# Subtest: legacy seasonal editions open and close on their configured dates through 2031
+ok 11 - legacy seasonal editions open and close on their configured dates through 2031
+  ---
+  duration_ms: 2022.498245
+  type: 'test'
+  ...
+# Subtest: legacy earned coins, Battle Pass claim and weapon case survive a browser reload
+ok 12 - legacy earned coins, Battle Pass claim and weapon case survive a browser reload
+  ---
+  duration_ms: 4404.604605
+  type: 'test'
+  ...
+# Subtest: rejoining the same match accepts frame one from a new socket after a higher old frame
+ok 13 - rejoining the same match accepts frame one from a new socket after a higher old frame
+  ---
+  duration_ms: 2769.626804
+  type: 'test'
+  ...
+# Subtest: A11 paired pistol view draws two finite models and changes pose with the firing hand
+ok 14 - A11 paired pistol view draws two finite models and changes pose with the firing hand
+  ---
+  duration_ms: 1891.18575
+  type: 'test'
+  ...
+# Subtest: A01 payload can be contested, enters overtime and crosses three checkpoints
+ok 15 - A01 payload can be contested, enters overtime and crosses three checkpoints
+  ---
+  duration_ms: 47.66005
+  type: 'test'
+  ...
+# Subtest: A02 search plants, defuses, holds eliminated players and switches sides
+ok 16 - A02 search plants, defuses, holds eliminated players and switches sides
+  ---
+  duration_ms: 9.589292
+  type: 'test'
+  ...
+# Subtest: A03 flags require recovery at home and score three validated captures
+ok 17 - A03 flags require recovery at home and score three validated captures
+  ---
+  duration_ms: 1.208783
+  type: 'test'
+  ...
+# Subtest: A04 gun game advances only on eliminations and counts the winning shot
+ok 18 - A04 gun game advances only on eliminations and counts the winning shot
+  ---
+  duration_ms: 4.640986
+  type: 'test'
+  ...
+# Subtest: A05 chamber limits ammunition and lives; legitimate eliminations replenish ammo
+ok 19 - A05 chamber limits ammunition and lives; legitimate eliminations replenish ammo
+  ---
+  duration_ms: 3.816898
+  type: 'test'
+  ...
+# Subtest: A06 bounty values are visible and repeated victim bonuses are capped
+ok 20 - A06 bounty values are visible and repeated victim bonuses are capped
+  ---
+  duration_ms: 4.649921
+  type: 'test'
+  ...
+# Subtest: A07 hardcore uses lower health and withholds occluded opponents
+ok 21 - A07 hardcore uses lower health and withholds occluded opponents
+  ---
+  duration_ms: 1.409359
+  type: 'test'
+  ...
+# Subtest: A08 extraction must hold at the home zone and consumes each cargo once
+ok 22 - A08 extraction must hold at the home zone and consumes each cargo once
+  ---
+  duration_ms: 14.596681
+  type: 'test'
+  ...
+# Subtest: A09 race requires ordered airborne gates and retains the last checkpoint
+ok 23 - A09 race requires ordered airborne gates and retains the last checkpoint
+  ---
+  duration_ms: 6.851387
+  type: 'test'
+  ...
+# Subtest: A10 roulette assigns identical weapons, resets both players and awards three rounds
+ok 24 - A10 roulette assigns identical weapons, resets both players and awards three rounds
+  ---
+  duration_ms: 1.364895
+  type: 'test'
+  ...
+# Subtest: A11 paired pistols consume a shared magazine and switching to a sniper holsters them
+ok 25 - A11 paired pistols consume a shared magazine and switching to a sniper holsters them
+  ---
+  duration_ms: 2.938129
+  type: 'test'
+  ...
+# Subtest: A12 heat blocks sustained fire and cools; private rooms may switch heat off
+ok 26 - A12 heat blocks sustained fire and cools; private rooms may switch heat off
+  ---
+  duration_ms: 14.769864
+  type: 'test'
+  ...
+# Subtest: A13 simulated shots break cover and remove its collider from both snapshots
+ok 27 - A13 simulated shots break cover and remove its collider from both snapshots
+  ---
+  duration_ms: 4.374347
+  type: 'test'
+  ...
+# Subtest: A14 a metal surface reflects one attenuated ray with no extra pellet hits
+ok 28 - A14 a metal surface reflects one attenuated ray with no extra pellet hits
+  ---
+  duration_ms: 0.651314
+  type: 'test'
+  ...
+# Subtest: A17 melee parry counters during its window, then enforces cooldown
+ok 29 - A17 melee parry counters during its window, then enforces cooldown
+  ---
+  duration_ms: 1.119057
+  type: 'test'
+  ...
+# Subtest: A18 EMP disables nearby electronic equipment and destroys a nearby shield
+ok 30 - A18 EMP disables nearby electronic equipment and destroys a nearby shield
+  ---
+  duration_ms: 1.208844
+  type: 'test'
+  ...
+# Subtest: A19 shields block movement, refuse overlapping placements and expire
+ok 31 - A19 shields block movement, refuse overlapping placements and expire
+  ---
+  duration_ms: 3.481994
+  type: 'test'
+  ...
+# Subtest: A24 room rules validate map, health, gravity and permitted weapon ladder
+ok 32 - A24 room rules validate map, health, gravity and permitted weapon ladder
+  ---
+  duration_ms: 1.046562
+  type: 'test'
+  ...
+# Subtest: A26 broadcast follows its chosen teammate and filters opponents behind metal
+ok 33 - A26 broadcast follows its chosen teammate and filters opponents behind metal
+  ---
+  duration_ms: 0.725022
+  type: 'test'
+  ...
+# Subtest: A27 rejoin preserves objective inventory, resets input streams and expires deserted seats
+ok 34 - A27 rejoin preserves objective inventory, resets input streams and expires deserted seats
+  ---
+  duration_ms: 1.136019
+  type: 'test'
+  ...
+# Subtest: A31 train has stable carriage colliders, moving scenery and damage off the deck
+ok 35 - A31 train has stable carriage colliders, moving scenery and damage off the deck
+  ---
+  duration_ms: 0.855586
+  type: 'test'
+  ...
+# Subtest: A32 submerged lab drains oxygen and health, then replenishes oxygen in air
+ok 36 - A32 submerged lab drains oxygen and health, then replenishes oxygen in air
+  ---
+  duration_ms: 12.697948
+  type: 'test'
+  ...
+# Subtest: A33 orbit retains momentum, bounds movement and extends jump time
+ok 37 - A33 orbit retains momentum, bounds movement and extends jump time
+  ---
+  duration_ms: 4.066484
+  type: 'test'
+  ...
+# Subtest: A34 volcanic hazards move and shrink; an active survivor earns a team victory
+ok 38 - A34 volcanic hazards move and shrink; an active survivor earns a team victory
+  ---
+  duration_ms: 16.122947
+  type: 'test'
+  ...
+# Subtest: A35 Titan shield requires two simultaneous operators and alternates telegraphed attacks
+ok 39 - A35 Titan shield requires two simultaneous operators and alternates telegraphed attacks
+  ---
+  duration_ms: 3.743241
+  type: 'test'
+  ...
+# Subtest: A36 fractured arenas toggle synchronized geometry and restore the original colliders
+ok 40 - A36 fractured arenas toggle synchronized geometry and restore the original colliders
+  ---
+  duration_ms: 8.089946
+  type: 'test'
+  ...
+# Subtest: A38 hidden vault checks ordered interactions and separately records collection
+ok 41 - A38 hidden vault checks ordered interactions and separately records collection
+  ---
+  duration_ms: 0.667875
+  type: 'test'
+  ...
+# Subtest: A39 alien waves scale, use two movement types, cap enemies and end on the boss
+ok 42 - A39 alien waves scale, use two movement types, cap enemies and end on the boss
+  ---
+  duration_ms: 2.124371
+  type: 'test'
+  ...
+# Subtest: A40 weekend schedule uses Oman midnight and leaves weekday raids available separately
+ok 43 - A40 weekend schedule uses Oman midnight and leaves weekday raids available separately
+  ---
+  duration_ms: 0.636116
+  type: 'test'
+  ...
+# Subtest: A41 authoritative timing, ammo, damage and stale input reject duplicate results
+ok 44 - A41 authoritative timing, ammo, damage and stale input reject duplicate results
+  ---
+  duration_ms: 0.368717
+  type: 'test'
+  ...
+# Subtest: published predecessor → populated database copy → Ascension → code-only rollback retains accounts, permissions, friends, chat and 500 saved levels
+ok 45 - published predecessor → populated database copy → Ascension → code-only rollback retains accounts, permissions, friends, chat and 500 saved levels
+  ---
+  duration_ms: 3280.887312
+  type: 'test'
+  ...
+# Rehearsed the exact predecessor tree bc1ba01fcda1c1043d4dc746acaa36901b828c94 with two synthetic accounts and all 500 saved levels.
+# Subtest: A16 mastery credits server results once per match and only to the earned weapon
+ok 46 - A16 mastery credits server results once per match and only to the earned weapon
+  ---
+  duration_ms: 7.770161
+  type: 'test'
+  ...
+# Subtest: A20 earned evolution tiers persist at 3, 10 and 25 credited eliminations
+ok 47 - A20 earned evolution tiers persist at 3, 10 and 25 credited eliminations
+  ---
+  duration_ms: 5.097827
+  type: 'test'
+  ...
+# Subtest: A21 clans enforce invites, unique names, emblem, roles and earned achievements
+ok 48 - A21 clans enforce invites, unique names, emblem, roles and earned achievements
+  ---
+  duration_ms: 5.959584
+  type: 'test'
+  ...
+# Subtest: A22 war registration checks roster, start time, finished result and standings
+ok 49 - A22 war registration checks roster, start time, finished result and standings
+  ---
+  duration_ms: 3.818972
+  type: 'test'
+  ...
+# Subtest: A23 rivalry records wins without a kill, caps repeat opponents and expires duel invites
+ok 50 - A23 rivalry records wins without a kill, caps repeat opponents and expires duel invites
+  ---
+  duration_ms: 2.708341
+  type: 'test'
+  ...
+# Subtest: A25 two captains draft six players in balanced order and lock both ready rosters
+ok 51 - A25 two captains draft six players in balanced order and lock both ready rosters
+  ---
+  duration_ms: 5.861252
+  type: 'test'
+  ...
+# Subtest: A28 server browser lists real slots, filters modes and excludes private and locked rooms
+ok 52 - A28 server browser lists real slots, filters modes and excludes private and locked rooms
+  ---
+  duration_ms: 3.834922
+  type: 'test'
+  ...
+# Subtest: A30 server day rolls over at Oman midnight and claims are unique per account
+ok 53 - A30 server day rolls over at Oman midnight and claims are unique per account
+  ---
+  duration_ms: 3.259589
+  type: 'test'
+  ...
+# Subtest: A40 shared weekend damage and rewards survive a store restart and repeated settlement
+ok 54 - A40 shared weekend damage and rewards survive a store restart and repeated settlement
+  ---
+  duration_ms: 2.605579
+  type: 'test'
+  ...
+# Subtest: A42 implausible movement raises a throttled review entry without banning the account
+ok 55 - A42 implausible movement raises a throttled review entry without banning the account
+  ---
+  duration_ms: 2.04809
+  type: 'test'
+  ...
+# Subtest: A43 deltas reference a delivered keyframe, omit unchanged players and periodically resynchronize
+ok 56 - A43 deltas reference a delivered keyframe, omit unchanged players and periodically resynchronize
+  ---
+  duration_ms: 0.479384
+  type: 'test'
+  ...
+# 10-row synthetic full 300 B, one changed row plus removal 77 B
+# Subtest: A45 scheduled private SQLite backups verify integrity, retain copies and restore to a fresh path
+ok 57 - A45 scheduled private SQLite backups verify integrity, retain copies and restore to a fresh path
+  ---
+  duration_ms: 109.371444
+  type: 'test'
+  ...
+# Verified WAL restore, private file and directory modes, daily retention and separate backup worker.
+# Subtest: A45 a restarted backup schedule keeps one hourly cadence after its first due snapshot
+ok 58 - A45 a restarted backup schedule keeps one hourly cadence after its first due snapshot
+  ---
+  duration_ms: 193.562894
+  type: 'test'
+  ...
+# Subtest: A45 a failed private backup retries automatically after storage becomes available
+ok 59 - A45 a failed private backup retries automatically after storage becomes available
+  ---
+  duration_ms: 83.231393
+  type: 'test'
+  ...
+# Subtest: A47 strict input groups admit matching cross-input players and keep mixed groups available
+ok 60 - A47 strict input groups admit matching cross-input players and keep mixed groups available
+  ---
+  duration_ms: 0.635044
+  type: 'test'
+  ...
+# Subtest: A45 unavailable private storage preserves signed-in play and blocks a pending schema migration
+ok 61 - A45 unavailable private storage preserves signed-in play and blocks a pending schema migration
+  ---
+  duration_ms: 538.88853
+  type: 'test'
+  ...
+# Subtest: A46 enrolled offline recovery requires the password, consumes the code and revokes old sessions
+ok 62 - A46 enrolled offline recovery requires the password, consumes the code and revokes old sessions
+  ---
+  duration_ms: 3979.981172
+  type: 'test'
+  ...
+# Subtest: A50 health endpoint requires a persisted admin role and returns only operational fields
+ok 63 - A50 health endpoint requires a persisted admin role and returns only operational fields
+  ---
+  duration_ms: 853.82253
+  type: 'test'
+  ...
+# Subtest: A16 mastery ignores an ineligible opponent while crediting a different weapon against a fresh opponent
+ok 64 - A16 mastery ignores an ineligible opponent while crediting a different weapon against a fresh opponent
+  ---
+  duration_ms: 4.052728
+  type: 'test'
+  ...
+# Subtest: an existing unrecognized database is preserved and startup stops before schema creation
+ok 65 - an existing unrecognized database is preserved and startup stops before schema creation
+  ---
+  duration_ms: 1.243008
+  type: 'test'
+  ...
+# Subtest: Ascension loopback with 2, 4, 6 and 10 authenticated WebSockets, combat, room chat, deltas and rejoin
+ok 66 - Ascension loopback with 2, 4, 6 and 10 authenticated WebSockets, combat, room chat, deltas and rejoin
+  ---
+  duration_ms: 5271.768987
+  type: 'test'
+  ...
+# 2 Ascension clients / 1212 ms / 10668 aggregate state bytes / 24 state frames / 9 deltas.
+# 4 Ascension clients / 1220 ms / 23849 aggregate state bytes / 48 state frames / 19 deltas.
+# 6 Ascension clients / 1215 ms / 37547 aggregate state bytes / 72 state frames / 29 deltas.
+# 10 Ascension clients / 1218 ms / 75159 aggregate state bytes / 120 state frames / 49 deltas.
+# Subtest: opening offline keeps a saved account session until the server rejects it
+ok 67 - opening offline keeps a saved account session until the server rejects it
+  ---
+  duration_ms: 2000.246453
+  type: 'test'
+  ...
+# Subtest: queue warm-up respawns targets and returns to the lobby when the queue ends
+ok 68 - queue warm-up respawns targets and returns to the lobby when the queue ends
+  ---
+  duration_ms: 4474.424099
+  type: 'test'
+  ...
+# Subtest: Clutch Lab finishes on a clear or death and Parkour tracks a medal and personal best
+ok 69 - Clutch Lab finishes on a clear or death and Parkour tracks a medal and personal best
+  ---
+  duration_ms: 5266.045689
+  type: 'test'
+  ...
+# Subtest: touch Jump handles taps, holds through a wall-run and clears on cancellation
+ok 70 - touch Jump handles taps, holds through a wall-run and clears on cancellation
+  ---
+  duration_ms: 2568.29505
+  type: 'test'
+  ...
+# Subtest: builder checkpoints open doors and delay the exit until a triggered wave is cleared
+ok 71 - builder checkpoints open doors and delay the exit until a triggered wave is cleared
+  ---
+  duration_ms: 4031.482357
+  type: 'test'
+  ...
+# Subtest: game clients share maps, join a ranked veto from warm-up and open a linked report
+ok 72 - game clients share maps, join a ranked veto from warm-up and open a linked report
+  ---
+  duration_ms: 13283.073024
+  type: 'test'
+  ...
+# Subtest: escort contest, side swap and delivery winner are recorded
+ok 73 - escort contest, side swap and delivery winner are recorded
+  ---
+  duration_ms: 6.659781
+  type: 'test'
+  ...
+# Subtest: moving hot zone rotates and scores only when held alone
+ok 74 - moving hot zone rotates and scores only when held alone
+  ---
+  duration_ms: 1.788816
+  type: 'test'
+  ...
+# Subtest: elimination rounds hold dead players out and a spectator can follow the last play
+ok 75 - elimination rounds hold dead players out and a spectator can follow the last play
+  ---
+  duration_ms: 2.062216
+  type: 'test'
+  ...
+# Subtest: weapon budget accepts only affordable choices and locks that loadout in a round
+ok 76 - weapon budget accepts only affordable choices and locks that loadout in a round
+  ---
+  duration_ms: 4.054761
+  type: 'test'
+  ...
+# Subtest: prop hunt enforces roles and switches hiders at halftime
+ok 77 - prop hunt enforces roles and switches hiders at halftime
+  ---
+  duration_ms: 1.387087
+  type: 'test'
+  ...
+# Subtest: Jeep Relay swaps drivers at gates and records the winning crew
+ok 78 - Jeep Relay swaps drivers at gates and records the winning crew
+  ---
+  duration_ms: 1.069464
+  type: 'test'
+  ...
+# Subtest: Crown Raids require two teammates on separate seals
+ok 79 - Crown Raids require two teammates on separate seals
+  ---
+  duration_ms: 1.810937
+  type: 'test'
+  ...
+# Subtest: early ranked disconnects wait, can resume and void without rating points
+ok 80 - early ranked disconnects wait, can resume and void without rating points
+  ---
+  duration_ms: 2.154409
+  type: 'test'
+  ...
+# Subtest: ready squads stay together through a ranked captain veto
+ok 81 - ready squads stay together through a ranked captain veto
+  ---
+  duration_ms: 155.540203
+  type: 'test'
+  ...
+# Subtest: map codes and match reports preserve data boundaries and snapshot existing SQLite data
+ok 82 - map codes and match reports preserve data boundaries and snapshot existing SQLite data
+  ---
+  duration_ms: 10.022687
+  type: 'test'
+  ...
+# Subtest: offline files are served and the worker caches only its scoped game shell
+ok 83 - offline files are served and the worker caches only its scoped game shell
+  ---
+  duration_ms: 53.036338
+  type: 'test'
+  ...
+# Subtest: the Play menu launches all four operations in order, with valid geometry, stars, paints and debrief splits
+ok 84 - the Play menu launches all four operations in order, with valid geometry, stars, paints and debrief splits
+  ---
+  duration_ms: 25651.205542
+  type: 'test'
+  ...
+# Subtest: relay contesting, radar cooldown, field kits, supplies and extraction work through touch controls
+ok 85 - relay contesting, radar cooldown, field kits, supplies and extraction work through touch controls
+  ---
+  duration_ms: 6525.260457
+  type: 'test'
+  ...
+# Subtest: checkpoints survive reload, death, and timeout and preserve the loadout and independent difficulty records
+ok 86 - checkpoints survive reload, death, and timeout and preserve the loadout and independent difficulty records
+  ---
+  duration_ms: 29221.827252
+  type: 'test'
+  ...
+# Subtest: cell delivery and the code require the right interactable, escort waits, and both finale routes can finish
+ok 87 - cell delivery and the code require the right interactable, escort waits, and both finale routes can finish
+  ---
+  duration_ms: 16742.660995
+  type: 'test'
+  ...
+# Subtest: the Oman daily rotation, faster radar, stamps and five languages are independent of story progress
+ok 88 - the Oman daily rotation, faster radar, stamps and five languages are independent of story progress
+  ---
+  duration_ms: 19400.30296
+  type: 'test'
+  ...
+# Subtest: a browser without writable storage can resume and unlock the next operation in the current session
+ok 89 - a browser without writable storage can resume and unlock the next operation in the current session
+  ---
+  duration_ms: 7913.808419
+  type: 'test'
+  ...
+# Subtest: 500 stable levels have reachable objectives, an open escort lane and chapter navigation
+ok 90 - 500 stable levels have reachable objectives, an open escort lane and chapter navigation
+  ---
+  duration_ms: 4387.683588
+  type: 'test'
+  ...
+# Subtest: all 500 consecutive campaign unlocks run through their objectives to the final debrief
+ok 91 - all 500 consecutive campaign unlocks run through their objectives to the final debrief
+  ---
+  duration_ms: 24595.388218
+  type: 'test'
+  ...
+# Simulated 500 consecutive clears and 2139 objective completions
+# Subtest: real account saves transfer a guest campaign and checkpoint across clients and recover an interrupted offline save
+ok 92 - real account saves transfer a guest campaign and checkpoint across clients and recover an interrupted offline save
+  ---
+  duration_ms: 28439.18103
+  type: 'test'
+  ...
+# Subtest: account records advance sequentially through 500, merge best results and protect newer checkpoints
+ok 93 - account records advance sequentially through 500, merge best results and protect newer checkpoints
+  ---
+  duration_ms: 35.09034
+  type: 'test'
+  ...
+# Subtest: an existing Overdrive database is backed up before mission migration and account saves survive a restart
+ok 94 - an existing Overdrive database is backed up before mission migration and account saves survive a restart
+  ---
+  duration_ms: 1054.868304
+  type: 'test'
+  ...
+# Subtest: the Z.3 upgrade snapshots an existing campaign, friends and rank once and preserves them across restarts
+ok 95 - the Z.3 upgrade snapshots an existing campaign, friends and rank once and preserves them across restarts
+  ---
+  duration_ms: 13.326372
+  type: 'test'
+  ...
+# RECOIL X private database backup failed: Error
+# Subtest: Z.2 menus, ghost, dual boss, ordered mission gates, daily course, avatar and touch editor
+ok 96 - Z.2 menus, ghost, dual boss, ordered mission gates, daily course, avatar and touch editor
+  ---
+  duration_ms: 12450.558349
+  type: 'test'
+  ...
+# Subtest: two game clients run Overdrive UI against the real local server
+ok 97 - two game clients run Overdrive UI against the real local server
+  ---
+  duration_ms: 11473.007875
+  type: 'test'
+  ...
+# Subtest: desktop and touch clients launch all 15 Ascension modes from the player menus
+ok 98 - desktop and touch clients launch all 15 Ascension modes from the player menus
+  ---
+  duration_ms: 73441.395361
+  type: 'test'
+  ...
+# payload on train: host, join, start, render and leave passed.
+# search on lab: host, join, start, render and leave passed.
+# flags on orbit: host, join, start, render and leave passed.
+# gunrun on bastion: host, join, start, render and leave passed.
+# chamber on train: host, join, start, render and leave passed.
+# bounty on lab: host, join, start, render and leave passed.
+# hardcore on orbit: host, join, start, render and leave passed.
+# extraction on bastion: host, join, start, render and leave passed.
+# race on train: host, join, start, render and leave passed.
+# roulette on lab: host, join, start, render and leave passed.
+# volcano on orbit: host, join, start, render and leave passed.
+# titan on bastion: host, join, start, render and leave passed.
+# fracture on train: host, join, start, render and leave passed.
+# invasion on lab: host, join, start, render and leave passed.
+# worldboss on orbit: host, join, start, render and leave passed.
+# Subtest: independent compact snapshots reproduce the complete permitted view at every team size
+ok 99 - independent compact snapshots reproduce the complete permitted view at every team size
+  ---
+  duration_ms: 2031.537598
+  type: 'test'
+  ...
+# 2 players, same 40 snapshots per player: 20040 → 13943 JSON bytes
+# 4 players, same 40 snapshots per player: 61632 → 36266 JSON bytes
+# 6 players, same 40 snapshots per player: 124896 → 66705 JSON bytes
+# 10 players, same 40 snapshots per player: 316980 → 153095 JSON bytes
+# Subtest: compact clients receive each expansion objective, disguises, round spawns and spectator focus
+ok 100 - compact clients receive each expansion objective, disguises, round spawns and spectator focus
+  ---
+  duration_ms: 1862.991714
+  type: 'test'
+  ...
+# Subtest: 2 players play through 130 and 276 ms round trips
+ok 101 - 2 players play through 130 and 276 ms round trips
+  ---
+  duration_ms: 12526.369249
+  type: 'test'
+  ...
+# 5 simulated seconds, 2 players, ping readings 130/276 ms, 32 input packets, largest remote 16 ms step 0.116 game units
+# Subtest: 10 players play through 130 and 276 ms round trips
+ok 102 - 10 players play through 130 and 276 ms round trips
+  ---
+  duration_ms: 15151.673789
+  type: 'test'
+  ...
+# 5 simulated seconds, 10 players, ping readings 130/276 ms, 32 input packets, largest remote 16 ms step 0.116 game units
+# Subtest: press and release within one server tick consume one action and keep the server cooldown
+ok 103 - press and release within one server tick consume one action and keep the server cooldown
+  ---
+  duration_ms: 0.695777
+  type: 'test'
+  ...
+# Subtest: a congested socket skips replaceable states, receives chat, and resumes with one fresh complete state
+ok 104 - a congested socket skips replaceable states, receives chat, and resumes with one fresh complete state
+  ---
+  duration_ms: 2224.669304
+  type: 'test'
+  ...
+# Subtest: authoritative movement, visibility, shot cooldown and replay bounds
+ok 105 - authoritative movement, visibility, shot cooldown and replay bounds
+  ---
+  duration_ms: 10.247657
+  type: 'test'
+  ...
+# Subtest: reconnect resumes the same seat and stale controls expire
+ok 106 - reconnect resumes the same seat and stale controls expire
+  ---
+  duration_ms: 1.676546
+  type: 'test'
+  ...
+# Subtest: pings are projected by the server and rate limited
+ok 107 - pings are projected by the server and rate limited
+  ---
+  duration_ms: 0.365682
+  type: 'test'
+  ...
+# Subtest: Overcharge pickups and Chess moves use cooldowns
+ok 108 - Overcharge pickups and Chess moves use cooldowns
+  ---
+  duration_ms: 0.642688
+  type: 'test'
+  ...
+# Subtest: Relic Relay captures and Squad Rescue revives and bleed-outs
+ok 109 - Relic Relay captures and Squad Rescue revives and bleed-outs
+  ---
+  duration_ms: 9.548555
+  type: 'test'
+  ...
+# Subtest: 4- and 8-team brackets progress to a champion with spectators
+ok 110 - 4- and 8-team brackets progress to a champion with spectators
+  ---
+  duration_ms: 8322.320862
+  type: 'test'
+  ...
+# Subtest: team changes, host controls and idle code expiration
+ok 111 - team changes, host controls and idle code expiration
+  ---
+  duration_ms: 108.512029
+  type: 'test'
+  ...
+# Subtest: existing accounts, live 2/4/6/10-player matches, private rooms and moderation
+ok 112 - existing accounts, live 2/4/6/10-player matches, private rooms and moderation
+  ---
+  duration_ms: 17676.348803
+  type: 'test'
+  ...
+# 2 concurrent WebSockets, 1261 ms of controls, aggregate state payload 6142 bytes
+# 4 concurrent WebSockets, 1274 ms of controls, aggregate state payload 17800 bytes
+# 6 concurrent WebSockets, 1294 ms of controls, aggregate state payload 33462 bytes
+# 10 concurrent WebSockets, 1341 ms of controls, aggregate state payload 80900 bytes
+# Subtest: additive migration preserves WAL-backed accounts, sessions, friends and chat
+ok 113 - additive migration preserves WAL-backed accounts, sessions, friends and chat
+  ---
+  duration_ms: 62.43148
+  type: 'test'
+  ...
+# Subtest: ranked result deduplication, division boundaries, season rewards and expiry
+ok 114 - ranked result deduplication, division boundaries, season rewards and expiry
+  ---
+  duration_ms: 4.019244
+  type: 'test'
+  ...
+# Subtest: Z.4 signed-in home launcher, reports, warnings, grants, audit export and sign-out use the real server
+ok 115 - Z.4 signed-in home launcher, reports, warnings, grants, audit export and sign-out use the real server
+  ---
+  duration_ms: 9016.316563
+  type: 'test'
+  ...
+# Subtest: Z.4 staff console operates on real HTTP, WebSockets, and a private SQLite copy
+    # Subtest: Z.4 entry, admin assets, and the public health response agree on the release
+    ok 1 - Z.4 entry, admin assets, and the public health response agree on the release
+      ---
+      duration_ms: 22.673566
+      type: 'test'
+      ...
+    # Subtest: all staff routes require the live database role for reads and writes
+    ok 2 - all staff routes require the live database role for reads and writes
+      ---
+      duration_ms: 46.899287
+      type: 'test'
+      ...
+    # Subtest: directory, active restrictions, admin roster, private notes and player warnings
+    ok 3 - directory, active restrictions, admin roster, private notes and player warnings
+      ---
+      duration_ms: 22.060312
+      type: 'test'
+      ...
+    # Subtest: case intake, evidence, claims, priority, notes, resolution, reopening and filters
+    ok 4 - case intake, evidence, claims, priority, notes, resolution, reopening and filters
+      ---
+      duration_ms: 31.447507
+      type: 'test'
+      ...
+    # Subtest: wallet grants survive retries and reversal is atomic, audited and visible to the player
+    ok 5 - wallet grants survive retries and reversal is atomic, audited and visible to the player
+      ---
+      duration_ms: 16.845639
+      type: 'test'
+      ...
+    # Subtest: kick, both ban durations, unban, both mute durations and unmute use existing moderation
+    ok 6 - kick, both ban durations, unban, both mute durations and unmute use existing moderation
+      ---
+      duration_ms: 1933.817744
+      type: 'test'
+      ...
+    # Subtest: server readings, movement review and manual private backup use measured state and enforce a cooldown
+    ok 7 - server readings, movement review and manual private backup use measured state and enforce a cooldown
+      ---
+      duration_ms: 123.269457
+      type: 'test'
+      ...
+    1..7
+ok 116 - Z.4 staff console operates on real HTTP, WebSockets, and a private SQLite copy
+  ---
+  duration_ms: 4267.185331
+  type: 'test'
+  ...
+1..116
+# tests 123
+# suites 0
+# pass 123
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215845.095815

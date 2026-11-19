@@ -29,7 +29,7 @@ test('additive migration preserves WAL-backed accounts, sessions, friends and ch
   legacy.prepare('INSERT INTO sessions VALUES (?,?,?)').run(createHash('sha256').update(token).digest('hex'),1,Date.now()+3600000);
   let server;
   try{
-    server=createRecoilServer({database});
+    server=createRecoilServer({database,backups:{directory:join(directory,'private-backups')}});
     server.listen(0,'127.0.0.1');await once(server,'listening');
     const headers={Authorization:'Bearer '+token},origin='http://127.0.0.1:'+server.address().port+'/rx-api';
     const user=await (await fetch(origin+'/me',{headers})).json();
@@ -38,11 +38,12 @@ test('additive migration preserves WAL-backed accounts, sessions, friends and ch
     assert.equal(friends.friends[0].name,'LegacyFriend');
     const chat=await (await fetch(origin+'/messages?with=LegacyFriend',{headers})).json();
     assert.equal(chat.messages[0].body,'Saved Crown Trials chat');
-    const directoryMode=process.platform==='win32'?null:statSync(join(directory,'.recoil-backups')).mode&0o777;
+    const directoryMode=process.platform==='win32'?null:statSync(join(directory,'private-backups')).mode&0o777;
     if(directoryMode!=null)assert.equal(directoryMode,0o700);
-    const files=readdirSync(join(directory,'.recoil-backups'));
+    const migrationFiles=()=>readdirSync(join(directory,'private-backups')).filter(name=>name.endsWith('-migration.sqlite'));
+    const files=migrationFiles();
     assert.equal(files.length,1);
-    const backup=join(directory,'.recoil-backups',files[0]);
+    const backup=join(directory,'private-backups',files[0]);
     if(directoryMode!=null)assert.equal(statSync(backup).mode&0o777,0o600);
     const copy=new DatabaseSync(backup,{readOnly:true});
     assert.equal(copy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
@@ -53,7 +54,7 @@ test('additive migration preserves WAL-backed accounts, sessions, friends and ch
     copy.close();
     assert.equal(legacy.prepare('SELECT version FROM rx2_schema').get().version,1);
     migrateOverdrive(legacy,database,true);
-    assert.deepEqual(readdirSync(join(directory,'.recoil-backups')),files);
+    assert.deepEqual(migrationFiles(),files);
     assert.equal(legacy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
   }finally{
     if(server)await new Promise(resolve=>server.close(resolve));

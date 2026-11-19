@@ -1,8 +1,11 @@
 // Movement, hits, ammo, objectives and results use server time and state.
 import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
 
+import {ASC_MODES,COOP,rulesFor,ascField,initWorld,ascSpawn,modeKill,heldWeapon,ruleMove,tickWorld,worldView} from './ascension-world.mjs';
+import {combatAction,coverHit,reflectRay} from './ascension-combat.mjs';
+
 export const TEAM_SIZES = [1,2,3,5];
-export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES];
+export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...ASC_MODES];
 export const DRAFTS = ['knight','rook','bishop'];
 export const PINGS = ['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
 export const ROOM_GRACE = 20000;
@@ -46,14 +49,17 @@ function spawn(p, now) {
     jumpAt:0,jump:0,hp:100,down:null,spawnAt:0,shieldUntil:now+850,boost:0,readyShot:now+230,
     weapon:p.budget?3:0,loadout:p.budget?3:0,prop:0,
     ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),taps:null,inputAt:now});
+  ascSpawn(p);
 }
 
-export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random}) {
+export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rules={},rng=Math.random}) {
+  const asc=ASC_MODES.includes(mode)?rulesFor(rules):null;
+  if(asc)field=ascField(mode,asc);
   const placed=[0,0];
   const members=new Map();
   for(const record of players) {
     const p={...record,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',
-      inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0};
+      shots:0,hits:0,inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0};
     p.spawnX=(p.slot-(players.filter(other=>other.team===p.team).length-1)/2)*3.65;
     spawn(p,now);
     members.set(p.id,p);
@@ -65,7 +71,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   }
   if(mode==='escort')field={...field,cover:field.cover.filter(c=>c.x!==0)};
   if(mode==='props')field={...field,scenery:HUNT_SCENERY};
-  return {
+  const match={
     id,mode,season,field,rule,remake,
     limit:mode==='relic'||mode==='elimination'||mode==='budget'?3:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
@@ -75,6 +81,8 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
     events:[],timeline:[{at:0,kind:'start',text:'Match started',actor:null}],focus:null,lastLead:null,
     history:[],lastSample:0,finalKill:null,tick:0,tournament,overtime:false
   };
+  if(asc)initWorld(match,asc,now);
+  return match;
 }
 
 export function inputMatch(m,id,data,now) {
@@ -105,7 +113,7 @@ export function setOffline(m,id,now,immediate=false) {
 export function restorePlayer(m,id) {
   const p=m?.players.get(id);
   if(!p||p.forfeited) return false;
-  p.offlineAt=0;p.remakeEligible=false;p.seq=-1;p.input=neutral();p.taps=null;
+  p.offlineAt=0;if(p.asc)p.asc.actionSeq=-1;p.remakeEligible=false;p.seq=-1;p.input=neutral();p.taps=null;
   return true;
 }
 
@@ -188,19 +196,20 @@ function finish(m,winner,reason,now) {
   if(m.result)return;
   recordLead(m,now);
   markEvent(m,now,'end',reason==='remake'?'Match voided after an early disconnect':'Match ended');
-  const players=[...m.players.values()].map(({id,name,team,kills,deaths,damage,revives,inputs,forfeited})=>
-    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited}));
+  const players=[...m.players.values()].map(({id,name,team,kills,deaths,damage,revives,inputs,forfeited,shots,hits,asc})=>
+    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited,shots,hits,...(asc?{earned:{weaponKills:asc.weaponKills,opponents:asc.opponents,opponentWeapons:asc.opponentWeapons,
+      bounty:asc.reward,bank:asc.bank,vault:asc.found,race:asc.finish}}:{})}));
   const candidates=players.filter(p=>!p.forfeited).sort((a,b)=>
     (b.kills*120+b.damage+b.revives*80)-(a.kills*120+a.damage+a.revives*80)||a.deaths-b.deaths||a.id-b.id);
   m.result={id:m.id,mode:m.mode,season:m.season,winner,reason,score:m.score.slice(),
     duration:Math.max(0,now-m.started),players,mvp:candidates[0]?.name||null,highlight:m.finalKill,
-    field:m.field.name,timeline:m.timeline.slice()};
+    field:m.field.name,timeline:m.timeline.slice(),...(m.asc?{war:m.asc.war,race:m.asc.scores,worldDamage:m.asc.worldDamage}:{})};
 }
 
-function eliminate(m,victim,killer,now) {
+function eliminate(m,victim,killer,now,method='weapon') {
   victim.hp=0;victim.down=null;victim.deaths++;victim.spawnAt=now+2700;
   dropRelic(m,victim,now);
-  if(!killer||killer.team===victim.team||killer.forfeited)return;
+  if(!killer||killer.team===victim.team||killer.forfeited){if(m.asc)modeKill(m,victim,null,now,{finish});return;}
   killer.kills++;
   markEvent(m,now,'elimination',`${killer.name} eliminated ${victim.name}`,killer.id);
   const ids=new Set([killer.id,victim.id]);
@@ -210,6 +219,7 @@ function eliminate(m,victim,killer,now) {
   m.finalKill=highlight;
   m.events.push({type:'z2:kill',killer:killer.name,victim:victim.name},
     {type:'z2:killcam',only:victim.id,replay:highlight});
+  if(modeKill(m,victim,killer,now,{finish},method))return;
   if(['elimination','budget','props'].includes(m.mode))victim.spawnAt=0;
   if(m.mode==='relic'||m.rule)return;
   m.score[killer.team]++;
@@ -217,47 +227,72 @@ function eliminate(m,victim,killer,now) {
   else if(m.mode==='chess')m.roundAt=now+2200;
 }
 
-function hit(m,shooter,victim,damage,now) {
+function hit(m,shooter,victim,damage,now,method='weapon') {
   if(victim.shieldUntil>now||victim.hp<=0)return;
   const amount=Math.min(victim.hp,damage);
   victim.hp-=amount;shooter.damage+=amount;
+  if(m.asc&&victim.id<0)m.asc.worldDamage+=amount;
   if(victim.id<0)return;
   if(victim.hp>0)return;
   if(m.mode==='rescue'){
     victim.down={by:shooter.id,until:now+8500,helper:null,healing:0};dropRelic(m,victim,now);
     m.events.push({type:'z2:notice',team:victim.team,message:`${victim.name} is down. Hold Use nearby to drag and revive.`});
-  }else eliminate(m,victim,shooter,now);
+  }else eliminate(m,victim,shooter,now,method);
 }
 
 function fire(m,p,now) {
   const w=weapons[p.weapon];
   p.ammo[p.weapon]--;
-  p.readyShot=now+w.interval*(p.boost>now ? .74 : 1);
+  const dual=p.asc?.dual&&[0,3].includes(p.weapon);
+  const chamber=m.mode==='chamber';
+  p.shots++;p.readyShot=now+(dual&&p.weapon===0?172:w.interval)*(p.boost>now?.74:1)*(dual&&p.weapon===3?.69:1);
+  if(p.asc&&m.asc.rules.heat&&[0,3].includes(p.weapon)){
+    p.asc.heat=Math.min(100,p.asc.heat+(dual?15:11));if(p.asc.heat>=99)p.asc.locked=true;
+  }
   const eye=[p.x,1.62+p.jump,p.z];
   let end;
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
   if(m.mode==='raid'&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
+  if(m.asc)opponents.push(...m.asc.enemies.filter(e=>e.hp>0));
+  let connected=false;
   for(let pellet=0;pellet<w.pellets&&!m.result;pellet++){
-    const yaw=p.yaw+(m.rng()-.5)*w.spray,pitch=p.pitch+(m.rng()-.5)*w.spray;
-    const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
-    let reach=obstruction(m.field,eye,dir,w.range),target=null;
-    for(const other of opponents) {
-      const disguise=m.mode==='props'&&other.team===m.rule.half;
-      const width=other.id<0?1.35:disguise?[.55,.4,.32][other.prop]:.45;
-      const height=other.id<0?3.5:disguise?[1.05,1.23,1.4][other.prop]:1.96;
-      const first=intersect(eye,dir,[other.x-width,other.jump,other.z-width],
-        [other.x+width,other.jump+height,other.z+width],reach);
-      if(first<reach){reach=first;target=other;}
+    const spread=w.spray*(dual?2:1);
+    const yaw=p.yaw+(m.rng()-.5)*spread,pitch=p.pitch+(m.rng()-.5)*spread;
+    let dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)],start=eye,range=w.range;
+    for(let leg=0;leg<2;leg++){
+      let reach=range,target=null,wall=null;
+      for(const c of m.field.cover){
+        const d=intersect(start,dir,[c.x-c.w/2,0,c.z-c.d/2],[c.x+c.w/2,c.h,c.z+c.d/2],reach);
+        if(d<reach){reach=d;wall=c;}
+      }
+      for(const other of opponents){
+        const disguise=m.mode==='props'&&other.team===m.rule.half;
+        const width=other.id<0?1.35:disguise?[.55,.4,.32][other.prop]:.45;
+        const height=other.id<0?3.5:disguise?[1.05,1.23,1.4][other.prop]:1.96;
+        const d=intersect(start,dir,[other.x-width,other.jump,other.z-width],[other.x+width,other.jump+height,other.z+width],reach);
+        if(d<reach){reach=d;target=other;}
+      }
+      const point=start.map((v,i)=>v+dir[i]*reach),visible=point.map(v=>round(v,100));
+      if(!end)end=visible;
+      if(leg)m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:start.map(v=>round(v,100)),b:visible});
+      const damage=(chamber?150:w.damage)*(leg?.55:1)*(dual?.84:1);
+      if(target){
+        if(!connected&&target.hp>0&&!(target.shieldUntil>now)){p.hits++;connected=true;}
+        hit(m,p,target,Math.ceil(damage),now);break;
+      }
+      coverHit(m,wall,damage);
+      if(!m.asc||leg||wall?.material!=='metal')break;
+      dir=reflectRay(wall,point,dir);start=point.map((v,i)=>v+dir[i]*.03);range=(range-reach)*.65;
+      if(range<1)break;
     }
-    if(!end)end=eye.map((v,i)=>round(v+dir[i]*reach,100));
-    if(target)hit(m,p,target,w.damage,now);
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
 }
 
 function reload(p,now) {
   const w=weapons[p.weapon];
-  if(!p.reloadAt&&p.ammo[p.weapon]<w.ammo){p.reloadAt=now+w.reload;p.reloadGun=p.weapon;}
+  if(p.asc?.spawnMode==='chamber')return;
+  if(!p.reloadAt&&p.ammo[p.weapon]<w.ammo){p.reloadAt=now+w.reload*(p.asc?.dual?1.35:1);p.reloadGun=p.weapon;}
 }
 
 function powerOrRelic(m,p,now) {
@@ -324,9 +359,9 @@ export function updateMatch(m,now) {
   }
   if([...m.players.values()].some(p=>p.offlineAt&&p.remakeEligible&&!p.forfeited))return;
   const teams=[0,1].map(team=>[...m.players.values()].some(p=>p.team===team&&!p.forfeited));
-  if(!teams[0]||(!teams[1]&&m.mode!=='raid')){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
+  if(!teams[0]||(!teams[1]&&m.mode!=='raid'&&!COOP.includes(m.mode))){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
   if(now>=m.end){
-    if(m.mode==='raid'){finish(m,1,'time',now);return;}
+    if(m.mode==='raid'||COOP.includes(m.mode)){finish(m,1,'time',now);return;}
     if(m.tournament&&m.score[0]===m.score[1]&&!m.overtime){
       m.overtime=true;m.end=now+60000;
       m.events.push({type:'z2:notice',message:'Cup overtime · the next elimination wins.'});
@@ -343,6 +378,7 @@ export function updateMatch(m,now) {
     m.roundAt=0;
     for(const p of m.players.values())if(!p.forfeited)spawn(p,now);
   }
+  if(m.asc){tickWorld(m,now,delta,{finish,spawn,eliminate,move});if(m.result)return;}
   if(!advanceMode(m,now,delta,{finish,spawn,move:(p,dx,dz)=>move(m.field,p,dx,dz)})){recordLead(m,now);return;}
   for(const r of m.relics)if(r.returnAt&&r.returnAt<=now)resetRelic(r);
   for(const p of m.players.values()){
@@ -358,16 +394,17 @@ export function updateMatch(m,now) {
     const dragging=m.mode==='rescue'&&input.use&&[...m.players.values()]
       .some(other=>other.down&&other.team===p.team&&dist(other,p)<2.3);
     const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
-    move(m.field,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
-      (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
+    ruleMove(m,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
+      (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta,delta,move);
     if((input.jump||taps?.jump)&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
-    p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/680)*Math.PI)*.97):0;
+    const low=m.asc&&(m.field.id==='orbit'||m.asc.rules.gravity==='low');
+    p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/(low?1150:680))*Math.PI)*(low?2.15:.97)):0;
     if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(m,p,now);
     powerOrRelic(m,p,now);
-    const weapon=m.mode==='budget'?p.loadout:input.weapon;
-    if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
+    const weapon=m.mode==='budget'?p.loadout:heldWeapon(m,p,input);
+    if(p.weapon!==weapon){if(p.asc&&![0,3].includes(weapon))p.asc.dual=false;p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
-    const firing=input.fire||taps?.fire;
+    const firing=(input.fire||taps?.fire)&&!p.asc?.locked&&!(p.asc?.stunned>now)&&m.mode!=='race';
     if(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0))reload(p,now);
     if(firing&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
       (m.mode!=='props'||p.team!==m.rule.half))fire(m,p,now);
@@ -396,33 +433,37 @@ export function prepareSnapshot(m) {
   };
 }
 
-export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
-  const viewer=m.players.get(id);
+export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m),anchor=null) {
+  const viewer=m.players.get(id),eliminated=viewer&&m.mode==='search'&&!viewer.hp;
+  const sight=eliminated?[...m.players.values()].find(p=>p.team===viewer.team&&p.hp>0&&!p.offlineAt):viewer||anchor;
   const rows=[];
   for(const actor of frame.actors){
     const target=m.players.get(actor.own[0]);
-    if(viewer&&target.team!==viewer.team&&(m.season||m.mode==='props')){
-      if(m.mode==='props'&&m.rule.phase==='hide'&&viewer.team!==m.rule.half)continue;
-      if(!canSee(viewer,target,m.field))continue;
+    if(eliminated&&!sight&&target.team!==viewer.team)continue;
+    if(sight&&target.team!==sight.team&&(anchor||m.season||m.mode==='props'||m.mode==='hardcore'||eliminated)){
+      if(m.mode==='props'&&m.rule.phase==='hide'&&sight.team!==m.rule.half)continue;
+      if(!canSee(sight,target,m.field))continue;
     }
     if(target.id===id)rows.push(packed?(actor.packedOwn??=packRow(actor.own)):actor.own);
     else rows.push(packed?(actor.packedPublic??=packRow(actor.publicRow)):actor.publicRow);
   }
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
-    objective:ruleView(m,viewer,now),waitingEarly:frame.waitingEarly,
-    camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
+    asc:worldView(m,viewer),objective:ruleView(m,viewer,now),waitingEarly:frame.waitingEarly,
+    camera:anchor?anchor.id:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
     relics:m.mode==='relic'?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
     power:m.mode==='overcharge'?m.power.map(r=>[r.x,r.z,r.ready<=now]):undefined};
 }
+
+export function ascAction(m,id,body,now){return combatAction(m,m?.players.get(id),body,now,{hit,canSee});}
 
 export function tacticalPing(m,id,kind,now) {
   const p=m.players.get(id);
   if(!p?.hp||p.forfeited||p.offlineAt||p.pingAt+1400>now||!Number.isInteger(kind)||!PINGS[kind])return null;
   p.pingAt=now;
   let position=null;
-  if(kind===0&&m.mode!=='props'){
+  if(kind===0&&m.mode!=='props'&&m.mode!=='hardcore'){
     const target=[...m.players.values()].filter(q=>q.team!==p.team&&q.hp>0&&!q.forfeited&&canSee(p,q,m.field))
       .sort((a,b)=>dist(a,p)-dist(b,p))[0];
     if(target)position={x:target.x,z:target.z};

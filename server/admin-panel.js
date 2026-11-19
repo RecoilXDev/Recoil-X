@@ -1,119 +1,269 @@
-(()=>{'use strict';
-if(window.__rxAdminLoaded)return;window.__rxAdminLoaded=true;
-const style=document.createElement('style');
-style.textContent=[
-'#rx-admin-launch{position:fixed;left:18px;bottom:18px;z-index:2147483000;cursor:pointer;border:1px solid #31a9bd;border-radius:13px;padding:12px 17px;background:linear-gradient(110deg,#082637,#173a54);box-shadow:0 6px 30px #0009;color:#eaffff;font:800 12px system-ui;letter-spacing:.12em}',
-'#rx-admin-root{display:none;position:fixed;inset:0;z-index:2147483001;background:#020918e8;backdrop-filter:blur(5px);align-items:center;justify-content:center;font:14px/1.45 system-ui,sans-serif;color:#ecf5ff}',
-'#rx-admin-root.open{display:flex}#rx-admin-root *{box-sizing:border-box}',
-'#rx-admin-window{display:flex;width:min(1020px,96vw);height:min(790px,94vh);background:#0b1626;border:1px solid #2d5570;border-radius:20px;box-shadow:0 20px 80px #000d;overflow:hidden}',
-'#rx-admin-nav{flex:0 0 215px;background:linear-gradient(#0b2437,#0a1423);padding:22px 14px;border-right:1px solid #284157}',
-'#rx-admin-nav h2{font-size:23px;letter-spacing:.10em;margin:0 6px 3px;color:white}#rx-admin-nav small{font-size:10px;letter-spacing:.22em;color:#51dccd;margin:0 6px 22px;display:block}',
-'#rx-admin-nav button{display:block;width:100%;text-align:left;margin:4px 0;padding:12px;border:0;border-radius:11px;color:#a3bcce;background:transparent;font:700 13px system-ui;cursor:pointer}',
-'#rx-admin-nav button.active,#rx-admin-nav button:hover{background:#19445e;color:white}',
-'#rx-admin-main{flex:1;overflow:auto;padding:24px;min-width:0}',
-'#rx-admin-main header{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:19px}#rx-admin-main h1{font-size:23px;margin:0}#rx-admin-main header p{color:#83a8bf;margin:4px 0 0}',
-'#rx-admin-main .card{background:#10243a;border:1px solid #294b64;border-radius:15px;padding:17px;margin-bottom:14px}',
-'#rx-admin-main .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
-'#rx-admin-main .number{font-size:29px;font-weight:900;color:#69e7d3}',
-'#rx-admin-main .muted{font-size:12px;color:#a0b5c9}',
-'#rx-admin-main label{display:block;margin:8px 0 13px;color:#a7c5d3;font-size:12px;font-weight:700}',
-'#rx-admin-main input,#rx-admin-main textarea,#rx-admin-main select{display:block;width:100%;padding:11px;margin-top:5px;background:#071424;border:1px solid #38576c;border-radius:9px;color:#fff;outline:none;font:14px system-ui}',
-'#rx-admin-main input:focus,#rx-admin-main textarea:focus,#rx-admin-main select:focus{border-color:#4dd8ce}',
-'#rx-admin-main button.action{border:0;border-radius:10px;background:#4fd2d3;color:#06202a;padding:11px 15px;font-weight:850;cursor:pointer;margin:3px}',
-'#rx-admin-main button.secondary{background:#284d65;color:#fff}#rx-admin-main button.danger{background:#ef6c80;color:#29070d}',
-'#rx-admin-main #rx-admin-close{border:1px solid #3c5973;color:white;background:#19324a;border-radius:10px;font-size:23px;padding:5px 12px;cursor:pointer}',
-'#rx-admin-main .notice{font-size:12px;font-weight:700;color:#64e7d4;min-height:19px;margin-bottom:10px}',
-'#rx-admin-main .notice.error{color:#ff8596}#rx-admin-main [hidden]{display:none!important}',
-'#rx-admin-main table{border-collapse:collapse;width:100%;font-size:12px}#rx-admin-main td,#rx-admin-main th{border-bottom:1px solid #2e5066;padding:9px 6px;text-align:left;vertical-align:top}#rx-admin-main th{color:#93bace}',
-'@media(max-width:700px){#rx-admin-window{display:block;overflow:auto}#rx-admin-nav{padding:10px;border-right:0;border-bottom:1px solid #284157}#rx-admin-nav h2{font-size:16px;display:inline}#rx-admin-nav small{display:inline}#rx-admin-nav button{display:inline-block;width:auto;padding:8px;font-size:11px}#rx-admin-main{padding:13px}#rx-admin-main .stats{grid-template-columns:1fr}}'
-].join('');
-document.head.append(style);
-const launch=document.createElement('button');launch.id='rx-admin-launch';launch.textContent='⚡ ADMIN';launch.type='button';document.body.append(launch);
-const root=document.createElement('div');root.id='rx-admin-root';
-root.innerHTML=[
-'<div id="rx-admin-window" role="dialog" aria-modal="true" aria-label="RECOIL X administrator">',
-'<aside id="rx-admin-nav"><h2>RECOIL X</h2><small>COMMAND CENTER</small>',
-'<button data-tab="overview" class="active">▣ Overview</button><button data-tab="players">♙ Players</button><button data-tab="coins">◈ Spawn Coins</button><button data-tab="audit">☷ Action Log</button></aside>',
-'<div id="rx-admin-main"><header><div><h1>Admin Control Center</h1><p>Secure live server management</p></div><button id="rx-admin-close" aria-label="Close">×</button></header>',
-'<div class="notice" id="rx-admin-message" aria-live="polite"></div>',
-'<section id="rx-admin-login-section" class="card"><h3>Administrator sign in</h3><p class="muted">Use your existing RECOIL X admin account. Your password is never stored.</p>',
-'<form id="rx-admin-login"><label>Account name<input name="name" required autocomplete="username"></label>',
-'<label>Password<input type="password" name="password" required autocomplete="current-password"></label>',
-'<button class="action">Sign in</button></form></section>',
-'<div id="rx-admin-authenticated" hidden>',
-'<section data-page="overview"><div id="rx-admin-stats" class="stats"></div><div class="card"><h3>Live moderation</h3><p class="muted">Server-enforced bans, unbans, temporary bans, kicks and mutes. Every action needs a reason and is audited.</p><button class="action secondary" data-go="players">Manage players</button><button class="action secondary" data-go="audit">Action history</button></div><div class="card"><button id="rx-admin-logout" class="action secondary">Sign out</button></div></section>',
-'<section data-page="players" hidden><div class="card"><h3>Find a player</h3><form id="rx-admin-find"><label>Exact player name<input name="name" required></label><button class="action">Look up player</button></form><div id="rx-admin-player-info"></div></div>',
-'<div class="card"><h3>Moderate a player</h3><form id="rx-admin-moderate">',
-'<label>Player name<input name="name" required></label><label>Action<select name="action"><option value="kick">Kick</option><option value="tempban">Temporary ban</option><option value="ban">Permanent ban</option><option value="unban">Unban</option><option value="mute">Mute</option><option value="unmute">Unmute</option></select></label>',
-'<label>Minutes (temporary ban / timed mute)<input name="minutes" type="number" min="1" max="43200" value="60"></label>',
-'<label>Reason<textarea name="reason" maxlength="240" required placeholder="Why is this action necessary?"></textarea></label><button class="action danger">Apply moderation</button></form></div></section>',
-'<section data-page="coins" hidden><div class="card"><h3>Spawn / grant coins</h3><p class="muted">Coins are securely added to a server-side bonus wallet and audited. The older browser-only shop is not yet linked to this wallet.</p>',
-'<form id="rx-admin-coins"><label>Player name<input name="name" required></label><label>Amount (1 to 1,000,000)<input name="amount" type="number" min="1" max="1000000" value="1000" required></label>',
-'<label>Reason<textarea name="reason" maxlength="240" required placeholder="Tournament win, event reward, compensation"></textarea></label>',
-'<button class="action">+ Grant coins</button></form></div></section>',
-'<section data-page="audit" hidden><div class="card"><h3>Moderation and coin history</h3><button id="rx-admin-refresh" class="action secondary">Refresh</button><div id="rx-admin-history" style="overflow:auto"></div></div></section>',
-'</div></div></div>'
-].join('');
-document.body.append(root);
-const get=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let token=sessionStorage.getItem('rx-admin-token')||'';
-const msg=(s,error=false)=>{const n=get('rx-admin-message');n.textContent=s;n.classList.toggle('error',error)};
-const read=f=>Object.fromEntries(new FormData(f));
-async function api(path,payload,authorized=true){
- const r=await fetch('/rx-api/'+path,{method:payload?'POST':'GET',headers:{...(payload?{'Content-Type':'application/json'}:{}),...(authorized?{Authorization:'Bearer '+token}:{})},...(payload?{body:JSON.stringify(payload)}:{})});
- const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed.');return data;
-}
-function clear(){token='';sessionStorage.removeItem('rx-admin-token');get('rx-admin-login-section').hidden=false;get('rx-admin-authenticated').hidden=true;}
-async function verify(){
- if(!token){clear();return;}
- try{const d=await api('me');if(!d.user?.admin)throw Error('Admin role is not enabled.');
- get('rx-admin-login-section').hidden=true;get('rx-admin-authenticated').hidden=false;await tab('overview');
- }catch(e){clear();msg(e.message,true);}
-}
-function close(){root.classList.remove('open');msg('');}
-launch.addEventListener('click',()=>{root.classList.add('open');document.exitPointerLock?.();verify();});
-get('rx-admin-close').addEventListener('click',close);
-root.addEventListener('click',e=>{if(e.target===root)close();const go=e.target.closest('[data-go]');if(go)tab(go.dataset.go);});
-root.addEventListener('pointerdown',e=>e.stopPropagation());
-document.addEventListener('keydown',e=>{if(!root.classList.contains('open'))return;if(e.key==='Escape'){close();return;}if(root.contains(e.target))e.stopPropagation();},true);
-async function tab(name){
- for(const p of root.querySelectorAll('[data-page]'))p.hidden=p.dataset.page!==name;
- for(const b of root.querySelectorAll('[data-tab]'))b.classList.toggle('active',b.dataset.tab===name);
- msg('');if(name==='overview')await overview();if(name==='audit')await audit();
-}
-for(const b of root.querySelectorAll('[data-tab]'))b.onclick=()=>tab(b.dataset.tab);
-async function overview(){try{const d=await api('admin/overview');
- const values=[['Total players',d.total],['Online now',d.online],['Banned players',d.banned],['Bonus coins granted',Number(d.coinsGranted).toLocaleString()]];
- get('rx-admin-stats').innerHTML=values.map(row=>'<div class="card"><div class="muted">'+esc(row[0])+'</div><div class="number">'+esc(row[1])+'</div></div>').join('');
-}catch(e){msg(e.message,true);}}
-get('rx-admin-login').addEventListener('submit',async e=>{e.preventDefault();const b=read(e.target);
- try{const d=await api('login',b,false);if(!d.user?.admin)throw Error('This account is not an administrator.');
- token=d.token;sessionStorage.setItem('rx-admin-token',token);e.target.reset();await verify();msg('Admin access granted.');
- }catch(err){clear();msg(err.message,true);}});
-get('rx-admin-logout').onclick=async()=>{try{await api('logout',{});}catch{}clear();msg('Signed out of admin panel.');};
-get('rx-admin-find').addEventListener('submit',async e=>{e.preventDefault();
- try{const d=await api('admin/player?name='+encodeURIComponent(read(e.target).name));const p=d.player;
- get('rx-admin-player-info').innerHTML='<div class="card"><b>'+esc(p.name)+'</b> '+(p.admin?'(ADMIN)':'')+
- '<p class="muted">ID '+esc(p.id)+'</p><p>Ban: '+(p.banned?'ACTIVE':'none')+' '+esc(p.banReason)+'</p>'+
- '<p>Mute: '+(p.muted?'ACTIVE':'none')+' '+esc(p.muteReason)+'</p><p>Server wallet: '+esc(p.coins)+' coins</p>'+
- '<button class="action secondary" id="rx-admin-select">Moderate this player</button></div>';
- get('rx-admin-select').onclick=()=>{get('rx-admin-moderate').elements.name.value=p.name;msg('Selected '+p.name);};
- }catch(err){msg(err.message,true);}});
-get('rx-admin-moderate').addEventListener('submit',async e=>{e.preventDefault();const b=read(e.target);
- if(!confirm('Confirm '+b.action+' for '+b.name+'?'))return;
- try{const d=await api('z2/admin/action',{name:b.name,action:b.action,reason:b.reason,minutes:Number(b.minutes)});
- msg('Applied '+d.action+' to '+d.name+'.');
- }catch(err){msg(err.message,true);}});
-get('rx-admin-coins').addEventListener('submit',async e=>{e.preventDefault();const b=read(e.target);
- if(!confirm('Grant '+b.amount+' bonus wallet coins to '+b.name+'?'))return;
- try{const d=await api('admin/coins',{name:b.name,amount:Number(b.amount),reason:b.reason});
- msg('Granted '+d.amount.toLocaleString()+' coins to '+d.name+'. New wallet balance: '+d.coins.toLocaleString()+'.');
- }catch(err){msg(err.message,true);}});
-async function audit(){try{
- const [a,c]=await Promise.all([api('z2/admin'),api('admin/ledger')]);
- const rows=[...a.actions.map(x=>({...x,when:x.created,detail:x.action})),...c.grants.map(x=>({...x,when:x.created,detail:'+'+x.amount+' coins'}))].sort((x,y)=>y.when-x.when).slice(0,70);
- get('rx-admin-history').innerHTML=rows.length?'<table><tr><th>Time</th><th>Admin</th><th>Player</th><th>Action</th><th>Reason</th></tr>'+rows.map(x=>'<tr><td>'+esc(new Date(x.when).toLocaleString())+'</td><td>'+esc(x.actor)+'</td><td>'+esc(x.target)+'</td><td>'+esc(x.detail)+'</td><td>'+esc(x.reason)+'</td></tr>').join('')+'</table>':'No moderation actions yet.';
- }catch(e){msg(e.message,true);}}
-get('rx-admin-refresh').onclick=audit;
+(() => {
+  'use strict';
+  if(window.RecoilAdmin4)return;
+  const tabs=[['overview','Overview','◉'],['players','Players','◎'],['reports','Reports','▤'],['wallet','Wallet','◇'],['audit','Audit','≡'],['server','Server','▥']];
+  let bridge,owner,dialog,main,nav,status,confirmation,heading,identity,returnTo;
+  let page='overview',generation=0,active=false,selected='',caseId=null,pending=null;
+  const filters={players:'all',prefix:'',reports:'open',wallet:'',actor:'',target:'',category:'all'};
+  let playerPage=0,reportPage=null;
+  const date=ms=>ms==null?'—':new Date(ms).toLocaleString();
+  const number=value=>Number(value||0).toLocaleString();
+  const actionLabels={'coins-grant':'Bonus coins granted','coins-reverse':'Coin grant reversed','staff-note':'Staff note','case-note':'Case note',warn:'Private warning',claim:'Case claimed',release:'Case released',resolve:'Case resolved',reopen:'Case reopened',unmute:'Chat mute lifted',unban:'Ban lifted',tempban:'Temporary ban',backup:'Private backup requested'};
+  const title=value=>actionLabels[value]||String(value||'').replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());
+  const query=fields=>new URLSearchParams(Object.entries(fields).filter(([,v])=>v!=null&&v!=='')).toString();
+  const signed=()=>active&&bridge?.account()?.admin&&bridge.account().id===owner;
+  function el(tag,text='',cls='') {
+    const node=document.createElement(tag);
+    if(text!=='')node.textContent=String(text);
+    if(cls)node.className=cls;
+    return node;
+  }
+  function btn(label,fn,cls='') {
+    const node=el('button',label,('rx-btn '+cls).trim());
+    node.type='button';node.onclick=fn;return node;
+  }
+  function actions(...children){const box=el('div','','rx-actions');box.append(...children);return box;}
+  function card(parent,name){const block=el('section','','rx-card');if(name)block.append(el('h2',name));parent.append(block);return block;}
+  function field(parent,label,options={}) {
+    const wrap=el('label',label),input=el(options.items?'select':options.multiline?'textarea':'input');
+    if(options.items)for(const [v,t] of options.items){const opt=el('option',t);opt.value=v;input.append(opt);}
+    else if(!options.multiline)input.type=options.type||'text';
+    if(options.maxLength)input.maxLength=options.maxLength;
+    if(options.min!=null)input.min=options.min;
+    if(options.max!=null)input.max=options.max;
+    input.required=!!options.required;input.setAttribute('aria-label',label);
+    if(options.value!=null)input.value=String(options.value);
+    wrap.append(input);parent.append(wrap);return input;
+  }
+  function form(parent){const node=el('form','','rx-form');parent.append(node);return node;}
+  function submit(node,label,fn,cls='primary') {
+    const button=btn(label,null,cls);button.type='submit';node.append(actions(button));
+    node.onsubmit=event=>{event.preventDefault();fn();};return button;
+  }
+  function row(parent,primary,detail,action,flag) {
+    const line=el('article','','rx-row'),text=el('div');
+    const name=el('strong',primary);if(flag)name.append(el('span',flag,'rx-flag'));text.append(name);if(detail)text.append(el('p',detail,'rx-meta rx-text'));
+    line.append(text);if(action)line.append(action);parent.append(line);
+  }
+  function stats(parent,values){
+    const box=el('div','','rx-metrics');for(const [label,value] of values){
+      const item=el('div','','rx-stat');item.append(el('small',label),el('strong',value));box.append(item);
+    }parent.append(box);
+  }
+  function message(text='',error=false){status.textContent=text;status.classList.toggle('error',error);}
+  function dismiss(){pending=null;confirmation.hidden=true;confirmation.replaceChildren();}
+  function close(){
+    if(!active)return;
+    active=false;++generation;dismiss();main.replaceChildren();message();identity.textContent='';
+    selected='';caseId=null;playerPage=0;reportPage=null;
+    Object.assign(filters,{players:'all',prefix:'',reports:'open',wallet:'',actor:'',target:'',category:'all'});
+    if(dialog.open&&typeof dialog.close==='function')dialog.close();else dialog.removeAttribute('open');
+    if(returnTo?.isConnected)returnTo.focus();returnTo=null;bridge=null;owner=null;
+  }
+  async function read(path,render){
+    const ticket=generation;
+    try{const data=await bridge.request(path);if(signed()&&ticket===generation)render(data);}
+    catch(error){if(active&&ticket===generation){if(error.status===401||error.status===403)close();else message(error.message,true);}}
+  }
+  function review(label,detail,path,payload,done){
+    if(!signed())return;
+    dismiss();confirmation.hidden=false;
+    const ticket=generation,job={running:false};pending=job;
+    const cancel=btn('Cancel',dismiss),apply=btn('Confirm',async()=>{
+      if(!signed()||ticket!==generation||pending!==job||job.running)return;
+      job.running=true;apply.disabled=true;cancel.disabled=true;
+      try{
+        const result=await bridge.request(path,payload);
+        if(!signed()||ticket!==generation||pending!==job)return;
+        dismiss();if(done)done(result);else visit(page,label+' saved.');
+      }catch(error){
+        if(!active||ticket!==generation||pending!==job)return;
+        if(error.status===401){close();return;}
+        message(error.message,true);job.running=false;apply.disabled=false;cancel.disabled=false;
+      }
+    },'primary');
+    confirmation.append(el('strong',label),el('p',detail,'rx-text'),actions(cancel,apply));
+    cancel.focus();
+  }
+  function openPlayer(name){selected=name;visit('players');}
+  function openCase(id){caseId=id;visit('reports');}
+  function mount(){
+    dialog=el('dialog');dialog.id='rx4-console';dialog.lang='en';dialog.dir='ltr';dialog.setAttribute('aria-labelledby','rx4-heading');
+    const shell=el('div','','rx-shell'),rail=el('aside','','rx-rail'),brand=el('div','RECOIL ','rx-brand');
+    brand.append(el('b','X'),el('span','Z.4','rx-release'));
+    nav=el('nav');nav.setAttribute('aria-label','Staff sections');
+    for(const [id,label,icon] of tabs){
+      const button=btn('',()=>{if(id==='reports')caseId=null;visit(id);});
+      button.className='rx-tab';button.dataset.page=id;
+      const mark=el('span',icon,'rx-symbol');mark.setAttribute('aria-hidden','true');button.append(mark,el('span',label));nav.append(button);
+    }
+    identity=el('p','','rx-identity');rail.append(brand,nav,identity);
+    const body=el('div','','rx-body'),top=el('header','','rx-top');
+    heading=el('h1','Admin console');heading.id='rx4-heading';const titles=el('div');titles.append(el('span','Admin console','rx-context'),heading);top.append(titles,btn('Close',close));
+    status=el('div','','rx-notice');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    main=el('div','','rx-main');confirmation=el('div','','rx-confirm');confirmation.hidden=true;confirmation.setAttribute('aria-label','Confirm staff action');
+    body.append(top,status,main,confirmation);shell.append(rail,body);dialog.append(shell);document.body.append(dialog);
+    dialog.addEventListener('cancel',e=>{e.preventDefault();if(pending&&!pending.running)dismiss();else close();});
+    dialog.addEventListener('close',()=>{if(active&&!dialog.open)close();});
+    dialog.addEventListener('keydown',e=>e.stopPropagation());
+    dialog.addEventListener('pointerdown',e=>e.stopPropagation());
+  }
+  function open(connection){
+    if(!connection.account()?.admin)return;
+    if(active)close();if(!dialog)mount();
+    bridge=connection;owner=bridge.account().id;active=true;returnTo=document.activeElement;
+    identity.textContent='Signed in · '+bridge.account().name;
+    if(document.pointerLockElement)document.exitPointerLock?.();
+    if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+    visit('overview');
+  }
+  function visit(id,notice=''){
+    if(!signed()){close();return;}
+    page=id;++generation;dismiss();message(notice);main.replaceChildren();
+    for(const b of nav.children){if(b.dataset.page===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
+    heading.textContent=tabs.find(t=>t[0]===id)[1];main.scrollTop=0;
+    ({overview,players,reports,wallet,audit,server})[id]();
+  }
+  function overview(){
+    const metrics=el('div');main.append(metrics);
+    read('/admin/overview',d=>stats(metrics,[['Online',number(d.online)],['Players',number(d.total)],['Open reports',number(d.openReports)],['Urgent cases',number(d.urgentReports)]]));
+    const book=card(main,'Report inbox');
+    read('/admin/reports?group=open',d=>{
+      if(!d.reports.length)book.append(el('p','No open reports.','rx-meta'));
+      for(const r of d.reports.slice(0,3))row(book,'#'+r.id+' · '+r.target,r.reason,btn('Review',()=>openCase(r.id)),r.priority?'Urgent':'');
+      book.append(actions(btn('Open inbox',()=>{caseId=null;visit('reports');})));
+    });
+    const recent=card(main,'Recent staff activity');
+    read('/admin/audit',d=>{
+      if(!d.actions.length)recent.append(el('p','No staff actions recorded.','rx-meta'));
+      for(const a of d.actions.slice(0,4))row(recent,title(a.kind)+(a.target?' · '+a.target:''),a.actor+' · '+date(a.created));
+    });
+  }
+  function players(){
+    const directory=card(main,'Player directory'),search=form(directory),grid=el('div','','rx-grid');search.append(grid);
+    const prefix=field(grid,'Name starts with',{value:filters.prefix,maxLength:64});
+    const group=field(grid,'Show players',{value:filters.players,items:[['all','All players'],['online','Online now'],['restricted','Active bans or mutes'],['admins','Administrators']]});
+    submit(search,'Search players',()=>{filters.prefix=prefix.value.trim();filters.players=group.value;playerPage=0;visit('players');});
+    const list=el('div');directory.append(list);
+    read('/admin/players?'+query({q:filters.prefix,group:filters.players,after:playerPage}),d=>{
+      if(!d.players.length)list.append(el('p','No matching players.','rx-meta'));
+      for(const p of d.players)row(list,p.name,[p.admin?'Admin':'Player',p.online?'Online':'Offline'].join(' · '),btn('Inspect',()=>openPlayer(p.name)));
+      if(playerPage)list.append(btn('First page',()=>{playerPage=0;visit('players');}));
+      if(d.next)list.append(btn('Next players',()=>{playerPage=d.next;visit('players');}));
+    });
+    if(!selected)return;
+    const details=card(main,selected);
+    read('/admin/player?'+query({name:selected}),d=>{
+      const p=d.player;
+      details.append(el('p',(p.admin?'Administrator':'Player')+' · '+(p.online?'Online':'Offline')+' · '+number(p.coins)+' bonus coins','rx-meta'));
+      for(const [on,reason,until,label] of [[p.banned,p.banReason,p.banUntil,'Ban'],[p.muted,p.muteReason,p.muteUntil,'Mute']])
+        if(on)row(details,label+' active',reason+' · '+(until?'Until '+date(until):'Indefinite'));
+      details.append(actions(btn('Player history',()=>{filters.target=p.name;filters.actor='';filters.category='all';visit('audit');}),btn('Open wallet',()=>{filters.wallet=p.name;visit('wallet');})));
+      const edit=form(details),opts=[['staff-note','Private staff note']];
+      if(!p.admin)opts.push(['warn','Send private warning'],['kick','Kick player'],['tempban','Temporary ban'],['ban','Permanent ban'],['unban','Unban player'],['timed-mute','Timed chat mute'],['mute','Indefinite chat mute'],['unmute','Unmute player']);
+      const action=field(edit,'Player action',{items:opts}),duration=field(edit,'Duration in minutes',{type:'number',min:1,max:43200,value:60});
+      const why=field(edit,'Reason or staff note',{multiline:true,maxLength:240,required:true});
+      const showDuration=()=>{const timed=['tempban','timed-mute'].includes(action.value);duration.parentElement.hidden=!timed;duration.required=timed;};action.onchange=showDuration;showDuration();
+      submit(edit,'Review action',()=>{
+        const kind=action.value,note=why.value.trim(),label=opts.find(pair=>pair[0]===kind)[1];
+        if(kind==='warn'||kind==='staff-note')review(label,p.name+' · '+note,'/admin/note',{kind,name:p.name,reason:note});
+        else review(label,p.name+' · '+note+(duration.required?' · '+duration.value+' min':''),'/z2/admin/action',{action:kind==='timed-mute'?'mute':kind,name:p.name,minutes:duration.required?Number(duration.value):null,reason:note});
+      });
+      details.scrollIntoView?.({block:'nearest'});
+    });
+  }
+  function reports(){
+    if(caseId){showCase();return;}
+    const inbox=card(main,'Report queue'),f=form(inbox);
+    const group=field(f,'Queue',{value:filters.reports,items:[['open','Open cases'],['urgent','Urgent cases'],['mine','Assigned to me'],['closed','Closed cases'],['all','All cases']]});
+    submit(f,'Show cases',()=>{filters.reports=group.value;reportPage=null;visit('reports');});
+    read('/admin/reports?'+query({group:filters.reports,before:reportPage}),d=>{
+      if(!d.reports.length)inbox.append(el('p','No cases in this queue.','rx-meta'));
+      for(const r of d.reports)row(inbox,'#'+r.id+' · '+r.target,(r.priority?'Urgent · ':'')+(r.owner||'Unassigned')+' · '+r.reason,btn('Open case',()=>openCase(r.id)));
+      if(reportPage)inbox.append(btn('Newest cases',()=>{reportPage=null;visit('reports');}));
+      if(d.next)inbox.append(btn('Older cases',()=>{reportPage=d.next;visit('reports');}));
+    });
+  }
+  function showCase(){
+    main.append(actions(btn('Back to inbox',()=>{caseId=null;visit('reports');})));
+    const block=card(main,'Case #'+caseId);
+    read('/admin/case?'+query({id:caseId}),d=>{
+      const r=d.report,closed=r.closedAt!=null;
+      row(block,r.target,(closed?'Closed':'Open')+' · '+(r.priority?'Urgent':'Normal')+' · '+(r.owner||'Unassigned'),btn('Inspect player',()=>openPlayer(r.target)));
+      block.append(el('p',r.reason,'rx-text'),el('p','Reported by '+r.reporter+' · '+date(r.created),'rx-meta'));
+      const change=(kind,label,payload={})=>review(label,'Case #'+r.id+' · '+r.target+(payload.reason?' · '+payload.reason:''),'/admin/case',{kind,reportId:r.id,...payload});
+      if(!closed){
+        const tools=actions();
+        if(!r.owner)tools.append(btn('Claim case',()=>change('claim','Claim case')));
+        if(r.owner===bridge.account().name)tools.append(btn('Release case',()=>change('release','Release case')));
+        tools.append(btn(r.priority?'Set normal priority':'Mark urgent',()=>change('priority',r.priority?'Set normal priority':'Mark urgent',{urgent:!r.priority})));block.append(tools);
+      }
+      const edit=form(block),mode=field(edit,'Case action',{items:closed?[['reopen','Reopen case']]:[['case-note','Add case note'],['resolve','Resolve case']]});
+      const why=field(edit,'Case note or reason',{multiline:true,required:true,maxLength:240});
+      submit(edit,'Review case action',()=>change(mode.value,mode.options[mode.selectedIndex].textContent,{reason:why.value.trim()}));
+      const history=card(main,'Case timeline');row(history,'Report received',r.reporter+' · '+date(r.created));
+      if(r.matchId){row(history,'Linked match',r.matchId);for(const e of d.evidence)row(history,title(e.kind),e.label+' · '+Math.round(e.at/1000)+'s');}
+      for(const n of d.notes)row(history,title(n.kind),n.actor+' · '+date(n.created)+' · '+n.reason);
+    });
+  }
+  function wallet(){
+    const finder=card(main,'Bonus wallets'),f=form(finder),name=field(f,'Exact player name',{value:filters.wallet,maxLength:18});
+    submit(f,'Find wallet',()=>{filters.wallet=name.value.trim();visit('wallet');});
+    if(filters.wallet)read('/admin/player?'+query({name:filters.wallet}),d=>stats(finder,[['Player',d.player.name],['Bonus coins',number(d.player.coins)]]));
+    const award=card(main,'Grant bonus coins');
+    award.append(el('p','Grants go to the player’s server bonus wallet. The legacy shop uses local coins.','rx-meta'));
+    const edit=form(award),grid=el('div','','rx-grid');edit.append(grid);
+    const to=field(grid,'Recipient',{value:filters.wallet,maxLength:18,required:true}),amount=field(grid,'Coins',{type:'number',min:1,max:1000000,required:true});
+    const why=field(edit,'Grant reason',{multiline:true,maxLength:240,required:true});
+    let previous='',key='';
+    submit(edit,'Review grant',()=>{
+      const data={name:to.value.trim(),amount:Number(amount.value),reason:why.value.trim()},signature=JSON.stringify(data);
+      if(signature!==previous){key=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');previous=signature;}
+      review('Grant '+number(data.amount)+' bonus coins',data.name+' · '+data.reason,'/admin/coins',{...data,requestId:key},result=>{filters.wallet=result.name;visit('wallet','Grant #'+result.grantId+' recorded.');});
+    });
+    const history=card(main,filters.wallet?'Grants for '+filters.wallet:'Recent grants');
+    read('/admin/ledger?'+query({name:filters.wallet}),d=>{
+      if(!d.grants.length)history.append(el('p','No grants found.','rx-meta'));
+      for(const g of d.grants){
+        const line=el('div');history.append(line);
+        const detail=g.actor+' · '+date(g.created)+' · '+g.reason+(g.reversedAt?' · Reversed by '+g.reversedBy+' · '+g.reversalReason:'');
+        row(line,'#'+g.id+' · '+g.target+' · '+number(g.amount)+' coins',detail,g.reversedAt?null:btn('Reverse grant',()=>{
+          line.replaceChildren();const undo=form(line),why=field(undo,'Reason for reversing grant #'+g.id,{multiline:true,maxLength:240,required:true});
+          submit(undo,'Review reversal',()=>review('Reverse grant #'+g.id,g.target+' · '+number(g.amount)+' coins · '+why.value,'/admin/reverse',{grantId:g.id,reason:why.value.trim()}),'danger');
+          undo.append(btn('Cancel reversal',()=>visit('wallet')));why.focus();
+        }));
+      }
+    });
+  }
+  function audit(){
+    const find=card(main,'Staff audit log'),f=form(find),grid=el('div','','rx-grid');f.append(grid);
+    const actor=field(grid,'Admin name',{value:filters.actor,maxLength:18}),target=field(grid,'Player name',{value:filters.target,maxLength:18});
+    const group=field(grid,'Action group',{value:filters.category,items:[['all','All actions'],['moderation','Moderation'],['cases','Reports'],['wallet','Bonus wallet'],['staff','Staff notes and operations']]});
+    submit(f,'Apply audit filters',()=>{filters.actor=actor.value.trim();filters.target=target.value.trim();filters.category=group.value;visit('audit');});
+    const result=card(main,'Matching entries');
+    read('/admin/audit?'+query({actor:filters.actor,target:filters.target,group:filters.category}),d=>{
+      if(!d.actions.length){result.append(el('p','No matching entries.','rx-meta'));return;}
+      result.append(actions(btn('Export these entries',()=>{
+        const url=URL.createObjectURL(new Blob([JSON.stringify(d.actions,null,2)],{type:'application/json'}));
+        const a=el('a');a.href=url;a.download='RECOIL-X-Z4-staff-audit.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      })));
+      for(const a of d.actions)row(result,title(a.kind)+(a.target?' · '+a.target:''),a.actor+' · '+date(a.created)+' · '+a.reason,a.report?btn('Open case',()=>openCase(a.report)):null);
+    });
+  }
+  function server(){
+    const vitals=card(main,'Server health');
+    vitals.append(actions(btn('Refresh measurements',()=>visit('server'))));
+    read('/asc/health',d=>{
+      stats(vitals,[['Connected players',number(d.players)],['Rooms',number(d.rooms+d.legacyRooms)],['Active matches',number(d.playing)],['Memory',number(d.memoryMiB)+' MiB'],
+        ['Median round trip',d.rttMs==null?'No sample':d.rttMs+' ms'],['Uptime',Math.floor(d.uptimeSeconds/60)+' min'],['Disconnects',number(d.disconnects)],['Errors',number(d.errors)]]);
+      const snapshot=card(main,'Private database backups');row(snapshot,'Status · '+d.backups.state,'Last verified copy · '+date(d.backups.last));
+      if(d.backups.failedAt)row(snapshot,'Last failure',date(d.backups.failedAt));
+      const f=form(snapshot),reason=field(f,'Backup reason',{maxLength:240,required:true});
+      submit(f,'Request a private backup',()=>review('Create a verified private backup',reason.value,'/admin/backup',{reason:reason.value.trim()},out=>visit('server','Backup request recorded · '+out.state)));
+      const alerts=card(main,'Movement reviews');
+      if(!d.movementReviews.length)alerts.append(el('p','No movement alerts recorded.','rx-meta'));
+      for(const a of d.movementReviews)row(alerts,a.name,title(a.kind)+' · '+date(a.created),btn('Inspect player',()=>openPlayer(a.name)));
+    });
+  }
+  window.RecoilAdmin4=Object.freeze({open,close});
 })();

@@ -8,8 +8,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
+import {verifiedBackup,backupSchedule} from './ascension-backup.mjs';
+import {migrateAscension,ascensionStore} from './ascension-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
-import { createAdminPatch } from './admin-patch.mjs';
+import { createAdminPatch, migrateAdministration } from './admin-patch.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -86,6 +88,10 @@ function allowed(key, count, duration) {
   return item.count <= count;
 }
 
+function passwordMatches(derived,stored) {
+  if(typeof stored!=='string'||!/^[0-9a-f]{128}$/i.test(stored))return false;
+  return timingSafeEqual(Buffer.from(derived,'hex'),Buffer.from(stored,'hex'));
+}
 async function passwordHash(password, salt) {
   return (await derive(password, Buffer.from(salt, 'hex'), 64, {
     N: 1 << 17, r: 8, p: 1, maxmem: 160 * 1024 * 1024
@@ -95,11 +101,26 @@ async function passwordHash(password, salt) {
 export function createRecoilServer(options = {}) {
   const filename = options.database ?? 'recoil-x.sqlite';
   const existing = filename !== ':memory:' && existsSync(filename);
+  const backupOpts=options.backups??{};
+  if(existing){
+    const prior=new DatabaseSync(filename,{readOnly:true});
+    let due;
+    try{
+      const table=prior.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+      const hasUsers=!!table.get('users');
+      if(!hasUsers&&prior.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").get())
+        throw Error('Existing database has no RECOIL X account table. Verify the private database path.');
+      due=hasUsers&&['asc_version','rx3_maps','rx_mission_save','rx4_admin_events'].some(name=>!table.get(name));
+    }finally{prior.close();}
+    if(due)verifiedBackup(filename,{...backupOpts,reason:'migration'});
+  }
   const db = openDb(filename);
   try {
-    const upgraded=migrateOverdrive(db,filename,existing);
+    migrateOverdrive(db,filename,false);
     // One consistent backup covers every migration in this startup.
-    migrateMissions(db,filename,existing&&!upgraded);
+    migrateMissions(db,filename,false);
+    migrateAscension(db);
+    migrateAdministration(db);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -108,11 +129,15 @@ export function createRecoilServer(options = {}) {
   const clients = new Map(), rooms = new Map();
   let passwordJobs = 0;
   let lastExpiry = 0;
-  const overdriveData = overdriveStore(db,fail);
+  const ascData=ascensionStore(db,fail);ascData.resumeWars(sqlTime());
+  const backup=backupSchedule(filename,backupOpts);
+  const health={since:sqlTime(),disconnects:0,errors:0,rtt:[],pings:new Map()};
+  const overdriveData = overdriveStore(db,fail,ascData);
   const missions = missionStore(db,fail);
-  const adminPatch = createAdminPatch(db,fail,()=>clients.size);
+  const adminPatch = createAdminPatch(db,fail,()=>Array.from(clients.keys()));
+  let lastManualBackup=-Infinity;
   const overdrive = createOverdrive({
-    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
+    client:id=>clients.get(id),send,store:overdriveData,ascStore:ascData,fail,allowed,leaveLegacy:leave,cleanChat,onError:()=>{health.errors++;console.error('RECOIL X match simulation failed.');}
   });
 
   const st = sql => db.prepare(sql);
@@ -164,13 +189,13 @@ export function createRecoilServer(options = {}) {
   }
 
   function send(client, event) {
-    if (client?.socket.readyState !== 1) return;
+    if (client?.socket.readyState !== 1) return false;
     const transport=client.transport;
     const replaceable=event.type==='z2:state'||(event.type==='relay'&&
       (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
-    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
-    if(transport.writableLength>=400000){transport.destroy();return;}
-    client.socket.send(JSON.stringify(event));
+    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return false;
+    if(transport.writableLength>=400000){transport.destroy();return false;}
+    client.socket.send(JSON.stringify(event));return true;
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
 
@@ -227,8 +252,10 @@ export function createRecoilServer(options = {}) {
         throw error;
       }
       account = byName.get(handle);
-    } else if (!account || !timingSafeEqual(Buffer.from(secret,'hex'),Buffer.from(account.secret,'hex'))) {
-      throw fail(401, 'Account name or password is incorrect.');
+    } else {
+      // Recovery or moderation can finish while scrypt is running.
+      account = byName.get(handle);
+      if(!account||account.salt!==salt||!passwordMatches(secret,account.secret))throw fail(401,'Account name or password is incorrect.');
     }
     verifyBan(account);
     const token = randomBytes(32).toString('hex');
@@ -286,6 +313,8 @@ export function createRecoilServer(options = {}) {
 
   function moderate(user, body) {
     const now=sqlTime();
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    if(!allowed('staff-mod:'+user.id,40,60000))throw fail(429,'Wait before another moderation action.');
     const result=overdriveData.moderation(user,body,now);
     if (['kick','tempban','ban'].includes(result.action)) {
       const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
@@ -295,20 +324,98 @@ export function createRecoilServer(options = {}) {
     return result;
   }
 
+  function administration(req,path,user,body) {
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    const now=sqlTime(),params=new URL(req.url,'http://localhost').searchParams;
+    if(req.method==='GET'){
+      if(!allowed('staff-read:'+user.id,150,60000))throw fail(429,'Wait before refreshing again.');
+      switch(path){
+        case '/admin/overview': return adminPatch.overview(user,now);
+        case '/admin/players': return adminPatch.players(user,params,now);
+        case '/admin/player': return adminPatch.player(user,params.get('name'),now);
+        case '/admin/ledger': return adminPatch.ledger(user,params.get('name'));
+        case '/admin/reports': return adminPatch.reportList(user,params);
+        case '/admin/case': return adminPatch.caseHistory(user,Number(params.get('id')));
+        case '/admin/audit': return adminPatch.audit(user,params);
+      }
+    }
+    if(req.method==='POST'){
+      if(!allowed('staff-write:'+user.id,60,60000))throw fail(429,'Wait before another staff action.');
+      switch(path){
+        case '/admin/coins':
+        case '/admin/reverse': {
+          if(!allowed('admin-coins:'+user.id,30,60000))throw fail(429,'Too many wallet changes.');
+          const grant=path==='/admin/coins'?adminPatch.grantCoins(user,body,now):adminPatch.reverseGrant(user,body,now);
+          if(!grant.repeated)send(clients.get(grant.id),{type:'rx-admin:coins',coins:grant.coins,granted:grant.amount});
+          return grant;
+        }
+        case '/admin/note': {
+          const result=adminPatch.staffNote(user,body,now);
+          if(result.kind==='warn')send(clients.get(result.id),{type:'rx-admin:notice'});
+          return result;
+        }
+        case '/admin/case': return adminPatch.reportAction(user,body,now);
+        case '/admin/backup': {
+          const reason=adminPatch.reasonFor(body.reason);
+          if(filename===':memory:')throw fail(409,'A file-backed game database is required.');
+          if(backup.status.state==='running')throw fail(409,'A private backup is already running.');
+          if(now-lastManualBackup<3600000)throw fail(429,'A manual backup was requested within the last hour.');
+          adminPatch.backupRequested(user,reason,now);
+          lastManualBackup=now;backup.start();
+          return {state:backup.status.state};
+        }
+      }
+    }
+    throw fail(404,'Unknown staff operation.');
+  }
+
   async function endpoint(req, path) {
     if ((path === '/register' || path === '/login') && req.method === 'POST')
       return credentials(req,await readJson(req),path === '/register');
+    if(path==='/asc/recover'&&req.method==='POST'){
+      const b=await readJson(req),name=typeof b.name==='string'?canonical(b.name):'',password=b.password;
+      if(!allowed('asc-reset-ip:'+req.socket.remoteAddress,8,60000)||!allowed('asc-reset-name:'+name,5,60000)||passwordJobs>=3)throw fail(429,'Wait before trying again.');
+      if(typeof password!=='string'||password.length<10||password.length>128||typeof b.code!=='string'||b.code.length!==32||name.length>60)throw fail(400,'Recovery details are invalid.');
+      const user=byName.get(name),salt=randomBytes(16).toString('hex');let secret;
+      passwordJobs++;try{secret=await passwordHash(password,salt);}finally{passwordJobs--;}
+      if(!user)throw fail(400,'Recovery details are invalid.');
+      const out=ascData.recover(user.id,b.code,salt,secret);cutConnection(clients.get(user.id),'Sign in with your new password.');return out;
+    }
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
+    if(path.startsWith('/admin/'))return administration(req,path,user,body);
+    if(path==='/account/notices'){
+      if(req.method==='GET')return adminPatch.notices(user);
+      if(req.method==='POST')return adminPatch.acknowledge(user,body.id);
+    }
+    if(path.startsWith('/asc/')){
+      if(req.method==='GET'&&path==='/asc/profile')return ascData.profile(user.id,sqlTime());
+      if(req.method==='GET'&&path==='/asc/health'){
+        if(!user.admin)throw fail(403,'Administrator access is required.');
+        const readings=health.rtt.slice().sort((a,b)=>a-b);
+        return {players:clients.size,legacyRooms:rooms.size,...overdrive.stats(),uptimeSeconds:Math.floor((sqlTime()-health.since)/1000),
+          memoryMiB:Math.round(process.memoryUsage().rss/1048576),rttMs:readings.length?readings[Math.floor(readings.length/2)]:null,
+          disconnects:health.disconnects,errors:health.errors,backups:backup.status,movementReviews:ascData.alerts()};
+      }
+      if(req.method==='POST'&&path==='/asc/community'){
+        if(!allowed('asc-social:'+user.id,25,60000))throw fail(429,'Wait before another community action.');
+        return ascData.social(user,body,sqlTime());
+      }
+      if(req.method==='POST'&&path==='/asc/recovery-code'){
+        if(!allowed('asc-issue:'+user.id,4,60000)||passwordJobs>=3)throw fail(429,'Wait before trying again.');
+        if(typeof body.password!=='string'||body.password.length>128)throw fail(400,'Enter the current password.');
+        let digest;passwordJobs++;try{digest=await passwordHash(body.password,user.salt);}finally{passwordJobs--;}
+        if(!passwordMatches(digest,user.secret)||byId.get(user.id).secret!==user.secret)throw fail(403,'Current password is incorrect.');
+        return {code:ascData.codes(user.id)};
+      }
+      throw fail(404,'Unknown Ascension service.');
+    }
     if (req.method === 'GET') {
       if (path === '/missions') return missions.read(user.id);
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
-      if (path === '/admin/overview') return adminPatch.overview(user);
-      if (path === '/admin/ledger') return adminPatch.ledger(user);
-      if (path === '/admin/player') return adminPatch.player(user,new URL(req.url,'http://localhost').searchParams.get('name'));
       if (path === '/z3/map') {
         if(!allowed('shared-map-read:'+user.id,30,60000))throw fail(429,'Wait before opening more maps.');
         return overdriveData.loadMap(new URL(req.url,'http://localhost').searchParams.get('code'));
@@ -343,12 +450,6 @@ export function createRecoilServer(options = {}) {
         return moderate(user,{name:body.name,action,reason:'Updated from the Friends moderation panel'});
       }
       if (path === '/z2/admin/action') return moderate(user,body);
-      if (path === '/admin/coins') {
-        if(!allowed('admin-coins:'+user.id,30,60000))throw fail(429,'Too many coin grants.');
-        const grant=adminPatch.grantCoins(user,body,sqlTime());
-        send(clients.get(grant.id),{type:'rx-admin:coins',coins:grant.coins,granted:grant.amount});
-        return grant;
-      }
       if (path === '/z2/report') return overdriveData.report(user,body,sqlTime());
       if (path === '/z3/map') {
         if(!allowed('shared-map-write:'+user.id,6,60000))throw fail(429,'Wait before sharing more maps.');
@@ -387,17 +488,20 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
-    if (path === '/admin-panel.js') {
+    if(['/admin-panel.js','/server/admin-panel.js','/server/admin-panel.css'].includes(path)){
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
-      try{const js=readFileSync(new URL('./admin-panel.js',import.meta.url));
-        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
-        res.end(req.method==='HEAD'?undefined:js);
-      }catch{res.writeHead(404).end();}return;
+      const css=path.endsWith('.css');
+      try{
+        const asset=readFileSync(new URL(css?'./admin-panel.css':'./admin-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':css?'text/css; charset=utf-8':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:asset);
+      }catch{res.writeHead(404).end();}
+      return;
     }
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script></body>');
+        const html = readFileSync(htmlPath);
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
@@ -410,10 +514,10 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.3',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.4',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
-      if (!error.status) console.error(error);
+      if (!error.status){health.errors++;console.error('RECOIL X request failed.');}
       res.statusCode = error.status || 500;
       res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
     }
@@ -427,6 +531,12 @@ export function createRecoilServer(options = {}) {
       cutConnection(c,'Sign in again.');return;
     }
     if (typeof data.type==='string'&&data.type.startsWith('z2:')) {
+      if(data.type==='z2:clock'){
+        const pending=health.pings.get(c.id);
+        if(pending&&data.n===pending.n){health.pings.delete(c.id);const rtt=sqlTime()-pending.at;if(rtt>=0&&rtt<=10000){health.rtt.push(rtt);if(health.rtt.length>96)health.rtt.shift();}}
+        return;
+      }
+      if(data.type==='z2:echo'&&c.deltaState){const n=randomBytes(8).toString('hex');health.pings.set(c.id,{n,at:sqlTime()});send(c,{type:'z2:clock',n});}
       overdrive.packet(c,current,data);return;
     }
     if (data.type === 'leave') {leave(c);return;}
@@ -498,7 +608,7 @@ export function createRecoilServer(options = {}) {
           const user=authenticate(data.token);
           cutConnection(clients.get(user.id),'Signed in on another device.');
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
-            compactState:data.compactState===1};
+            compactState:data.compactState===1,deltaState:data.deltaState===1&&data.compactState===1};
           clients.set(user.id,connected);clearTimeout(timeout);
           send(connected,{type:'ready',user:profile(user)});
           overdrive.attach(connected,true);
@@ -515,6 +625,7 @@ export function createRecoilServer(options = {}) {
     ws.on('close',()=>{
       clearTimeout(timeout);
       if (connected&&clients.get(connected.id)===connected) {
+        health.disconnects++;health.pings.delete(connected.id);
         leave(connected,'Your friend disconnected.');clients.delete(connected.id);
         overdrive.disconnect(connected);
       }
@@ -528,7 +639,7 @@ export function createRecoilServer(options = {}) {
   },60000);
   cleanup.unref();
   server.on('close',()=>{
-    clearInterval(cleanup);overdrive.close();
+    clearInterval(cleanup);backup.close();overdrive.close();
     for (const c of clients.values()) cutConnection(c,'Game server stopped.');
     db.close();
   });
@@ -546,7 +657,8 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
   } else {
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
-    const server=createRecoilServer({database,origins});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
+    const server=createRecoilServer({database,origins,backups:{directory:process.env.RX_PRIVATE_BACKUPS||undefined,
+      keep:Number(process.env.RX_BACKUP_KEEP||7),hours:Number(process.env.RX_BACKUP_HOURS||24)}});
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.4 listening on port '+port));
   }
 }

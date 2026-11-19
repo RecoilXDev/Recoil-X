@@ -1,0 +1,69 @@
+#rx4-console {
+  --rx-ink:#101920; --rx-panel:#16222c; --rx-line:#38505d; --rx-soft:#b9cbd1;
+  --rx-paper:#f3f6ed; --rx-accent:#8fe2d1; --rx-gold:#ffcb7b;
+  color:var(--rx-paper); background:var(--rx-ink); border:1px solid #506774;
+  border-radius:16px; padding:0; width:min(1120px,96vw); max-width:96vw;
+  height:min(790px,93vh); height:min(790px,93dvh); max-height:96dvh;
+  margin:auto; box-shadow:0 25px 90px #0009; text-align:start;
+  color-scheme:dark; font:400 1rem/1.45 "Barlow",system-ui,sans-serif;
+}
+#rx4-console::backdrop { background:#030b13d9; }
+#rx4-console:not([open]),#rx4-console [hidden] { display:none!important; }
+#rx4-console * { box-sizing:border-box; }
+#rx4-console .rx-shell { display:grid; grid-template-columns:195px minmax(0,1fr); height:100%; }
+#rx4-console .rx-rail { display:flex; flex-flow:column; background:#101c25; border-inline-end:1px solid var(--rx-line); padding:24px 14px; gap:23px; }
+#rx4-console .rx-brand { font-size:1.22rem; font-weight:900; letter-spacing:.04em; color:var(--rx-paper); }
+#rx4-console .rx-brand b { color:var(--rx-gold); }
+#rx4-console .rx-release { margin-inline-start:6px; font:600 .8rem/1.2 ui-monospace,monospace; color:var(--rx-soft); }
+#rx4-console nav { display:grid; gap:4px; }
+#rx4-console button { min-height:42px; box-shadow:none; text-shadow:none; cursor:pointer; }
+#rx4-console .rx-tab { display:flex; align-items:center; gap:10px; text-align:start; border:1px solid transparent; border-radius:9px; color:var(--rx-soft); background:transparent; padding:9px 11px; font:650 .98rem/1.25 system-ui,sans-serif; }
+#rx4-console .rx-tab .rx-symbol { width:20px; text-align:center; color:#95b7c1; font-size:1.15rem; }
+#rx4-console .rx-tab[aria-current="page"] { color:#effffb; background:#203b42; border-color:#416a69; }
+#rx4-console .rx-tab[aria-current="page"] .rx-symbol { color:var(--rx-accent); }
+#rx4-console .rx-identity { margin-block-start:auto; overflow-wrap:anywhere; color:var(--rx-soft); font-size:.88rem; }
+#rx4-console .rx-body { min-width:0; display:flex; flex-direction:column; min-height:0; }
+#rx4-console .rx-top { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:19px clamp(16px,3vw,34px); border-block-end:1px solid var(--rx-line); }
+#rx4-console h1,#rx4-console h2,#rx4-console h3,#rx4-console p { margin:0; color:inherit; text-shadow:none; text-transform:none; }
+#rx4-console .rx-context { display:block; color:var(--rx-accent); font-size:.82rem; font-weight:700; margin-block-end:4px; }
+#rx4-console .rx-flag { display:inline-block; margin-inline-start:8px; padding:1px 7px; font:650 .78rem/1.4 system-ui,sans-serif; color:var(--rx-gold); border:1px solid #866a40; border-radius:4px; vertical-align:middle; }
+#rx4-console h1 { font-size:clamp(1.3rem,3vw,1.85rem); letter-spacing:-.035em; line-height:1.1; }
+#rx4-console h2 { font-size:1.35rem; letter-spacing:-.02em; }
+#rx4-console h3 { font-size:1rem; font-weight:750; }
+#rx4-console .rx-main { padding:20px clamp(16px,3vw,34px) 26px; overflow:auto; min-height:0; display:flex; flex-direction:column; gap:14px; }
+#rx4-console .rx-card { padding:16px; background:var(--rx-panel); border:1px solid var(--rx-line); border-radius:12px; display:grid; gap:12px; }
+#rx4-console .rx-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+#rx4-console .rx-stat { background:#1c2c35; border:1px solid var(--rx-line); border-radius:10px; padding:13px; }
+#rx4-console .rx-stat strong { display:block; font:700 clamp(1.4rem,4vw,2rem)/1.3 ui-monospace,monospace; color:var(--rx-accent); }
+#rx4-console .rx-stat small,#rx4-console .rx-meta { color:var(--rx-soft); font-size:.88rem; }
+#rx4-console .rx-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(215px,100%),1fr)); gap:12px; }
+#rx4-console .rx-actions { display:flex; flex-wrap:wrap; align-items:end; gap:8px; }
+#rx4-console .rx-btn { background:#243743; color:var(--rx-paper); border:1px solid #4b6471; padding:9px 13px; border-radius:8px; font:650 .93rem/1.25 system-ui,sans-serif; }
+#rx4-console .rx-btn.primary { background:var(--rx-accent); border-color:var(--rx-accent); color:#092a29; }
+#rx4-console .rx-btn.danger { color:#ffd0bd; background:#442b29; border-color:#976454; }
+#rx4-console .rx-btn:hover,#rx4-console .rx-tab:hover { filter:brightness(1.15); }
+#rx4-console button:disabled { cursor:default; opacity:.5; }
+#rx4-console :focus-visible { outline:3px solid var(--rx-gold); outline-offset:2px; }
+#rx4-console .rx-form { display:grid; gap:12px; }
+#rx4-console label { display:grid; align-content:start; gap:5px; color:var(--rx-soft); font-weight:650; font-size:.9rem; }
+#rx4-console input,#rx4-console select,#rx4-console textarea { min-width:0; width:100%; min-height:42px; padding:9px 10px; background:#0d1921; color:var(--rx-paper); border:1px solid #48616e; border-radius:7px; font:400 1rem/1.28 system-ui,sans-serif; }
+#rx4-console textarea { resize:vertical; min-height:62px; }
+#rx4-console .rx-row { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 15px; padding:10px 0; border-block-start:1px solid #34464f; }
+#rx4-console .rx-row>div { min-width:0; flex:1 1 170px; overflow-wrap:anywhere; }
+#rx4-console .rx-row strong { display:block; color:var(--rx-paper); }
+#rx4-console .rx-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+#rx4-console .rx-notice:not(:empty) { padding:8px clamp(16px,3vw,34px); background:#193237; color:var(--rx-accent); font-size:.94rem; }
+#rx4-console .rx-notice.error:not(:empty) { background:#3c2728; color:#ffd1c0; }
+#rx4-console .rx-confirm { border-block-start:2px solid var(--rx-gold); padding:12px clamp(16px,3vw,34px); background:#2e2923; display:grid; gap:8px; }
+@media(max-width:760px),(max-height:540px) {
+  #rx4-console { width:98vw; max-width:98vw; height:96vh; height:96dvh; border-radius:10px; }
+  #rx4-console .rx-shell { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); }
+  #rx4-console .rx-rail { flex-direction:row; align-items:center; gap:10px; padding:5px 9px; border-inline-end:0; border-block-end:1px solid var(--rx-line); }
+  #rx4-console .rx-brand,#rx4-console .rx-identity,#rx4-console .rx-symbol { display:none; }
+  #rx4-console nav { display:flex; overflow-x:auto; flex:1; }
+  #rx4-console .rx-tab { white-space:nowrap; padding:6px 9px; }
+  #rx4-console .rx-top { padding:6px 14px; }
+  #rx4-console .rx-main { padding:12px; gap:9px; }
+  #rx4-console .rx-card { padding:12px; }
+}
+@media(prefers-contrast:more) { #rx4-console { --rx-line:#a2b4bf; --rx-soft:#e0ebec; } }
