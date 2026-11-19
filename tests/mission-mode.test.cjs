@@ -304,6 +304,9 @@ test('real account saves transfer a guest campaign and checkpoint across clients
   const {createRecoilServer}=await import('../server/server.mjs');
   const {once}=require('node:events');
   const server=createRecoilServer({database:':memory:'});
+  // These simulated devices share Node's HTTP pool and synchronously advance the game.
+  // Give each request its own connection so one device cannot inherit another's idle socket.
+  server.prependListener('request',(_req,res)=>res.setHeader('Connection','close'));
   server.listen(0,'127.0.0.1');await once(server,'listening');
   const net={origin:'http://127.0.0.1:'+server.address().port},games=[];
   const device=(seed={})=>{const g=gameAt(seed,false,undefined,net);games.push(g);return g;};

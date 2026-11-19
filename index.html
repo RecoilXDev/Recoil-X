@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X Z.3 · Project Ascension</title>
+<title>RECOIL X Z.4 · Project Ascension</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
@@ -886,7 +886,7 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">Z.3</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">Z.4</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -2034,7 +2034,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='Z.3 • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='Z.4 • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -7811,6 +7811,51 @@ let z1Account=null,z1Token='',z1Socket=null,z1SocketReady=false,z1ChatOpen=false
 let z1SocialRevision=0,z1FriendsList=[],z1RoomMessages=[];
 let z1ApiRoot=getStore('z1ServerUrl',''),z1FriendsBusy=false,z1RegisterMode=false,z1SocketRetry=0;
 const z1SessionKey='recoil-z1-session';
+const z4AdminAssets=new Map();
+let z4NoticeRevision=0;
+function z4AdminAccess(){
+  for(const id of ['rx-admin-launch','z4FriendsAdmin','z4AscAdmin']){
+    const el=$(id);if(el)el.classList.toggle('hide',!z1Account?.admin);
+  }
+  if(!z1Account?.admin)window.RecoilAdmin4?.close();
+}
+function z4LoadAdminAsset(kind){
+  if(z4AdminAssets.has(kind))return z4AdminAssets.get(kind);
+  const task=new Promise((resolve,reject)=>{
+    const node=document.createElement(kind);
+    if(kind==='link'){node.rel='stylesheet';node.href='./server/admin-panel.css';}
+    else{node.src='./server/admin-panel.js';node.async=true;}
+    const fail=()=>{node.remove();reject(Error('Staff console unavailable.'));};
+    node.onload=()=>{if(kind==='script'&&!window.RecoilAdmin4)fail();else resolve();};
+    node.onerror=fail;document.head.append(node);
+  }).catch(error=>{z4AdminAssets.delete(kind);throw error;});
+  z4AdminAssets.set(kind,task);return task;
+}
+async function z4OpenAdmin(){
+  if(!z1Account?.admin)return;
+  const account=z1Account.id;
+  try{
+    await Promise.all([z4LoadAdminAsset('link'),z4LoadAdminAsset('script')]);
+    if(z1Account?.id===account&&z1Account.admin)
+      window.RecoilAdmin4.open({account:()=>z1Account,request:z1Fetch});
+  }catch(error){
+    if(z1Account?.id===account&&z1Account.admin){showScreen('z2Admin');z2AdminRead();z2AdminStatus('Using the moderation form. Reopen Admin console to retry.');}
+  }
+}
+async function z4ReadNotices(acknowledge){
+  const owner=z1Account?.id,revision=++z4NoticeRevision;
+  const root=$('z4AccountNotices');if(!root||!owner)return;
+  try{
+    const d=await z1Fetch('/account/notices',acknowledge?{id:acknowledge}:undefined);
+    if(revision!==z4NoticeRevision||z1Account?.id!==owner)return;
+    root.replaceChildren();
+    if(d.coins||d.notices.length){
+      const wallet=document.createElement('p');wallet.textContent='Bonus wallet · '+d.coins.toLocaleString()+' coins';root.append(wallet);
+    }
+    for(const notice of d.notices){const item=document.createElement('p');item.textContent='Staff warning · '+notice.reason;root.append(item);}
+    if(d.notices.length)root.append(crownButton('Acknowledge warnings',()=>z4ReadNotices(d.notices.at(-1).id),'secondary'));
+  }catch(error){if(acknowledge&&owner===z1Account?.id)z1Say(error.message,true);}
+}
 
 function z1LocalHost(hostname){return ['localhost','127.0.0.1','[::1]'].includes(hostname);}
 function z1ServerRoot(value){
@@ -7862,7 +7907,9 @@ function z1RestoreSession(){
 }
 
 function z1UseAccount(profile){
+  if(z1Account?.id!==profile?.id)window.RecoilAdmin4?.close();
   z1Account=profile;
+  z4ReadNotices();
   if($('ascHub'))ascReload().catch(()=>{});
   missionSetAccount();
   z1StoreSession();
@@ -7896,12 +7943,15 @@ async function z1SignIn(event){
 }
 
 async function z1SignOut(){
+  const session=z1Token;
   try{await z1Fetch('/logout',{});}catch{}
+  if(session!==z1Token)return;
   z1ClearAccount();
   z1Say('Signed out.');
 }
 
 function z1ClearAccount(){
+  ++z1SocialRevision;++z4NoticeRevision;$('z4AccountNotices')?.replaceChildren();window.RecoilAdmin4?.close();
   if($('ascHub')){ascClient.profile=null;ascClient.actor=null;}
   z1Token='';z1Account=null;z1StoreSession();missionSetAccount();
   if(z1Socket){const socket=z1Socket;z1Socket=null;socket.close();}
@@ -7953,12 +8003,14 @@ function z1ConnectLive(){
 
 async function z1RefreshFriends(){
   if(!z1Account)return;
-  const revision=++z1SocialRevision;
+  const revision=++z1SocialRevision,session=z1Token;
+  const current=()=>revision===z1SocialRevision&&session===z1Token&&!!z1Account;
   try{
     const data=await z1Fetch('/friends');
-    if(revision!==z1SocialRevision||!z1Account)return;
+    if(!current())return;
     z1FriendsList=data.friends;z1RenderFriends();
   }catch(error){
+    if(!current())return;
     if(error.status===401)z1ClearAccount();
     else if(z1FriendsOpen())z1Say(error.message,true);
   }
@@ -7974,13 +8026,14 @@ async function z1FriendAction(name,action){
 
 async function z1JoinPreference(){
   if(!z1Account)return;
-  const toggle=$('z1AllowJoin');
+  const toggle=$('z1AllowJoin'),session=z1Token;
   try{
     const data=await z1Fetch('/settings',{joins:toggle.checked});
+    if(session!==z1Token||data.user.id!==z1Account?.id)return;
     z1Account=data.user;
     if(!z1Account.joins&&z1IsPartyHost())z1DropRoom();
     z1RenderFriends();z1Say(z1Account.joins?'Friends can join your hosted matches.':'Friend joins are off.');
-  }catch(error){toggle.checked=z1Account.joins;z1Say(error.message,true);}
+  }catch(error){if(session===z1Token&&z1Account){toggle.checked=z1Account.joins;z1Say(error.message,true);}}
 }
 
 function z1ChatRows(el,list){
@@ -8032,6 +8085,7 @@ function z1RenderFriends(){
   $('z1AuthForm').classList.toggle('hide',logged);
   $('z1SocialControls').classList.toggle('hide',!logged);
   $('z1AdminBox').classList.toggle('hide',!z1Account?.admin);
+  z4AdminAccess();
   if(!logged)return;
   $('z1SignedIn').textContent=z1Account.name+(z1SocketReady?' · Online':' · Connecting');
   $('z1AllowJoin').checked=!!z1Account.joins;
@@ -8079,6 +8133,7 @@ function z1LiveMessage(event){
     if(z1Room.role==='pending')z1Room.role='off';
     z1RenderFriends();z1Say(event.message,true);return;
   }
+  if(event.type==='rx-admin:notice'||event.type==='rx-admin:coins'){z4ReadNotices();return;}
   if(event.type==='account-closed'){z1ClearAccount();z1Say(event.message,true);return;}
   if(event.type==='refresh'){z1RefreshFriends();return;}
   if(event.type==='dm'){
@@ -10060,8 +10115,8 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='Z.3 · PROJECT ASCENSION';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · Z.3';
+  $('mainMenu').querySelector('.brandchip').textContent='Z.4 · PROJECT ASCENSION';
+  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · Z.4';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');
@@ -10079,7 +10134,7 @@ function z2MountUI(){
   };
   $('z2SignIn').onclick=()=>showScreen('z1FriendsMenu');
   $('z2LocalAccess').onclick=z2OpenOffline;
-  $('z2AdminAccess').onclick=()=>{showScreen('z2Admin');z2AdminRead();};
+  $('z2AdminAccess').onclick=z4OpenAdmin;
   $('z2Create').onsubmit=event=>{
     event.preventDefault();
     const mode=$('z2GameMode').value,teams=Number($('z2Tournament').value),size=Number($('z2TeamSize').value);
@@ -11907,6 +11962,11 @@ function ascMount(){
   window.addEventListener('keydown',()=>{ascClient.lastDevice='keyboard';});
   const home=$('z1Home');
   const hubLink=crownButton('Project Ascension',ascOpen,'secondary','ascHubLink');home.append(hubLink);
+  home.append(crownButton('Admin console',z4OpenAdmin,'secondary hide','rx-admin-launch'));
+  const friends=$('z1SocialControls');
+  friends.append(crownButton('Admin console',z4OpenAdmin,'secondary hide','z4FriendsAdmin'));
+  const notices=document.createElement('div');notices.id='z4AccountNotices';notices.setAttribute('aria-live','polite');friends.append(notices);
+  if(z1Account)z4ReadNotices();
   const hub=z1MakeScreen('ascHub','Project Ascension','','mainMenu');
   const nav=ascEl('div','',hub);nav.className='asc-links';
   for(const [label,open] of [['Play',()=>showScreen('z1PlayMenu')],['Multiplayer',z2Open],['Ranked',()=>{z2Open();$('z2RankedTab').click();}],['Missions',missionOpen],
@@ -11927,6 +11987,7 @@ function ascMount(){
   ascFieldInput(tools,'Local war start','ascWarTime','datetime-local');ascButton(tools,'Offer clan war',ascCommunityAction('war'));
   ascFieldInput(tools,'War ID','ascWarId','number');ascButton(tools,'Accept war',ascCommunityAction('accept-war'));
   const admin=ascDetails(hub,'Administrator operations');admin.id='ascOps';
+  admin.append(crownButton('Open admin console',z4OpenAdmin,'secondary hide','z4AscAdmin'));z4AdminAccess();
   const health=ascEl('pre','',admin);ascButton(admin,'Refresh server health',()=>ascRequest(async()=>{
     const d=await z1Fetch('/asc/health');
     health.textContent=[d.players+' online · '+(d.rooms+d.legacyRooms)+' rooms · '+d.playing+' matches',d.uptimeSeconds+' s uptime · '+d.memoryMiB+' MiB',
@@ -12088,16 +12149,20 @@ function ascPadMenus(now){
   let pad;try{pad=Array.from(navigator.getGamepads()).find(p=>p?.connected);}catch{return;}ascClient.padConnected=!!pad;if(!pad){ascClient.pad=null;ascClient.padMask=0;return;}
   ascClient.pad=pad;if(pad.axes.some(v=>Math.abs(v)>.2)||pad.buttons.some(b=>b.pressed))ascClient.lastDevice='controller';const buttons=pad.buttons,pressed=n=>!!buttons[n]?.pressed,mask=[0,1,2,3,4,5,12,13,14,15].reduce((v,n)=>v|(pressed(n)?1<<n:0),0),
     previous=ascClient.padMask||0,edge=n=>!!(mask&(1<<n))&&!(previous&(1<<n));ascClient.padMask=mask;
-  if(phase==='playing'&&!paused){
+  const staff=$('rx4-console'),staffOpen=staff?.hasAttribute('open');
+  if(!staffOpen&&phase==='playing'&&!paused){
     if(z2IsMatch()&&z2Live.match.ascRules){if(edge(4))ascSendTool('parry');if(edge(5))ascSendTool('melee');if(edge(12))ascSendTool('shield');if(edge(13))ascSendTool('emp');if(edge(14))ascSendTool('dual');if(edge(15))switchGunWithAnimation((pl.weapon+1)%4);if(edge(2))z2Live.reload=true;}
     return;
   }
-  const active=[...document.querySelectorAll('.z1-new-screen')].find(n=>!n.classList.contains('hide'))||['mainMenu','deviceMenu','v8GunMenu'].map($).find(n=>n&&!n.classList.contains('hide'));
+  const active=staffOpen?staff:[...document.querySelectorAll('.z1-new-screen')].find(n=>!n.classList.contains('hide'))||['mainMenu','deviceMenu','v8GunMenu'].map($).find(n=>n&&!n.classList.contains('hide'));
   if(!active)return;
-  const items=[...active.querySelectorAll('button,summary,select,input')].filter(e=>!e.disabled&&e.getClientRects?.().length>0);
+  if(staffOpen&&edge(1)){staff.dispatchEvent(new Event('cancel',{cancelable:true}));return;}
+  const confirmBox=staffOpen?staff.querySelector('.rx-confirm'):null;
+  const scope=confirmBox&&!confirmBox.hidden?confirmBox:active;
+  const items=[...scope.querySelectorAll('button,summary,select,input,textarea')].filter(e=>!e.disabled&&e.getClientRects?.().length>0);
   if(!items.length)return;const i=items.indexOf(document.activeElement);
   if(i>=0&&items[i].tagName==='SELECT'&&(edge(14)||edge(15))){const el=items[i];el.selectedIndex=(el.selectedIndex+(edge(15)?1:-1)+el.options.length)%el.options.length;el.dispatchEvent(new Event('change'));return;}
-  if(edge(12)||edge(14))items[(i-1+items.length)%items.length].focus();
+  if(edge(12)||edge(14))items[i<0?items.length-1:(i-1+items.length)%items.length].focus();
   if(edge(13)||edge(15))items[(i+1)%items.length].focus();
   if(edge(0)&&i>=0)items[i].click();if(edge(1))active.querySelector('.z1-back')?.click();
 }

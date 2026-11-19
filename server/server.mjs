@@ -11,6 +11,7 @@ import { migrateMissions, missionStore } from './mission-store.mjs';
 import {verifiedBackup,backupSchedule} from './ascension-backup.mjs';
 import {migrateAscension,ascensionStore} from './ascension-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
+import { createAdminPatch, migrateAdministration } from './admin-patch.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -109,7 +110,7 @@ export function createRecoilServer(options = {}) {
       const hasUsers=!!table.get('users');
       if(!hasUsers&&prior.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").get())
         throw Error('Existing database has no RECOIL X account table. Verify the private database path.');
-      due=hasUsers&&['asc_version','rx3_maps','rx_mission_save'].some(name=>!table.get(name));
+      due=hasUsers&&['asc_version','rx3_maps','rx_mission_save','rx4_admin_events'].some(name=>!table.get(name));
     }finally{prior.close();}
     if(due)verifiedBackup(filename,{...backupOpts,reason:'migration'});
   }
@@ -119,6 +120,7 @@ export function createRecoilServer(options = {}) {
     // One consistent backup covers every migration in this startup.
     migrateMissions(db,filename,false);
     migrateAscension(db);
+    migrateAdministration(db);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -132,6 +134,8 @@ export function createRecoilServer(options = {}) {
   const health={since:sqlTime(),disconnects:0,errors:0,rtt:[],pings:new Map()};
   const overdriveData = overdriveStore(db,fail,ascData);
   const missions = missionStore(db,fail);
+  const adminPatch = createAdminPatch(db,fail,()=>Array.from(clients.keys()));
+  let lastManualBackup=-Infinity;
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,ascStore:ascData,fail,allowed,leaveLegacy:leave,cleanChat,onError:()=>{health.errors++;console.error('RECOIL X match simulation failed.');}
   });
@@ -309,6 +313,8 @@ export function createRecoilServer(options = {}) {
 
   function moderate(user, body) {
     const now=sqlTime();
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    if(!allowed('staff-mod:'+user.id,40,60000))throw fail(429,'Wait before another moderation action.');
     const result=overdriveData.moderation(user,body,now);
     if (['kick','tempban','ban'].includes(result.action)) {
       const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
@@ -316,6 +322,51 @@ export function createRecoilServer(options = {}) {
       cutConnection(clients.get(result.id),message);
     }
     return result;
+  }
+
+  function administration(req,path,user,body) {
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    const now=sqlTime(),params=new URL(req.url,'http://localhost').searchParams;
+    if(req.method==='GET'){
+      if(!allowed('staff-read:'+user.id,150,60000))throw fail(429,'Wait before refreshing again.');
+      switch(path){
+        case '/admin/overview': return adminPatch.overview(user,now);
+        case '/admin/players': return adminPatch.players(user,params,now);
+        case '/admin/player': return adminPatch.player(user,params.get('name'),now);
+        case '/admin/ledger': return adminPatch.ledger(user,params.get('name'));
+        case '/admin/reports': return adminPatch.reportList(user,params);
+        case '/admin/case': return adminPatch.caseHistory(user,Number(params.get('id')));
+        case '/admin/audit': return adminPatch.audit(user,params);
+      }
+    }
+    if(req.method==='POST'){
+      if(!allowed('staff-write:'+user.id,60,60000))throw fail(429,'Wait before another staff action.');
+      switch(path){
+        case '/admin/coins':
+        case '/admin/reverse': {
+          if(!allowed('admin-coins:'+user.id,30,60000))throw fail(429,'Too many wallet changes.');
+          const grant=path==='/admin/coins'?adminPatch.grantCoins(user,body,now):adminPatch.reverseGrant(user,body,now);
+          if(!grant.repeated)send(clients.get(grant.id),{type:'rx-admin:coins',coins:grant.coins,granted:grant.amount});
+          return grant;
+        }
+        case '/admin/note': {
+          const result=adminPatch.staffNote(user,body,now);
+          if(result.kind==='warn')send(clients.get(result.id),{type:'rx-admin:notice'});
+          return result;
+        }
+        case '/admin/case': return adminPatch.reportAction(user,body,now);
+        case '/admin/backup': {
+          const reason=adminPatch.reasonFor(body.reason);
+          if(filename===':memory:')throw fail(409,'A file-backed game database is required.');
+          if(backup.status.state==='running')throw fail(409,'A private backup is already running.');
+          if(now-lastManualBackup<3600000)throw fail(429,'A manual backup was requested within the last hour.');
+          adminPatch.backupRequested(user,reason,now);
+          lastManualBackup=now;backup.start();
+          return {state:backup.status.state};
+        }
+      }
+    }
+    throw fail(404,'Unknown staff operation.');
   }
 
   async function endpoint(req, path) {
@@ -333,6 +384,11 @@ export function createRecoilServer(options = {}) {
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
+    if(path.startsWith('/admin/'))return administration(req,path,user,body);
+    if(path==='/account/notices'){
+      if(req.method==='GET')return adminPatch.notices(user);
+      if(req.method==='POST')return adminPatch.acknowledge(user,body.id);
+    }
     if(path.startsWith('/asc/')){
       if(req.method==='GET'&&path==='/asc/profile')return ascData.profile(user.id,sqlTime());
       if(req.method==='GET'&&path==='/asc/health'){
@@ -432,6 +488,16 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if(['/admin-panel.js','/server/admin-panel.js','/server/admin-panel.css'].includes(path)){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      const css=path.endsWith('.css');
+      try{
+        const asset=readFileSync(new URL(css?'./admin-panel.css':'./admin-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':css?'text/css; charset=utf-8':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:asset);
+      }catch{res.writeHead(404).end();}
+      return;
+    }
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
@@ -448,7 +514,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.3',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.4',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status){health.errors++;console.error('RECOIL X request failed.');}
@@ -593,6 +659,6 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
     const server=createRecoilServer({database,origins,backups:{directory:process.env.RX_PRIVATE_BACKUPS||undefined,
       keep:Number(process.env.RX_BACKUP_KEEP||7),hours:Number(process.env.RX_BACKUP_HOURS||24)}});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.4 listening on port '+port));
   }
 }
