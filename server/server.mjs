@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
+import { createAdminPatch } from './admin-patch.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -109,6 +110,7 @@ export function createRecoilServer(options = {}) {
   let lastExpiry = 0;
   const overdriveData = overdriveStore(db,fail);
   const missions = missionStore(db,fail);
+  const adminPatch = createAdminPatch(db,fail,()=>clients.size);
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
   });
@@ -304,6 +306,9 @@ export function createRecoilServer(options = {}) {
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
+      if (path === '/admin/overview') return adminPatch.overview(user);
+      if (path === '/admin/ledger') return adminPatch.ledger(user);
+      if (path === '/admin/player') return adminPatch.player(user,new URL(req.url,'http://localhost').searchParams.get('name'));
       if (path === '/z3/map') {
         if(!allowed('shared-map-read:'+user.id,30,60000))throw fail(429,'Wait before opening more maps.');
         return overdriveData.loadMap(new URL(req.url,'http://localhost').searchParams.get('code'));
@@ -338,6 +343,12 @@ export function createRecoilServer(options = {}) {
         return moderate(user,{name:body.name,action,reason:'Updated from the Friends moderation panel'});
       }
       if (path === '/z2/admin/action') return moderate(user,body);
+      if (path === '/admin/coins') {
+        if(!allowed('admin-coins:'+user.id,30,60000))throw fail(429,'Too many coin grants.');
+        const grant=adminPatch.grantCoins(user,body,sqlTime());
+        send(clients.get(grant.id),{type:'rx-admin:coins',coins:grant.coins,granted:grant.amount});
+        return grant;
+      }
       if (path === '/z2/report') return overdriveData.report(user,body,sqlTime());
       if (path === '/z3/map') {
         if(!allowed('shared-map-write:'+user.id,6,60000))throw fail(429,'Wait before sharing more maps.');
@@ -376,10 +387,17 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if (path === '/admin-panel.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./admin-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath);
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
