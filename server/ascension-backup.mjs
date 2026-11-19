@@ -43,31 +43,58 @@ export function verifiedBackup(file,{directory,keep=7,reason='daily',now=Date.no
 }
 export function backupSchedule(file,options={}){
   const status={state:'idle',last:null,failedAt:null};
-  let worker=null,stopped=false;
+  let worker=null,timer=null,stopped=false;
   const hours=options.hours??24;
   if(!Number.isFinite(hours)||hours<1||hours>168)throw Error('Backup interval must be 1–168 hours.');
+  const interval=hours*3600000;
+  const retryDelay=3600000;
+  function schedule(delay){
+    if(stopped)return;
+    timer=setTimeout(start,Math.max(1000,delay));
+    timer.unref();
+  }
+  function reportFailure(reason){
+    status.state='failed';
+    status.failedAt=Date.now();
+    console.error('RECOIL X private database backup failed:',reason);
+  }
+  function finish(result){
+    worker=null;
+    if(result?.ok){
+      status.state='ok';status.last=result.time;status.failedAt=null;
+      schedule(interval);
+    }else{
+      reportFailure(result?.reason||'Worker exited without a verified snapshot.');
+      schedule(retryDelay);
+    }
+  }
   function start(){
     if(stopped||worker||file===':memory:')return;
+    clearTimeout(timer);
     status.state='running';
-    worker=new Worker(new URL(import.meta.url),{workerData:{file,options}});
-    worker.once('message',m=>{
-      if(m.ok){status.state='ok';status.last=m.time;status.failedAt=null;}
-      else{status.state='failed';status.failedAt=Date.now();console.error('RECOIL X private database backup failed:',m.reason);}
-    });
-    worker.once('error',()=>{status.state='failed';status.failedAt=Date.now();console.error('RECOIL X database backup worker failed.');});
-    worker.once('exit',()=>{worker=null;});
+    try{worker=new Worker(new URL(import.meta.url),{workerData:{file,options}});}
+    catch(error){finish({reason:error.code||error.name});return;}
+    let result;
+    worker.once('message',message=>{result=message;});
+    worker.once('error',error=>{result={reason:error.code||error.name};});
+    worker.once('exit',code=>finish(code===0?result:{reason:result?.reason||'Worker exit code '+code}));
   }
-  const timer=file!==':memory:'?setInterval(start,hours*3600000):null;timer?.unref();
   // A restart must not indefinitely postpone backups on a frequently recycled host.
-  let first=null;
   if(file!==':memory:'){
     const key=createHash('sha256').update(realpathSync(file)).digest('hex').slice(0,16);
     const directory=options.directory||join(homedir(),'.local','state','recoil-x','backups',key);
-    const daily=existsSync(directory)?readdirSync(directory).filter(n=>n.startsWith('rx-'+key+'-')&&n.endsWith('-daily.sqlite')).sort().at(-1):null;
-    const last=daily?statSync(join(directory,daily)).mtimeMs:0;status.last=last||null;
-    first=setTimeout(start,Math.max(1000,last+hours*3600000-Date.now()));first.unref();
+    try{
+      const daily=existsSync(directory)?readdirSync(directory).filter(n=>n.startsWith('rx-'+key+'-')&&n.endsWith('-daily.sqlite')).sort().at(-1):null;
+      const last=daily?statSync(join(directory,daily)).mtimeMs:0;
+      status.last=last||null;
+      schedule(last+interval-Date.now());
+    }catch(error){
+      // The pre-migration backup gate runs separately before the game opens its database.
+      reportFailure(error.code||error.name);
+      schedule(retryDelay);
+    }
   }
-  return {status,start,close(){stopped=true;clearInterval(timer);clearTimeout(first);}};
+  return {status,start,close(){stopped=true;clearTimeout(timer);}};
 }
 if(!isMainThread&&workerData?.file){
   try{const r=verifiedBackup(workerData.file,workerData.options);parentPort.postMessage({ok:true,time:r.time});}

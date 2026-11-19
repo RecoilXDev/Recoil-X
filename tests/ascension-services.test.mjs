@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {once} from 'node:events';
 import {randomUUID} from 'node:crypto';
-import {mkdtempSync,readdirSync,rmSync,copyFileSync,statSync} from 'node:fs';
+import {mkdtempSync,readdirSync,rmSync,copyFileSync,statSync,utimesSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as wait} from 'node:timers/promises';
@@ -134,6 +134,78 @@ test('A45 scheduled private SQLite backups verify integrity, retain copies and r
     assert.equal(timer.status.state,'ok');assert.equal(readdirSync(directory).length,3);t.diagnostic('Verified WAL restore, private file and directory modes, daily retention and separate backup worker.');
   }finally{timer?.close();db.close();rmSync(folder,{force:true,recursive:true});}
 });
+const realTimeout=globalThis.setTimeout;
+async function waitForVerifiedBackup(schedule){
+  const deadline=performance.now()+10000;
+  while(schedule.status.state==='running'&&performance.now()<deadline)
+    await new Promise(resolve=>realTimeout(resolve,10));
+  assert.equal(schedule.status.state,'ok');
+}
+test('A45 a restarted backup schedule keeps one hourly cadence after its first due snapshot',async t=>{
+  const folder=mkdtempSync(join(tmpdir(),'recoil-backup-cadence-'));
+  const file=join(folder,'game.sqlite'),directory=join(folder,'private');
+  const db=new DatabaseSync(file);
+  const hour=3600000,boot=Math.floor(Date.now()/1000)*1000;
+  let schedule;
+  try{
+    db.exec('CREATE TABLE users(id INTEGER PRIMARY KEY)');
+    const prior=verifiedBackup(file,{directory});
+    const created=new Date(boot-hour/2);
+    utimesSync(prior.path,created,created);
+    t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:boot});
+    schedule=backupSchedule(file,{directory,hours:1});
+    t.mock.timers.tick(hour/2-1);
+    assert.equal(schedule.status.state,'idle');
+    t.mock.timers.tick(1);
+    assert.equal(schedule.status.state,'running');
+    await waitForVerifiedBackup(schedule);
+    t.mock.timers.tick(hour/2);
+    assert.equal(schedule.status.state,'ok','restart time must not trigger an extra snapshot');
+    t.mock.timers.tick(hour/2-1);
+    assert.equal(schedule.status.state,'ok');
+    t.mock.timers.tick(1);
+    assert.equal(schedule.status.state,'running','next snapshot is due one interval after the previous one');
+    await waitForVerifiedBackup(schedule);
+    assert.equal(readdirSync(directory).filter(name=>name.endsWith('-daily.sqlite')).length,3);
+  }finally{
+    schedule?.close();
+    t.mock.timers.reset();
+    db.close();
+    rmSync(folder,{recursive:true,force:true});
+  }
+});
+test('A45 a failed private backup retries automatically after storage becomes available',async t=>{
+  const folder=mkdtempSync(join(tmpdir(),'recoil-backup-retry-'));
+  const file=join(folder,'game.sqlite'),directory=join(folder,'private');
+  const db=new DatabaseSync(file);
+  let schedule;
+  try{
+    db.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES (19)');
+    writeFileSync(directory,'temporary storage fault');
+    const errors=t.mock.method(console,'error',()=>{});
+    t.mock.timers.enable({apis:['setTimeout'],now:Date.now()});
+    schedule=backupSchedule(file,{directory,hours:24});
+    assert.equal(schedule.status.state,'failed');
+    assert.ok(schedule.status.failedAt);
+    assert.equal(errors.mock.callCount(),1);
+    rmSync(directory);
+    t.mock.timers.tick(3600000-1);
+    assert.equal(schedule.status.state,'failed');
+    t.mock.timers.tick(1);
+    assert.equal(schedule.status.state,'running');
+    await waitForVerifiedBackup(schedule);
+    assert.equal(schedule.status.failedAt,null);
+    const saved=readdirSync(directory).filter(name=>name.endsWith('-daily.sqlite'));
+    assert.equal(saved.length,1);
+    const copy=new DatabaseSync(join(directory,saved[0]),{readOnly:true});
+    try{assert.equal(copy.prepare('SELECT id FROM users').get().id,19);}finally{copy.close();}
+  }finally{
+    schedule?.close();
+    t.mock.timers.reset();
+    db.close();
+    rmSync(folder,{recursive:true,force:true});
+  }
+});
 test('A47 strict input groups admit matching cross-input players and keep mixed groups available',()=>{
   const entries=[['touch','touch'],['any','controller'],['any','touch'],['any','unknown']].map(([pref,device],i)=>({pref,device,id:i+1,since:i}));
   const groups=compatibleGroups(entries);assert.deepEqual(groups[0].map(x=>x.id),[1,3]);assert.deepEqual(groups.at(-1).map(x=>x.id),[2,3,4]);
@@ -146,6 +218,39 @@ async function accountServer(t){
     headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:b?JSON.stringify(b):undefined});return {s:res.status,v:await res.json()};};
   return {file,api};
 }
+test('A45 unavailable private storage preserves signed-in play and blocks a pending schema migration',async t=>{
+  const {file,api}=await accountServer(t);
+  const {v:owner}=await api('/register',{name:'RestartPilot',password:'temporary-test-password'});
+  assert.ok(owner.token);
+  const root=mkdtempSync(join(tmpdir(),'recoil-backup-startup-'));
+  const database=join(root,'copy.sqlite'),directory=join(root,'unavailable');
+  let server;
+  try{
+    const source=verifiedBackup(file,{directory:join(root,'verified')});
+    copyFileSync(source.path,database);
+    writeFileSync(directory,'temporary storage fault');
+    const errors=t.mock.method(console,'error',()=>{});
+    server=createRecoilServer({database,backups:{directory}});
+    server.listen(0,'127.0.0.1');await once(server,'listening');
+    const response=await fetch('http://127.0.0.1:'+server.address().port+'/rx-api/me',{headers:{Authorization:'Bearer '+owner.token}});
+    assert.equal(response.status,200);
+    assert.equal((await response.json()).user.id,owner.user.id);
+    assert.equal(errors.mock.callCount(),1);
+    await new Promise(resolve=>server.close(resolve));server=null;
+
+    const pending=new DatabaseSync(database);
+    try{pending.exec('DROP TABLE asc_version');}finally{pending.close();}
+    assert.throws(()=>createRecoilServer({database,backups:{directory}}),{code:'EEXIST'});
+    const preserved=new DatabaseSync(database,{readOnly:true});
+    try{
+      assert.equal(preserved.prepare('SELECT id FROM users WHERE name=?').get('RestartPilot').id,owner.user.id);
+      assert.equal(preserved.prepare("SELECT name FROM sqlite_master WHERE name='asc_version'").get(),undefined);
+    }finally{preserved.close();}
+  }finally{
+    if(server)await new Promise(resolve=>server.close(resolve));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 test('A46 enrolled offline recovery requires the password, consumes the code and revokes old sessions',async t=>{
   const {api,file}=await accountServer(t),name='RecovUser',password='test-original-pass',next='test-replaced-pass';
   const {v:a}=await api('/register',{name,password});assert(a.token);

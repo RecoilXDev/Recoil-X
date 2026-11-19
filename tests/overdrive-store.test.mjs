@@ -40,7 +40,8 @@ test('additive migration preserves WAL-backed accounts, sessions, friends and ch
     assert.equal(chat.messages[0].body,'Saved Crown Trials chat');
     const directoryMode=process.platform==='win32'?null:statSync(join(directory,'private-backups')).mode&0o777;
     if(directoryMode!=null)assert.equal(directoryMode,0o700);
-    const files=readdirSync(join(directory,'private-backups'));
+    const migrationFiles=()=>readdirSync(join(directory,'private-backups')).filter(name=>name.endsWith('-migration.sqlite'));
+    const files=migrationFiles();
     assert.equal(files.length,1);
     const backup=join(directory,'private-backups',files[0]);
     if(directoryMode!=null)assert.equal(statSync(backup).mode&0o777,0o600);
@@ -53,7 +54,7 @@ test('additive migration preserves WAL-backed accounts, sessions, friends and ch
     copy.close();
     assert.equal(legacy.prepare('SELECT version FROM rx2_schema').get().version,1);
     migrateOverdrive(legacy,database,true);
-    assert.deepEqual(readdirSync(join(directory,'private-backups')),files);
+    assert.deepEqual(migrationFiles(),files);
     assert.equal(legacy.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
   }finally{
     if(server)await new Promise(resolve=>server.close(resolve));

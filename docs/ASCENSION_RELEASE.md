@@ -1,11 +1,12 @@
 # Project Ascension release verification and rollback
 
-**Release decision:** development candidate for owner review. Production approval is pending. The four partially verified acceptance items are automatic backups on the host, physical input devices, accessibility on target devices, and low-RAM performance on actual hardware. The [50-feature checklist](../RECOIL_X_Z3_CHANGELOG.md) identifies each implementation and independent check.
+**Project Ascension is a development candidate awaiting owner review.** The acceptance table records 46 verified features and four with outstanding checks. Those four concern backup recovery on Alwaysdata, physical controller input, accessibility on target devices, and low-memory phone performance. [50-feature checklist](../RECOIL_X_Z3_CHANGELOG.md)
 
 ## Baseline, architecture and integration
 
 - The checked starting commit was [ea0d2a9](https://github.com/RecoilXDev/Recoil-X/commit/ea0d2a9ed821614a5b047d899a064d386565aab2), the published Z.3 **Operation Overdrive** practice HUD fix. Its complete tree was `337e70abf80307c4de50309d516bf63d4abf39fe`. This is the immediate code rollback target for Ascension. [The Z.2 backup branch](https://github.com/RecoilXDev/Recoil-X/tree/z2-safe-before-ascension) retains `eed923b9a9a7f7262874085bccecad746dce0786`, which predates the subsequent 20-feature expansion.
 - [Draft PR #9](https://github.com/RecoilXDev/Recoil-X/pull/9) collects the entire release on `z3-project-ascension`. [Compare it with the published baseline](https://github.com/RecoilXDev/Recoil-X/compare/ea0d2a9ed821614a5b047d899a064d386565aab2...z3-project-ascension). A development push does not match the Alwaysdata workflow's `main` push trigger.
+- On 19 November 2026, the live homepage opened **Operation Overdrive**. Its local challenge menu included Clutch Lab and Parkour Courses. The successful Alwaysdata deployment was at the published baseline. [Live game](https://recoil-x.alwaysdata.net/) · [Deployment run](https://github.com/RecoilXDev/Recoil-X/actions/runs/44341694913)
 - The existing `index.html` owns menus, WebGL, the fallback renderer, touch/gamepad input, local collections and practice activities. Ascension uses its existing stage, mesh, collision, user session, aim, weapon, score and navigation systems. The server still serves the same page, HTTP account API and WebSocket endpoint. GitHub Pages still points the client at the existing multiplayer origin.
 - The Node server runs the room simulation and wraps result persistence in the existing SQLite transaction. Only the first insertion of a match ID settles rewards. The draft, private rules, input preference and room browser operate above the same simulation as the legacy competitive modes. Clans and scheduled wars use account IDs already authenticated by the Friends service.
 - Server controls, damage, ammo, timers and objectives determine the outcome of competitive Ascension games. Mastery and economy credits use eligible opponents and distinct match IDs. One account operating multiple genuinely separate accounts is a remaining fair-play issue for human moderation. Input-family selection is a client-declared preference. The server cannot authenticate physical hardware.
@@ -41,7 +42,7 @@ Open `http://127.0.0.1:8787/`. Friends registration and sign-in here use the new
 
 ## Automated verification
 
-**110 tests passed, 0 failed, 0 skipped in 97.01 seconds.** [Full test output](ASCENSION_TEST_RESULTS.txt). All 50 A-numbered feature cases ran on the development checkout, alongside the previous regression coverage. The test runner used two workers. One inline game script and 27 JavaScript server, worker or test files passed syntax checks. The manifest, declared server dependencies, mission store and GitHub Actions workflow matched the baseline byte for byte.
+**114 tests passed, 0 failed, 0 skipped in 202.97 seconds.** [Full test output](ASCENSION_TEST_RESULTS.txt). All 50 A-numbered feature cases ran on the development checkout, alongside the previous regression coverage. The test runner used two workers. One inline game script and 27 JavaScript server, worker or test files passed syntax checks. The manifest, declared server dependencies, mission store and GitHub Actions workflow matched the baseline byte for byte.
 
 | Area | Test evidence |
 |---|---|
@@ -53,9 +54,15 @@ Open `http://127.0.0.1:8787/`. Friends registration and sign-in here use the new
 | Combat, bosses and modes | Exercised legacy shooting, respawning, dual Crown bosses, Crown raid, relics, Chess, tournaments, the 20-feature expansion and Ascension's ten match modes. Some scenario tests set an initial position, near-complete timer, or low boss health and then run the actual simulation. This verifies transitions separately from human match balance. |
 | Economy and calendar | Claimed an earned Battle Pass tier, opened a weapon case, and recovered coins and ownership after a simulated browser reload. Checked opening and closing boundaries for the legacy seasonal editions through 2031. Individual future story missions, pets, craft recipes, and every skin permutation still need sampling on target devices. |
 | Browser and controls | In Chrome, selected desktop controls, opened the grouped hub, rotated and privately saved a map, and entered its playable arena. Selected touch controls, entered moving-target training, saw Fire and Jump, and used Leave practice to return. Keyboard/touch client paths and gamepad axes, triggers, jump and parry have automated cases. |
+| All 15 multiplayer launches | A desktop host and a touch guest used the actual game menu handlers and loopback WebSockets. Both joined by code, entered the same match, rendered the selected arena and objective HUD, and left through the lobby controls. The cases rotated through all four Ascension arenas. The raid cases waited for a living boss or enemy. A simulated Friday enabled the weekend event. |
 | Static compatibility | Parsed the complete inline game script, checked all server and test files, loaded server modules through the tests, checked the installed WebSocket dependency, and compared the deployment workflow and dependency manifest with the baseline. |
+| Deployment layout | Copied the five public files and tracked server files into the directory layout in the Alwaysdata workflow. Started `node server.mjs` on loopback using the declared WebSocket dependency, its four dependencies and a fresh private SQLite file. The homepage and all five asset responses matched the branch byte for byte. An ordinary test player registered and opened the Ascension mastery and challenge board. The existing health endpoint reported 500 mission levels. |
 
 From the project root, run a single numbered check with, for example, `node --test --test-name-pattern=A45 tests/ascension-services.test.mjs`. Run `node --test tests/ascension-wire.test.mjs` to repeat the socket group tests. Run `node --test tests/ascension-migration.test.mjs` in the full Git checkout to repeat the database and code-rollback rehearsal.
+
+Run `node --test --test-name-pattern="launch all 15" tests/overdrive-client.test.cjs` to repeat the host and join checks through the game menus. The test prints each mode and arena it exercised.
+
+A second check attempted to open two independent Chromium contexts for an interactive Payload Escort match. This environment denied the browser process its startup socket before it loaded the game. That two-browser check is **NOT TESTED**. The 15-mode run above used the game’s UI handlers with two simulated browser environments, real HTTP sign-in and real local WebSockets.
 
 ## Performance measurements
 
@@ -63,10 +70,10 @@ The table measures aggregate JSON application snapshot payloads sent to all clie
 
 | Players | Window (ms) | Aggregate state bytes | State frames | Delta frames |
 |---:|---:|---:|---:|---:|
-| 2 | 1,211 | 10,668 | 24 | 9 |
-| 4 | 1,216 | 23,833 | 48 | 19 |
-| 6 | 1,216 | 37,583 | 72 | 29 |
-| 10 | 1,221 | 72,897 | 120 | 49 |
+| 2 | 1,218 | 10,560 | 24 | 9 |
+| 4 | 1,221 | 23,849 | 48 | 19 |
+| 6 | 1,216 | 37,619 | 72 | 29 |
+| 10 | 1,216 | 75,159 | 120 | 49 |
 
 - In the deterministic ten-row encoder fixture, a full JSON frame used 300 bytes. A delta carrying one changed row and one removed row used 77 bytes. The encoder chooses a full frame when it is smaller and refreshes its keyframe about once per second.
 - The existing latency suite exercised 2- and 10-player clients at simulated 130 ms and 276 ms round trips. It also checked a congested transport, reliable chat and resumption with a fresh view. These are injected conditions on the test machine. They do not measure the path between a player's device in Oman and Alwaysdata.
@@ -80,6 +87,8 @@ On first startup against a recognized existing game schema, the server makes a p
 The default private backup directory is `~/.local/state/recoil-x/backups/<database-fingerprint>/`. A file-backed database gets a scheduled verified copy about every 24 hours with seven scheduled copies retained. Migration snapshots are separate and retained. Optional existing-host overrides are `RX_PRIVATE_BACKUPS`, `RX_BACKUP_HOURS` (1–168) and `RX_BACKUP_KEEP` (1–30). The deployment uses the defaults unless the owner already configured an override. The worker requires private writable storage with room for the retained snapshots and a temporary full copy. The dashboard reports last success or failure, and the server log records worker failures.
 
 Each snapshot gets a new name. SQLite writes a consistent standalone copy using `VACUUM INTO`. The game opens the copy read-only, checks `PRAGMA integrity_check`, checks the account table, then publishes it to private storage. On Unix, private directories use mode 0700 and completed database files use 0600. The automated rehearsal restored a WAL-backed snapshot to another filename and checked that the original database still held its newer value. [SQLite documentation](https://www.sqlite.org/lang_vacuum.html#vacuuminto)
+
+The restart rehearsal found that the previous scheduler could take an early second snapshot. The corrected scheduler starts one timer and schedules the next copy after the worker finishes. A separate rehearsal made the private backup folder unavailable. An already-migrated server continued serving a saved login and reported the backup failure. The worker retried after one simulated hour and wrote a verified copy when storage returned. An upgrade that still required a migration stopped before any schema change when the backup could not be written.
 
 Recovery codes are opt-in. **Friends → Account recovery** requires the current password to issue or replace a code. Save it privately. The server stores its digest and returns the code only on issuance. A successful reset consumes it and revokes active sessions. Accounts without a previously issued code still have their original sign-in path. This release has no email delivery dependency. [OWASP recovery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
 
