@@ -81,7 +81,7 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
     return transaction(()=>{
       settleExpired();
       const now=clock(),id=user.id;
-      return {points:balance(id),catalog,recipes,inventory:inventory.all(id),equipment:q('SELECT slot,item FROM rx5_equipment WHERE account=?').all(id),
+      return {userId:id,points:balance(id),catalog,recipes,inventory:inventory.all(id),equipment:q('SELECT slot,item FROM rx5_equipment WHERE account=?').all(id),
         listings:q("SELECT a.id,u.name seller,a.item,a.quantity,a.price,a.expires FROM rx5_auctions a JOIN users u ON u.id=a.seller WHERE a.status='open' AND a.expires>? ORDER BY a.id DESC LIMIT 50").all(now),
         myListings:q("SELECT id,item,quantity,price,status FROM rx5_auctions WHERE seller=? ORDER BY id DESC LIMIT 30").all(id),
         trades:q("SELECT t.id,us.name sender,ur.name recipient,t.give_item,t.give_qty,t.want_item,t.want_qty,t.status,t.expires,t.sender sender_id,t.recipient recipient_id FROM rx5_trades t JOIN users us ON us.id=t.sender JOIN users ur ON ur.id=t.recipient WHERE t.sender=? OR t.recipient=? ORDER BY t.id DESC LIMIT 40").all(id,id),
