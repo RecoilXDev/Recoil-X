@@ -1,0 +1,28 @@
+name: Validate RECOIL X Z.5 development
+on:
+  push:
+    branches:
+      - z5-evolution-ascension
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing server dependencies (no deployment)
+        run: npm install --prefix server --ignore-scripts --no-audit --no-fund
+      - name: Check all server JavaScript syntax
+        run: |
+          for f in server/*.mjs server/*.js; do node --check "$f"; done
+      - name: Run new Z.5 foundation and economy tests
+        run: node --test tests/z5-core.test.mjs tests/z5-economy.test.mjs
+      - name: Run existing integration and regression suite
+        run: node --test tests/*.test.mjs tests/*.test.cjs
