@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {DatabaseSync} from 'node:sqlite';
+import {migrateZ5,createZ5Core} from '../server/z5-core.mjs';
+import {migrateZ5Economy,createZ5Economy} from '../server/z5-economy.mjs';
+import {migrateZ5Challenges,createZ5Challenges} from '../server/z5-challenges.mjs';
+function fixture(){
+ const db=new DatabaseSync(':memory:');
+ db.exec("PRAGMA foreign_keys=ON;CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT NOT NULL,handle TEXT NOT NULL UNIQUE,banned INTEGER NOT NULL DEFAULT 0,admin INTEGER NOT NULL DEFAULT 0)");
+ db.exec("INSERT INTO users VALUES(1,'Alpha','alpha',0,0),(2,'Beta','beta',0,0)");
+ migrateZ5(db,':memory:',false);migrateZ5Economy(db,':memory:',false);
+ assert.equal(migrateZ5Challenges(db,':memory:',false),true);
+ assert.equal(migrateZ5Challenges(db,':memory:',false),false);
+ let now=Date.parse('2026-11-20T16:00:00Z');
+ const clock=()=>now;
+ const core=createZ5Core(db,{clock}),eco=createZ5Economy(db,{clock}),challenge=createZ5Challenges(db,{clock});
+ const a={id:1},b={id:2};
+ const checkin=user=>{const claim=core.checkin(user);eco.onDailyCheckin(user,claim);challenge.onCheckin(user,claim);return claim;};
+ const settle=(name,winner=0,kills=2)=>{const result={id:name,winner,reason:'score',duration:12000,players:[{id:1,team:0,kills,deaths:0,inputs:10,forfeited:false},{id:2,team:1,kills:0,deaths:1,inputs:10,forfeited:false}]};eco.onMatchSettled(result,now);return challenge.onMatchSettled(result,now);};
+ return {db,core,eco,challenge,a,b,checkin,settle,advance:days=>now+=days*86400000};
+}
+test('challenge progress is server-generated, rewards are one-time, day rolls over in Oman',()=>{
+ const f=fixture();
+ assert.equal(f.challenge.board(f.a).daily.find(x=>x.kind==='checkin').progress,0);
+ f.checkin(f.a);
+ let current=f.challenge.board(f.a);
+ assert.equal(current.daily.find(x=>x.kind==='checkin').progress,1);
+ assert.equal(f.challenge.claimDaily(f.a,{kind:'checkin'}).reward,10);
+ assert.throws(()=>f.challenge.claimDaily(f.a,{kind:'checkin'}),{status:409});
+ assert.equal(f.challenge.onMatchSettled({id:'bad',winner:null}).count,0);
+ f.settle('m1');f.settle('m2');
+ current=f.challenge.board(f.a);
+ assert.equal(current.daily.find(x=>x.kind==='finish').progress,2);
+ assert.equal(f.challenge.claimDaily(f.a,{kind:'finish'}).reward,35);
+ assert.throws(()=>f.challenge.claimDaily(f.a,{kind:'finish'}),{status:409});
+ f.advance(1);
+ assert.equal(f.challenge.board(f.a).daily.find(x=>x.kind==='finish').progress,0);
+ f.db.close();
+});
+test('story progression cannot skip chapters, only verified match results count',()=>{
+ const f=fixture();
+ f.settle('s1');f.settle('s2');f.settle('s3');
+ assert.throws(()=>f.challenge.claimStory(f.a,{chapter:2}),{status:409});
+ assert.equal(f.challenge.claimStory(f.a,{chapter:1}).reward,90);
+ assert.equal(f.challenge.claimStory(f.a,{chapter:2}).reward,150);
+ assert.throws(()=>f.challenge.claimStory(f.a,{chapter:2}),{status:409});
+ assert.equal(f.challenge.board(f.a).story[0].claimed,true);
+ assert.throws(()=>f.challenge.claimStory(f.a,{chapter:3}),{status:409});
+ f.db.close();
+});
+test('prestige never touches old progression, requires server-ranked matches and costs 200 Z.5 points',()=>{
+ const f=fixture();
+ assert.throws(()=>f.challenge.prestige(f.a),{status:409});
+ for(let i=0;i<10;i++)f.settle('p'+i);
+ const before=f.challenge.board(f.a).points;
+ assert.equal(f.challenge.board(f.a).stats.matches,10);
+ assert.equal(f.challenge.prestige(f.a).level,1);
+ assert.equal(f.challenge.board(f.a).points,before-200);
+ assert.throws(()=>f.challenge.prestige(f.a),{status:409});
+ f.db.close();
+});
