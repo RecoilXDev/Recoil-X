@@ -10,6 +10,7 @@ import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 import { createAdminPatch } from './admin-patch.mjs';
+import { createZ5Core, migrateZ5 } from './z5-core.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -100,6 +101,7 @@ export function createRecoilServer(options = {}) {
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
     migrateMissions(db,filename,existing&&!upgraded);
+    migrateZ5(db,filename,existing);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -111,6 +113,7 @@ export function createRecoilServer(options = {}) {
   const overdriveData = overdriveStore(db,fail);
   const missions = missionStore(db,fail);
   const adminPatch = createAdminPatch(db,fail,()=>clients.size);
+  const z5 = createZ5Core(db);
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
   });
@@ -302,6 +305,11 @@ export function createRecoilServer(options = {}) {
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (path === '/z5/status') return z5.status(user);
+      if (path === '/z5/clan') return z5.clan(user);
+      if (path === '/z5/titles') return z5.titles(user);
+      if (path === '/z5/ping') return z5.ping();
+      if (path === '/z5/admin/audit') return z5.adminAudit(user);
       if (path === '/missions') return missions.read(user.id);
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
@@ -332,6 +340,16 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if (path.startsWith('/z5/')) {
+        if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
+        if (path === '/z5/checkin') return z5.checkin(user);
+        if (path === '/z5/clan/create') return z5.createClan(user,body);
+        if (path === '/z5/clan/invite') return z5.invite(user,body);
+        if (path === '/z5/clan/accept') return z5.accept(user,body);
+        if (path === '/z5/clan/leave') return z5.leave(user);
+        if (path === '/z5/clan/kick') return z5.kick(user,body);
+        if (path === '/z5/title/equip') return z5.equip(user,body);
+      }
       if (path === '/missions') {
         if(!allowed('mission-save:'+user.id,160,60000))throw fail(429,'Mission saves are busy. Retry shortly.');
         return missions.write(user.id,body);
@@ -387,6 +405,13 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if (path === '/z5-panel.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/admin-panel.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./admin-panel.js',import.meta.url));
@@ -397,7 +422,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
