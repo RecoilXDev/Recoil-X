@@ -100,8 +100,11 @@ export function createRecoilServer(options = {}) {
   try {
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
+    // Keep the legacy one-backup-per-startup migration invariant.
+    const needMission=!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx_mission_save'").get();
     migrateMissions(db,filename,existing&&!upgraded);
-    migrateZ5(db,filename,existing);
+    // Previous migration already backed up this database, if needed.
+    migrateZ5(db,filename,existing&&!upgraded&&!needMission);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
