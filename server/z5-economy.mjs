@@ -60,6 +60,8 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
     if(next<0)throw error(409,'Not enough items.');
     if(next>100000)throw error(409,'Inventory limit reached.');
     q('INSERT INTO rx5_inventory(account,item,quantity) VALUES(?,?,?) ON CONFLICT(account,item) DO UPDATE SET quantity=excluded.quantity').run(id,item,next);
+    // A cosmetic cannot stay equipped once its final owned copy enters escrow or is traded.
+    if(next===0)q('DELETE FROM rx5_equipment WHERE account=? AND item=?').run(id,item);
     return next;
   }
   function addPoints(id,n) {
