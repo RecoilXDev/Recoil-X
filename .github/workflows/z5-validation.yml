@@ -23,6 +23,6 @@ jobs:
         run: |
           for f in server/*.mjs server/*.js; do node --check "$f"; done
       - name: Run new Z.5 foundation and economy tests
-        run: node --test tests/z5-core.test.mjs tests/z5-economy.test.mjs
+        run: node --test tests/z5-core.test.mjs tests/z5-economy.test.mjs tests/z5-challenges.test.mjs
       - name: Run existing integration and regression suite
         run: node --test tests/*.test.mjs tests/*.test.cjs
