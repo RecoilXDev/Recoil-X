@@ -34,14 +34,14 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |20|Legendary Weapon Evolutions|U|
 |21|Clan System|P — new server clans/invites/membership; no clan emblem or clan achievements|
 |22|Clan Wars|U|
-|23|Player Rivalries|U|
+|23|Player Rivalries|P — server-authoritative match statistics and rival records, not ranked rivalry challenges|
 |24|Custom Match Rules|U|
 |25|Team Drafting|U|
 |26|Broadcast Spectator Mode|U|
 |27|Match Rejoin Slots|E — existing overdrive reconnect logic; needs full testing|
 |28|Server Browser|U|
 |29|Shareable Match Recaps|U|
-|30|Community Challenge Board|U|
+|30|Community Challenge Board|P — verified daily check-in, match, win and elimination challenges|
 |31|Moving Train Map|U|
 |32|Flooded Laboratory|U|
 |33|Zero-Gravity Arena|U|
@@ -78,13 +78,13 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |60|Extraction Mode 2.0|U|
 |61|Clan System|P — same shared server system as #21|
 |62|Friend Parties|U|
-|63|Trading Hub|U|
-|64|Auction House|U|
-|65|Crafting Laboratory|U|
+|63|Trading Hub|P — escrow-based direct cosmetic trade offers, acceptance and expiry|
+|64|Auction House|P — item escrow, separate Z.5 currency, buying and refunds|
+|65|Crafting Laboratory|P — server-validated Kingdom Scrap recipes; original 3D skins not yet applied|
 |66|Weapon Blueprints|U|
-|67|Seasonal Story Missions|U|
+|67|Seasonal Story Missions|P — three persistent story chapters tracked from verified matches; full seasonal calendar not integrated|
 |68|Daily Login Rewards|P — server-side, idempotent Z.5 points, not existing coins|
-|69|Prestige System|U|
+|69|Prestige System|P — up to ten separate Z.5 prestige levels, earned with match milestones and points; does not affect old level saves|
 |70|Player Titles|P — three unlock conditions and equipping, not integrated into global nameplates|
 |71|Photo Mode|U|
 |72|Weather 2.0|U|
@@ -112,10 +112,18 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 - \`server/z5-panel.js\`: a functioning separate panel for login, clan operations, reward claims, title selection, HTTP latency, and Z.5 admin audit.
 - \`tests/z5-core.test.mjs\`: automated module-level regression tests.
 
+### Second implementation pass (new on the same development branch)
+- `server/z5-economy.mjs`: Z.5 inventory and equipment persistence, server-only match rewards, replay-protected award ledger, escrow auction listings and direct trades, fixed crafting recipes, expiry recovery, and match rivalry records.
+- `server/z5-challenges.mjs`: Oman-day challenge progress from trusted matches/check-ins, three story chapters, rewards, and a Z.5-only prestige track.
+- `server/z5-economy-panel.js`: Armory & Market, crafting, trading, auction, rivalry stats, challenges, story and prestige.
+- `server/overdrive.mjs`: delegates finished authoritative matches to Z.5; old settlement logic is retained.
+- `tests/z5-economy.test.mjs` and `tests/z5-challenges.test.mjs`: transaction, ownership, replay, expiry, rewards and validation tests.
+- `.github/workflows/z5-validation.yml`: independent CI on the development branch, with no deployment action.
+
 **Important limitations**
 - Existing browser-only coin/shop balances are NOT equivalent to the new Z.5 points; no exchanges or real-money commerce are supported.
-- Clan emblems, clans wars, parties, social commerce, trading and auction are not implemented.
-- There is no proof of full multiplayer load, low-end device FPS, new weapons or modes, mobile touch experience, or production stability.
+- Clan emblems, clan wars and friend parties are not implemented. Z.5-only trading and auctions exist but require wider integration and security/load testing.
+- Z.5 crafted cosmetics are persistent inventory records, not yet visual 3D weapons. Story chapters are not yet seasonal-calendar driven. There is no proof of full multiplayer load, low-end device FPS, new weapons or modes, mobile touch experience, or production stability.
 - No production database was accessed or modified.
 - The HTML frontend is large and is served unchanged: the overlay is inserted by the development server response.
 
