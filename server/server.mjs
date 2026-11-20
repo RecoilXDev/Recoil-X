@@ -11,6 +11,7 @@ import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 import { createAdminPatch } from './admin-patch.mjs';
 import { createZ5Core, migrateZ5 } from './z5-core.mjs';
+import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -104,7 +105,9 @@ export function createRecoilServer(options = {}) {
     const needMission=!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx_mission_save'").get();
     migrateMissions(db,filename,existing&&!upgraded);
     // Previous migration already backed up this database, if needed.
+    const hadZ5=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx5_version'").get();
     migrateZ5(db,filename,existing&&!upgraded&&!needMission);
+    migrateZ5Economy(db,filename,existing&&!upgraded&&!needMission&&hadZ5);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -117,8 +120,10 @@ export function createRecoilServer(options = {}) {
   const missions = missionStore(db,fail);
   const adminPatch = createAdminPatch(db,fail,()=>clients.size);
   const z5 = createZ5Core(db);
+  const economy = createZ5Economy(db);
   const overdrive = createOverdrive({
-    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
+    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
+    onSettled:(result,now)=>economy.onMatchSettled(result,now)
   });
 
   const st = sql => db.prepare(sql);
@@ -308,6 +313,7 @@ export function createRecoilServer(options = {}) {
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (path === '/z5/economy') return economy.view(user);
       if (path === '/z5/status') return z5.status(user);
       if (path === '/z5/clan') return z5.clan(user);
       if (path === '/z5/titles') return z5.titles(user);
@@ -345,7 +351,15 @@ export function createRecoilServer(options = {}) {
     if (req.method === 'POST') {
       if (path.startsWith('/z5/')) {
         if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
-        if (path === '/z5/checkin') return z5.checkin(user);
+        if (path === '/z5/checkin') {const claim=z5.checkin(user);economy.onDailyCheckin(user,claim);return claim;}
+        if (path === '/z5/craft') return economy.craft(user,body);
+        if (path === '/z5/equip') return economy.equip(user,body);
+        if (path === '/z5/auction/list') return economy.list(user,body);
+        if (path === '/z5/auction/buy') return economy.buy(user,body);
+        if (path === '/z5/auction/cancel') return economy.cancelListing(user,body);
+        if (path === '/z5/trade/offer') return economy.offer(user,body);
+        if (path === '/z5/trade/accept') return economy.accept(user,body);
+        if (path === '/z5/trade/decline') return economy.decline(user,body);
         if (path === '/z5/clan/create') return z5.createClan(user,body);
         if (path === '/z5/clan/invite') return z5.invite(user,body);
         if (path === '/z5/clan/accept') return z5.accept(user,body);
