@@ -14,7 +14,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -374,6 +374,8 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function settle(room,now) {
     const result=room.match.result;
     const deltas=store.settle(result,now);
+    // Rewards are server-generated and idempotent. A rewards error must not end a match.
+    try{onSettled(result,now);}catch(error){onError(error);}
     room.result={...result,deltas};
     room.expires=now+Math.min(idleTime,180000);
     if(room.tournament){
