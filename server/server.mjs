@@ -10,6 +10,9 @@ import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 import { createAdminPatch } from './admin-patch.mjs';
+import { createZ5Core, migrateZ5 } from './z5-core.mjs';
+import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
+import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -99,7 +102,15 @@ export function createRecoilServer(options = {}) {
   try {
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
+    // Keep the legacy one-backup-per-startup migration invariant.
+    const needMission=!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx_mission_save'").get();
     migrateMissions(db,filename,existing&&!upgraded);
+    // Previous migration already backed up this database, if needed.
+    const hadZ5=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx5_version'").get();
+    migrateZ5(db,filename,existing&&!upgraded&&!needMission);
+    const hadEconomy=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx5_economy_version'").get();
+    migrateZ5Economy(db,filename,existing&&!upgraded&&!needMission&&hadZ5);
+    migrateZ5Challenges(db,filename,existing&&!upgraded&&!needMission&&hadZ5&&hadEconomy);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -111,8 +122,12 @@ export function createRecoilServer(options = {}) {
   const overdriveData = overdriveStore(db,fail);
   const missions = missionStore(db,fail);
   const adminPatch = createAdminPatch(db,fail,()=>clients.size);
+  const z5 = createZ5Core(db);
+  const economy = createZ5Economy(db);
+  const challenges = createZ5Challenges(db);
   const overdrive = createOverdrive({
-    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat
+    client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
+    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{challenges.onMatchSettled(result,now);}}
   });
 
   const st = sql => db.prepare(sql);
@@ -302,6 +317,13 @@ export function createRecoilServer(options = {}) {
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (path === '/z5/economy') return economy.view(user);
+      if (path === '/z5/challenges') return challenges.board(user);
+      if (path === '/z5/status') return z5.status(user);
+      if (path === '/z5/clan') return z5.clan(user);
+      if (path === '/z5/titles') return z5.titles(user);
+      if (path === '/z5/ping') return z5.ping();
+      if (path === '/z5/admin/audit') return z5.adminAudit(user);
       if (path === '/missions') return missions.read(user.id);
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
@@ -332,6 +354,27 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if (path.startsWith('/z5/')) {
+        if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
+        if (path === '/z5/checkin') {const claim=z5.checkin(user);economy.onDailyCheckin(user,claim);challenges.onCheckin(user,claim);return claim;}
+        if (path === '/z5/challenges/claim') return challenges.claimDaily(user,body);
+        if (path === '/z5/story/claim') return challenges.claimStory(user,body);
+        if (path === '/z5/prestige') return challenges.prestige(user);
+        if (path === '/z5/craft') return economy.craft(user,body);
+        if (path === '/z5/equip') return economy.equip(user,body);
+        if (path === '/z5/auction/list') return economy.list(user,body);
+        if (path === '/z5/auction/buy') return economy.buy(user,body);
+        if (path === '/z5/auction/cancel') return economy.cancelListing(user,body);
+        if (path === '/z5/trade/offer') return economy.offer(user,body);
+        if (path === '/z5/trade/accept') return economy.accept(user,body);
+        if (path === '/z5/trade/decline') return economy.decline(user,body);
+        if (path === '/z5/clan/create') return z5.createClan(user,body);
+        if (path === '/z5/clan/invite') return z5.invite(user,body);
+        if (path === '/z5/clan/accept') return z5.accept(user,body);
+        if (path === '/z5/clan/leave') return z5.leave(user);
+        if (path === '/z5/clan/kick') return z5.kick(user,body);
+        if (path === '/z5/title/equip') return z5.equip(user,body);
+      }
       if (path === '/missions') {
         if(!allowed('mission-save:'+user.id,160,60000))throw fail(429,'Mission saves are busy. Retry shortly.');
         return missions.write(user.id,body);
@@ -387,6 +430,20 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if (path === '/z5-economy-panel.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-economy-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
+    if (path === '/z5-panel.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-panel.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/admin-panel.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./admin-panel.js',import.meta.url));
@@ -397,7 +454,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
