@@ -33,7 +33,7 @@ async function api(path,body) {
  const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed.');return d;
 }
 async function refresh(){
- const d=await api('economy');
+ const [d,c]=await Promise.all([api('economy'),api('challenges')]);
  const owned=d.inventory.filter(x=>x.quantity>0);
  const choices=names(d),invChoices=owned.map(x=>'<option value="'+esc(x.item)+'">'+esc(label(d,x.item))+' ('+esc(x.quantity)+')</option>').join('');
  const equip=d.equipment.map(x=>esc(x.slot)+': '+esc(label(d,x.item))).join(' · ')||'No Z.5 cosmetics equipped yet';
@@ -49,6 +49,9 @@ async function refresh(){
  html+='<form class="row" data-form="offer">'+tag('name','Recipient account')+'<label>Give<select name="give">'+invChoices+'</select></label><label>Quantity<input type="number" name="giveQty" min="1" max="100" value="1" required></label><label>Want<select name="want">'+choices+'</select></label><label>Quantity<input type="number" name="wantQty" min="1" max="100" value="1" required></label><button '+(!owned.length?'disabled':'')+'>Offer</button></form>';
  html+='<h3 style="margin-top:16px">Trade history</h3>'+(!d.trades.length?'<p>No offers.</p>':d.trades.map(x=>'<div class="line row"><span>#'+esc(x.id)+' '+esc(x.sender)+' → '+esc(x.recipient)+': '+esc(label(d,x.give_item))+' ×'+esc(x.give_qty)+' for '+esc(label(d,x.want_item))+' ×'+esc(x.want_qty)+' — '+esc(x.status)+'</span>'+(x.status==='open'?(x.recipient_id===d.userId?'<button type="button" data-action="accept" data-id="'+esc(x.id)+'">Accept</button>':'')+'<button type="button" data-action="decline" data-id="'+esc(x.id)+'">'+(x.recipient_id===d.userId?'Decline':'Cancel')+'</button>':'')+'</div>').join(''))+'</section>';
  html+='<section class="card"><h3>Rivalries</h3>'+(d.rivals.length?d.rivals.map(x=>'<div class="line">'+esc(x.opponent)+' · '+esc(x.wins)+' wins / '+esc(x.losses)+' losses</div>').join(''):'<p>Finish multiplayer matches to build a rivalry history.</p>')+'</section>';
+ html+='<section class="card"><h3>Daily Challenges · '+esc(c.day)+'</h3><p class="muted">Progress is recorded by the game server.</p>'+c.daily.map(x=>'<div class="line row"><span><b>'+esc(x.name)+'</b> '+esc(x.description)+' — '+esc(Math.min(x.progress,x.target))+'/'+esc(x.target)+' (+'+esc(x.reward)+' points)</span>'+(x.claimed?'<span>Claimed ✓</span>':'<button type="button" data-action="daily-claim" data-kind="'+esc(x.kind)+'" '+(x.progress<x.target?'disabled':'')+'>Claim</button>')+'</div>').join('')+'</section>';
+ html+='<section class="card"><h3>Seasonal Story Missions</h3>'+c.story.map(x=>'<div class="line row"><span>Chapter '+esc(x.chapter)+': <b>'+esc(x.name)+'</b> — '+esc(x.description)+' · '+esc(Math.min(x.progress,x.target))+'/'+esc(x.target)+'</span>'+(x.claimed?'<span>Completed ✓</span>':'<button type="button" data-action="story-claim" data-chapter="'+esc(x.chapter)+'" '+(x.progress<x.target?'disabled':'')+'>Claim +'+esc(x.reward)+'</button>')+'</div>').join('')+'</section>';
+ html+='<section class="card"><h3>Z.5 Prestige · Level '+esc(c.prestige)+'</h3><p class="muted">Cosmetic-only prestige: every level requires another ten valid matches and 200 Z.5 points. Existing Mission Mode levels are never reset.</p><button type="button" data-action="prestige" '+(!c.canPrestige?'disabled':'')+'>Prestige (200 points)</button></section>';
  dataNode().innerHTML=html;
 }
 async function open(){overlay.classList.add('active');document.exitPointerLock?.();message('');try{await refresh()}catch(e){dataNode().textContent=e.message;message(e.message,true)}}
@@ -67,11 +70,11 @@ dataNode().addEventListener('submit',async e=>{
 dataNode().addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b)return;
  const action=b.dataset.action,item=b.dataset.item,id=Number(b.dataset.id);
- const endpoints={craft:'craft',equip:'equip',buy:'auction/buy',cancel:'auction/cancel',accept:'trade/accept',decline:'trade/decline'};
+ const endpoints={craft:'craft',equip:'equip',buy:'auction/buy',cancel:'auction/cancel',accept:'trade/accept',decline:'trade/decline','daily-claim':'challenges/claim','story-claim':'story/claim',prestige:'prestige'};
  if(!endpoints[action])return;
  if(['buy','cancel','accept','decline'].includes(action)&&!confirm('Confirm this '+action+' action?'))return;
  b.disabled=true;
- try{await api(endpoints[action],['craft','equip'].includes(action)?{item}:{id});await refresh();message(action+' completed.')}
+ try{const payload=['craft','equip'].includes(action)?{item}:action==='daily-claim'?{kind:b.dataset.kind}:action==='story-claim'?{chapter:Number(b.dataset.chapter)}:action==='prestige'?{}:{id};await api(endpoints[action],payload);await refresh();message(action+' completed.')}
  catch(error){message(error.message,true);b.disabled=false}
 });
 window.RXZ5Economy={open};
