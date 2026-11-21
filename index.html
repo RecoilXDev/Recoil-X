@@ -931,6 +931,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 #rx5AcademyClose{flex:0 0 40px;font-size:17px!important}
 @media(max-width:530px){#rx5AcademyScores{grid-template-columns:1fr}}
 </style>
+<style id="rx5-focus-hud-css">body.rx5-focus-hud #tips{display:none!important}body.rx5-focus-hud .hud-panel{backdrop-filter:none!important;box-shadow:none!important}body.rx5-focus-hud #rxWeatherLabel{display:none!important}</style>
 </head>
 <body>
 <div id="rxStage">
@@ -984,6 +985,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
       <label><input id="rx5KillfeedToggle" type="checkbox"> Show killfeed</label>
       <label><input id="rx5ContrastToggle" type="checkbox"> High contrast HUD</label>
       <label><input id="rx5MotionToggle" type="checkbox"> Reduce animations & flashes</label>
+      <label><input id="rx5FocusToggle" type="checkbox" checked> Focus HUD (hide nonessential tips)</label>
     </details>
     <p class="rx-simple-note">Fewer menus, smarter enemies. All advanced content is still available.</p>
   </div>
@@ -3565,7 +3567,7 @@ function rx2AfterStart(which){rx2MakeCovers();const custom=which==='custom';if(c
  if(which==='training'){bots.length=0;for(let i=0;i<7;i++){let b=spawnBot(i);b.x=(i-3)*9;b.z=-23-(i%3)*7;b.hp=rx5AcademyLesson==='precision'?75:85;b.speed=1.9;b.nextShot=999;b.name='🎯 '+rx5AcademyLesson.toUpperCase()+' '+(i+1);bots.push(b);}gameSeconds=90;pl.weapon=rx5AcademyLesson==='precision'?2:rx5AcademyLesson==='tracking'?3:0;drawGunModel(pl.weapon);}
  if(which==='objective'){gameSeconds=360;rx2ObjectiveIndex=0;rx2MakeCovers();}
  $('rx2Hud').classList.remove('hide');rx2UpdateHud();}
-function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.name='🎯 TARGET '+b.id;b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35)+b.id)*dt*(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
+function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.x=(b.id-3)*9;b.z=-23-(b.id%3)*7;b.hp=rx5AcademyLesson==='precision'?75:85;b.name='🎯 '+rx5AcademyLesson.toUpperCase()+' '+(b.id+1);b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35)+b.id)*dt*(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
  if(mode==='objective'){if(!b.alive)return false;if(dist(b,pl)>17&&Math.random()<.08)b.strafedir*=-1;}return false;}
 function rx2OnBotKilled(bot,killer){if(mode==='training'){if(!bot.alive)return true;bot.hp=0;bot.alive=false;bot.respawn=performance.now()/1000+3;rx2TrainingAccuracy.hits++;rx2Kills++;toast('🎯 TARGET DOWN',550);return true;}rx2Kills++;return false;}
 function rx2MovePlayer(dx,dz,dt,running){const now=performance.now()/1000;let sp=1;if(now<rx2SlideUntil&&pl.jump<.01){sp=1.95;pl.crouched=true;}if(keys.Space&&pl.jump<=.01){const cover=rx2Covers.find(c=>c.hp>0&&Math.hypot(pl.x-c.x,pl.z-c.z)<3);if(cover){pl.vy=5.5;pl.jump=.04;toast('↗ VAULT',400);}}slide(pl,dx*sp,dz*sp,.47);}
@@ -12222,7 +12224,8 @@ runCrownGame();
     ['rx5MinimapToggle','minimap','rx5-no-minimap',true],
     ['rx5KillfeedToggle','killfeed','rx5-no-feed',true],
     ['rx5ContrastToggle','contrast','rx5-high-contrast',false],
-    ['rx5MotionToggle','motion','rx5-reduce-motion',false]
+    ['rx5MotionToggle','motion','rx5-reduce-motion',false],
+    ['rx5FocusToggle','focus','rx5-focus-hud',true]
   ]){
     const input=document.getElementById(id);
     if(!input)continue;
