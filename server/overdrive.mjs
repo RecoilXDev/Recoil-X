@@ -174,7 +174,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const squad=data.squad===true&&!tournament?{queued:false}:null;
     const mode=tournament||squad?'arena':data.mode;
     demand(MODES.includes(mode),400,'Choose a supported match mode.');
-    const size=mode==='chess'?1:mode==='jeep'?2:data.size;
+    const size=['chess','gungame','onechamber','bounty','parkour'].includes(mode)?1:mode==='jeep'?2:data.size;
     const sizes=tournament?[1,2]:mode==='raid'?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
     demand(sizes.includes(size),400,'Choose a supported team size.');
     const limit=data.limit??15;
