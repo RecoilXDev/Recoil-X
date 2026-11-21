@@ -1,8 +1,8 @@
 // Z.5 Combat Quality: server-authoritative heat and input flood protection.
 // Heat is opt-in for unranked public rooms; seasonal/ranked balance is unchanged.
-export const HEAT_PER_SHOT=Object.freeze([4.6,0,0,3.8]);
+export const HEAT_PER_SHOT=Object.freeze([8,0,0,6.5]);
 export const HEAT_RELEASE=35;
-export const HEAT_COOL_RATE=34;
+export const HEAT_COOL_RATE=26;
 
 export function initCombatQuality(player){
   player.rx5Heat=[0,0,0,0];
