@@ -1,0 +1,20 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+test('quality pass lives inside the existing game and keeps simple menu',()=>{
+ assert.match(html,/rx5QualityMount\(\);/);
+ assert.match(html,/id='rx5CombatSettings'/);
+ assert.match(html,/Enable tactical heat in local matches/);
+ assert.match(html,/High-visibility crosshair/);
+ assert.match(html,/rx5MasteryHits\(pl\.weapon,hits\)/);
+ assert.match(html,/rx5MasteryKill\(pl\.weapon,killer\)/);
+ assert.match(html,/rx5ApplyRemoteHeat\(event\)/);
+ assert.match(html,/rx5ClientTick\(dt,now\)/);
+ assert.match(html,/rx5Cost=\[8,0,0,6\.5\]/);
+ assert.match(html,/const side=\(elite\?\(b\.id%2===0\?-1:1\)/);
+ assert.match(html,/rx5TacticalLimit\(\)/);
+ assert.match(html,/startGame\('solo'\);gameSeconds=300/);
+ assert.doesNotMatch(html,/Z\.5 LAB floating menu/i);
+});
