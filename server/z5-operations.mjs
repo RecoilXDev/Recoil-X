@@ -19,7 +19,7 @@ function shape(row,match){
 }
 export function createZ5Operations(db,{clock=Date.now,online=()=>0,roomStats=()=>({}),uptime=()=>process.uptime(),memory=()=>process.memoryUsage()}={}){
   // json_each remains on the server. We select match rows by authenticated user id.
-  const mine=db.prepare(\`
+  const mine=db.prepare(`
     SELECT r.id,r.mode,r.finished,r.result
     FROM rx2_results AS r
     WHERE EXISTS (
@@ -27,7 +27,7 @@ export function createZ5Operations(db,{clock=Date.now,online=()=>0,roomStats=()=
       WHERE CAST(json_extract(entry.value,'$.id') AS INTEGER)=?
     )
     ORDER BY r.finished DESC LIMIT 25
-  \`);
+  `);
   const one=db.prepare('SELECT id,mode,finished,result FROM rx2_results WHERE id=?');
   const isParticipant=(match,id)=>Array.isArray(match?.players)&&match.players.some(p=>p.id===id);
   function recent(user){
