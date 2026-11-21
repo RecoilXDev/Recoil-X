@@ -917,6 +917,20 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 #rx5QualityNote{font-size:11px;color:#b9d2db;line-height:1.4}
 </style>
 <style id="rx5-blueprint-css">#rx5CombatSettings .rx5-blueprint-row{display:block;margin:9px 8px;color:#bce0e8;font-size:12px}#rx5BlueprintChoice{display:block;margin-top:6px;width:100%;padding:9px;border-radius:8px;border:1px solid #42697f;background:#092134;color:#fff}#rx5BlueprintInfo{margin:0 8px 8px}</style>
+<style id="rx5-academy-css">
+#rx5AcademyDialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:#030915dd;z-index:2147482600;box-sizing:border-box}
+#rx5AcademyDialog[hidden]{display:none!important}
+.rx5-academy-dialog{box-sizing:border-box;width:min(640px,100%);max-height:88vh;overflow:auto;background:#0e1d2d;color:#ebf6ff;border:1px solid #426f80;border-radius:18px;padding:20px;box-shadow:0 20px 75px #000b;font:13px/1.5 system-ui}
+.rx5-academy-header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.rx5-academy-header h2{margin:0;color:#9ceae8;font-size:21px}.rx5-academy-header p{margin:4px 0 16px;color:#acccda}
+#rx5AcademyScores{display:grid;gap:10px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.rx5-academy-tile{display:flex;flex-direction:column;gap:6px;background:#132f42;border:1px solid #33546d;border-radius:11px;padding:12px}
+.rx5-academy-tile strong{font-size:15px;color:#c4ffff}
+.rx5-academy-tile small{font-size:11px;color:#b5cbd7;flex:1}
+#rx5AcademyDialog button{background:#1b5269;border:1px solid #5290a6;color:#efffff;font:750 11px system-ui;border-radius:8px;min-height:37px;padding:7px;cursor:pointer}
+#rx5AcademyClose{flex:0 0 40px;font-size:17px!important}
+@media(max-width:530px){#rx5AcademyScores{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div id="rxStage">
@@ -12081,6 +12095,56 @@ function rx5BlueprintUpdateUI(){
    ' · '+(rx5Mastery.hits[gun]||0)+' hits, '+(rx5Mastery.kills[gun]||0)+' bot eliminations';
 }
 
+
+// Training Academy: three offline lessons using the existing 3D training map and bots.
+const RX5_ACADEMY_KEY='rx5-academy-medals-v1';
+const RX5_LESSONS={
+ precision:{title:'Precision',subtitle:'Sniper, still targets, 90 seconds'},
+ tracking:{title:'Tracking',subtitle:'SMG, moving targets, 90 seconds'},
+ reaction:{title:'Reaction',subtitle:'Assault rifle, fast targets, 90 seconds'}
+};
+let rx5AcademyMedals=getStore(RX5_ACADEMY_KEY,{});
+if(!rx5AcademyMedals||typeof rx5AcademyMedals!=='object'||Array.isArray(rx5AcademyMedals))rx5AcademyMedals={};
+function rx5AcademyFinish(){
+ if(mode!=='training')return;
+ const hits=Math.max(0,Math.floor(pl.hits||0)),shots=Math.max(0,Math.floor(pl.shots||0));
+ const accuracy=shots?Math.round(hits/shots*100):0,kills=Math.max(0,Math.floor(rx2Kills||0));
+ const tier=kills>=14&&accuracy>=35?3:kills>=8&&accuracy>=25?2:kills>=3?1:0;
+ const names=['No medal','Bronze','Silver','Gold'];
+ const previous=rx5AcademyMedals[rx5AcademyLesson];
+ if(!previous||tier>previous.tier||(tier===previous.tier&&kills>previous.kills)){
+   rx5AcademyMedals[rx5AcademyLesson]={tier,kills,accuracy,at:new Date().toISOString()};
+   setStore(RX5_ACADEMY_KEY,rx5AcademyMedals);
+ }
+ toast('🎓 '+RX5_LESSONS[rx5AcademyLesson].title.toUpperCase()+' · '+names[tier],1800);
+}
+function rx5AcademyOpen(){
+ const box=document.getElementById('rx5AcademyDialog');if(!box)return;
+ const scores=box.querySelector('#rx5AcademyScores');scores.replaceChildren();
+ for(const [key,lesson] of Object.entries(RX5_LESSONS)){
+   const tile=document.createElement('div');tile.className='rx5-academy-tile';
+   const mark=rx5AcademyMedals[key],names=['No medal','Bronze','Silver','Gold'];
+   const title=document.createElement('strong');title.textContent=lesson.title;
+   const description=document.createElement('small');description.textContent=lesson.subtitle+' · Best: '+(mark?names[mark.tier]+' ('+mark.kills+' targets)':'not played');
+   const action=document.createElement('button');action.type='button';action.textContent='START '+lesson.title.toUpperCase();
+   action.onclick=()=>{rx5AcademyLesson=key;setStore('rx5-academy-lesson',key);box.hidden=true;rx2Start('training');};
+   tile.append(title,description,action);scores.append(tile);
+ }
+ box.hidden=false;document.exitPointerLock?.();
+ box.querySelector('#rx5AcademyClose')?.focus();
+}
+function rx5AcademyMount(){
+ if(document.getElementById('rx5AcademyDialog'))return;
+ const box=document.createElement('div');box.id='rx5AcademyDialog';box.hidden=true;
+ box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label','RECOIL X Academy');
+ box.innerHTML='<section class="rx5-academy-dialog"><div class="rx5-academy-header"><div><h2>🎓 TRAINING ACADEMY</h2><p>Three 90-second lessons. Earn local medals without affecting coins.</p></div><button type="button" id="rx5AcademyClose" aria-label="Close academy">✕</button></div><div id="rx5AcademyScores"></div></section>';
+ document.body.append(box);
+ box.querySelector('#rx5AcademyClose').onclick=()=>{box.hidden=true;};
+ box.addEventListener('click',e=>{if(e.target===box)box.hidden=true;});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!box.hidden)box.hidden=true;},true);
+ window.RXZ5Academy={open:rx5AcademyOpen};
+}
+
 function rx5QualityMount(){
  const box=document.querySelector('#hud .ammo-box');
  if(box&&!document.getElementById('rx5HeatHud')){
@@ -12112,6 +12176,7 @@ function rx5QualityMount(){
  rx5QualityHud();
 }
 rx5QualityMount();
+rx5AcademyMount();
 
 runCrownGame();
 
