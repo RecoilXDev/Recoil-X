@@ -1,6 +1,17 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Z.5 Combat & Quality staged pass (2026-11-21) — NOT LIVE
+- Development branch: `z5-combat-quality-20261121`. Existing production `main` remains unchanged until reviewed and merged.
+- **Playable combat**: server-authoritative assault rifle/SMG overheat and cooldown in casual/nonseason multiplayer, with per-player heat HUD. Seasonal/ranked mode balance remains unchanged. Local offline tactical heat is optional in the simple menu.
+- **Progression**: local, cosmetic per-weapon mastery labels based on offline hits and bot eliminations. No existing coins, missions, accounts, achievements or server inventory are changed.
+- **Bots**: coordinated left/right flanking on Nightmare and peek goal constraints that respect the actual map size (rather than forcing all bots into a 66m area).
+- **Performance/accessibility**: cap low-priority tracer/particle lists on mobile, reduce internal render scale conservatively during sustained low FPS, reversible high-visibility reticle.
+- **Safety**: guard authoritative input snapshots at 120/second per player; neither client-requested position nor kills are accepted. No full anticheat claim.
+- **Verification**: automated unit/regression checks added; physical iPhone and multi-player load tests remain outstanding.
+- **Status**: this is a targeted quality pass, NOT completion of the original 85 features. All unrelated U/P items stay in the backlog.
+
+
 **Source branch:** `z5-full-expansion`  
 **Base:** main at `75429fdedd6407a1f42c2508401d2360a27eb3d4` (deployed 2026-11-20)  
 **Status:** Z.5 INCREMENTAL EXPANSION DEPLOYED to Alwaysdata on November 21, 2026. Deployment and live asset checks succeeded: [GitHub Actions #44903169106](https://github.com/RecoilXDev/Recoil-X/actions/runs/44903169106). **The entire 85-feature request remains INCOMPLETE; many requirements are still partial or unimplemented.**
