@@ -1,6 +1,18 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Seventh implementation: Z.5 Tactical Expansion & Quick Play cleanup (2026-11-21)
+- Branch: `z5-planned-features-tactical-ui-20261121`. **Status: staged pending full CI and deployment verification.**
+- **#18 EMP Grenades:** 3.25-second disable on nearby offline bots, proximity-limited and consumes shared gadget stock; ignored in multiplayer/host games to prevent client-only effects.
+- **#19 Deployable Shields:** temporary physical cover with 165 HP, 12-second expiry, obstructs existing shooting and movement rays, max two active; placed only in unobstructed solo areas. Not yet network-synchronized.
+- **#66 Weapon Blueprints:** Steady (accuracy/slowdown), Rapid (fire rate/spread penalty) and Impact (damage/cadence penalty), unlocked by existing per-gun local mastery; applied directly to offline shot simulation; untouched server-side balance.
+- **#15/#76 Training Academy:** original 3D range now offers 90-second Precision (sniper), Tracking (SMG), and Reaction (assault rifle) lessons, moving-target styles, saved best local Bronze/Silver/Gold medals.
+- **#85 UI:** Quick Play remains the single primary action in OG Futuristic Arena; four Mode/Locker/Friends/Settings secondary actions; the academy, clans, forge, match hub, and server-authorized Admin move under collapsible More. Tactical gear and blueprints live in settings. Mobile gadget button displays selected item.
+- **Preservation:** no database schema changes, no server inventory migration, no alteration to original accounts, older game modes, 500 missions or event schedule. Existing local settings are preserved.
+- **Still incomplete:** underwater mode, full multiplayer destructive environments, networked tactical gadgets, clan wars, moving train, zero gravity, new bosses, integrated all-mode mastery, and several other 85-item requirements. Device/performance validation required.
+
+
+
 ### Z.5 — Visible Combat Update & Clean Navigation (2026-11-21)
 - Source branch: `z5-visible-update-clean-ui-20261121`. **Status: LIVE.** Merged as [PR #14](https://github.com/RecoilXDev/Recoil-X/pull/14) at `237e93488f36c846a308ce9485a5bbae397a6f61`. [Alwaysdata deployment #44919850869](https://github.com/RecoilXDev/Recoil-X/actions/runs/44919850869) passed 16 workflow steps, including fresh Z.5 build marker, default offline heat, new menu assets and service worker verification.
 - Replaced crowded Z.5 navigation with a prominent Quick Play / Modes / Locker / Friends / Settings flow and a clear "What's New" release panel. Existing advanced menus remain available; Career, Forge and Match Hub move to a compact More Features section.
@@ -48,11 +60,11 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |12|Weapon Overheating|P — casual multiplayer uses server-controlled heat; offline optional; physical playtesting pending|
 |13|Destructible Cover|E — offline X.2 temporary cover damage; full multiplayer destruction not built|
 |14|Bullet Ricochet|U|
-|15|Advanced Aim Academy|E — existing X.2 practice range; expanded lessons not implemented|
+|15|Advanced Aim Academy|P — three real offline 90-second lessons with weapons and saved medals; no online class progression|
 |16|Weapon Mastery Challenges|P — local hits/kill rank labels; complete server-authoritative challenge track missing|
 |17|Melee Parry System|U|
-|18|EMP Grenades|U|
-|19|Deployable Shields|U|
+|18|EMP Grenades|P — offline-only bot disable; server-side multiplayer integration not implemented|
+|19|Deployable Shields|P — offline destructible timed cover; multiplayer validation and sync absent|
 |20|Legendary Weapon Evolutions|U|
 |21|Clan System|P — new server clans/invites/membership; no clan emblem or clan achievements|
 |22|Clan Wars|U|
@@ -103,7 +115,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |63|Trading Hub|P — escrow-based direct cosmetic trade offers, acceptance and expiry|
 |64|Auction House|P — item escrow, separate Z.5 currency, buying and refunds|
 |65|Crafting Laboratory|P — server-validated Kingdom Scrap recipes; original 3D skins not yet applied|
-|66|Weapon Blueprints|U|
+|66|Weapon Blueprints|P — local mastery unlocks three mods with actual combat stat effects; server inventory missing|
 |67|Seasonal Story Missions|P — three persistent story chapters tracked from verified matches; full seasonal calendar not integrated|
 |68|Daily Login Rewards|P — server-side, idempotent Z.5 points, not existing coins|
 |69|Prestige System|P — up to ten separate Z.5 prestige levels, earned with match milestones and points; does not affect old level saves|
@@ -113,7 +125,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |73|Character Customization|E — local suit/helmet/backpack; network model sync not verified|
 |74|Custom HUD Editor|P — visibility, contrast and animation controls; drag-and-drop not built|
 |75|Replay Theater|P — play/scrub recorded match-event timeline only; not full 3D footage|
-|76|Training Academy|E — existing offline aim practice; full multi-lesson academy not built|
+|76|Training Academy|P — Precision, Tracking and Reaction lessons with local medals; broader coursework unfinished|
 |77|Accessibility Suite|P — Classic preference controls and reduced motion; full remapping not built|
 |78|Network Diagnostics|P — live five-request HTTP timing and range; actual WebSocket packet loss still unsupported|
 |79|Admin Audit Log|P — role-gated in-game Z.5 Admin console combines moderation ledger, coin grants, Z.5 activity and server health|

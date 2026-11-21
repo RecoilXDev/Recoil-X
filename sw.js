@@ -1,6 +1,6 @@
 const scope=new URL(self.registration.scope);
 const prefix='recoil-x-shell:'+scope.pathname+':';
-const cacheName=prefix+'z5-brand-fix-3';
+const cacheName=prefix+'z5-tactics-4';
 const shell=new URL('index.html',scope).href;
 const assets=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png']
   .map(path=>new URL(path,scope).href);

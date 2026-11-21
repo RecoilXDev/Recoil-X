@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-CLEAN-2/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-BRAND-FIX-3"/);
+ assert.match(js,/Z\.5-TACTICS-4/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-TACTICS-4"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-brand-fix-3/);
+ assert.match(sw,/z5-tactics-4/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-2');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-TACTICS-4');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -29,7 +29,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.ok(ui.querySelector('#rx5-native-advanced'));
  assert.ok(ui.querySelector('#rx5-native-pause'));
  const extras=ui.querySelectorAll('[data-rx5-open]');
- assert.equal(extras.length,13);
+ assert.equal(extras.length,16);
  for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleBotLevel'])
    assert.ok(ui.querySelector('#'+item),item+' must be retained');
  const admin=ui.querySelectorAll('[data-rx-admin-only]');
