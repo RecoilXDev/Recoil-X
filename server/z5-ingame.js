@@ -109,13 +109,13 @@ news.querySelector('#rx5-news-options').addEventListener('click',()=>{
  const details=$('rx5Options');
  if(details){details.open=true;details.scrollIntoView?.({block:'nearest',behavior:'auto'});}
 });
-function button(parent,key,label,admin=false){
- const b=document.createElement('button');b.type='button';b.textContent=label;
- b.dataset.rx5Open=key;
- if(admin){b.dataset.rxAdminOnly='';b.hidden=true;b.setAttribute('aria-label','Admin controls');}
- b.addEventListener('click',()=>{void open(key);});
- parent.append(b);
- return b;
+function makeButton(parent,key,label,admin=false){
+ const button=document.createElement('button');button.type='button';button.textContent=label;
+ button.dataset.rx5Open=key;
+ if(admin){button.dataset.rxAdminOnly='';button.hidden=true;button.setAttribute('aria-label','Admin controls');}
+ button.addEventListener('click',()=>{void open(key);});
+ parent.append(button);
+ return button;
 }
 const more=document.createElement('details');more.id='rx5More';
 more.innerHTML='<summary>MORE FEATURES <span style="font-weight:400;color:#8ab0bf">Career · Forge · Online</span></summary><span class="rx5-more-desc">Advanced features are still here whenever you need them.</span>';
@@ -138,12 +138,12 @@ pauseMore.innerHTML='<summary>MORE FEATURES · Z.5</summary>';
 const pauseGroup=document.createElement('div');pauseGroup.id='rx5-native-pause';
 pauseMore.append(pauseGroup);pause.append(pauseMore);
 for(const target of [simpleGroup,advancedGroup,pauseGroup]){
- button(target,'career','🏅 Career & Clans');
- button(target,'market','⚒ Forge & Market');
- button(target,'matches','🌐 Match Hub');
- button(target,'admin','🛡 Admin',true);
+ makeButton(target,'career','🏅 Career & Clans');
+ makeButton(target,'market','⚒ Forge & Market');
+ makeButton(target,'matches','🌐 Match Hub');
+ makeButton(target,'admin','🛡 Admin',true);
 }
-button(advancedGroup,'news','✦ What\'s New');
+makeButton(advancedGroup,'news','✦ What\'s New');
 const pauseNews=document.createElement('button');
 pauseNews.type='button';pauseNews.textContent='✦ Z.5 UPDATE NOTES';
 pauseNews.addEventListener('click',showNews);
