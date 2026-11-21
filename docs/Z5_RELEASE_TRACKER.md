@@ -2,7 +2,7 @@
 ## Scope, acceptance matrix and deployment safety
 
 ### Seventh implementation: Z.5 Tactical Expansion & Quick Play cleanup (2026-11-21)
-- Branch: `z5-planned-features-tactical-ui-20261121`. **Status: staged pending full CI and deployment verification.**
+- Branch: `z5-planned-features-tactical-ui-20261121`. **Status: DEPLOYED to Alwaysdata.** [PR #16](https://github.com/RecoilXDev/Recoil-X/pull/16) merged into main as `bf7ad1ff3dd8fdb36685e6342e81b469dd36874b`; [CI #44923199637](https://github.com/RecoilXDev/Recoil-X/actions/runs/44923199637) passed 102 tests, 0 failed; [Alwaysdata deployment #44923454751](https://github.com/RecoilXDev/Recoil-X/actions/runs/44923454751) passed 16 steps including live identity, gadget/UI assets and server restart.
 - **#18 EMP Grenades:** 3.25-second disable on nearby offline bots, proximity-limited and consumes shared gadget stock; ignored in multiplayer/host games to prevent client-only effects.
 - **#19 Deployable Shields:** temporary physical cover with 165 HP, 12-second expiry, obstructs existing shooting and movement rays, max two active; placed only in unobstructed solo areas. Not yet network-synchronized.
 - **#66 Weapon Blueprints:** Steady (accuracy/slowdown), Rapid (fire rate/spread penalty) and Impact (damage/cadence penalty), unlocked by existing per-gun local mastery; applied directly to offline shot simulation; untouched server-side balance.
