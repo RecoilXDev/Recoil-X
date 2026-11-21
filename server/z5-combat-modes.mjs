@@ -1,6 +1,6 @@
 // RECOIL X Z.5 playable authoritative multiplayer rules.
 // Reuses the existing movement, cover, networking and result settlement engine.
-export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour'];
+export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour','roulette','ctf'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const near=(p,x,z,r=3)=>Math.hypot(p.x-x,p.z-z)<=r;
 const weaponOrder=[0,3,1,2];
@@ -17,11 +17,13 @@ export function z5Spawn(p,now){
 }
 export function z5Weapon(m,p,inputWeapon){
   if(m.mode==='onechamber')return 2;
+  if(m.mode==='roulette')return m.rule.weapon;
   if(m.mode==='gungame')return weaponOrder[Math.min(weaponOrder.length-1,p.kills)];
   return inputWeapon;
 }
-export function z5CanShoot(m){return m.mode!=='parkour';}
-export function z5ModeState(mode,now){
+export function z5CanShoot(m){return m.mode!=='parkour'&&(m.mode!=='roulette'||m.rule.phase==='fight');}
+export function z5ModeState(mode,now,rng=Math.random){
+  if(mode==='roulette')return {round:1,phase:'fight',weapon:Math.floor(clamp(rng(),0,.999999)*4),deadline:now+60000};
   if(mode==='chaos')return {hazard:false,changeAt:now+12000,pulseAt:now+1000,phase:0};
   if(mode==='parkour')return {progress:{},gates,total:gates.length};
   return null;
@@ -47,6 +49,13 @@ export function z5Elimination(m,victim,killer,now,{finish,mark}){
       mark(m,now,'evolution',killer.name+' advanced to weapon '+Math.min(weaponOrder.length,killer.kills+1),killer.id);
       if(killer.kills>=weaponOrder.length)finish(m,killer.team,'gun-game',now);
       return true;
+    case 'roulette':
+      victim.spawnAt=0;
+      m.score[killer.team]++;
+      mark(m,now,'roulette',killer.name+' won roulette round '+m.rule.round,killer.id);
+      if(m.score[killer.team]>=3)finish(m,killer.team,'roulette',now);
+      else{m.rule.phase='break';m.rule.deadline=now+2500;}
+      return true;
     case 'onechamber':
       victim.spawnAt=victim.deaths>=3?0:now+2700;
       if(victim.deaths>=3)victim.forfeited=true;
@@ -70,7 +79,22 @@ export function z5Elimination(m,victim,killer,now,{finish,mark}){
     default:return false;
   }
 }
-export function z5Advance(m,now,{finish,mark}){
+export function z5Advance(m,now,{finish,mark,spawn=()=>{}}){
+  if(m.mode==='roulette') {
+    const s=m.rule;
+    if(now>=s.deadline){
+      if(s.phase==='fight'){
+        s.phase='break';s.deadline=now+2500;
+        mark(m,now,'roulette','Roulette round '+s.round+' timed out');
+      }else{
+        s.round++;s.phase='fight';s.deadline=now+60000;
+        s.weapon=Math.floor(clamp(m.rng(),0,.999999)*4);
+        for(const p of m.players.values())if(!p.forfeited)spawn(p,now);
+        mark(m,now,'roulette','Roulette round '+s.round+' · assigned weapon '+(s.weapon+1));
+      }
+    }
+    if(s.phase!=='fight')return false;
+  }
   if(m.mode==='chaos'){
     const s=m.rule;
     if(now>=s.changeAt){
@@ -111,6 +135,7 @@ export function z5Objective(m,who,now){
   }
   if(m.mode==='gungame')return {type:'gungame',weaponStage:who?Math.min(4,who.kills+1):1,stages:4};
   if(m.mode==='onechamber')return {type:'onechamber',lives:who?Math.max(0,3-who.deaths):3,ammo:who?.ammo?.[2]||0};
+  if(m.mode==='roulette')return {type:'roulette',round:m.rule.round,weapon:m.rule.weapon,phase:m.rule.phase,deadline:m.rule.deadline};
   if(m.mode==='hardcore')return {type:'hardcore',maxHp:60};
   if(m.mode==='bounty')return {type:'bounty',minKills:2,bonus:2};
 }
