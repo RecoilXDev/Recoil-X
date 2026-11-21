@@ -110,8 +110,8 @@ jobs:
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
-          grep -Fq 'content="Z.5-BRAND-FIX-3"' /tmp/recoil-z5-live.html
-          grep -Fq '<title>RECOIL X Z.5 · Combat Quality</title>' /tmp/recoil-z5-live.html
+          grep -Fq 'content="Z.5-TACTICS-4"' /tmp/recoil-z5-live.html
+          grep -Fq '<title>RECOIL X Z.5 · Tactical Expansion</title>' /tmp/recoil-z5-live.html
           grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
             echo 'Legacy Z.3 startup branding unexpectedly present' >&2; exit 1
@@ -126,9 +126,15 @@ jobs:
           grep -Fq 'Career & Clans' /tmp/recoil-z5-ingame.js
           grep -Fq 'Forge & Market' /tmp/recoil-z5-ingame.js
           grep -Fq 'Match Hub' /tmp/recoil-z5-ingame.js
-          grep -Fq 'Z.5-CLEAN-2' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Z.5-TACTICS-4' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5-release-strip' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5WhatsNew' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Training Academy' /tmp/recoil-z5-ingame.js
+          grep -Fq 'EMP grenade (solo)' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Deployable shield (solo)' /tmp/recoil-z5-ingame.js
+          grep -Fq 'function rx5AcademyFinish' /tmp/recoil-z5-live.html
+          grep -Fq 'function rx5BlueprintWeapon' /tmp/recoil-z5-live.html
+          grep -Fq 'rx5Portable:true' /tmp/recoil-z5-live.html
           curl --fail --silent --show-error --location \
             --output /tmp/recoil-z5-admin.js https://recoil-x.alwaysdata.net/admin-panel.js
           grep -Fq "api('me')" /tmp/recoil-z5-admin.js
@@ -143,7 +149,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'z5-brand-fix-3' /tmp/recoil-z5-sw.js
+          grep -Fq 'z5-tactics-4' /tmp/recoil-z5-sw.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
