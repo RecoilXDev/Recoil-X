@@ -2,7 +2,7 @@
 ## Scope, acceptance matrix and deployment safety
 
 ### Z.5 — Visible Combat Update & Clean Navigation (2026-11-21)
-- Source branch: `z5-visible-update-clean-ui-20261121`. **Status: in verification; not yet claimed live.**
+- Source branch: `z5-visible-update-clean-ui-20261121`. **Status: LIVE.** Merged as [PR #14](https://github.com/RecoilXDev/Recoil-X/pull/14) at `237e93488f36c846a308ce9485a5bbae397a6f61`. [Alwaysdata deployment #44919850869](https://github.com/RecoilXDev/Recoil-X/actions/runs/44919850869) passed 16 workflow steps, including fresh Z.5 build marker, default offline heat, new menu assets and service worker verification.
 - Replaced crowded Z.5 navigation with a prominent Quick Play / Modes / Locker / Friends / Settings flow and a clear "What's New" release panel. Existing advanced menus remain available; Career, Forge and Match Hub move to a compact More Features section.
 - Combined bot difficulty, HUD accessibility and combat options into a single settings section; all are reversible. No account saves, missions, 2031 calendar or currency tables are erased.
 - Offline weapon overheating is enabled **by default for new/default settings** so solo Quick Play visibly uses the combat update; explicit existing user choices are preserved.
