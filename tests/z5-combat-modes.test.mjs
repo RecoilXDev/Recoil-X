@@ -105,3 +105,44 @@ test('Duel Roulette uses identical server-selected weapons and advances rounds',
  assert.equal(m.rule.phase,'fight');
  assert.equal(z5Weapon(m,p,0),z5Weapon(m,v,1));
 });
+
+test('Search & Destroy requires a real hold to plant, and defenders can disarm before fuse',()=>{
+ const m=make('searchdestroy'),a=m.players.get(1),d=m.players.get(2);
+ assert.ok(MODES.includes('searchdestroy'));assert.equal(m.rule.armed,false);
+ a.x=0;a.z=0;a.input.use=true;
+ const events=[],opts={finish:()=>{},mark:(m,at,kind)=>events.push(kind),spawn:()=>{}};
+ z5Advance(m,1200,opts);assert.equal(m.rule.armed,false,'one instantaneous tap cannot plant');
+ z5Advance(m,2800,opts);assert.equal(m.rule.armed,true);
+ assert.equal(z5Objective(m,a,2800).armed,true);
+ d.x=0;d.z=0;d.input.use=true;
+ z5Advance(m,3000,opts);assert.equal(m.score[1],0);
+ z5Advance(m,5600,opts);assert.equal(m.score[1],1);
+ assert.equal(m.rule.phase,'break');
+ assert.deepEqual(events.filter(e=>e==='plant'||e==='defuse'),['plant','defuse']);
+});
+test('Search & Destroy rounds have no automatic respawn on elimination',()=>{
+ const m=make('searchdestroy'),a=m.players.get(1),d=m.players.get(2);
+ a.kills=1;d.deaths=1;d.spawnAt=5000;
+ assert.equal(z5Elimination(m,d,a,2000,{finish:()=>{},mark:()=>{}}),true);
+ assert.equal(d.spawnAt,0);
+});
+test('PvP Extraction completes three supplies followed by the extraction exit',()=>{
+ const m=make('extraction'),p=m.players.get(1);
+ assert.ok(MODES.includes('extraction'));assert.equal(m.rule.stage[0],0);
+ p.input.use=true;let winner=null;
+ const opts={finish:(m,w)=>winner=w,mark:()=>{},spawn:()=>{}};
+ let now=1000;
+ for(let i=0;i<4;i++){
+  const target=m.rule.steps[i];
+  p.x=target.x;p.z=target.z;
+  z5Advance(m,now,opts);
+  assert.equal(m.rule.stage[0],i);
+  z5Advance(m,now+700,opts);
+  assert.equal(m.rule.stage[0],i+1);
+  if(i<3)assert.equal(z5Objective(m,p,now+700).stage,i+1);
+  now+=1000;
+ }
+ assert.equal(winner,0);
+ assert.equal(m.score[0],4);
+ assert.equal(z5Elimination(m,m.players.get(2),p,now,{finish:()=>{},mark:()=>{}}),true);
+});
