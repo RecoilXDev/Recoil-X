@@ -9,7 +9,7 @@ import {makeMatch,inputMatch,updateMatch,snapshot} from '../server/overdrive-mat
 test('heat is per weapon, requires sustained shots, and recovers after cooling',()=>{
  const p={};initCombatQuality(p);
  assert.equal(HEAT_PER_SHOT[1],0);
- for(let i=0;i<21;i++)recordCombatShot(p,0);
+ for(let i=0;i<12;i++)recordCombatShot(p,0);
  assert.equal(heatAllowsShot(p,0),true);
  assert.equal(recordCombatShot(p,0),true);
  assert.equal(heatAllowsShot(p,0),false);
