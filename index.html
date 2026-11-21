@@ -882,6 +882,18 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 #rxSimplePanel .rx-simple-difficulty{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:10px;background:#102b41;color:#d5edf8}
 #rxSimplePanel select{border:1px solid #497b91;background:#0b1c31;color:#eaffff;padding:8px;border-radius:7px;max-width:210px;font-size:12px}
 #rxSimplePanel .rx-simple-note{color:#b8cdd9;font-size:11px;line-height:1.5;margin:12px 0}
+#rxSimplePanel details{margin-top:12px;padding:10px;border:1px solid #456d80;border-radius:9px;text-align:left}
+#rxSimplePanel summary{cursor:pointer;min-height:30px;font-weight:700}
+#rxSimplePanel details label{display:flex;align-items:center;gap:12px;min-height:32px;color:#daf3fa;font-size:13px}
+#rxSimplePanel details input{width:17px;height:17px;accent-color:#48cbda}
+body.rx5-no-minimap #minimap,body.rx5-no-feed #killfeed{display:none!important}
+body.rx5-high-contrast #hud{filter:contrast(1.4) brightness(1.12)}
+body.rx5-reduce-motion #hud *,body.rx5-reduce-motion #mainMenu *,
+body.rx5-reduce-motion #rxStage *,body.rx5-reduce-motion #overlay *{
+  animation-duration:.001ms!important;animation-iteration-count:1!important;
+  transition-duration:.001ms!important
+}
+body.rx5-reduce-motion #hurtfx{opacity:0!important}
 #rxSimplePanel .rx-simple-toggle{width:100%;margin-top:6px;min-height:36px;font-size:12px;background:#132a40}
 #mainMenu:not(.rx-simple-active) #rxSimplePanel{max-width:260px;margin:5px auto 16px;padding:6px;background:transparent;border:0;box-shadow:none}
 #mainMenu:not(.rx-simple-active) #rxSimplePanel .rx-simple-heading,#mainMenu:not(.rx-simple-active) #rxSimpleActions{display:none}
@@ -937,6 +949,12 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
         <option value="nightmare">Nightmare · coordinated tactics</option>
       </select>
     </label>
+    <details id="rx5Accessibility"><summary>Accessibility & HUD settings</summary>
+      <label><input id="rx5MinimapToggle" type="checkbox"> Show minimap</label>
+      <label><input id="rx5KillfeedToggle" type="checkbox"> Show killfeed</label>
+      <label><input id="rx5ContrastToggle" type="checkbox"> High contrast HUD</label>
+      <label><input id="rx5MotionToggle" type="checkbox"> Reduce animations & flashes</label>
+    </details>
     <p class="rx-simple-note">Fewer menus, smarter enemies. All advanced content is still available.</p>
   </div>
   <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Advanced menu</button>
@@ -11911,6 +11929,22 @@ runCrownGame();
   document.getElementById('rxSimpleLocker').onclick=()=>document.getElementById('shopBtn')?.click();
   document.getElementById('rxSimpleFriends').onclick=()=>document.getElementById('roomBtn')?.click();
   document.getElementById('rxSimpleSettings').onclick=()=>document.getElementById('rxSettingsBtn')?.click();
+  // All optional HUD settings are local and reversible; combat essentials remain visible.
+  for(const [id,key,cls,defaults] of [
+    ['rx5MinimapToggle','minimap','rx5-no-minimap',true],
+    ['rx5KillfeedToggle','killfeed','rx5-no-feed',true],
+    ['rx5ContrastToggle','contrast','rx5-high-contrast',false],
+    ['rx5MotionToggle','motion','rx5-reduce-motion',false]
+  ]){
+    const input=document.getElementById(id);
+    if(!input)continue;
+    let preferred=defaults;
+    try{preferred=getStore('rx5-a11y-'+key,defaults)===true;}catch{}
+    input.checked=preferred;
+    const update=()=>{document.body.classList.toggle(cls,key==='minimap'||key==='killfeed'?!input.checked:input.checked);
+      try{setStore('rx5-a11y-'+key,input.checked);}catch{}};
+    input.onchange=update;update();
+  }
   apply(simplified);
 })();
 </script>
