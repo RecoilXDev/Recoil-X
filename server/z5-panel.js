@@ -19,6 +19,7 @@ html+='<div class="box"><h3>Clan management</h3>';
 if(d.clan){html+='<p><b>'+esc(d.clan.name)+'</b> ('+esc(d.clan.role)+')</p><p>'+d.clan.members.map(m=>esc(m.name)+' · '+esc(m.role)).join(' | ')+'</p><button data-action="leave">Leave / disband</button>';if(d.clan.role==='leader')html+='<form data-action="invite">Invite account <input name="name" placeholder="Exact username" required><button>Invite</button></form><form data-action="kick">Remove member <input name="name" required><button>Remove</button></form>';}
 else{html+='<form data-action="create">Create a clan <input name="name" minlength="3" maxlength="24" placeholder="Clan name" required><button>Create</button></form>';for(const i of d.invites||[])html+='<p>Invitation: '+esc(i.name)+' <button data-action="accept" data-slug="'+esc(i.slug)+'">Accept</button></p>';}
 html+='</div><div class="box"><h3>Forge, Trading & Auction House</h3><p class="muted">Earn Z.5 points and materials, craft cosmetics, trade safely and check rivalries.</p><button data-action="economy">Open Armory & Market</button></div>';
+html+='<div class="box"><h3>Live Match Hub</h3><p class="muted">Find public rooms, review your completed matches, watch event replays and check network response time.</p><button data-action="matchhub">Open Match Hub</button></div>';
 html+='<div class="box"><h3>Unlocked player titles</h3><form data-action="title"><select name="title">'+d.titles.available.map(t=>'<option '+(t===d.titles.equipped?'selected':'')+' value="'+esc(t)+'">'+esc(t)+'</option>').join('')+'</select><button>Equip</button></form></div>';
 html+='<div class="box"><h3>Network diagnostics</h3><p class="muted">HTTP response timing only; not packet-loss measurement.</p><button data-action="ping">Measure latency</button><span id="rx5-ping-result"></span></div>';
 if(user?.admin)html+='<div class="box"><h3>Z.5 Admin Audit</h3><button data-action="audit">View recent activity</button><div id="rx5-audit-results"></div></div>';
@@ -30,6 +31,7 @@ el('rx5-body').addEventListener('click',e=>{const button=e.target.closest('butto
 else if(a==='leave'){if(!confirm('Leave or disband your clan?'))return;await post('z5/clan/leave');await render();alert('Clan updated.')}
 else if(a==='accept'){await post('z5/clan/accept',{slug:button.dataset.slug});await render();alert('Joined clan.')}
 else if(a==='logout'){try{await post('logout')}catch{}token='';user=null;sessionStorage.removeItem('rx5-token');login();}
+else if(a==='matchhub'){if(!window.RXZ5MatchHub)throw Error('Match Hub is unavailable.');await window.RXZ5MatchHub.open();}
 else if(a==='economy'){if(!window.RXZ5Economy)throw Error('Economy panel is unavailable.');await window.RXZ5Economy.open();}
 else if(a==='ping'){const t=performance.now();await api('z5/ping');el('rx5-ping-result').textContent=' HTTP round trip '+Math.round(performance.now()-t)+' ms';}
 else if(a==='audit'){const d=await api('z5/admin/audit');el('rx5-audit-results').innerHTML=d.actions.slice(0,30).map(x=>'<p>'+esc(x.actor)+' · '+esc(x.action)+' · '+esc(x.details)+'</p>').join('')||'<p>No Z.5 activity yet.</p>';}
