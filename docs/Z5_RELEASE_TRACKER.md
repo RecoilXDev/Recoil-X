@@ -1,6 +1,17 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Z.5 — Visible Combat Update & Clean Navigation (2026-11-21)
+- Source branch: `z5-visible-update-clean-ui-20261121`. **Status: in verification; not yet claimed live.**
+- Replaced crowded Z.5 navigation with a prominent Quick Play / Modes / Locker / Friends / Settings flow and a clear "What's New" release panel. Existing advanced menus remain available; Career, Forge and Match Hub move to a compact More Features section.
+- Combined bot difficulty, HUD accessibility and combat options into a single settings section; all are reversible. No account saves, missions, 2031 calendar or currency tables are erased.
+- Offline weapon overheating is enabled **by default for new/default settings** so solo Quick Play visibly uses the combat update; explicit existing user choices are preserved.
+- A release identity `Z.5-CLEAN-2`, refreshed service-worker cache and stricter post-deployment live asset checks prevent a previous generic smoke test from incorrectly validating an older UI.
+- Only authenticated admins can see the Admin controls; no public floating admin launcher.
+- This is UI/visibility remediation for the deployed combat update, **not delivery of all 85 originally requested features**. Physical mobile/TV QA is still outstanding.
+
+
+
 ### Z.5 Combat & Quality pass (2026-11-21) — LIVE; remaining backlog incomplete
 - Merged via [pull request #13](https://github.com/RecoilXDev/Recoil-X/pull/13), commit `53bfeb5143594b0f88ce643cc549e7940234b85f`; [Alwaysdata deployment #44918624323](https://github.com/RecoilXDev/Recoil-X/actions/runs/44918624323) passed all phases, including upload, restart, live-page check and asset verification.
 - **Playable combat**: server-authoritative assault rifle/SMG overheat and cooldown in casual/nonseason multiplayer, with per-player heat HUD. Seasonal/ranked mode balance remains unchanged. Local offline tactical heat is optional in the simple menu.
