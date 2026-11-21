@@ -438,7 +438,22 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     publish(room);
   }
 
+  // Only publicly joinable rooms are discoverable; private codes are never exposed.
+  function browse({mode='',size=null}={}){
+    const now=clock(),filter=typeof mode==='string'?mode.slice(0,32):'';
+    return [...rooms.values()].filter(r=>!r.ranked&&!r.secret&&!r.locked&&!r.squad &&
+      r.phase==='lobby'&&r.expires>now&&players(r).length<capacity(r)&&(!filter||r.mode===filter) &&
+      (size==null||r.size===size)).slice(0,30).map(r=>({
+        code:r.code,mode:r.mode,size:r.size,players:players(r).length,capacity:capacity(r),
+        expires:r.expires,phase:r.phase
+      }));
+  }
+  function statistics(){
+    return {rooms:rooms.size,activeMatches:[...rooms.values()].filter(r=>r.phase==='playing').length,
+      queuedPlayers:queue.size};
+  }
+
   const timer=setInterval(tick,50);
   timer.unref();
-  return {packet,attach,disconnect,drop,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
+  return {packet,attach,disconnect,drop,browse,statistics,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
 }
