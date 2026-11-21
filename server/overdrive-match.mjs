@@ -1,6 +1,7 @@
 // Movement, hits, ammo, objectives and results use server time and state.
 import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
 import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimination, z5Advance, z5Objective } from './z5-combat-modes.mjs';
+import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allowCombatInput} from './z5-combat-quality.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
 export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES];
@@ -48,6 +49,7 @@ function spawn(p, now) {
     weapon:p.budget?3:0,loadout:p.budget?3:0,prop:0,
     ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),taps:null,inputAt:now});
   z5Spawn(p,now);
+  initCombatQuality(p);
 }
 
 export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random}) {
@@ -85,6 +87,7 @@ export function inputMatch(m,id,data,now) {
   if(!p||p.forfeited||p.offlineAt||m.result||!Number.isSafeInteger(data.seq)||data.seq<=p.seq||
     data.seq>2147483647||![data.f,data.s,data.yaw,data.pitch].every(Number.isFinite)||
     !Number.isInteger(data.weapon)||!weapons[data.weapon]) return false;
+  if(!allowCombatInput(p,now))return false;
   const f=clamp(data.f,-1,1),s=clamp(data.s,-1,1);
   const scale=Math.max(1,Math.hypot(f,s));
   p.seq=data.seq;p.inputs++;p.inputAt=now;
@@ -237,6 +240,9 @@ function fire(m,p,now) {
   const w=weapons[p.weapon];
   p.ammo[p.weapon]--;
   p.readyShot=now+w.interval*(p.boost>now ? .74 : 1);
+  if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
+    m.events.push({type:'z2:notice',only:p.id,message:'Weapon overheated · release fire to cool down.'});
+  }
   const eye=[p.x,1.62+p.jump,p.z];
   let end;
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
@@ -352,6 +358,7 @@ export function updateMatch(m,now) {
   for(const r of m.relics)if(r.returnAt&&r.returnAt<=now)resetRelic(r);
   for(const p of m.players.values()){
     if(m.result||m.roundAt)break;
+    coolCombatQuality(p,delta);
     const taps=p.taps;
     p.taps=null;
     if(p.forfeited||p.offlineAt)continue;
@@ -374,7 +381,7 @@ export function updateMatch(m,now) {
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=input.fire||taps?.fire;
     if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(p,now);
-    if(firing&&z5CanShoot(m)&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
+    if(firing&&z5CanShoot(m)&&(m.season||m.tournament||heatAllowsShot(p,p.weapon))&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
       (m.mode!=='props'||p.team!==m.rule.half))fire(m,p,now);
   }
   recordLead(m,now);
@@ -414,6 +421,7 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
     else rows.push(packed?(actor.packedPublic??=packRow(actor.publicRow)):actor.publicRow);
   }
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
+    heat:viewer?.rx5Heat?.[viewer.weapon]??0,overheated:!!viewer?.rx5Overheated?.[viewer.weapon],
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
     objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:

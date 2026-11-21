@@ -901,6 +901,20 @@ body.rx5-reduce-motion #hurtfx{opacity:0!important}
 @media(max-width:430px){#rxSimplePanel{padding:12px}#rxSimplePanel .rx-simple-difficulty{flex-direction:column}#rxSimplePanel select{max-width:100%}}
 @media(prefers-reduced-motion:reduce){#rxSimplePanel *{animation:none!important;transition:none!important}}
 </style>
+
+<style id="rx5-combat-quality-css">
+#rx5HeatHud{margin-top:5px;min-width:130px;font:11px/1.3 system-ui,sans-serif;color:#91e2e9;letter-spacing:.025em}
+#rx5HeatHud .rx5-heat-track{height:5px;border-radius:999px;margin-top:3px;background:#244250;overflow:hidden}
+#rx5HeatHud .rx5-heat-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#58d9d0,#ffae53);transition:width .14s linear}
+#rx5HeatHud.hot{color:#ffb9a0}#rx5HeatHud.hot .rx5-heat-track i{background:#f47f67}
+#rx5MasteryHud{font-size:10px;line-height:1.35;color:#d7b8fa;margin-top:3px}
+body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 2px #000) contrast(1.3)}
+#rx5CombatSettings{margin-top:10px;padding:10px;border:1px solid #456d80;border-radius:10px;text-align:left}
+#rx5CombatSettings summary{cursor:pointer;color:#d2f5ff;font-weight:750}
+#rx5CombatSettings label{display:flex;gap:10px;align-items:center;min-height:35px;font-size:12px;color:#e5f6ff}
+#rx5CombatSettings input{width:18px;height:18px}
+#rx5QualityNote{font-size:11px;color:#b9d2db;line-height:1.4}
+</style>
 </head>
 <body>
 <div id="rxStage">
@@ -1752,10 +1766,10 @@ if(target){hits++;rx2HitMarker(target,headshot);let dmg=weapon.damage*(mode==='s
 else if(target.name&&target.id!==undefined&&bots.includes(target)){const damage=crownDamageBot(target,dmg);target.hp-=damage;if(damage)rx3BotHit(target,damage);if(target.hp<=0)killBot(target,byGuest?shooter:pl);}
 else if(remotePlayers.has(target.id)){let rem=remotePlayers.get(target.id);rem.hp=Math.max(0,rem.hp-dmg);let conn=remoteConns.get(rem.id);conn?.send({t:'health',hp:rem.hp,shield:rem.shield,hit:true});if(rem.hp<=0&&rem.alive!==false){rem.deaths++;rem.hp=0;rem.alive=false;rem.respawnAt=performance.now()/1000+3;conn?.send({t:'down'});shooter.kills=(shooter.kills||0)+1;z1CreditKill(shooter);if(shooter===pl)addCoins(Math.round(75*(equippedPet==='scarab'?1.2:1)));else remoteConns.get(shooter.id)?.send({t:'coins',amount:75});addFeed(`${shooter.name||username} ✦ ${rem.name}`);}}}}
 return hits;}
-function killBot(bot,killer){if(rx2OnBotKilled(bot,killer))return;if(mode==='duel'){rxDuelBotKilled(bot,killer);return;}if(mode==='infection'){rxInfectionBotKilled(bot,killer);return;}if(mode==='mystery'){vxMysteryBotKill(bot,killer);return;}if(mode==='boss'){vxBossOnKill(bot,killer);return;}vxOnKill(killer);bot.deaths=(bot.deaths||0)+1;bot.alive=false;bot.respawn=performance.now()/1000+rand(3.5,6.5);killer.kills=(killer.kills||0)+1;addFeed(`${killer.name||username} ✦ ${bot.name}`);if(killer===pl)addCoins(Math.round(25*(equippedPet==='scarab'?1.2:1)*(performance.now()/1000<vxDoubleCoinUntil?2:1)));else if((mode==='host'||z1IsPartyHost())&&remoteConns.has(killer.id))remoteConns.get(killer.id)?.send({t:'coins',amount:25});toast('💥 '+tr('botKill')+' +25 🪙');hitFlash=.22;playSound('kill');if(mode==='host')broadcast({t:'feed',text:`${killer.name||username} ✦ ${bot.name}`});}
+function killBot(bot,killer){if(rx2OnBotKilled(bot,killer))return;if(mode==='duel'){rxDuelBotKilled(bot,killer);return;}if(mode==='infection'){rxInfectionBotKilled(bot,killer);return;}if(mode==='mystery'){vxMysteryBotKill(bot,killer);return;}if(mode==='boss'){vxBossOnKill(bot,killer);return;}vxOnKill(killer);bot.deaths=(bot.deaths||0)+1;bot.alive=false;rx5MasteryKill(pl.weapon,killer);bot.respawn=performance.now()/1000+rand(3.5,6.5);killer.kills=(killer.kills||0)+1;addFeed(`${killer.name||username} ✦ ${bot.name}`);if(killer===pl)addCoins(Math.round(25*(equippedPet==='scarab'?1.2:1)*(performance.now()/1000<vxDoubleCoinUntil?2:1)));else if((mode==='host'||z1IsPartyHost())&&remoteConns.has(killer.id))remoteConns.get(killer.id)?.send({t:'coins',amount:25});toast('💥 '+tr('botKill')+' +25 🪙');hitFlash=.22;playSound('kill');if(mode==='host')broadcast({t:'feed',text:`${killer.name||username} ✦ ${bot.name}`});}
 function animateGun(anim,duration){let art=$('weaponArt');art.classList.remove('shoot','reload','switching');void art.offsetWidth;art.classList.add(anim);clearTimeout(gunAnimTimer);gunAnimTimer=setTimeout(()=>art.classList.remove(anim),duration);}
-function fire(now){if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}pl.nextShot=now+w.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;pl.shots+=w.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
-if(mode==='guest'){if(hostConn?.open)hostConn.send({t:'fire',x:pl.x,z:pl.z,yaw:pl.yaw,pitch:pl.pitch,crouched:pl.crouched,weapon:pl.weapon});}else{const hits=fireCore(pl,w);pl.hits+=hits;if(hits){hitFlash=.14;$('crosshair').classList.add('hit');setTimeout(()=>$('crosshair').classList.remove('hit'),100);playSound('hit');}}
+function fire(now){if(rx5ClientOverheated(now))return;if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}pl.nextShot=now+w.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;rx5ClientShot(pl.weapon);pl.shots+=w.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
+if(mode==='guest'){if(hostConn?.open)hostConn.send({t:'fire',x:pl.x,z:pl.z,yaw:pl.yaw,pitch:pl.pitch,crouched:pl.crouched,weapon:pl.weapon});}else{const hits=fireCore(pl,w);pl.hits+=hits;rx5MasteryHits(pl.weapon,hits);if(hits){hitFlash=.14;$('crosshair').classList.add('hit');setTimeout(()=>$('crosshair').classList.remove('hit'),100);playSound('hit');}}
 updateHUD();}
 function reload(now=performance.now()/1000){const rx3Started=pl&&pl.alive&&phase==='playing'&&now>=(pl.reloadEnd||0)&&pl.mags&&pl.stocks&&pl.mags[pl.weapon]<weapons[pl.weapon].max&&pl.stocks[pl.weapon]>0;if(!pl.alive||now<pl.reloadEnd)return;const w=weapons[pl.weapon],n=pl.weapon;if(pl.mags[n]>=w.max||pl.stocks[n]<=0)return;pl.reloadEnd=now+w.reload*(equippedPet==='cobra'?.84:1);toast('🔄 '+tr('reloadMsg'));animateGun('reload',w.reload*(equippedPet==='cobra'?.84:1)*1000);if(rx3Started)rx3ReloadStart(now,pl.reloadEnd);playSound('reload');}
 function changeWeapon(n){if(mode==='chaos'&&rxChaosType==='sniper')return;switchGunWithAnimation(n);}
@@ -1773,6 +1787,7 @@ let rx5LastPlayerShot=null,rx5SquadIntel=null;
 function rx5BotTacticsEnabled(){
   return rx5TacticalMode!=='standard'&&['solo','custom','objective','survival','builder','host'].includes(mode);
 }
+function rx5TacticalLimit(){return activeMap()?.ogClassic?33:ARENA_HALF-5;}
 function rx5BotFindCover(b,target,now){
   let best=null,score=-Infinity,reviewed=0;
   const geometry=[...obstacles,...rx2Covers.filter(c=>c.hp>0)];
@@ -1815,7 +1830,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   // Do not keep restarting the hide timer; that would trap a wounded bot forever.
   if(m.mode==='hide'&&now>=m.hideUntil){
     m.mode='peek';
-    m.goal={x:clamp(b.x+m.peekSide*3.5,-33,33),z:b.z+3.5*(b.z>target.z?1:-1)};
+    m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:b.z+3.5*(b.z>target.z?1:-1)};
     m.nextPlan=now+.85;
   }
   const prev=m.goal,lowHp=b.hp<(elite?52:43);
@@ -1830,7 +1845,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
       m.peekSide=b.strafedir||1;
     }else if(canSee){
       const toTarget=distance||1;
-      const side=(b.strafedir||1)*(elite?13:10);
+      const side=(elite?(b.id%2===0?-1:1):(b.strafedir||1))*(elite?13:10);
       const desiredDistance=elite?16:19;
       let x=target.x-(target.x-b.x)/toTarget*desiredDistance-
         (target.z-b.z)/toTarget*side;
@@ -1856,7 +1871,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
     if(remain<1.6&&m.mode==='cover')m.mode='hide';
     if(m.mode==='hide'&&now>=m.hideUntil){
       m.mode='peek';
-      m.goal={x:clamp(b.x+m.peekSide*3.5,-33,33),z:b.z+3.5*(b.z>target.z?1:-1)};
+      m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:b.z+3.5*(b.z>target.z?1:-1)};
     }
     if(remain<1.7&&(m.mode==='investigate'||m.mode==='patrol'||m.mode==='peek')){
       m.nextPlan=0;m.goal=null;
@@ -1922,7 +1937,7 @@ let accuracy=clamp(.66-d/48,.13,.58)*(difficulty===0?.7:difficulty===2?1.13:1);i
 if(target===pl)hurt(dmg*(equippedPet==='wisp'?.85:1));else{if(target.protectedUntil>now){b.nextShot=Math.max(b.nextShot,1.6);return;}target.shield=target.shield||0;let block=Math.min(target.shield,dmg*.65);target.shield-=block;target.hp=Math.max(0,target.hp-(dmg-block));if(target.hp<=0&&target.alive!==false){target.deaths++;target.hp=0;target.alive=false;target.respawnAt=performance.now()/1000+3;remoteConns.get(target.id)?.send({t:'down'});}else{remoteConns.get(target.id)?.send({t:'health',hp:target.hp,shield:target.shield,hit:true});}}}
 const end={x:target.x+rand(-.25,.25),y:1.45,z:target.z+rand(-.25,.25)};tracers.push({a:{x:b.x,y:1.65,z:b.z},b:end,t:.2,color:[1,.38,.24]});rx2SoundAt('enemy-shot',b.x,b.z);}
 }
-function simulate(dt,now){if(phase!=='playing'||paused)return;rxCustomTick(dt,now);rx2Tick(dt,now);
+function simulate(dt,now){rx5ClientTick(dt,now);if(phase!=='playing'||paused)return;rxCustomTick(dt,now);rx2Tick(dt,now);
 if(mode==='host')for(const guest of remotePlayers.values()){if(guest.alive===false&&guest.respawnAt&&now>=guest.respawnAt){let possibles=spawns.filter(s=>!blocked(s[0],s[1],.6)),s=possibles[Math.floor(Math.random()*possibles.length)]||[0,29];Object.assign(guest,{x:s[0],z:s[1],hp:100,shield:75,alive:true,respawnAt:0,protectedUntil:now+2.5});remoteConns.get(guest.id)?.send({t:'respawn',x:s[0],z:s[1]});shuffleBotsAfterDeath();}}
 if(!pl.alive&&!spectating)return;
 if(!spectating&&!z1ChatOpen&&!z1DriveTick(dt,now)){tickPet(dt);
@@ -1947,7 +1962,7 @@ for(let i=tracers.length-1;i>=0;i--){tracers[i].t-=dt;if(tracers[i].t<=0)tracers
 if(mode==='mystery')vxMysterySim(dt,now);if(mode!=='guest'){gameSeconds-=dt;if(gameSeconds<=0){gameSeconds=0;if(mode==='duel'&&rxDuelOutcome===null)rxDuelResolve(false);else finish();}if(!mode.startsWith('crown-')&&pl.kills>=30&&!['duel','infection','campaign','heist','convoy','survival','builder'].includes(mode))finish();}
 if(now-lastHudUpdate>1/v91Config().hud){lastHudUpdate=now;updateHUD();rx2UpdateHud();}}
 function finish(){if(phase!=='playing')return;rx3VictoryPrepare();rx2FinishMatch();const rxResult=rxModeResult();rxFinishStats();const vxWasMystery=mode==='mystery',vxWasBoss=mode==='boss';let vxWin=vxWasMystery?vxMysteryEnd():vxWasBoss?vxBossOutcome==='win':null;vxBonusEvent('matches');clearDeathTimers();if(mode==='host')broadcast({t:'end'});phase='end';if(document.pointerLockElement)document.exitPointerLock();$('endKills').textContent=pl.kills;$('endDeaths').textContent=pl.deaths;$('endAccuracy').textContent=(pl.shots?Math.round(pl.hits/pl.shots*100):0)+'%';$('endCoins').textContent=earnedMatch;$('endTitle').textContent=rxResult!==null?(rxResult==='win'?rxT('victory'):rxT('defeat')):vxWin!==null?(vxWin?vxT('vxVictory'):vxT('vxDefeat')):(pl.kills>=30?tr('won'):tr('timerOver'));showScreen('endMenu');rx3VictoryShow();rx2ShowMatchStats();setMusic(vxWin!==null?(vxWin?'victory':'results'):(pl.kills>=30?'victory':'results'));}
-function updateHUD(){ if(!pl.mags?.length)return;rxUpdateHud();$('rxInspectBtn').classList.toggle('hide',!mobile||phase!=='playing'||paused);vxUpdateHud();let now=performance.now()/1000,rem=Math.max(0,pl.sprintLockedUntil-now),left=rem>0?rem:10-pl.sprintUsed; if($('sprintBar')){$('sprintBar').style.width=clamp(left/10*100,0,100)+'%';$('sprintBar').classList.toggle('exhausted',rem>0);$('sprintState').textContent=rem>0?tr('exhausted')+' '+Math.ceil(rem)+'s':left.toFixed(1)+'s';$('sneakState').textContent=pl.crouched?tr('sneaking'):tr('standUp');}let count=(mode==='host'?1+remoteConns.size:mode==='guest'?roomPlayerCount:1);$('hudPlayers').textContent=mode==='solo'?`👥 1 • 🤖 ${bots.filter(b=>b.alive).length}`:`👥 ${count} ${tr('player')}`; $('timer').textContent=String(Math.floor(Math.max(0,gameSeconds)/60)).padStart(2,'0')+':'+String(Math.floor(Math.max(0,gameSeconds)%60)).padStart(2,'0');$('kills').textContent=pl.kills;$('deaths').textContent=pl.deaths;$('healthText').textContent=Math.ceil(pl.hp);$('shieldText').textContent=Math.ceil(pl.shield);$('healthBar').style.width=clamp(pl.hp,0,100)+'%';$('shieldBar').style.width=clamp(pl.shield,0,100)+'%';$('ammo').textContent=pl.mags[pl.weapon];$('reserve').textContent=pl.stocks[pl.weapon];$('weaponLabel').textContent=mode==='mystery'?(vxRole==='murderer'?'🔪 '+(VX_KNIVES.find(k=>k.id===vxEquippedKnife)?.name||'KNIFE'):vxRole==='sheriff'?'🔫 SHERIFF REVOLVER':'✋ SURVIVE'):weapons[pl.weapon].name;updateChestPrompt();}
+function updateHUD(){ rx5QualityHud();if(!pl.mags?.length)return;rxUpdateHud();$('rxInspectBtn').classList.toggle('hide',!mobile||phase!=='playing'||paused);vxUpdateHud();let now=performance.now()/1000,rem=Math.max(0,pl.sprintLockedUntil-now),left=rem>0?rem:10-pl.sprintUsed; if($('sprintBar')){$('sprintBar').style.width=clamp(left/10*100,0,100)+'%';$('sprintBar').classList.toggle('exhausted',rem>0);$('sprintState').textContent=rem>0?tr('exhausted')+' '+Math.ceil(rem)+'s':left.toFixed(1)+'s';$('sneakState').textContent=pl.crouched?tr('sneaking'):tr('standUp');}let count=(mode==='host'?1+remoteConns.size:mode==='guest'?roomPlayerCount:1);$('hudPlayers').textContent=mode==='solo'?`👥 1 • 🤖 ${bots.filter(b=>b.alive).length}`:`👥 ${count} ${tr('player')}`; $('timer').textContent=String(Math.floor(Math.max(0,gameSeconds)/60)).padStart(2,'0')+':'+String(Math.floor(Math.max(0,gameSeconds)%60)).padStart(2,'0');$('kills').textContent=pl.kills;$('deaths').textContent=pl.deaths;$('healthText').textContent=Math.ceil(pl.hp);$('shieldText').textContent=Math.ceil(pl.shield);$('healthBar').style.width=clamp(pl.hp,0,100)+'%';$('shieldBar').style.width=clamp(pl.shield,0,100)+'%';$('ammo').textContent=pl.mags[pl.weapon];$('reserve').textContent=pl.stocks[pl.weapon];$('weaponLabel').textContent=mode==='mystery'?(vxRole==='murderer'?'🔪 '+(VX_KNIVES.find(k=>k.id===vxEquippedKnife)?.name||'KNIFE'):vxRole==='sheriff'?'🔫 SHERIFF REVOLVER':'✋ SURVIVE'):weapons[pl.weapon].name;updateChestPrompt();}
 function toast(text,duration=1100){const t=$('toast');t.textContent=text;t.style.opacity=1;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.style.opacity=0,duration);}
 function addFeed(text){feedEntries.push({text,until:Date.now()+4500});renderFeed();}
 function renderFeed(){feedEntries=feedEntries.filter(a=>a.until>Date.now()).slice(-5);$('killfeed').replaceChildren(...feedEntries.map(a=>{let div=document.createElement('div');div.className='feed';div.textContent=a.text;return div}));}
@@ -2377,7 +2392,7 @@ function capturePointer(){
   if(result&&typeof result.catch==='function')result.catch(()=>rxEnableTvMouse(true));
  }catch(e){rxEnableTvMouse(true);}
 }
-function startGame(which){rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
+function startGame(which){rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';rx5QualityReset();setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
 function quit(){rx3ClearVisuals();vxAfterQuit();rxAfterQuit();if(mode==='host')for(const s of [...tradeSessions.values()])hostCancelTrade(s,'room closed');activeTrade=null;tradeSessions.clear();tradeInvites.clear();roomRoster=[];socialHide();spectating=false;updateSpectatorUI();clearDeathTimers();setMusic('lobby');phase='menu';paused=false;mouseDown=false;mobileFire=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();if(hostConn){hostConn.close();hostConn=null}if(peer){peer.destroy();peer=null}for(const c of remoteConns.values())c.close();remoteConns.clear();remotePlayers.clear();roomCode='';roomPlayerCount=1;lobbyVotes.clear();showScreen('mainMenu');refreshWallet();}
 $('soloBtn').onclick=showVoteSolo;$('roomBtn').onclick=()=>{mode='host';lobbyVotes.clear();showScreen('roomMenu');};$('backToMainBtn').onclick=()=>showScreen('mainMenu');$('helpBtn').onclick=()=>showScreen('helpMenu');$('helpBackBtn').onclick=()=>showScreen('mainMenu');$('resumeBtn').onclick=()=>{hideOverlay();capturePointer();};$('spectateBtn').onclick=enterSpectator;$('deathSpectateBtn').onclick=enterSpectator;$('spectatePrev').onclick=()=>cycleSpectator(-1);$('spectateNext').onclick=()=>cycleSpectator(1);$('spectateExit').onclick=exitSpectator;$('quitBtn').onclick=quit;$('endHomeBtn').onclick=quit;$('againBtn').onclick=()=>{if(mode==='mystery'){vxShowMysteryMenu();return;}if(mode==='boss'){vxBossStart();return;}if(mode==='solo')showVoteSolo();else if(mode==='host'){lobbyVotes.clear();showScreen('roomMenu');$('roomHostSection').classList.remove('hide');$('lobbyVotes').classList.remove('hide');drawVoteCards();}else quit();};
 $('soundBtn').onclick=()=>{sound=!sound;$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound)setMusic(musicMode);};
@@ -9391,7 +9406,7 @@ function z2Packet(event){
       if(event.reason)z2Say(event.reason);
       break;
     case 'z2:begin':z2Begin(event);break;
-    case 'z2:state':z2ApplyState(z2UnpackState(event));break;
+    case 'z2:state':rx5ApplyRemoteHeat(event);z2ApplyState(z2UnpackState(event));break;
     case 'z2:echo':z2Live.rtt=Math.max(0,Math.round(performance.now()-event.value));break;
     case 'z2:kill':addFeed(event.killer+' eliminated '+event.victim);break;
     case 'z2:shot':z2Shot(event);break;
@@ -11926,6 +11941,102 @@ z1MountJeepUI();
 z2MountUI();
 z3MountUI();
 missionMount();
+
+/* Z.5 Combat Quality — built into RECOIL X, not a separate LAB.
+   Tactical weapon heat and cosmetic mastery are local-only in offline modes.
+   Multiplayer heat is server-authoritative. No existing coins/saves are rewritten. */
+const RX5QKEY='recoil_x_z5_combat_quality_v1';
+const RX5MASTERKEY='recoil_x_z5_weapon_mastery_v1';
+const rx5QualityRead=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v&&typeof v==='object'&&!Array.isArray(v)?v:fallback;}catch{return fallback;}};
+let rx5QualitySettings={localHeat:false,boldReticle:false,...rx5QualityRead(RX5QKEY,{})};
+let rx5Mastery={hits:[0,0,0,0],kills:[0,0,0,0],...rx5QualityRead(RX5MASTERKEY,{})};
+for(const key of ['hits','kills'])rx5Mastery[key]=Array.from({length:4},(_,i)=>Math.max(0,Math.min(1000000,Number(rx5Mastery[key]?.[i])||0)));
+const rx5LocalHeat=[0,0,0,0],rx5Hot=[false,false,false,false];
+const rx5Cost=[8,0,0,6.5];
+let rx5RemoteHeat=0,rx5RemoteHot=false,rx5QualityLastHud=0,rx5QualityLastSave=0,rx5LowFrames=0;
+function rx5QualitySave(){try{localStorage.setItem(RX5QKEY,JSON.stringify(rx5QualitySettings));}catch{}}
+function rx5MasterySave(force=false){
+ const now=performance.now();
+ if(!force&&now-rx5QualityLastSave<900)return;
+ rx5QualityLastSave=now;
+ try{localStorage.setItem(RX5MASTERKEY,JSON.stringify(rx5Mastery));}catch{}
+}
+function rx5OfflineCombat(){return ['solo','custom','survival','objective','builder'].includes(mode);}
+function rx5ClientOverheated(){return rx5OfflineCombat()&&rx5QualitySettings.localHeat&&!!rx5Hot[pl.weapon];}
+function rx5ClientShot(weapon){
+ if(!rx5OfflineCombat()||!rx5QualitySettings.localHeat||!rx5Cost[weapon])return;
+ rx5LocalHeat[weapon]=Math.min(100,rx5LocalHeat[weapon]+rx5Cost[weapon]);
+ if(rx5LocalHeat[weapon]>=100&&!rx5Hot[weapon]){rx5Hot[weapon]=true;toast('🔥 OVERHEAT · RELEASE FIRE TO COOL',1300);}
+}
+function rx5QualityReset(){rx5LocalHeat.fill(0);rx5Hot.fill(false);rx5RemoteHeat=0;rx5RemoteHot=false;rx5QualityHud();}
+function rx5ApplyRemoteHeat(packet){
+ rx5RemoteHeat=Math.max(0,Math.min(100,Number(packet?.heat)||0));
+ rx5RemoteHot=packet?.overheated===true;rx5QualityHud();
+}
+function rx5MasteryHits(weapon,count){
+ if(!rx5OfflineCombat()||!Number.isInteger(weapon)||weapon<0||weapon>3||count<=0)return;
+ rx5Mastery.hits[weapon]=Math.min(1000000,rx5Mastery.hits[weapon]+Math.min(count,12));
+ rx5MasterySave();
+}
+function rx5MasteryKill(weapon,killer){
+ if(!rx5OfflineCombat()||killer!==pl||weapon<0||weapon>3)return;
+ rx5Mastery.kills[weapon]=Math.min(1000000,rx5Mastery.kills[weapon]+1);
+ rx5MasterySave();rx5QualityHud();
+}
+function rx5MasteryGrade(weapon){
+ const points=(rx5Mastery.hits[weapon]||0)+(rx5Mastery.kills[weapon]||0)*5;
+ return points>=600?'GODLY':points>=250?'GOLD':points>=90?'SILVER':points>=25?'BRONZE':'ROOKIE';
+}
+function rx5QualityHud(){
+ const root=document.getElementById('rx5HeatHud'),rank=document.getElementById('rx5MasteryHud');
+ if(!root||!rank)return;
+ const serverMatch=typeof z2IsMatch==='function'&&z2IsMatch()&&phase==='playing';
+ const enabled=serverMatch||(rx5OfflineCombat()&&rx5QualitySettings.localHeat);
+ root.style.display=enabled?'':'none';
+ const pct=serverMatch?rx5RemoteHeat:rx5LocalHeat[pl.weapon]||0;
+ const hot=serverMatch?rx5RemoteHot:rx5Hot[pl.weapon];
+ root.querySelector('[data-rx5heat]').textContent=(hot?'OVERHEATED':'WEAPON HEAT')+' · '+Math.round(pct)+'%';
+ root.querySelector('i').style.width=pct+'%';root.classList.toggle('hot',!!hot);
+ rank.style.display=rx5OfflineCombat()?'':'none';
+ rank.textContent=weapons[pl.weapon]?.name+' MASTERY · '+rx5MasteryGrade(pl.weapon);
+}
+function rx5ClientTick(dt,now){
+ for(let i=0;i<4;i++){
+  if(rx5LocalHeat[i]>0)rx5LocalHeat[i]=Math.max(0,rx5LocalHeat[i]-26*Math.max(0,Math.min(.15,dt)));
+  if(rx5Hot[i]&&rx5LocalHeat[i]<=35)rx5Hot[i]=false;
+ }
+ // Drop purely cosmetic effects first on constrained hardware.
+ if(mobile){if(tracers.length>90)tracers.splice(0,tracers.length-90);
+  if(particles.length>90)particles.splice(0,particles.length-90);}
+ if(mobile&&perfChoice==='auto'&&phase==='playing'&&fpsValue>0&&fpsValue<24){
+  rx5LowFrames+=dt;
+  if(rx5LowFrames>3.5){perfResolutionScale=Math.max(.56,perfResolutionScale-.06);rx5LowFrames=0;}
+ }else rx5LowFrames=Math.max(0,rx5LowFrames-dt*2);
+ if(now-rx5QualityLastHud>.25){rx5QualityLastHud=now;rx5QualityHud();}
+}
+function rx5QualityMount(){
+ const box=document.querySelector('#hud .ammo-box');
+ if(box&&!document.getElementById('rx5HeatHud')){
+  const d=document.createElement('div');d.id='rx5HeatHud';
+  d.innerHTML='<span data-rx5heat>WEAPON HEAT · 0%</span><div class="rx5-heat-track"><i></i></div>';
+  const r=document.createElement('div');r.id='rx5MasteryHud';box.append(d,r);
+ }
+ const wrap=document.getElementById('rxSimpleActions');
+ if(wrap&&!document.getElementById('rx5CombatSettings')){
+  const details=document.createElement('details');details.id='rx5CombatSettings';
+  details.innerHTML='<summary>Combat Quality & Mastery</summary><label><input type="checkbox" id="rx5LocalHeatSetting"> Enable tactical heat in local matches</label><label><input type="checkbox" id="rx5ReticleSetting"> High-visibility crosshair</label><div id="rx5QualityNote">Multiplayer heat is controlled by the server. Weapon mastery is a local cosmetic rank; no coins or account data are changed.</div>';
+  wrap.append(details);
+  const heat=document.getElementById('rx5LocalHeatSetting'),reticle=document.getElementById('rx5ReticleSetting');
+  heat.checked=!!rx5QualitySettings.localHeat;reticle.checked=!!rx5QualitySettings.boldReticle;
+  heat.onchange=()=>{rx5QualitySettings.localHeat=heat.checked;rx5QualitySave();rx5QualityReset();};
+  reticle.onchange=()=>{rx5QualitySettings.boldReticle=reticle.checked;document.body.classList.toggle('rx5-reticle-bold',reticle.checked);rx5QualitySave();};
+ }
+ document.body.classList.toggle('rx5-reticle-bold',!!rx5QualitySettings.boldReticle);
+ window.addEventListener('pagehide',()=>rx5MasterySave(true));
+ rx5QualityHud();
+}
+rx5QualityMount();
+
 runCrownGame();
 
 })();
