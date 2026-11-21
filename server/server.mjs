@@ -14,6 +14,7 @@ import { createZ5Core, migrateZ5 } from './z5-core.mjs';
 import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
 import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 import { createZ5Operations } from './z5-operations.mjs';
+import { startZ5Backups } from './z5-backups.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -132,6 +133,7 @@ export function createRecoilServer(options = {}) {
   });
 
   const operations = createZ5Operations(db,{online:()=>clients.size,roomStats:()=>overdrive.statistics()});
+  const backups = startZ5Backups(db,filename);
   const st = sql => db.prepare(sql);
   const byName = st('SELECT * FROM users WHERE handle=?');
   const byId = st('SELECT * FROM users WHERE id=?');
@@ -604,7 +606,7 @@ export function createRecoilServer(options = {}) {
   },60000);
   cleanup.unref();
   server.on('close',()=>{
-    clearInterval(cleanup);overdrive.close();
+    clearInterval(cleanup);backups.stop();overdrive.close();
     for (const c of clients.values()) cutConnection(c,'Game server stopped.');
     db.close();
   });
