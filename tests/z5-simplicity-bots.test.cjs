@@ -52,7 +52,7 @@ test('tactical enemies require reaction time and current LOS before damage',()=>
  f.context.botTactics.step(bot,f.player,.08,10,true);
  assert.equal(f.shots(),0,'No instant shot on first visual contact');
  bot.rx5Brain.mode='flank';bot.rx5Brain.reactionUntil=0;bot.nextShot=-1;
- f.context.botTactics.step(bot,f.player,.08,12,true);
+ f.context.botTactics.step(bot,f.player,.08,10.9,true);
  assert.ok(f.shots()>=1);
 });
 test('standard intelligence remains a supported lighter fallback',()=>{
