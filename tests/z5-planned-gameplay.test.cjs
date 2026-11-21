@@ -1,0 +1,10 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const {makeHarness}=require('./helpers/dom-harness.cjs');
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const nav=fs.readFileSync(path.join(root,'server/z5-ingame.js'),'utf8');
+const bridge=String.raw
