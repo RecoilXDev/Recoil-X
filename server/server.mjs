@@ -13,6 +13,7 @@ import { createAdminPatch } from './admin-patch.mjs';
 import { createZ5Core, migrateZ5 } from './z5-core.mjs';
 import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
 import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
+import { createZ5Operations } from './z5-operations.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -130,6 +131,7 @@ export function createRecoilServer(options = {}) {
     onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{challenges.onMatchSettled(result,now);}}
   });
 
+  const operations = createZ5Operations(db,{online:()=>clients.size,roomStats:()=>overdrive.statistics()});
   const st = sql => db.prepare(sql);
   const byName = st('SELECT * FROM users WHERE handle=?');
   const byId = st('SELECT * FROM users WHERE id=?');
@@ -317,6 +319,16 @@ export function createRecoilServer(options = {}) {
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (path === '/z5/rooms') {
+        const params=new URL(req.url,'http://localhost').searchParams;
+        const size=params.has('size')?Number(params.get('size')):null;
+        if(size!==null&&(!Number.isInteger(size)||size<1||size>5))throw fail(400,'Invalid team size filter.');
+        return {rooms:overdrive.browse({mode:params.get('mode')||'',size})};
+      }
+      if (path === '/z5/matches') return operations.recent(user);
+      if (path.startsWith('/z5/matches/')) return operations.details(user,path.slice('/z5/matches/'.length));
+      if (path === '/z5/diagnostics') return operations.diagnostics();
+      if (path === '/z5/admin/health') return operations.health(user);
       if (path === '/z5/economy') return economy.view(user);
       if (path === '/z5/challenges') return challenges.board(user);
       if (path === '/z5/status') return z5.status(user);
@@ -430,6 +442,13 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if (path === '/z5-matchhub.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-matchhub.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/z5-economy-panel.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./z5-economy-panel.js',import.meta.url));
@@ -454,7 +473,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
