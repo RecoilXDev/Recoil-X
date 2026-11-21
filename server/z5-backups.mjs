@@ -36,7 +36,7 @@ export function startZ5Backups(db,filename,{now=Date.now,onError=console.error,
   }
   const interval=schedule(run,intervalMs);
   interval.unref?.();
-  // First safe snapshot after the database's additive migrations finish.
-  run();
+  // The first automatic snapshot is due after the interval.
+  // Migration snapshots at startup are managed separately; don't duplicate them.
   return {run,stop:()=>{closed=true;unschedule(interval);}};
 }
