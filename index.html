@@ -1812,8 +1812,15 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   }
   const remembered=m.lastKnown&&now-m.lastSeen<7?m.lastKnown:null;
   if(!canSee&&now-m.lastSeen>7&&!rx5LastPlayerShot)m.lastKnown=null;
+  // Do not keep restarting the hide timer; that would trap a wounded bot forever.
+  if(m.mode==='hide'&&now>=m.hideUntil){
+    m.mode='peek';
+    m.goal={x:clamp(b.x+m.peekSide*3.5,-33,33),z:b.z+3.5*(b.z>target.z?1:-1)};
+    m.nextPlan=now+.85;
+  }
   const prev=m.goal,lowHp=b.hp<(elite?52:43);
-  if(now>=m.nextPlan||!prev||lowHp&&m.mode!=='cover'&&m.mode!=='hide'){
+  if((now>=m.nextPlan&&!(m.mode==='hide'&&now<m.hideUntil))||!prev||
+     (lowHp&&!['cover','hide','peek'].includes(m.mode))){
     m.nextPlan=now+(elite?.55:.95)+Math.random()*.45;
     const hideThis=lowHp||(canSee&&distance<29&&Math.random()<(elite?.56:.37));
     const cover=hideThis?rx5BotFindCover(b,target,now):null;
