@@ -867,6 +867,28 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
 @media(min-width:521px){.mission-layout{grid-template-columns:minmax(200px,1fr) minmax(0,1.65fr)}}
 
 </style>
+<style id="rx5-operation-simplicity-css">
+#mainMenu.rx-simple-active > :not(#rxSimplePanel){display:none!important}
+#rxSimplePanel{max-width:650px;margin:0 auto 14px;padding:18px 17px;border:1px solid #3b7d9b;border-radius:20px;background:linear-gradient(155deg,#0a2238ee,#111b2ce8);color:#e7faff;font:14px/1.45 system-ui,sans-serif;text-align:center;box-shadow:0 15px 44px #0006}
+#rxSimplePanel *{box-sizing:border-box}
+.rx-simple-brand{font-size:clamp(27px,6vw,43px);font-weight:900;letter-spacing:.16em;line-height:1.2}
+.rx-simple-brand b{color:#64e2ef}
+.rx-simple-motto{color:#a9d0dc;font-size:11px;letter-spacing:.22em;margin:7px 0 21px}
+#rxSimplePanel button{border-radius:10px;min-height:47px;cursor:pointer;font-weight:800;letter-spacing:.045em;color:#f0fdff;border:1px solid #3e7391;background:#1c3d53;padding:10px}
+#rxSimplePanel button:focus-visible,#rxSimplePanel select:focus-visible{outline:3px solid #91f0ff;outline-offset:3px}
+#rxSimplePanel .rx-simple-quick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;min-height:72px;font-size:19px;color:white;background:linear-gradient(110deg,#12668a,#138c8c);border:1px solid #6ee4ee;box-shadow:0 0 18px #3fdbdf22}
+#rxSimplePanel .rx-simple-quick small{color:#d8f4fc;font-size:11px;letter-spacing:0;font-weight:500}
+#rxSimplePanel .rx-simple-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:13px 0}
+#rxSimplePanel .rx-simple-difficulty{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:10px;background:#102b41;color:#d5edf8}
+#rxSimplePanel select{border:1px solid #497b91;background:#0b1c31;color:#eaffff;padding:8px;border-radius:7px;max-width:210px;font-size:12px}
+#rxSimplePanel .rx-simple-note{color:#b8cdd9;font-size:11px;line-height:1.5;margin:12px 0}
+#rxSimplePanel .rx-simple-toggle{width:100%;margin-top:6px;min-height:36px;font-size:12px;background:#132a40}
+#mainMenu:not(.rx-simple-active) #rxSimplePanel{max-width:260px;margin:5px auto 16px;padding:6px;background:transparent;border:0;box-shadow:none}
+#mainMenu:not(.rx-simple-active) #rxSimplePanel .rx-simple-heading,#mainMenu:not(.rx-simple-active) #rxSimpleActions{display:none}
+#mainMenu:not(.rx-simple-active) #rxSimpleToggle{min-height:33px}
+@media(max-width:430px){#rxSimplePanel{padding:12px}#rxSimplePanel .rx-simple-difficulty{flex-direction:column}#rxSimplePanel select{max-width:100%}}
+@media(prefers-reduced-motion:reduce){#rxSimplePanel *{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
 <div id="rxStage">
@@ -898,6 +920,27 @@ body.x4-blackout #game{filter:brightness(.52)}body[data-x4vision="night"] #game{
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
+<div id="rxSimplePanel" class="rx-simple-panel" aria-label="RECOIL X Classic menu">
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
+  <div id="rxSimpleActions">
+    <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · OG Futuristic Arena · 5-minute battle</small></button>
+    <div class="rx-simple-grid">
+      <button type="button" id="rxSimpleModes">⚔ MODES</button>
+      <button type="button" id="rxSimpleLocker">◈ LOCKER</button>
+      <button type="button" id="rxSimpleFriends">♧ FRIENDS</button>
+      <button type="button" id="rxSimpleSettings">⚙ SETTINGS</button>
+    </div>
+    <label class="rx-simple-difficulty" for="rxSimpleBotLevel">Bot intelligence
+      <select id="rxSimpleBotLevel" aria-label="Bot intelligence">
+        <option value="standard">Standard · learning</option>
+        <option value="veteran">Veteran · cover and flanking</option>
+        <option value="nightmare">Nightmare · coordinated tactics</option>
+      </select>
+    </label>
+    <p class="rx-simple-note">Fewer menus, smarter enemies. All advanced content is still available.</p>
+  </div>
+  <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Advanced menu</button>
+</div>
   <div class="topline"><span class="brandchip">RECOIL X // VERSION X.5 · EXPANSION</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">20 battlegrounds. Endless battles. Your legend begins here.</div>
   <div class="menu-stats"><span class="versionlabel">VERSION X.5 · 23 SEASONAL EDITIONS</span><span>🌵 <b data-t="fiveMaps">٥ خرائط</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
@@ -1125,6 +1168,11 @@ const VX_OMAN_EVENT_MAP=({id:'oman-fort',name:'Oman Celebration Fort',ar:'قلع
 
 const RX31_MYSTERY_MAPS=[{"id":"mm_school","name":"School","ar":"مدرسة","es":"Escuela","fr":"École","tr":"Okul","emoji":"🏫","desc":"Classrooms, gym and cafeteria","ground":[0.4,0.48,0.53],"wall":[0.28,0.38,0.48],"cover":[0.6,0.67,0.7],"sky":[0.44,0.56,0.68],"mysteryOnly":true},{"id":"mm_mall","name":"Mall","ar":"المركز التجاري","es":"Centro comercial","fr":"Centre commercial","tr":"AVM","emoji":"🛍️","desc":"Shops, food court and kiosks","ground":[0.48,0.47,0.45],"wall":[0.29,0.35,0.39],"cover":[0.7,0.63,0.5],"sky":[0.5,0.55,0.62],"mysteryOnly":true},{"id":"mm_mansion","name":"Mansion","ar":"القصر","es":"Mansión","fr":"Manoir","tr":"Malikâne","emoji":"🏛️","desc":"Ballroom, library and passages","ground":[0.42,0.3,0.28],"wall":[0.33,0.22,0.25],"cover":[0.6,0.46,0.31],"sky":[0.47,0.3,0.38],"mysteryOnly":true},{"id":"mm_hospital","name":"Hospital","ar":"المستشفى","es":"Hospital","fr":"Hôpital","tr":"Hastane","emoji":"🏥","desc":"Wards, reception and treatment rooms","ground":[0.53,0.61,0.61],"wall":[0.39,0.54,0.59],"cover":[0.74,0.8,0.78],"sky":[0.46,0.66,0.69],"mysteryOnly":true},{"id":"mm_office","name":"Office","ar":"المكتب","es":"Oficina","fr":"Bureau","tr":"Ofis","emoji":"🏢","desc":"Cubicles, conference and server rooms","ground":[0.43,0.5,0.53],"wall":[0.25,0.34,0.42],"cover":[0.58,0.64,0.67],"sky":[0.43,0.57,0.67],"mysteryOnly":true},{"id":"mm_arcade","name":"Arcade","ar":"صالة الألعاب","es":"Salón recreativo","fr":"Salle d’arcade","tr":"Oyun salonu","emoji":"🕹️","desc":"Neon machines and prize counter","ground":[0.23,0.22,0.34],"wall":[0.2,0.18,0.33],"cover":[0.48,0.21,0.59],"sky":[0.2,0.18,0.4],"mysteryOnly":true},{"id":"mm_cinema","name":"Cinema","ar":"السينما","es":"Cine","fr":"Cinéma","tr":"Sinema","emoji":"🎬","desc":"Screening rooms and popcorn lobby","ground":[0.26,0.24,0.32],"wall":[0.19,0.17,0.29],"cover":[0.64,0.3,0.28],"sky":[0.22,0.22,0.36],"mysteryOnly":true},{"id":"mm_hotel","name":"Hotel","ar":"الفندق","es":"Hotel","fr":"Hôtel","tr":"Otel","emoji":"🏨","desc":"Guest rooms, reception and lounges","ground":[0.51,0.46,0.39],"wall":[0.34,0.29,0.32],"cover":[0.66,0.57,0.46],"sky":[0.52,0.47,0.54],"mysteryOnly":true},{"id":"mm_library","name":"Library","ar":"المكتبة","es":"Biblioteca","fr":"Bibliothèque","tr":"Kütüphane","emoji":"📚","desc":"Book aisles, reading hall and archives","ground":[0.5,0.39,0.28],"wall":[0.31,0.26,0.22],"cover":[0.55,0.39,0.27],"sky":[0.51,0.44,0.37],"mysteryOnly":true},{"id":"mm_neighborhood","name":"Neighborhood","ar":"الحي السكني","es":"Vecindario","fr":"Quartier","tr":"Mahalle","emoji":"🏘️","desc":"Houses, yards and garages","ground":[0.38,0.48,0.38],"wall":[0.36,0.36,0.37],"cover":[0.57,0.54,0.42],"sky":[0.53,0.66,0.6],"mysteryOnly":true}];
 MAPS.push(...RX31_MYSTERY_MAPS);
+// Operation Simplicity: a lightweight reconstruction of the historic futuristic arena.
+// Original Zone 90 geometry was not found in the available repository history.
+MAPS.push({id:'og-future',name:'OG Futuristic Arena',ar:'الساحة المستقبلية الأصلية',es:'Arena futurista clásica',
+  fr:'Arène futuriste originale',tr:'Orijinal Fütüristik Arena',emoji:'🔷',desc:'Classic three-lane sci-fi combat',
+  ogClassic:true,ground:[.13,.19,.26],wall:[.18,.28,.37],cover:[.22,.39,.48],sky:[.09,.17,.30]});
 let rx31StickTouchIdentifier=null; // iOS: preserve joystick during other fingers' pointercancel
 let currentMapId='dunes',myVote=null,soloBotVotes=[],lobbyVotes=new Map(),votingContext='solo';
 let activeMap=()=>crownArena||MAPS.find(m=>m.id===currentMapId)||MAPS[0];
@@ -1388,10 +1436,47 @@ function rx31BuildMysteryArena(m){
  }
 }
 
+
+// Rebuilt from the Zone 90 design brief, not an exact historical asset restoration.
+// Symmetrical cover and unobstructed three-lane paths; one simplified arena draw.
+const z5ClassicSpawnPoints=[[0,27],[0,-27],[-17,24],[17,-24],[-17,-24],[17,24],[-25,0],[25,0]];
+function z5BuildOGFuture(){
+  const cyan=[.17,.83,.93],blue=[.20,.43,.72],metal=[.17,.27,.35],trim=[.27,.55,.64];
+  putBox(staticVerts,0,-.18,0,80,.16,80,[.10,.16,.22]);
+  for(let x=-36;x<=36;x+=8){
+    putBox(staticVerts,x,-.06,0,.055,.012,76,[.13,.34,.43]);
+    putBox(staticVerts,0,-.06,x,76,.012,.055,[.13,.34,.43]);
+  }
+  for(const t of [-1,1]){
+    addObstacle(t*39,0,1.8,80,7,metal);
+    addObstacle(0,t*39,80,1.8,7,metal);
+    putBox(staticVerts,t*38.1,5,0,.24,.19,76,cyan);
+    putBox(staticVerts,0,5,t*38.1,76,.19,.24,cyan);
+    // Two balanced spawn shelters and their illuminated entries.
+    addObstacle(-12,t*30,9,2.2,3.0,metal);
+    addObstacle(12,t*30,9,2.2,3.0,metal);
+    putBox(staticVerts,0,.02,t*30,7,.08,7,t===1?[.44,.14,.17]:blue);
+    putBox(staticVerts,0,.04,t*21,3,.08,6,cyan);
+    // Side-lane cover is mirrored for both teams.
+    addObstacle(t*22,-12,4,9,2.8,trim);
+    addObstacle(t*22,12,4,9,2.8,trim);
+    addObstacle(t*10,-12,5,4,1.55,metal);
+    addObstacle(t*10,12,5,4,1.55,metal);
+    putBox(staticVerts,t*32,0,0,3,.18,18,blue);
+    putBox(staticVerts,t*32,3,0,1,.19,18,cyan);
+  }
+  // Central reactor is recognizable but has enough space to move around.
+  addObstacle(0,0,6,6,3.2,metal);
+  putBox(staticVerts,0,3.4,0,6.6,.26,6.6,cyan);
+  putBox(staticVerts,0,4.6,0,2.2,2.5,2.2,blue);
+  putBox(staticVerts,0,7,0,.9,.5,.9,cyan);
+}
+
 function buildMap(){
 if(crownArena){crownBuildArena(crownArena);return;}
 staticVerts.length=0;obstacles.length=0;let m=activeMap(),g=m.ground,c=m.cover,w=m.wall;
 Object.assign(colors,{ground:g,wall:w,wall2:c,cover:c,cover2:w,neon:[.94,.67,.31],orange:[.93,.43,.22],tower:w,light:[.95,.77,.48]});
+if(m.ogClassic){z5BuildOGFuture();if(gl&&program)v91RebuildStaticGPU();return;}
 putBox(staticVerts,0,-.18,0,ARENA_SIDE,.15,ARENA_SIDE,g);
 for(let i=-Math.floor(ARENA_HALF);i<=Math.floor(ARENA_HALF);i+=8){let tint=[Math.min(1,g[0]*1.12),Math.min(1,g[1]*1.12),Math.min(1,g[2]*1.08)];putBox(staticVerts,i,-.07,0,.05,.012,ARENA_SIDE-4,tint);putBox(staticVerts,0,-.07,i,ARENA_SIDE-4,.012,.05,tint);}
 for(const [x,z,wid,deep] of [[0,-ARENA_WALL,ARENA_SIDE,1.8],[0,ARENA_WALL,ARENA_SIDE,1.8],[-ARENA_WALL,0,1.8,ARENA_SIDE],[ARENA_WALL,0,1.8,ARENA_SIDE]])addObstacle(x,z,wid,deep,7,m.wall);
@@ -1617,7 +1702,7 @@ function renderPet(out,now,eye=null,center=null){
 }
 function resetPlayer(){crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:1.63,yaw:0,pitch:0,jump:0,vy:0,hp:100,shield:75,kills:0,deaths:0,shots:0,hits:0,weapon:0,nextShot:0,reloadEnd:0,alive:true,walk:0,crouched:false,sprintUsed:0,sprintLockedUntil:0,spawnProtectedUntil:0});pl.mags=weapons.map(w=>w.mag);pl.stocks=weapons.map(w=>w.reserve);drawGunModel(0);}
 const botNames=['SandViper_01','DuneHunter_07','FalconBot_12','MirageGhost','Scorpion_X','DustStriker','OasisSniper','RedCanyonAI','StormRider','NightRecon','GoldWarden','NomadZero'];
-function spawnBot(id){let spot=spawns[(id+1)%spawns.length],pos=spot;for(let i=0;i<25;i++){let hot=id<6;let tryx=hot?clamp(pl.x+rand(-52,52),-ARENA_HALF+4,ARENA_HALF-4):rand(-ARENA_HALF+7,ARENA_HALF-7),tryz=hot?clamp(pl.z+rand(-52,52),-ARENA_HALF+4,ARENA_HALF-4):rand(-ARENA_HALF+7,ARENA_HALF-7);if(len2(tryx-pl.x,tryz-pl.z)>16&&!blocked(tryx,tryz,.7)){pos=[tryx,tryz];break;}}
+function spawnBot(id){const og=activeMap()?.ogClassic;let spots=og?z5ClassicSpawnPoints:spawns;let spot=spots[(id+1)%spots.length],pos=spot;for(let i=0;i<25;i++){let hot=id<6;let range=og?29:ARENA_HALF-4;let travel=og?26:52;let tryx=hot?clamp(pl.x+rand(-travel,travel),-range,range):rand(-range,range),tryz=hot?clamp(pl.z+rand(-travel,travel),-range,range):rand(-range,range);if(len2(tryx-pl.x,tryz-pl.z)>16&&!blocked(tryx,tryz,.7)){pos=[tryx,tryz];break;}}
 return {id,x:pos[0],z:pos[1],hp:100,yaw:rand(-3,3),speed:rand(2.0,3.1),nextShot:rand(2.4,4.3),sawTarget:false,alive:true,respawn:0,strafedir:Math.random()>.5?1:-1,turn:rand(.9,2),walk:0,name:botNames[id%botNames.length],skinId:skins[1+id%(skins.length-1)].id,personality:['rusher','flanker','guardian','hunter'][id%4]};}
 function resetBots(){bots.length=0;for(let i=0;i<(mode==='solo'?v91Config().bots:12);i++)bots.push(spawnBot(i));pickups.length=0;for(const [x,z,type] of [[-30,0,'health'],[30,0,'health'],[0,-29,'ammo'],[0,29,'ammo'],[-27,18,'shield'],[27,-18,'shield'],[-84,15,'health'],[84,-15,'health'],[-71,-61,'ammo'],[71,61,'ammo'],[-65,68,'shield'],[65,-68,'shield'],[18,85,'health'],[-18,-85,'ammo'],[90,52,'shield'],[-90,-52,'health'],[52,-88,'ammo'],[-52,88,'shield']])if(!blocked(x,z,.8))pickups.push({x,z,type,ready:0,spin:rand(0,6)});tracers.length=0;}
 function shuffleBotsAfterDeath(){if(mode==='guest')return;for(const b of bots){let fresh=spawnBot(b.id);Object.assign(b,fresh);b.nextShot=rand(2.8,4.5);}tracers.length=0;}
@@ -1660,7 +1745,7 @@ function clearDeathTimers(){if(deathTimer!==null)clearTimeout(deathTimer);if(dea
 function beginDeathCountdown(hostControlled=false){clearDeathTimers();if(phase!=='playing')return;deathDeadline=Date.now()+3000;showScreen('deadMenu');rx2ShowKillcam();$('respawnCountdown').textContent='3';if(document.pointerLockElement)document.exitPointerLock();deathTicker=setInterval(()=>{$('respawnCountdown').textContent=String(Math.max(0,Math.ceil((deathDeadline-Date.now())/1000)));},90);
 if(!hostControlled){deathTimer=setTimeout(()=>{if(phase==='playing'&&!pl.alive)respawn();},3000);}}
 function hurt(dmg){rx2OnHurt(dmg);rx3PlayerHurt(dmg);if(!pl.alive||spectating)return;if(performance.now()/1000<pl.spawnProtectedUntil)return;let shieldAbsorb=Math.min(pl.shield,dmg*.65);pl.shield-=shieldAbsorb;pl.hp-=dmg-shieldAbsorb;$('hurtfx').style.opacity='.8';setTimeout(()=>$('hurtfx').style.opacity='0',130);playSound('hurt');if(pl.hp<=0){pl.hp=0;pl.alive=false;pl.deaths++;vxResetStreak();if(mode==='mystery'){vxMysteryPlayerDeath();return;}if(mode==='duel'){rxDuelPlayerDown();return;}if(mode==='infection'){rxInfectionOutcome='lose';finish();return;}if(mode==='boss')vxBossOutcome='lose';beginDeathCountdown(false);}updateHUD();}
-function respawn(x=null,z=null){vxResetStreak();clearDeathTimers();let options=spawns.filter(q=>!blocked(q[0],q[1],.6)),s=options[Math.floor(Math.random()*options.length)]||[0,29];pl.x=Number.isFinite(x)?x:s[0];pl.z=Number.isFinite(z)?z:s[1];pl.y=1.63;pl.jump=0;pl.vy=0;pl.hp=100;pl.shield=75;pl.alive=true;pl.crouched=false;mobileCrouch=false;pl.sprintUsed=0;pl.sprintLockedUntil=0;pl.spawnProtectedUntil=performance.now()/1000+2.5;pl.mags[pl.weapon]=weapons[pl.weapon].mag;$('weaponArt').classList.remove('sneaking');$('touchcrouch').classList.remove('active');if(mode!=='guest')shuffleBotsAfterDeath();if(!spectating){hideOverlay();capturePointer();}updateHUD();} 
+function respawn(x=null,z=null){vxResetStreak();clearDeathTimers();let options=(activeMap()?.ogClassic?z5ClassicSpawnPoints:spawns).filter(q=>!blocked(q[0],q[1],.6)),s=options[Math.floor(Math.random()*options.length)]||[0,29];pl.x=Number.isFinite(x)?x:s[0];pl.z=Number.isFinite(z)?z:s[1];pl.y=1.63;pl.jump=0;pl.vy=0;pl.hp=100;pl.shield=75;pl.alive=true;pl.crouched=false;mobileCrouch=false;pl.sprintUsed=0;pl.sprintLockedUntil=0;pl.spawnProtectedUntil=performance.now()/1000+2.5;pl.mags[pl.weapon]=weapons[pl.weapon].mag;$('weaponArt').classList.remove('sneaking');$('touchcrouch').classList.remove('active');if(mode!=='guest')shuffleBotsAfterDeath();if(!spectating){hideOverlay();capturePointer();}updateHUD();} 
 function botBehavior(b,dt,now){if(rx2BotBehavior(b,dt,now))return;if(mode==='infection'){rxInfectionBot(b,dt,now);return;}if(mode==='duel'){rxDuelBot(b,dt,now);return;}rxBotAdjust(b,dt,now);if(mode==='mystery'){vxMysteryBot(b,dt,now);return;}if(mode==='boss'&&b.isBoss){vxBossAI(b,dt,now);return;}if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.respawn=0;}return;}
 let targets=[pl];if(mode==='host'||z1IsPartyHost()&&!Z1_SOLO_SEAT_MODES.has(mode))targets.push(...remotePlayers.values());targets=targets.filter(t=>t.alive!==false&&t.hp>0&&t.spectating!==true&&(t!==pl||!spectating));if(!targets.length)return;let target=targets.reduce((a,t)=>dist(t,b)<dist(a,b)?t:a,targets[0]);const lure=rx2Gadgets.find(g=>g.type==='decoy'&&performance.now()/1000-g.started<g.duration&&Math.hypot(g.x-b.x,g.z-b.z)<25);if(lure)target={x:lure.x,z:lure.z,alive:true,hp:100000,shield:0};let d=dist(b,target),dx=(target.x-b.x)/Math.max(d,.01),dz=(target.z-b.z)/Math.max(d,.01),canSee=los(b.x,b.z,target.x,target.z)&&!rx2SmokeBlocks(b,target);
 // Sneaking reduces bots' ability to notice you at a distance; standing and close-range combat still reveal you.
@@ -11655,6 +11740,35 @@ z3MountUI();
 missionMount();
 runCrownGame();
 
+})();
+</script>
+<script id="rx5-operation-simplicity">
+(()=>{
+  'use strict';
+  const root=document.getElementById('mainMenu'),toggle=document.getElementById('rxSimpleToggle');
+  if(!root||!toggle)return;
+  let simplified=true;
+  try{simplified=getStore('rx5-simple-menu',true)!==false;}catch{}
+  function apply(value){
+    simplified=!!value;
+    root.classList.toggle('rx-simple-active',simplified);
+    toggle.textContent=simplified?'Advanced menu · All features':'← Back to simple menu';
+    toggle.setAttribute('aria-pressed',String(simplified));
+    try{setStore('rx5-simple-menu',simplified);}catch{}
+  }
+  const level=document.getElementById('rxSimpleBotLevel');
+  try{const saved=getStore('rx5-bot-challenge','veteran');level.value=['standard','veteran','nightmare'].includes(saved)?saved:'veteran';}catch{level.value='veteran'}
+  level.onchange=()=>{try{setStore('rx5-bot-challenge',level.value)}catch{}};
+  toggle.onclick=()=>apply(!simplified);
+  document.getElementById('rxSimpleQuick').onclick=()=>{
+    // Quick Play intentionally bypasses vote screens and remains local/offline.
+    chooseMap('og-future');startGame('solo');gameSeconds=300;updateHUD();
+  };
+  document.getElementById('rxSimpleModes').onclick=()=>document.getElementById('rx2OpenBtn')?.click();
+  document.getElementById('rxSimpleLocker').onclick=()=>document.getElementById('shopBtn')?.click();
+  document.getElementById('rxSimpleFriends').onclick=()=>document.getElementById('roomBtn')?.click();
+  document.getElementById('rxSimpleSettings').onclick=()=>document.getElementById('rxSettingsBtn')?.click();
+  apply(simplified);
 })();
 </script>
 </body>
