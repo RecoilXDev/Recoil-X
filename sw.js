@@ -1,6 +1,6 @@
 const scope=new URL(self.registration.scope);
 const prefix='recoil-x-shell:'+scope.pathname+':';
-const cacheName=prefix+'z3-2';
+const cacheName=prefix+'z5-clean-2';
 const shell=new URL('index.html',scope).href;
 const assets=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png']
   .map(path=>new URL(path,scope).href);
@@ -8,7 +8,7 @@ const shellPaths=new Set([scope.pathname,new URL(shell).pathname]);
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(cacheName).then(cache=>
-    cache.addAll(assets.map(url=>new Request(url,{cache:'reload'})))));
+    cache.addAll(assets.map(url=>new Request(url,{cache:'reload'}))).then(()=>self.skipWaiting?.())));
 });
 
 self.addEventListener('activate',event=>{

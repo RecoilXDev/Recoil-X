@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
+<meta name="rx-build" content="Z.5-CLEAN-2" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
 <title>RECOIL X Z.3 · Operation Overdrive</title>
@@ -938,7 +939,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="mobileControls"><div class="joybase" id="joybase"><div class="joystick" id="joystick"></div></div><div class="touch-swipe" id="touchswipe"></div><div class="touchbuttons"><button class="touchbtn fire" id="touchfire" data-t="fire">إطلاق</button><button class="touchbtn" id="touchjump" data-t="jump">قفز</button><button class="touchbtn" id="touchreload" data-t="reload">تعبئة</button><button class="touchbtn" id="touchweapon" data-t="weapon">سلاح</button><button class="touchbtn skill" id="touchcrouch" data-t="crouch">تسلّل</button><button class="touchbtn skill" id="touchsprint" data-t="sprint">ركض</button></div><button id="rx2TouchGadget" class="rx2-touch hide" type="button">💨 GADGET</button><button id="rx2TouchSlide" class="rx2-touch rx2-slide hide" type="button">↘ SLIDE</button><button id="v8TouchView" class="hide" type="button">👁 VIEW</button><button class="touch-chest" id="touchchest" data-t="openChest">Open chest</button></div>
 <div id="v92MobileIndicator" class="v92-mobile-indicator" aria-live="polite"></div><div id="overlay"><div class="panel"><div class="panel-content">
 <div id="deviceMenu">
-  <div class="topline"><span class="brandchip">RECOIL X // VERSION X.5 · SEASONS THROUGH 2031</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X // VERSION Z.5 · SEASONS THROUGH 2031</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
   <div class="eyebrow" data-t="chooseDeviceLabel">SELECT YOUR PLATFORM</div>
   <h1 class="game-title">RECOIL <span>X</span></h1><div class="recoil-tagline">LOCK-LOAD-DOMINATE</div>
   <p class="subtitle" data-t="deviceIntro">هل تلعب على هاتف أم كمبيوتر؟ سنجهّز التحكم المناسب لك.</p>
@@ -946,7 +947,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" aria-label="RECOIL X Classic menu">
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-CLEAN-2" aria-label="RECOIL X Classic menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · OG Futuristic Arena · 5-minute battle</small></button>
@@ -2278,7 +2279,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='Z.3 • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='Z.5 • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -11948,7 +11949,7 @@ missionMount();
 const RX5QKEY='recoil_x_z5_combat_quality_v1';
 const RX5MASTERKEY='recoil_x_z5_weapon_mastery_v1';
 const rx5QualityRead=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v&&typeof v==='object'&&!Array.isArray(v)?v:fallback;}catch{return fallback;}};
-let rx5QualitySettings={localHeat:false,boldReticle:false,...rx5QualityRead(RX5QKEY,{})};
+let rx5QualitySettings={localHeat:true,boldReticle:false,...rx5QualityRead(RX5QKEY,{})};
 let rx5Mastery={hits:[0,0,0,0],kills:[0,0,0,0],...rx5QualityRead(RX5MASTERKEY,{})};
 for(const key of ['hits','kills'])rx5Mastery[key]=Array.from({length:4},(_,i)=>Math.max(0,Math.min(1000000,Number(rx5Mastery[key]?.[i])||0)));
 const rx5LocalHeat=[0,0,0,0],rx5Hot=[false,false,false,false];
@@ -12051,7 +12052,7 @@ runCrownGame();
   function apply(value){
     simplified=!!value;
     root.classList.toggle('rx-simple-active',simplified);
-    toggle.textContent=simplified?'Advanced menu · All features':'← Back to simple menu';
+    toggle.textContent=simplified?'◈ ADVANCED MODE':'← SIMPLE MODE';
     toggle.setAttribute('aria-pressed',String(simplified));
     try{setStore('rx5-simple-menu',simplified);}catch{}
   }

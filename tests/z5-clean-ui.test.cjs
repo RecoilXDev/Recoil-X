@@ -1,0 +1,47 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const {makeHarness}=require('./helpers/dom-harness.cjs');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+test('clean UI source has valid syntax and explicit current release identity',()=>{
+ const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
+ assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
+ assert.match(js,/Z\.5-CLEAN-2/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-CLEAN-2"/);
+ assert.match(html,/localHeat:true/);
+ assert.match(html,/id="rxSimpleQuick"/);
+ assert.match(sw,/z5-clean-2/);
+ assert.match(sw,/skipWaiting/);
+});
+test('clean UI puts newest changes in front while preserving all advanced features',()=>{
+ const h=makeHarness();
+ const script=read('server/z5-ingame.js');
+ assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
+ const {ui,ctx}=h;
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-2');
+ assert.ok(ui.querySelector('#rx5-release-strip'));
+ assert.ok(ui.querySelector('#rx5-open-news'));
+ assert.ok(ui.querySelector('#rx5More'));
+ assert.ok(ui.querySelector('#rx5Options'));
+ assert.ok(ui.querySelector('#rx5-native-main'));
+ assert.ok(ui.querySelector('#rx5-native-advanced'));
+ assert.ok(ui.querySelector('#rx5-native-pause'));
+ const extras=ui.querySelectorAll('[data-rx5-open]');
+ assert.equal(extras.length,13);
+ for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleBotLevel'])
+   assert.ok(ui.querySelector('#'+item),item+' must be retained');
+ const admin=ui.querySelectorAll('[data-rx-admin-only]');
+ assert.equal(admin.length,3);
+ assert.ok(admin.every(x=>x.hidden),'Admin controls must be hidden for non-admin users');
+ assert.equal(ui.querySelector('#rx5LocalHeatSetting').checked,true);
+ assert.ok(ui.querySelector('#rx5CombatSettings').closest('#rx5Options'));
+ const notes=ui.querySelector('#rx5WhatsNew');
+ assert.equal(notes.hidden,true);
+ ui.querySelector('#rx5-open-news').click();
+ assert.equal(notes.hidden,false);
+ ui.querySelector('[data-rx5-close]').click();
+ assert.equal(notes.hidden,true);
+ assert.equal(ui.querySelector('#rxSimpleQuick').disabled,false);
+});
