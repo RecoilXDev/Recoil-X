@@ -1,6 +1,6 @@
 // RECOIL X Z.5 playable authoritative multiplayer rules.
 // Reuses the existing movement, cover, networking and result settlement engine.
-export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour','roulette','ctf'];
+export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour','roulette','ctf','searchdestroy','extraction'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const near=(p,x,z,r=3)=>Math.hypot(p.x-x,p.z-z)<=r;
 const weaponOrder=[0,3,1,2];
@@ -21,8 +21,12 @@ export function z5Weapon(m,p,inputWeapon){
   if(m.mode==='gungame')return weaponOrder[Math.min(weaponOrder.length-1,p.kills)];
   return inputWeapon;
 }
-export function z5CanShoot(m){return m.mode!=='parkour'&&(m.mode!=='roulette'||m.rule.phase==='fight');}
+export function z5CanShoot(m){return m.mode!=='parkour'&&(!['roulette','searchdestroy'].includes(m.mode)||m.rule.phase==='fight');}
 export function z5ModeState(mode,now,rng=Math.random){
+  if(mode==='searchdestroy')return {round:1,phase:'fight',site:{x:0,z:0},armed:false,
+    deadline:now+60000,fuse:0,interactions:{},scores:[0,0]};
+  if(mode==='extraction')return {stage:[0,0],steps:[{x:0,z:-13},{x:-14,z:-1},{x:0,z:13},{x:0,z:22}],
+    interactions:{}};
   if(mode==='roulette')return {round:1,phase:'fight',weapon:Math.floor(clamp(rng(),0,.999999)*4),deadline:now+60000};
   if(mode==='chaos')return {hazard:false,changeAt:now+12000,pulseAt:now+1000,phase:0};
   if(mode==='parkour')return {progress:{},gates,total:gates.length};
@@ -48,6 +52,11 @@ export function z5Elimination(m,victim,killer,now,{finish,mark}){
       m.score[killer.team]=Math.max(m.score[killer.team],killer.kills);
       mark(m,now,'evolution',killer.name+' advanced to weapon '+Math.min(weaponOrder.length,killer.kills+1),killer.id);
       if(killer.kills>=weaponOrder.length)finish(m,killer.team,'gun-game',now);
+      return true;
+    case 'searchdestroy':
+      victim.spawnAt=0;
+      return true;
+    case 'extraction':
       return true;
     case 'roulette':
       victim.spawnAt=0;
@@ -79,7 +88,69 @@ export function z5Elimination(m,victim,killer,now,{finish,mark}){
     default:return false;
   }
 }
+
+// Objective interactions require a living, connected participant holding Use at the real site.
+// Progress is awarded by elapsed authoritative server time, never from a client timestamp.
+function objectiveHold(s,p,now,tag,threshold){
+  const id=p.id+':'+tag;
+  if(!p.input?.use){delete s.interactions[id];return false;}
+  const started=s.interactions[id]??now;
+  s.interactions[id]=started;
+  return now-started>=threshold;
+}
+function z5RoundWin(m,s,team,now,{mark,finish}){
+  if(s.phase!=='fight')return;
+  m.score[team]++;
+  mark(m,now,'objective','Team '+(team+1)+' won Search & Destroy round '+s.round);
+  if(m.score[team]>=3){finish(m,team,'search-destroy',now);return;}
+  s.phase='break';s.deadline=now+3700;s.armed=false;s.interactions={};
+}
+
 export function z5Advance(m,now,{finish,mark,spawn=()=>{}}){
+  if(m.mode==='searchdestroy'){
+    const s=m.rule;
+    if(s.phase==='break'){
+      if(now<s.deadline)return false;
+      s.round++;s.phase='fight';s.armed=false;s.deadline=now+60000;s.fuse=0;s.interactions={};
+      for(const p of m.players.values())if(!p.forfeited)spawn(p,now);
+      mark(m,now,'round','Search & Destroy round '+s.round+' begins');
+      return true;
+    }
+    const active=[0,1].map(team=>[...m.players.values()].filter(p=>
+      p.team===team&&!p.forfeited&&!p.offlineAt&&p.hp>0));
+    if(!s.armed&&!active[0].length)z5RoundWin(m,s,1,now,{mark,finish});
+    else if(!active[1].length)z5RoundWin(m,s,0,now,{mark,finish});
+    if(s.phase!=='fight'||m.result)return false;
+    if(s.armed){
+      const defuse=active[1].some(p=>near(p,s.site.x,s.site.z,3)&&objectiveHold(s,p,now,'defuse',2400));
+      if(defuse){mark(m,now,'defuse','Bomb defused!');z5RoundWin(m,s,1,now,{mark,finish});}
+      else if(now>=s.fuse){mark(m,now,'detonation','Bomb detonated');z5RoundWin(m,s,0,now,{mark,finish});}
+      if(s.phase!=='fight'||m.result)return false;
+    }else{
+      const planter=active[0].find(p=>near(p,s.site.x,s.site.z,3)&&objectiveHold(s,p,now,'plant',1500));
+      if(planter){s.armed=true;s.fuse=now+25000;mark(m,now,'plant',planter.name+' planted the bomb',planter.id);}
+      else if(now>=s.deadline)z5RoundWin(m,s,1,now,{mark,finish});
+      if(s.phase!=='fight'||m.result)return false;
+    }
+  }
+  if(m.mode==='extraction'){
+    const s=m.rule;
+    for(const p of m.players.values()){
+      if(p.forfeited||p.offlineAt||p.hp<=0)continue;
+      const team=p.team,n=s.stage[team];
+      if(n>=s.steps.length)continue;
+      const next=s.steps[n],x=team?-next.x:next.x,z=team?-next.z:next.z;
+      if(!near(p,x,z,3)){delete s.interactions[p.id+':extract'];continue;}
+      if(objectiveHold(s,p,now,'extract',650)){
+        s.stage[team]++;
+        s.interactions={};
+        m.score[team]=s.stage[team];
+        mark(m,now,'extraction',p.name+(s.stage[team]===s.steps.length?' extracted successfully':
+          ' secured supply '+s.stage[team]),p.id);
+        if(s.stage[team]>=s.steps.length){finish(m,team,'extraction',now);return false;}
+      }
+    }
+  }
   if(m.mode==='roulette') {
     const s=m.rule;
     if(now>=s.deadline){
@@ -127,6 +198,16 @@ export function z5Advance(m,now,{finish,mark,spawn=()=>{}}){
   return !m.result;
 }
 export function z5Objective(m,who,now){
+  if(m.mode==='searchdestroy'){
+    const s=m.rule;
+    return {type:'searchdestroy',phase:s.phase,round:s.round,site:s.site,armed:s.armed,
+      remaining:Math.max(0,(s.armed?s.fuse:s.deadline)-now)};
+  }
+  if(m.mode==='extraction'){
+    const stage=who?m.rule.stage[who.team]:0;
+    const step=m.rule.steps[Math.min(stage,m.rule.steps.length-1)];
+    return {type:'extraction',stage,total:4,x:who?.team?-step.x:step.x,z:who?.team?-step.z:step.z};
+  }
   if(m.mode==='chaos')return {type:'hazard',active:m.rule.hazard,next:m.rule.changeAt,center:{x:0,z:0,radius:4}};
   if(m.mode==='parkour'){
     const n=who?m.rule.progress[who.id]||0:0;
