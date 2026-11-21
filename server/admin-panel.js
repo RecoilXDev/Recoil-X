@@ -28,7 +28,6 @@ style.textContent=[
 '@media(max-width:700px){#rx-admin-window{display:block;overflow:auto}#rx-admin-nav{padding:10px;border-right:0;border-bottom:1px solid #284157}#rx-admin-nav h2{font-size:16px;display:inline}#rx-admin-nav small{display:inline}#rx-admin-nav button{display:inline-block;width:auto;padding:8px;font-size:11px}#rx-admin-main{padding:13px}#rx-admin-main .stats{grid-template-columns:1fr}}'
 ].join('');
 document.head.append(style);
-const launch=document.createElement('button');launch.id='rx-admin-launch';launch.textContent='⚡ ADMIN';launch.type='button';document.body.append(launch);
 const root=document.createElement('div');root.id='rx-admin-root';
 root.innerHTML=[
 '<div id="rx-admin-window" role="dialog" aria-modal="true" aria-label="RECOIL X administrator">',
@@ -41,7 +40,7 @@ root.innerHTML=[
 '<label>Password<input type="password" name="password" required autocomplete="current-password"></label>',
 '<button class="action">Sign in</button></form></section>',
 '<div id="rx-admin-authenticated" hidden>',
-'<section data-page="overview"><div id="rx-admin-stats" class="stats"></div><div class="card"><h3>Live moderation</h3><p class="muted">Server-enforced bans, unbans, temporary bans, kicks and mutes. Every action needs a reason and is audited.</p><button class="action secondary" data-go="players">Manage players</button><button class="action secondary" data-go="audit">Action history</button></div><div class="card"><button id="rx-admin-logout" class="action secondary">Sign out</button></div></section>',
+'<section data-page="overview"><div id="rx-admin-stats" class="stats"></div><div class="card"><h3>Live moderation</h3><p class="muted">Server-enforced bans, unbans, temporary bans, kicks and mutes. Every action needs a reason and is audited.</p><button class="action secondary" data-go="players">Manage players</button><button class="action secondary" data-go="audit">Action history</button></div><div class="card"><button id="rx-admin-logout" class="action secondary">Close Admin</button></div></section>',
 '<section data-page="players" hidden><div class="card"><h3>Find a player</h3><form id="rx-admin-find"><label>Exact player name<input name="name" required></label><button class="action">Look up player</button></form><div id="rx-admin-player-info"></div></div>',
 '<div class="card"><h3>Moderate a player</h3><form id="rx-admin-moderate">',
 '<label>Player name<input name="name" required></label><label>Action<select name="action"><option value="kick">Kick</option><option value="tempban">Temporary ban</option><option value="ban">Permanent ban</option><option value="unban">Unban</option><option value="mute">Mute</option><option value="unmute">Unmute</option></select></label>',
@@ -57,22 +56,54 @@ root.innerHTML=[
 document.body.append(root);
 const get=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let token=sessionStorage.getItem('rx-admin-token')||'';
+let token='',adminVerified=false,verifyVersion=0;
 const msg=(s,error=false)=>{const n=get('rx-admin-message');n.textContent=s;n.classList.toggle('error',error)};
 const read=f=>Object.fromEntries(new FormData(f));
 async function api(path,payload,authorized=true){
- const r=await fetch('/rx-api/'+path,{method:payload?'POST':'GET',headers:{...(payload?{'Content-Type':'application/json'}:{}),...(authorized?{Authorization:'Bearer '+token}:{})},...(payload?{body:JSON.stringify(payload)}:{})});
+ const r=await fetch('/rx-api/'+path,{method:payload?'POST':'GET',
+  headers:{...(payload?{'Content-Type':'application/json'}:{}),...(authorized?{Authorization:'Bearer '+token}:{})},
+  ...(payload?{body:JSON.stringify(payload)}:{})});
  const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed.');return data;
 }
-function clear(){token='';sessionStorage.removeItem('rx-admin-token');get('rx-admin-login-section').hidden=false;get('rx-admin-authenticated').hidden=true;}
+function setTabVisible(visible){
+ for(const button of document.querySelectorAll('[data-rx-admin-only]'))button.hidden=!visible;
+ if(!visible)root.classList.remove('open');
+}
+function clear(){
+ token='';adminVerified=false;setTabVisible(false);
+ get('rx-admin-login-section').hidden=true;
+ get('rx-admin-authenticated').hidden=true;
+}
 async function verify(){
- if(!token){clear();return;}
- try{const d=await api('me');if(!d.user?.admin)throw Error('Admin role is not enabled.');
- get('rx-admin-login-section').hidden=true;get('rx-admin-authenticated').hidden=false;await tab('overview');
- }catch(e){clear();msg(e.message,true);}
+ const next=sessionStorage.getItem('rx5-token')||'';
+ const version=++verifyVersion;
+ adminVerified=false;token=next;setTabVisible(false);
+ if(!next){clear();return false;}
+ try{
+  // A server-confirmed admin flag is required; client-side names never grant privileges.
+  const d=await api('me');
+  if(version!==verifyVersion||sessionStorage.getItem('rx5-token')!==next)return false;
+  if(!d.user?.admin){clear();return false;}
+  adminVerified=true;token=next;
+  get('rx-admin-login-section').hidden=true;
+  get('rx-admin-authenticated').hidden=false;
+  setTabVisible(true);
+  return true;
+ }catch{if(version===verifyVersion)clear();return false;}
 }
 function close(){root.classList.remove('open');msg('');}
-launch.addEventListener('click',()=>{root.classList.add('open');document.exitPointerLock?.();verify();});
+async function open(){
+ if(!(await verify()))return false;
+ root.classList.add('open');
+ document.exitPointerLock?.();
+ await tab('overview');
+ return true;
+}
+window.RXZ5Admin={open,refresh:verify};
+window.addEventListener('rx5-auth-changed',()=>{void verify()});
+window.addEventListener('focus',()=>{void verify()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void verify()});
+void verify();
 get('rx-admin-close').addEventListener('click',close);
 root.addEventListener('click',e=>{if(e.target===root)close();const go=e.target.closest('[data-go]');if(go)tab(go.dataset.go);});
 root.addEventListener('pointerdown',e=>e.stopPropagation());
@@ -87,11 +118,7 @@ async function overview(){try{const d=await api('admin/overview');
  const values=[['Total players',d.total],['Online now',d.online],['Banned players',d.banned],['Bonus coins granted',Number(d.coinsGranted).toLocaleString()]];
  get('rx-admin-stats').innerHTML=values.map(row=>'<div class="card"><div class="muted">'+esc(row[0])+'</div><div class="number">'+esc(row[1])+'</div></div>').join('');
 }catch(e){msg(e.message,true);}}
-get('rx-admin-login').addEventListener('submit',async e=>{e.preventDefault();const b=read(e.target);
- try{const d=await api('login',b,false);if(!d.user?.admin)throw Error('This account is not an administrator.');
- token=d.token;sessionStorage.setItem('rx-admin-token',token);e.target.reset();await verify();msg('Admin access granted.');
- }catch(err){clear();msg(err.message,true);}});
-get('rx-admin-logout').onclick=async()=>{try{await api('logout',{});}catch{}clear();msg('Signed out of admin panel.');};
+get('rx-admin-logout').onclick=close;
 get('rx-admin-find').addEventListener('submit',async e=>{e.preventDefault();
  try{const d=await api('admin/player?name='+encodeURIComponent(read(e.target).name));const p=d.player;
  get('rx-admin-player-info').innerHTML='<div class="card"><b>'+esc(p.name)+'</b> '+(p.admin?'(ADMIN)':'')+
