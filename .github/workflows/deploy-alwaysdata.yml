@@ -51,8 +51,18 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Validate server syntax
-        run: node --check server/server.mjs
+      - name: Select supported Node.js for validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install test dependencies
+        run: npm install --prefix server --ignore-scripts --no-audit --no-fund
+
+      - name: Validate server and game before deploying
+        run: |
+          for f in server/*.mjs server/*.js; do node --check "$f"; done
+          node --test tests/*.test.mjs tests/*.test.cjs
 
       - name: Upload the game page and offline files
         run: |
@@ -92,3 +102,15 @@ jobs:
             --retry 5 --retry-delay 3 --output /dev/null \
             https://recoil-x.alwaysdata.net/
           echo "RECOIL X website responded successfully."
+
+      - name: Verify the deployed Z.5 assets and game modes
+        run: |
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 3 \
+            --output /tmp/recoil-z5-live.html https://recoil-x.alwaysdata.net/
+          grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
+          grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
+          grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
+          curl --fail --silent --show-error --location \
+            --output /tmp/recoil-z5-hub.js https://recoil-x.alwaysdata.net/z5-matchhub.js
+          grep -Fq 'MATCH HUB' /tmp/recoil-z5-hub.js
+          echo "Z.5 Classic map, simplified menu, online modes and Match Hub confirmed live."

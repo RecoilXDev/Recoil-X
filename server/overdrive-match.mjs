@@ -1,8 +1,9 @@
 // Movement, hits, ammo, objectives and results use server time and state.
 import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
+import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimination, z5Advance, z5Objective } from './z5-combat-modes.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
-export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES];
+export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES];
 export const DRAFTS = ['knight','rook','bishop'];
 export const PINGS = ['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
 export const ROOM_GRACE = 20000;
@@ -46,28 +47,30 @@ function spawn(p, now) {
     jumpAt:0,jump:0,hp:100,down:null,spawnAt:0,shieldUntil:now+850,boost:0,readyShot:now+230,
     weapon:p.budget?3:0,loadout:p.budget?3:0,prop:0,
     ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),taps:null,inputAt:now});
+  z5Spawn(p,now);
 }
 
 export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random}) {
   const placed=[0,0];
   const members=new Map();
   for(const record of players) {
-    const p={...record,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',
+    const p={...record,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',matchMode:mode,
       inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0};
     p.spawnX=(p.slot-(players.filter(other=>other.team===p.team).length-1)/2)*3.65;
     spawn(p,now);
     members.set(p.id,p);
   }
-  const rule=modeState(mode,now,players);
+  const rule=modeState(mode,now,players)||z5ModeState(mode,now,rng);
   if(mode==='jeep'){
     field={id:'rally',name:'Double Track',half:28,cover:[]};
     for(const p of members.values())Object.assign(p,{x:rule.cars[p.team].x,z:23,yaw:0});
   }
   if(mode==='escort')field={...field,cover:field.cover.filter(c=>c.x!==0)};
   if(mode==='props')field={...field,scenery:HUNT_SCENERY};
+  if(mode==='chaos')field=z5Arena(field,rng);
   return {
     id,mode,season,field,rule,remake,
-    limit:mode==='relic'||mode==='elimination'||mode==='budget'?3:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
+    limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
     end:now+360000,last:now,score:[0,0],result:null,roundAt:0,rng,
     relics:[0,1].map(team=>({team,x:0,z:team?24:-24,holder:null,home:true,returnAt:0})),
@@ -211,7 +214,8 @@ function eliminate(m,victim,killer,now) {
   m.events.push({type:'z2:kill',killer:killer.name,victim:victim.name},
     {type:'z2:killcam',only:victim.id,replay:highlight});
   if(['elimination','budget','props'].includes(m.mode))victim.spawnAt=0;
-  if(m.mode==='relic'||m.rule)return;
+  if(z5Elimination(m,victim,killer,now,{finish,mark:markEvent}))return;
+  if(['relic','ctf'].includes(m.mode)||m.rule)return;
   m.score[killer.team]++;
   if(m.score[killer.team]>=m.limit||m.overtime)finish(m,killer.team,'score',now);
   else if(m.mode==='chess')m.roundAt=now+2200;
@@ -266,7 +270,7 @@ function powerOrRelic(m,p,now) {
     if(charge&&p.boost<now){p.boost=now+7500;charge.ready=now+13500;
       m.events.push({type:'z2:notice',only:p.id,message:'Overcharged · faster movement and fire'});}
   }
-  if(m.mode!=='relic')return;
+  if(!['relic','ctf'].includes(m.mode))return;
   const own=m.relics[p.team], enemy=m.relics[1-p.team];
   if(own.holder==null&&!own.home&&dist(own,p)<1.3&&p.input.use)resetRelic(own);
   if(enemy.holder==null&&dist(enemy,p)<1.3&&p.input.use){
@@ -344,6 +348,7 @@ export function updateMatch(m,now) {
     for(const p of m.players.values())if(!p.forfeited)spawn(p,now);
   }
   if(!advanceMode(m,now,delta,{finish,spawn,move:(p,dx,dz)=>move(m.field,p,dx,dz)})){recordLead(m,now);return;}
+  if(!z5Advance(m,now,{finish,mark:markEvent,spawn})){recordLead(m,now);return;}
   for(const r of m.relics)if(r.returnAt&&r.returnAt<=now)resetRelic(r);
   for(const p of m.players.values()){
     if(m.result||m.roundAt)break;
@@ -354,7 +359,7 @@ export function updateMatch(m,now) {
     if(!p.hp){if(p.spawnAt&&p.spawnAt<=now)spawn(p,now);continue;}
     if(m.mode==='props'&&p.team!==m.rule.half&&m.rule.phase==='hide')continue;
     const input=p.input;
-    const carrying=m.mode==='relic'&&m.relics.some(r=>r.holder===p.id);
+    const carrying=['relic','ctf'].includes(m.mode)&&m.relics.some(r=>r.holder===p.id);
     const dragging=m.mode==='rescue'&&input.use&&[...m.players.values()]
       .some(other=>other.down&&other.team===p.team&&dist(other,p)<2.3);
     const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
@@ -364,12 +369,12 @@ export function updateMatch(m,now) {
     p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/680)*Math.PI)*.97):0;
     if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(m,p,now);
     powerOrRelic(m,p,now);
-    const weapon=m.mode==='budget'?p.loadout:input.weapon;
+    const weapon=m.mode==='budget'?p.loadout:z5Weapon(m,p,input.weapon);
     if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=input.fire||taps?.fire;
-    if(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0))reload(p,now);
-    if(firing&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
+    if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(p,now);
+    if(firing&&z5CanShoot(m)&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
       (m.mode!=='props'||p.team!==m.rule.half))fire(m,p,now);
   }
   recordLead(m,now);
@@ -410,10 +415,10 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
   }
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
-    objective:ruleView(m,viewer,now),waitingEarly:frame.waitingEarly,
+    objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
-    relics:m.mode==='relic'?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
+    relics:['relic','ctf'].includes(m.mode)?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
     power:m.mode==='overcharge'?m.power.map(r=>[r.x,r.z,r.ready<=now]):undefined};
 }
 

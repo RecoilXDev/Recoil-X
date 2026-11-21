@@ -174,7 +174,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const squad=data.squad===true&&!tournament?{queued:false}:null;
     const mode=tournament||squad?'arena':data.mode;
     demand(MODES.includes(mode),400,'Choose a supported match mode.');
-    const size=mode==='chess'?1:mode==='jeep'?2:data.size;
+    const size=['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?1:mode==='jeep'?2:data.size;
     const sizes=tournament?[1,2]:mode==='raid'?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
     demand(sizes.includes(size),400,'Choose a supported team size.');
     const limit=data.limit??15;
@@ -438,7 +438,22 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     publish(room);
   }
 
+  // Only publicly joinable rooms are discoverable; private codes are never exposed.
+  function browse({mode='',size=null}={}){
+    const now=clock(),filter=typeof mode==='string'?mode.slice(0,32):'';
+    return [...rooms.values()].filter(r=>!r.ranked&&!r.secret&&!r.locked&&!r.squad &&
+      r.phase==='lobby'&&r.expires>now&&players(r).length<capacity(r)&&(!filter||r.mode===filter) &&
+      (size==null||r.size===size)).slice(0,30).map(r=>({
+        code:r.code,mode:r.mode,size:r.size,players:players(r).length,capacity:capacity(r),
+        expires:r.expires,phase:r.phase
+      }));
+  }
+  function statistics(){
+    return {rooms:rooms.size,activeMatches:[...rooms.values()].filter(r=>r.phase==='playing').length,
+      queuedPlayers:queue.size};
+  }
+
   const timer=setInterval(tick,50);
   timer.unref();
-  return {packet,attach,disconnect,drop,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
+  return {packet,attach,disconnect,drop,browse,statistics,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
 }
