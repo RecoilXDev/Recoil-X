@@ -67,7 +67,7 @@ document.head.append(style);
 const hero=document.createElement('div');
 hero.id='rx5-release-strip';
 hero.setAttribute('aria-label','Current RECOIL X version');
-hero.innerHTML='<div><strong>● Z.5 · COMBAT QUALITY</strong><small>Smarter bots · Weapon mastery · Overheating</small></div><button type="button" id="rx5-open-news">WHAT\\'S NEW</button>';
+hero.innerHTML='<div><strong>● Z.5 · COMBAT QUALITY</strong><small>Smarter bots · Weapon mastery · Overheating</small></div><button type="button" id="rx5-open-news">WHAT\'S NEW</button>';
 simple.prepend(hero);
 const news=document.createElement('div');
 news.id='rx5WhatsNew';news.hidden=true;
@@ -143,7 +143,7 @@ for(const target of [simpleGroup,advancedGroup,pauseGroup]){
  button(target,'matches','🌐 Match Hub');
  button(target,'admin','🛡 Admin',true);
 }
-button(advancedGroup,'news','✦ What\\'s New');
+button(advancedGroup,'news','✦ What\'s New');
 const pauseNews=document.createElement('button');
 pauseNews.type='button';pauseNews.textContent='✦ Z.5 UPDATE NOTES';
 pauseNews.addEventListener('click',showNews);
