@@ -13,6 +13,11 @@ style.textContent=[
 '#mainMenu.rx-simple-active #rxSimplePanel{width:min(670px,96%);max-width:670px;margin:0 auto;padding:clamp(13px,3vw,26px)}',
 '#rxSimplePanel .rx-simple-brand{letter-spacing:.11em;font-size:clamp(28px,6vw,43px)}',
 '#rxSimplePanel .rx-simple-motto{margin-bottom:12px;color:#9db4c6}',
+'#mainMenu.rx-simple-active .rx-simple-heading{text-align:center}',
+'#mainMenu.rx-simple-active #rxSimpleActions{max-width:600px;margin:auto}',
+'#mainMenu.rx-simple-active #rxSimpleActions>.rx-simple-quick{margin:6px auto 13px;min-height:88px;background:linear-gradient(100deg,#0d7790,#199a97);border:1px solid #74e7e6;color:#fff}',
+'#mainMenu.rx-simple-active #rxSimpleActions>.rx-simple-quick:hover{filter:brightness(1.09)}',
+'#rx5-native-main button[data-rx5-open=academy]{border-color:#5a9995;color:#bdfff1}',
 '#rxSimpleActions .rx-simple-quick{margin-top:10px;border-radius:12px;min-height:76px;font-size:20px;box-shadow:0 10px 26px #0005}',
 '#rxSimpleActions .rx-simple-grid{gap:8px;margin:11px 0}',
 '#rxSimpleActions .rx-simple-grid button{min-height:54px;background:#122c40;border:1px solid #375975;font-weight:700}',
@@ -29,7 +34,10 @@ style.textContent=[
 '#rx5More[open]>summary:after,#rx5Options[open]>summary:after{content:"−"}',
 '#rx5More>summary:hover,#rx5Options>summary:hover{background:#143a4f}',
 '#rx5More .rx5-more-desc{display:block;color:#91acbf;font-size:10px;font-weight:450;padding:0 14px 10px}',
-'#rx5-native-main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 12px 12px}',
+'#rx5-native-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px 12px}',
+'#rx5Options #rx5-gear-row{margin:9px 10px;color:#d7edf6;font-size:12px}',
+'#rx5GearSelect{width:100%;min-height:38px;margin-top:6px;border:1px solid #41768c;border-radius:9px;background:#0b2638;color:#eff;padding:8px}',
+'#rx5-gear-help{display:block;margin:0 10px 12px;color:#a0bccd;font-size:11px;line-height:1.4}',
 '#rx5-native-main button,#rx5-native-advanced button,#rx5-native-pause button{border:1px solid #305c74;border-radius:10px;background:#16344a;color:#ecf7ff;font:700 12px/1.25 system-ui;min-height:43px;padding:9px 8px;cursor:pointer;text-align:center}',
 '#rx5-native-main button:focus-visible,#rx5-native-advanced button:focus-visible,#rx5-native-pause button:focus-visible,#rx5-release-strip button:focus-visible{outline:3px solid #83eef0;outline-offset:2px}',
 '#rx5Options .rx-simple-difficulty{margin:0 10px 8px;border:0;border-radius:8px;padding:10px;background:#102d40}',
@@ -67,7 +75,7 @@ document.head.append(style);
 const hero=document.createElement('div');
 hero.id='rx5-release-strip';
 hero.setAttribute('aria-label','Current RECOIL X version');
-hero.innerHTML='<div><strong>● Z.5 · COMBAT QUALITY</strong><small>Smarter bots · Weapon mastery · Overheating</small></div><button type="button" id="rx5-open-news">WHAT\'S NEW</button>';
+hero.innerHTML='<div><strong>● Z.5 · TACTICAL EXPANSION</strong><small>EMP · Shields · Blueprints · Academy</small></div><button type="button" id="rx5-open-news">WHAT\'S NEW</button>';
 simple.prepend(hero);
 const news=document.createElement('div');
 news.id='rx5WhatsNew';news.hidden=true;
@@ -75,16 +83,18 @@ news.setAttribute('role','dialog');news.setAttribute('aria-modal','true');
 news.setAttribute('aria-label','Z.5 update details');
 news.innerHTML=[
 '<div class="rx5-dialog"><h2>RECOIL X <span style="color:#69e3de">Z.5</span></h2>',
-'<p>COMBAT QUALITY UPDATE — now integrated into the existing game.</p>',
+'<p>TACTICAL EXPANSION — playable new features added to the existing game.</p>',
 '<div class="rx5-features">',
-'<div class="rx5-feature"><strong>⚔ Weapon Overheating</strong><small>Assault rifles and SMGs heat up. Cool down between bursts; offline matches can disable it in Combat Settings.</small></div>',
-'<div class="rx5-feature"><strong>🏅 Weapon Mastery</strong><small>Build a cosmetic mastery rank from offline hits and bot eliminations. No coins needed.</small></div>',
-'<div class="rx5-feature"><strong>🤖 Nightmare Bot Tactics</strong><small>Smarter flanking, hiding and peeking. Choose bot intelligence in Settings.</small></div>',
+'<div class="rx5-feature"><strong>⚡ EMP Grenades</strong><small>Temporarily disable nearby bots in solo play. Select EMP from Tactical Gear and press G or use the touch gadget control.</small></div>',
+'<div class="rx5-feature"><strong>🛡 Deployable Shields</strong><small>Place destructible cover for 12 seconds in a clear area. Solo-only and limited by shared gadget stock.</small></div>',
+'<div class="rx5-feature"><strong>🔧 Weapon Blueprints</strong><small>Unlock Steady, Rapid and Impact tuning via offline weapon mastery. Changes to spread, fire rate or damage are real.</small></div>',
+'<div class="rx5-feature"><strong>🎓 Training Academy</strong><small>Precision, Tracking and Reaction lessons in the existing 3D range, with persistent local medals.</small></div>',
+'<div class="rx5-feature"><strong>🤖 Veteran & Nightmare Bots</strong><small>Flank, hide and peek. Choose Standard, Veteran or Nightmare in Combat Settings.</small></div>',
 '<div class="rx5-feature"><strong>📱 Mobile Performance Guard</strong><small>Fewer low-priority effects during heavy action and adaptive rendering on slow devices.</small></div>',
 '<div class="rx5-feature"><strong>🎯 Cleaner Aim</strong><small>Optional high-visibility crosshair and a compact heat indicator in the HUD.</small></div>',
 '<div class="rx5-feature"><strong>🛡 Multiplayer Safety</strong><small>Server-side weapon heat and protection against excessive input traffic in casual games.</small></div>',
 '</div>',
-'<div class="rx5-warning">The full 85-feature roadmap is still being built. This update is the verified combat-quality release, not all 85 features.</div>',
+'<div class="rx5-warning">Z.5 is still a staged roadmap. EMPs and portable shields are offline-only; the 85-feature list is not yet complete.</div>',
 '<div class="rx5-dialog-actions"><button type="button" id="rx5-news-options">COMBAT SETTINGS</button><button type="button" data-rx5-close>GOT IT</button></div></div>'
 ].join('');
 document.body.append(news);
@@ -130,6 +140,19 @@ for(const id of ['rxSimpleBotLevel','rx5Accessibility','rx5CombatSettings']){
  const el=$(id);if(!el)continue;
  settings.append(el.closest('.rx-simple-difficulty')||el);
 }
+const gearRow=document.createElement('label');gearRow.id='rx5-gear-row';
+ gearRow.textContent='TACTICAL GEAR · choose before a solo match';
+ const gearSelect=document.createElement('select');gearSelect.id='rx5GearSelect';
+ const gearNames={smoke:'Smoke cover',flash:'Flash stun',decoy:'Decoy',scanner:'Enemy scanner',emp:'EMP grenade (solo)',shield:'Deployable shield (solo)'};
+ for(const [key,title] of Object.entries(gearNames)){
+   const choice=document.createElement('option');choice.value=key;choice.textContent=title;gearSelect.append(choice);
+ }
+ const updateGear=()=>{if(window.RXZ5Gear)gearSelect.value=window.RXZ5Gear.current();};
+ gearSelect.onchange=()=>{if(!window.RXZ5Gear?.select(gearSelect.value))updateGear();};
+ gearRow.append(gearSelect);settings.append(gearRow);
+ const gearHelp=document.createElement('small');gearHelp.id='rx5-gear-help';
+ gearHelp.textContent='Press G in an offline match or tap the GADGET button on mobile. EMP and shields never affect ranked or multiplayer.';
+ settings.append(gearHelp);updateGear();
 const advancedGroup=document.createElement('div');advancedGroup.id='rx5-native-advanced';
 advancedGroup.setAttribute('aria-label','Advanced RECOIL X shortcuts');
 menu.append(advancedGroup);
@@ -138,6 +161,7 @@ pauseMore.innerHTML='<summary>MORE FEATURES · Z.5</summary>';
 const pauseGroup=document.createElement('div');pauseGroup.id='rx5-native-pause';
 pauseMore.append(pauseGroup);pause.append(pauseMore);
 for(const target of [simpleGroup,advancedGroup,pauseGroup]){
+ makeButton(target,'academy','🎓 Training Academy');
  makeButton(target,'career','🏅 Career & Clans');
  makeButton(target,'market','⚒ Forge & Market');
  makeButton(target,'matches','🌐 Match Hub');
@@ -154,12 +178,13 @@ function career(){if(!window.RXZ5Career?.open)throw Error('Career features unava
 async function open(key){
  try{
    if(key==='news'){showNews();return;}
+   if(key==='academy'){if(!window.RXZ5Academy?.open)throw Error('Academy unavailable');return window.RXZ5Academy.open();}
    if(key==='admin'){if(!window.RXZ5Admin?.open)throw Error('Admin features unavailable');return await window.RXZ5Admin.open();}
    if(key==='career'||!currentToken())return await career();
    if(key==='market'){if(!window.RXZ5Economy?.open)throw Error('Forge unavailable');return await window.RXZ5Economy.open();}
    if(key==='matches'){if(!window.RXZ5MatchHub?.open)throw Error('Match Hub unavailable');return await window.RXZ5MatchHub.open();}
  }catch(error){console.warn('RECOIL X Z.5 navigation:',error);try{await career();}catch{}}
 }
-window.RXZ5InGame={open,showNews,version:'Z.5-CLEAN-2'};
+window.RXZ5InGame={open,showNews,version:'Z.5-TACTICS-4'};
 window.RXZ5Admin?.refresh();
 })();
