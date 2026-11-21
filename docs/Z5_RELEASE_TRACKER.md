@@ -3,7 +3,7 @@
 
 **Source branch:** `z5-full-expansion`  
 **Base:** main at `75429fdedd6407a1f42c2508401d2360a27eb3d4` (deployed 2026-11-20)  
-**Status:** Z.5 incremental release candidate — original 85-feature expansion INCOMPLETE. Deployment approved by owner on November 21, 2026. No component may be called production live until Alwaysdata verifies it.
+**Status:** Z.5 INCREMENTAL EXPANSION DEPLOYED to Alwaysdata on November 21, 2026. Deployment and live asset checks succeeded: [GitHub Actions #44903169106](https://github.com/RecoilXDev/Recoil-X/actions/runs/44903169106). **The entire 85-feature request remains INCOMPLETE; many requirements are still partial or unimplemented.**
 
 User request: combine the 50 requirements in *Z.3 Project Ascension*, all 30 Z.5 selected ideas, and five Z.5 foundation categories. These are 85 listed requirements, **not 85 confirmed new implementations**. Similar features should share one reusable system.
 
@@ -138,7 +138,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 - `server/z5-combat-modes.mjs`: Server-timed Search & Destroy planting/defusing and four-stage PvP Extraction interactions.
 - `server/overdrive-match.mjs`: Multiplayer scoring, respawn and objective state integration with previous gameplay engine.
 - `tests/z5-simplicity-bots.test.cjs` and `tests/z5-combat-modes.test.mjs`: Basic map, menu, AI cover and match timing tests.
-- This development branch has NOT been deployed. Live Alwaysdata is still the previous partial Z.5 release. Physical mobile/browser QA, server load, account backup restore are outstanding.
+- This increment was deployed to Alwaysdata on November 21 after CI and website checks. Physical mobile/browser QA, server load, and account backup-restore drills remain outstanding.
 
 ### Fifth implementation pass — deployment safeguards (2026-11-21)
 - `server/z5-backups.mjs`: database WAL-consistent snapshots every 24 hours, private `0700` folder / `0600` files, retention of seven scheduled copies, errors logged without crashing the live game. This does not replace off-site backups.
@@ -146,7 +146,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 - `tests/z5-backups.test.mjs`: actual SQLite snapshots, retention, privacy, content validation and in-memory no-op coverage.
 - `tests/z5-server-smoke.test.mjs`: starts staging server using in-memory SQLite and verifies Classic map, Z.5 modes, Match Hub, and private route protections.
 - `.github/workflows/deploy-alwaysdata.yml`: pre-deploy Node 24 validation plus post-restart verification of the new live Z.5 game page, Match Hub and map.
-- **This is a partial release of implemented features, NOT the promised completion of all 85 requirements.** Items listed U and unfinished portions of P remain in the backlog.
+- **This is a deployed partial release of implemented features, NOT completion of all 85 requirements.** Items listed U and unfinished portions of P remain in the backlog.
 
 **Important limitations**
 - Existing browser-only coin/shop balances are NOT equivalent to the new Z.5 points; no exchanges or real-money commerce are supported.
