@@ -14,6 +14,7 @@ test('automatic WAL snapshots are private, consistent, retained and independent 
     db.prepare('INSERT INTO accounts(id,coins) VALUES(1,10)').run();
     const backups=startZ5Backups(db,file,{now:()=>ticks,intervalMs:60000,keep:2,onError:e=>errors.push(e),
       schedule:(fn,delay)=>{callback=fn;assert.equal(delay,60000);return {unref:()=>{}}},unschedule:()=>{stopped=true}});
+    callback(); // First scheduled tick, simulated without waiting an hour.
     const directory=join(root,'.recoil-backups');
     let files=readdirSync(directory).filter(x=>x.includes('-automatic-'));
     assert.equal(files.length,1);
