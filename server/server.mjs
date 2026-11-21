@@ -444,6 +444,13 @@ export function createRecoilServer(options = {}) {
       }catch{res.writeHead(404).end();}
       return;
     }
+    if (path === '/z5-ingame.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-ingame.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/z5-matchhub.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./z5-matchhub.js',import.meta.url));
@@ -475,7 +482,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
