@@ -2,10 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<meta name="rx-build" content="Z.5-CLEAN-2" />
+<meta name="rx-build" content="Z.5-BRAND-FIX-3" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X Z.3 · Operation Overdrive</title>
+<title>RECOIL X Z.5 · Combat Quality</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
@@ -924,7 +924,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">Z.3</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">Z.5</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -947,7 +947,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-CLEAN-2" aria-label="RECOIL X Classic menu">
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-BRAND-FIX-3" aria-label="RECOIL X Classic menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · OG Futuristic Arena · 5-minute battle</small></button>
@@ -7277,7 +7277,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · UPDATE Z';version.textContent='CROWN TRIALS';
+  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='VERSION Z.5 · 23 SEASONAL EDITIONS';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10289,8 +10289,8 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='Z.3';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · Z.3';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
+  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');
