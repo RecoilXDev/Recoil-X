@@ -959,9 +959,9 @@ body.rx5-reduce-motion #hurtfx{opacity:0!important}
   </div>
   <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Advanced menu</button>
 </div>
-  <div class="topline"><span class="brandchip">RECOIL X // VERSION X.5 · EXPANSION</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X // VERSION Z.5 · EVOLUTION</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">20 battlegrounds. Endless battles. Your legend begins here.</div>
-  <div class="menu-stats"><span class="versionlabel">VERSION X.5 · 23 SEASONAL EDITIONS</span><span>🌵 <b data-t="fiveMaps">٥ خرائط</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
+  <div class="menu-stats"><span class="versionlabel">VERSION Z.5 · 23 SEASONAL EDITIONS</span><span>🌵 <b data-t="fiveMaps">٥ خرائط</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
   <div class="mode-grid"><button class="choice" id="soloBtn"><span>🎯</span><strong data-t="solo">حارب الروبوتات</strong><small data-t="soloSub">العب وحدك • واكسب العملات</small></button><button class="choice" id="roomBtn"><span>🔗</span><strong data-t="privateRoom">غرفة خاصة</strong><small data-t="roomSub">رمز دخول • مباريات مع الأصدقاء</small></button></div>
   <div class="menu-actions"><button class="primary" id="shopBtn">🛍️ <span data-t="skinShop">متجر الأزياء</span></button><button class="primary crate-main-btn" id="crateBtn">🎁 <span data-t="lootBoxes">صناديق الغنائم</span></button><button class="primary v8-gun-main-btn" id="v8GunBtn">🔫 <span data-t="v8GunBox">Gun Box</span></button><button class="primary pet-main-btn" id="petBtn">🐾 <span data-t="companions">المرافقون</span></button><button class="primary battlepass-main-btn" id="passBtn">🏆 <span data-t="battlePass">BATTLE PASS</span></button><button class="secondary" id="mapsBtn">🗳️ <span data-t="mapVote">التصويت على الخريطة</span></button></div>
 <div id="rxsePlayerBadge" class="rxse-banner hide" aria-label="Equipped seasonal title"></div><div id="rxseMenuBanner" class="rxse-banner hide" aria-live="polite"></div><button id="rxseOpenBtn" class="primary full hide" type="button">🎊 SEASONAL EVENT HUB</button>
@@ -8074,6 +8074,14 @@ function z1StoreSession(){
   try{
     if(z1Token)sessionStorage.setItem(z1SessionKey,JSON.stringify({root:z1ServerRoot(z1ApiRoot),token:z1Token}));
     else sessionStorage.removeItem(z1SessionKey);
+    // Use the same verified account throughout all Z.5 menus.
+    // Never copy a session from a different game server into this origin.
+    const sameOrigin=!!z1Token&&z1ServerRoot(z1ApiRoot)===location.origin;
+    if(sameOrigin)sessionStorage.setItem('rx5-token',z1Token);
+    else sessionStorage.removeItem('rx5-token');
+    window.dispatchEvent(new CustomEvent('rx5-auth-changed',{detail:{
+      source:'game',token:sameOrigin?z1Token:'',user:sameOrigin?z1Account:null
+    }}));
   }catch{}
 }
 function z1RestoreSession(){
@@ -8097,6 +8105,17 @@ function z1UseAccount(profile){
   z1RefreshFriends();
   z1RenderFriends();
 }
+// Career sign-in is a real RECOIL X game sign-in, not a separate Z.5 identity.
+window.addEventListener('rx5-auth-changed',event=>{
+  const update=event.detail;
+  if(update?.source!=='career')return;
+  if(update.token&&update.user){
+    try{z1ApiRoot=z1ServerRoot(location.origin);}catch{return;}
+    if(z1Token===update.token&&z1Account?.id===update.user.id)return;
+    z1Token=update.token;z1UseAccount(update.user);
+  }else if(z1Token){z1ClearAccount();}
+});
+
 
 function z1Say(message,error=false){
   const el=$('z1FriendsStatus');
