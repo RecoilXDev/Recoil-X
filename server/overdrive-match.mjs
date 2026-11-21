@@ -60,7 +60,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
     spawn(p,now);
     members.set(p.id,p);
   }
-  const rule=modeState(mode,now,players)||z5ModeState(mode,now);
+  const rule=modeState(mode,now,players)||z5ModeState(mode,now,rng);
   if(mode==='jeep'){
     field={id:'rally',name:'Double Track',half:28,cover:[]};
     for(const p of members.values())Object.assign(p,{x:rule.cars[p.team].x,z:23,yaw:0});
@@ -70,7 +70,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(mode==='chaos')field=z5Arena(field,rng);
   return {
     id,mode,season,field,rule,remake,
-    limit:mode==='relic'||mode==='elimination'||mode==='budget'||mode==='onechamber'?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
+    limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
     end:now+360000,last:now,score:[0,0],result:null,roundAt:0,rng,
     relics:[0,1].map(team=>({team,x:0,z:team?24:-24,holder:null,home:true,returnAt:0})),
@@ -215,7 +215,7 @@ function eliminate(m,victim,killer,now) {
     {type:'z2:killcam',only:victim.id,replay:highlight});
   if(['elimination','budget','props'].includes(m.mode))victim.spawnAt=0;
   if(z5Elimination(m,victim,killer,now,{finish,mark:markEvent}))return;
-  if(m.mode==='relic'||m.rule)return;
+  if(['relic','ctf'].includes(m.mode)||m.rule)return;
   m.score[killer.team]++;
   if(m.score[killer.team]>=m.limit||m.overtime)finish(m,killer.team,'score',now);
   else if(m.mode==='chess')m.roundAt=now+2200;
@@ -270,7 +270,7 @@ function powerOrRelic(m,p,now) {
     if(charge&&p.boost<now){p.boost=now+7500;charge.ready=now+13500;
       m.events.push({type:'z2:notice',only:p.id,message:'Overcharged · faster movement and fire'});}
   }
-  if(m.mode!=='relic')return;
+  if(!['relic','ctf'].includes(m.mode))return;
   const own=m.relics[p.team], enemy=m.relics[1-p.team];
   if(own.holder==null&&!own.home&&dist(own,p)<1.3&&p.input.use)resetRelic(own);
   if(enemy.holder==null&&dist(enemy,p)<1.3&&p.input.use){
@@ -348,7 +348,7 @@ export function updateMatch(m,now) {
     for(const p of m.players.values())if(!p.forfeited)spawn(p,now);
   }
   if(!advanceMode(m,now,delta,{finish,spawn,move:(p,dx,dz)=>move(m.field,p,dx,dz)})){recordLead(m,now);return;}
-  if(!z5Advance(m,now,{finish,mark:markEvent})){recordLead(m,now);return;}
+  if(!z5Advance(m,now,{finish,mark:markEvent,spawn})){recordLead(m,now);return;}
   for(const r of m.relics)if(r.returnAt&&r.returnAt<=now)resetRelic(r);
   for(const p of m.players.values()){
     if(m.result||m.roundAt)break;
@@ -359,7 +359,7 @@ export function updateMatch(m,now) {
     if(!p.hp){if(p.spawnAt&&p.spawnAt<=now)spawn(p,now);continue;}
     if(m.mode==='props'&&p.team!==m.rule.half&&m.rule.phase==='hide')continue;
     const input=p.input;
-    const carrying=m.mode==='relic'&&m.relics.some(r=>r.holder===p.id);
+    const carrying=['relic','ctf'].includes(m.mode)&&m.relics.some(r=>r.holder===p.id);
     const dragging=m.mode==='rescue'&&input.use&&[...m.players.values()]
       .some(other=>other.down&&other.team===p.team&&dist(other,p)<2.3);
     const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
@@ -418,7 +418,7 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
     objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
-    relics:m.mode==='relic'?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
+    relics:['relic','ctf'].includes(m.mode)?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
     power:m.mode==='overcharge'?m.power.map(r=>[r.x,r.z,r.ready<=now]):undefined};
 }
 
