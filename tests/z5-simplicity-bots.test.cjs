@@ -60,3 +60,17 @@ test('standard intelligence remains a supported lighter fallback',()=>{
  vm.runInContext("rx5TacticalMode='standard'",f.context);
  assert.equal(f.context.botTactics.enabled(),false);
 });
+
+test('wounded Veteran bots eventually leave cover to peek instead of hiding forever',()=>{
+ const f=tacticsFixture(),bot={id:8,x:10,z:0,alive:true,hp:30,nextShot:5,strafedir:1,speed:3,personality:'guardian'};
+ f.context.obstacles.push({x:5,z:0,w:4,d:4,h:3});
+ f.context.botTactics.step(bot,f.player,.08,10,true);
+ assert.ok(['cover','hide'].includes(bot.rx5Brain.mode));
+ // Advance the simulation to the chosen hiding point.
+ bot.x=bot.rx5Brain.goal.x;bot.z=bot.rx5Brain.goal.z;
+ f.context.botTactics.step(bot,f.player,.08,10.3,true);
+ assert.equal(bot.rx5Brain.mode,'hide');
+ const afterHide=bot.rx5Brain.hideUntil+.05;
+ f.context.botTactics.step(bot,f.player,.08,afterHide,true);
+ assert.notEqual(bot.rx5Brain.mode,'hide');
+});
