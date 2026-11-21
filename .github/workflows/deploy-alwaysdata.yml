@@ -113,4 +113,23 @@ jobs:
           curl --fail --silent --show-error --location \
             --output /tmp/recoil-z5-hub.js https://recoil-x.alwaysdata.net/z5-matchhub.js
           grep -Fq 'MATCH HUB' /tmp/recoil-z5-hub.js
-          echo "Z.5 Classic map, simplified menu, online modes and Match Hub confirmed live."
+          grep -Fq 'script src="/z5-ingame.js" defer' /tmp/recoil-z5-live.html
+          curl --fail --silent --show-error --location \
+            --output /tmp/recoil-z5-ingame.js https://recoil-x.alwaysdata.net/z5-ingame.js
+          grep -Fq 'Career & Clans' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Forge & Market' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Match Hub' /tmp/recoil-z5-ingame.js
+          curl --fail --silent --show-error --location \
+            --output /tmp/recoil-z5-admin.js https://recoil-x.alwaysdata.net/admin-panel.js
+          grep -Fq "api('me')" /tmp/recoil-z5-admin.js
+          grep -Fq "data-rx-admin-only" /tmp/recoil-z5-admin.js
+          if grep -Fq 'rx-admin-launch' /tmp/recoil-z5-admin.js; then
+            echo 'Public admin launcher must not exist' >&2; exit 1
+          fi
+          curl --fail --silent --show-error --location \
+            --output /tmp/recoil-z5-career.js https://recoil-x.alwaysdata.net/z5-panel.js
+          grep -Fq 'window.RXZ5Career' /tmp/recoil-z5-career.js
+          if grep -Fq 'Z.5 LAB' /tmp/recoil-z5-career.js; then
+            echo 'Legacy LAB launcher must be removed' >&2; exit 1
+          fi
+          echo "Z.5 in-game menus, role-gated Admin, Career, modes and Match Hub verified live."

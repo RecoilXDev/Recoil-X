@@ -94,7 +94,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |76|Training Academy|E — existing offline aim practice; full multi-lesson academy not built|
 |77|Accessibility Suite|P — Classic preference controls and reduced motion; full remapping not built|
 |78|Network Diagnostics|P — live five-request HTTP timing and range; actual WebSocket packet loss still unsupported|
-|79|Admin Audit Log|P — server-side Z.5 activity log plus existing Z.2/admin log|
+|79|Admin Audit Log|P — role-gated in-game Z.5 Admin console combines moderation ledger, coin grants, Z.5 activity and server health|
 |80|Anti-Cheat Foundations|U|
 
 ### C. Five foundation categories
@@ -104,7 +104,18 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |82|Economy and inventory overhaul|P — separate Z.5 points ledger; NOT joined with original economy|
 |83|Real multiplayer overhaul|E — existing Node/WebSocket/SQLite backend; Z.5 overhaul unverified|
 |84|Mobile and performance overhaul|P — lightweight classic arena and amortized bot tactics; physical FPS benchmarks pending|
-|85|Graphics and UI overhaul|P — minimal Quick Play menu, futuristic map and accessibility preferences; wider overhaul unfinished|
+|85|Graphics and UI overhaul|P — unified in-game Career, Forge, Match Hub and admin-only tab; Classic Quick Play and accessibility preferences; full graphics overhaul unfinished|
+
+### Sixth implementation pass — unified in-game Z.5 and restricted administration (2026-11-21)
+- `server/z5-ingame.js`: native Z.5 Career & Clans, Forge & Market and Match Hub buttons inside simplified, advanced and pause menus. There is no permanent Z.5 LAB floating launcher.
+- `server/z5-panel.js`: Career & Clans replaces the old Z.5 LAB wording and floating menu; its account sign-in is synchronized with the normal RECOIL X account session.
+- `index.html`: single session store synchronization between game account and Z.5; visible version branding uses Z.5; does not change game name or wipe previous saves.
+- `server/admin-panel.js`: no public floating admin button, independent admin token or separate administrator sign-in. The Admin tab is hidden until `/rx-api/me` verifies the actual signed-in account's `admin` role; checks repeat on login/focus/open. Server still enforces authorization for all moderation endpoints.
+- Admin view renewed with live server health and Z.5 activity history alongside bans, mutes, kicks and audited coin grants. Coin grants still affect a server bonus wallet, not the old browser-only coin store.
+- `server/server.mjs`: serves and loads the in-game integration module.
+- `tests/z5-ingame-admin.test.mjs`: integrated menu checks, authenticated server permission checks for normal/admin/revoked roles and source sanity checks.
+- **85-feature scope is still incomplete.** This patch reorganizes and secures implemented features; it does not invent missing weapons, levels, boss raids, advanced physics or anti-cheat systems.
+
 
 ## Implemented in development branch in this initial pass
 - \`server/z5-core.mjs\`: non-destructive migration, persistent clan membership and invitations, leader-only controls, max 40 members, rate-limit integration, daily server-day (Asia/Muscat) rewards, a player-title foundation, and permissioned activity records.

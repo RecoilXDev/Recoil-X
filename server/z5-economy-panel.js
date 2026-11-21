@@ -26,7 +26,7 @@ const names=o=>Object.entries(o.catalog).map(([id,item])=>'<option value="'+esc(
 const label=(o,id)=>o.catalog[id]?.name||id;
 async function api(path,body) {
  const token=sessionStorage.getItem('rx5-token');
- if(!token)throw Error('Sign in through the Z.5 LAB first.');
+ if(!token)throw Error('Sign in through the Career & Clans menu first.');
  const r=await fetch('/rx-api/z5/'+path,{method:body===undefined?'GET':'POST',
   headers:{Authorization:'Bearer '+token,...(body===undefined?{}:{'Content-Type':'application/json'})},
   ...(body===undefined?{}:{body:JSON.stringify(body)})});

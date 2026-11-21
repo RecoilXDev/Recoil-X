@@ -4,6 +4,7 @@ on:
     branches:
       - z5-evolution-ascension
       - z5-full-expansion
+      - z5-unified-ingame-admin
   pull_request:
     branches:
       - main

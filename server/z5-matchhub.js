@@ -9,7 +9,7 @@ document.body.append(screen);
 const q=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const report=(s,bad=false)=>{q('rx5-hub-status').textContent=s;q('rx5-hub-status').classList.toggle('error',bad)};
-async function api(path){const token=sessionStorage.getItem('rx5-token');if(!token)throw Error('Sign in with your RECOIL X account through Z.5 LAB first.');
+async function api(path){const token=sessionStorage.getItem('rx5-token');if(!token)throw Error('Sign in with your RECOIL X account through Career & Clans menu first.');
   const r=await fetch('/rx-api/z5/'+path,{headers:{Authorization:'Bearer '+token},cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d;}
 let view='rooms',replay=[],frame=0,playing=false,stepTimeout=0;
 const stop=()=>{playing=false;clearTimeout(stepTimeout)};
@@ -17,7 +17,7 @@ function close(){stop();screen.classList.remove('active');report('')}
 q('rx5-hub-close').onclick=close;screen.addEventListener('click',e=>{if(e.target===screen)close()});
 screen.addEventListener('pointerdown',e=>e.stopPropagation());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&screen.classList.contains('active'))close()});
-async function open(){screen.classList.add('active');document.exitPointerLock?.();report('');try{const token=sessionStorage.getItem('rx5-token');if(!token)throw Error('Sign in through Z.5 LAB first.');const r=await fetch('/rx-api/me',{headers:{Authorization:'Bearer '+token}});const me=await r.json();if(!r.ok)throw Error(me.error||'Sign in again.');
+async function open(){screen.classList.add('active');document.exitPointerLock?.();report('');try{const token=sessionStorage.getItem('rx5-token');if(!token)throw Error('Sign in through Career & Clans menu first.');const r=await fetch('/rx-api/me',{headers:{Authorization:'Bearer '+token}});const me=await r.json();if(!r.ok)throw Error(me.error||'Sign in again.');
 q('rx5-hub-admin').classList.toggle('hide',!me.user?.admin);await show('rooms');}catch(e){report(e.message,true);q('rx5-hub-body').textContent=e.message;}}
 async function show(name){stop();view=name;const body=q('rx5-hub-body');body.textContent='Loading...';try{
  if(name==='rooms'){const d=await api('rooms');body.innerHTML='<div class="card"><h3>Public joinable rooms</h3><p class="muted">Only live, open, non-passworded rooms appear here. Copy a code and enter it through the existing Multiplayer lobby.</p><button data-action="refresh">Refresh list</button>'+(!d.rooms.length?'<p>No public rooms available at this moment.</p>':d.rooms.map(r=>'<div class="line row"><b>'+escape(r.mode)+'</b><span>'+escape(r.players)+' / '+escape(r.capacity)+' players · '+escape(r.size)+' per team</span><code>'+escape(r.code)+'</code><button data-action="copy" data-code="'+escape(r.code)+'">Copy room code</button></div>').join(''))+'</div>';}
