@@ -78,3 +78,30 @@ test('server input processing remains compatible with new modes',()=>{
  assert.equal(p.weapon,0);
  assert.equal(m.result,null);
 });
+
+test('Capture the Flag reuses real two-base flag mechanics and snapshot state',()=>{
+ const m=make('ctf'),p=m.players.get(1);
+ assert.equal(m.limit,3);
+ assert.equal(m.relics.length,2);
+ assert.equal(snapshot(m,1,1200).relics.length,2);
+ p.x=0;p.z=23;
+ inputMatch(m,1,{seq:1,f:0,s:0,yaw:0,pitch:0,weapon:0,use:true},1200);
+ updateMatch(m,1200);
+ assert.equal(m.mode,'ctf');
+});
+test('Duel Roulette uses identical server-selected weapons and advances rounds',()=>{
+ const m=make('roulette',()=>.66),p=m.players.get(1),v=m.players.get(2);
+ assert.equal(m.rule.phase,'fight');
+ assert.equal(z5Weapon(m,p,0),2);
+ assert.equal(z5Weapon(m,v,3),2);
+ p.kills=1;v.deaths=1;
+ let winner=null;
+ z5Elimination(m,v,p,1800,{finish:(match,team)=>winner=team,mark:()=>{}});
+ assert.equal(m.score[0],1);
+ assert.equal(m.rule.phase,'break');
+ assert.equal(winner,null);
+ z5Advance(m,4300,{finish:()=>{},mark:()=>{},spawn:()=>{}});
+ assert.equal(m.rule.round,2);
+ assert.equal(m.rule.phase,'fight');
+ assert.equal(z5Weapon(m,p,0),z5Weapon(m,v,1));
+});
