@@ -106,6 +106,12 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |84|Mobile and performance overhaul|P — lightweight classic arena and amortized bot tactics; physical FPS benchmarks pending|
 |85|Graphics and UI overhaul|P — unified in-game Career, Forge, Match Hub and admin-only tab; Classic Quick Play and accessibility preferences; full graphics overhaul unfinished|
 
+### Production deployment — unified Z.5 menus and admin gating (2026-11-21)
+- RELEASED: Pull request [#12](https://github.com/RecoilXDev/Recoil-X/pull/12), commit `b27dff483b725ff918fc460e21b71866104c3692`.
+- DEPLOYED: [Alwaysdata GitHub Actions #44916037435](https://github.com/RecoilXDev/Recoil-X/actions/runs/44916037435) passed the complete regression suite, file upload, dependency installation, restart, website check and live menu/admin asset verification.
+- ACTIVE: game account sync, in-game Career & Clans / Forge & Market / Match Hub, hidden legacy LAB launch, and role-gated updated Admin console with health and activity audit.
+- **NOT FULLY COMPLETE:** The 85-feature tracker remains a delivery backlog. The deployment did not add unimplemented underwater combat, dynamic world destruction, advanced raids, new weapons or all missing game systems. Device and load testing is still outstanding.
+
 ### Sixth implementation pass — unified in-game Z.5 and restricted administration (2026-11-21)
 - `server/z5-ingame.js`: native Z.5 Career & Clans, Forge & Market and Match Hub buttons inside simplified, advanced and pause menus. There is no permanent Z.5 LAB floating launcher.
 - `server/z5-panel.js`: Career & Clans replaces the old Z.5 LAB wording and floating menu; its account sign-in is synchronized with the normal RECOIL X account session.
