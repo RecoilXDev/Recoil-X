@@ -3546,21 +3546,52 @@ function rx2RenderExtras(out,now){for(const c of rx2Covers)if(c.hp>0){const k=c.
 }
 function rx2BeforeStart(which){rx2Mode=which;rx2Kills=0;rx2Shots=0;rx2DamageReceived=0;rx2DamageDealt=0;rx2HitHead=0;rx2TrainingAccuracy={shots:0,hits:0};rx2GadgetStock=3;rx2ObjectiveIndex=0;rx2ModeStarted=performance.now()/1000;rx2Covers=[];rx2Gadgets=[];rx2Killcam=[];rx2Heat=0;rx2SlideUntil=0;rx2GunReadyAt=0;}
 function rx2AfterStart(which){rx2MakeCovers();const custom=which==='custom';if(custom){difficulty=rx2MyCustom.difficulty;bots.length=0;for(let i=0;i<rx2MyCustom.bots;i++)bots.push(spawnBot(i));gameSeconds=rx2MyCustom.seconds;}
- if(which==='training'){bots.length=0;for(let i=0;i<7;i++){let b=spawnBot(i);b.x=(i-3)*9;b.z=-23-(i%3)*7;b.hp=90;b.speed=1.9;b.nextShot=999;b.name='🎯 MOVING TARGET '+(i+1);bots.push(b);}gameSeconds=240;}
+ if(which==='training'){bots.length=0;for(let i=0;i<7;i++){let b=spawnBot(i);b.x=(i-3)*9;b.z=-23-(i%3)*7;b.hp=rx5AcademyLesson==='precision'?75:85;b.speed=1.9;b.nextShot=999;b.name='🎯 '+rx5AcademyLesson.toUpperCase()+' '+(i+1);bots.push(b);}gameSeconds=90;pl.weapon=rx5AcademyLesson==='precision'?2:rx5AcademyLesson==='tracking'?3:0;drawGunModel(pl.weapon);}
  if(which==='objective'){gameSeconds=360;rx2ObjectiveIndex=0;rx2MakeCovers();}
  $('rx2Hud').classList.remove('hide');rx2UpdateHud();}
-function rx2BotBehavior(b,dt,now){if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.name='🎯 TARGET '+b.id;b.nextShot=999;}return true;}b.x+=Math.cos(now*.6+b.id)*dt*.48;b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
+function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.name='🎯 TARGET '+b.id;b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35)+b.id)*dt*(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
  if(mode==='objective'){if(!b.alive)return false;if(dist(b,pl)>17&&Math.random()<.08)b.strafedir*=-1;}return false;}
 function rx2OnBotKilled(bot,killer){if(mode==='training'){if(!bot.alive)return true;bot.hp=0;bot.alive=false;bot.respawn=performance.now()/1000+3;rx2TrainingAccuracy.hits++;rx2Kills++;toast('🎯 TARGET DOWN',550);return true;}rx2Kills++;return false;}
 function rx2MovePlayer(dx,dz,dt,running){const now=performance.now()/1000;let sp=1;if(now<rx2SlideUntil&&pl.jump<.01){sp=1.95;pl.crouched=true;}if(keys.Space&&pl.jump<=.01){const cover=rx2Covers.find(c=>c.hp>0&&Math.hypot(pl.x-c.x,pl.z-c.z)<3);if(cover){pl.vy=5.5;pl.jump=.04;toast('↗ VAULT',400);}}slide(pl,dx*sp,dz*sp,.47);}
 function rx2Slide(){const now=performance.now()/1000;if(phase!=='playing'||paused||now<rx2SlideCooldown||pl.jump>.01)return;rx2SlideUntil=now+.48;rx2SlideCooldown=now+1.6;toast('↘ SLIDE',500);}
-function rx2Gadget(type=rx2Settings.gadget){let now=performance.now()/1000;if(phase!=='playing'||paused||rx2GadgetStock<=0||now<rx2GadgetReadyAt)return;
- rx2GadgetStock--;rx2GadgetReadyAt=now+5;const f=aimVector(pl.yaw,0),x=pl.x+f.x*9,z=pl.z+f.z*9;
- rx2Gadgets.push({type,x,z,started:now,duration:type==='smoke'?8:5});rx2Gadgets=rx2Gadgets.slice(-8);if(type==='flash'){for(const b of bots){if(b.alive&&Math.hypot(b.x-x,b.z-z)<14)b.nextShot=Math.max(b.nextShot,2.0);}}else if(type==='scanner'){const nearby=bots.filter(b=>b.alive&&dist(b,pl)<40).length;toast('📡 SCANNER FOUND '+nearby+' ENEMIES',1800);}else if(type==='decoy'){toast('🎭 DECOY DEPLOYED',700);}else toast('💨 SMOKE DEPLOYED',700);rx2SoundAt('gadget',x,z);}
+function rx2Gadget(type=rx2Settings.gadget){
+ const now=performance.now()/1000;
+ if(phase!=='playing'||paused||spectating||!pl.alive||rx2GadgetStock<=0||now<rx2GadgetReadyAt)return false;
+ // Non-authoritative new gadgets are never allowed to influence a multiplayer match.
+ if(['emp','shield'].includes(type)&&!rx5OfflineCombat()){toast('SOLO TACTICAL GEAR ONLY',1200);return false;}
+ const f=aimVector(pl.yaw,0),reach=type==='shield'?5.0:9.0,x=pl.x+f.x*reach,z=pl.z+f.z*reach;
+ if(type==='shield'&&(blocked(x,z,1.6)||Math.hypot(x,z)>(activeMap()?.ogClassic?32:ARENA_HALF-4))){
+   toast('🛡 NEED CLEAR SPACE TO DEPLOY',1300);return false;
+ }
+ rx2GadgetStock--;rx2GadgetReadyAt=now+5;
+ if(type==='emp'){
+   let stunned=0;
+   for(const b of bots)if(b.alive&&Math.hypot(b.x-x,b.z-z)<=14){
+     b.rx5EmpUntil=Math.max(b.rx5EmpUntil||0,now+3.25);
+     b.nextShot=Math.max(b.nextShot,1.6);stunned++;
+   }
+   toast('⚡ EMP · '+stunned+' BOTS DISABLED',1300);
+ }else if(type==='shield'){
+   rx2Covers=rx2Covers.filter(c=>!c.rx5Portable||c.hp>0&&c.expiresAt>now);
+   const own=rx2Covers.filter(c=>c.rx5Portable);
+   if(own.length>=2){const first=own[0];rx2Covers.splice(rx2Covers.indexOf(first),1);}
+   rx2Covers.push({x,z,w:2.7,d:.65,h:2.15,hp:165,maxHp:165,rx5Portable:true,expiresAt:now+12});
+   toast('🛡 SHIELD DEPLOYED · 12s',1150);
+ }else if(type==='flash'){
+   for(const b of bots)if(b.alive&&Math.hypot(b.x-x,b.z-z)<14)b.nextShot=Math.max(b.nextShot,2.0);
+ }else if(type==='scanner'){
+   const nearby=bots.filter(b=>b.alive&&dist(b,pl)<40).length;
+   toast('📡 SCANNER FOUND '+nearby+' ENEMIES',1800);
+ }else if(type==='decoy')toast('🎭 DECOY DEPLOYED',700);
+ else toast('💨 '+type.toUpperCase()+' DEPLOYED',700);
+ rx2Gadgets.push({type,x,z,started:now,duration:type==='shield'?12:type==='smoke'?8:5});
+ rx2Gadgets=rx2Gadgets.slice(-8);
+ rx2SoundAt('gadget',x,z);return true;
+}
 function rx2SmokeBlocks(a,b){return rx2Gadgets.some(g=>g.type==='smoke'&&performance.now()/1000-g.started<g.duration&&Math.min(len2(a.x-g.x,a.z-g.z),len2(b.x-g.x,b.z-g.z))<5);}
 function rx2SoundAt(type,x,z){if(!sound)return;try{const ac=audioCtx();if(!ac)return;const osc=ac.createOscillator(),gain=ac.createGain(),pan=ac.createStereoPanner?ac.createStereoPanner():null;const d=clamp(Math.hypot(x-pl.x,z-pl.z),0,90),dir=Math.atan2(x-pl.x,-(z-pl.z))-pl.yaw;
  osc.type=type==='break'?'sawtooth':'triangle';osc.frequency.setValueAtTime(type==='break'?140:410,ac.currentTime);osc.frequency.exponentialRampToValueAtTime(70,ac.currentTime+.16);gain.gain.value=Math.max(.005,.065*(1-d/100));osc.connect(gain);if(pan){pan.pan.value=clamp(Math.sin(dir),-1,1);gain.connect(pan);pan.connect(ac.destination);}else gain.connect(ac.destination);osc.start();osc.stop(ac.currentTime+.16);}catch(e){}}
-function rx2Tick(dt,now){if(phase!=='playing')return;rx2Heat=Math.max(0,rx2Heat-dt*29);rx2Gadgets=rx2Gadgets.filter(g=>now-g.started<g.duration);
+function rx2Tick(dt,now){if(phase!=='playing')return;rx2Covers=rx2Covers.filter(c=>!c.rx5Portable||(c.hp>0&&c.expiresAt>now));rx2Heat=Math.max(0,rx2Heat-dt*29);rx2Gadgets=rx2Gadgets.filter(g=>now-g.started<g.duration);
  if(rx2Killcam.length===0||now-rx2Killcam[rx2Killcam.length-1].t>.25)rx2Snapshot(now);
  if(mode==='objective'){const objective=RX2_OBJECTIVES[rx2ObjectiveIndex];if(objective&&Math.hypot(pl.x-objective.x,pl.z-objective.z)<5){rx2ObjectiveIndex++;toast('📍 OBJECTIVE SECURED '+rx2ObjectiveIndex+'/3',1800);if(rx2ObjectiveIndex===3){addCoins(180);finish();return;}}}
  if(mode==='training')rx2TrainingAccuracy.shots=pl.shots;
@@ -3569,7 +3600,7 @@ function rx2Tick(dt,now){if(phase!=='playing')return;rx2Heat=Math.max(0,rx2Heat-
 }
 function rx2FinishMatch(){if(!mode.startsWith('crown-')&&!['training','objective','custom','solo','boss','mystery','infection','duel','chaos'].includes(mode))return;rx2MatchHistory.unshift({mode,at:new Date().toISOString(),kills:pl.kills,shots:pl.shots,hits:pl.hits,headshots:rx2HitHead,received:Math.round(rx2DamageReceived),damage:Math.round(rx2DamageDealt),survived:Math.max(0,Math.round(performance.now()/1000-rx2ModeStarted)),objective:rx2ObjectiveIndex});rx2MatchHistory=rx2MatchHistory.slice(0,25);setStore('rx2_match_history',rx2MatchHistory);}
 function rx2ShowMatchStats(){const el=$('rx2MatchStats');if(!el)return;const m=rx2MatchHistory[0];if(!m){el.replaceChildren();return;}el.innerHTML='<span>🎯 HITS '+m.hits+'/'+m.shots+'</span><span>💥 DMG '+m.damage+'</span><span>❤️ LOST '+m.received+'</span><span>⏱ '+m.survived+'s</span><span>✹ HEAD '+m.headshots+'</span>'+(mode==='objective'?'<span>📍 '+m.objective+'/3</span>':'');}
-function rx2UpdateHud(){if($('rx2TouchGadget')){$('rx2TouchGadget').classList.toggle('hide',!mobile||phase!=='playing'||paused);$('rx2TouchSlide').classList.toggle('hide',!mobile||phase!=='playing'||paused);}const now=performance.now()/1000;if(now-rx2LastHudAt<.19)return;rx2LastHudAt=now;const el=$('rx2HudStatus');if(!el)return;const heat=rx2Heat>55?' 🔥'+Math.round(rx2Heat)+'%':'';el.textContent='X.4 · '+rx2EffectiveName()+' · 🎒 '+rx2GadgetStock+' GADGETS'+heat;const o=$('rx2Objective');o.textContent=mode==='objective'?rx2ObjectiveIndex<3?'📍 '+RX2_OBJECTIVES[rx2ObjectiveIndex].title+' ('+(rx2ObjectiveIndex+1)+'/3)':'OBJECTIVES COMPLETE':mode==='training'?'🎯 TARGET PRACTICE · '+rx2Kills+' DOWN':'';}
+function rx2UpdateHud(){if($('rx2TouchGadget')){$('rx2TouchGadget').textContent='⚙ '+String(rx2Settings.gadget||'smoke').toUpperCase();$('rx2TouchGadget').classList.toggle('hide',!mobile||phase!=='playing'||paused);$('rx2TouchSlide').classList.toggle('hide',!mobile||phase!=='playing'||paused);}const now=performance.now()/1000;if(now-rx2LastHudAt<.19)return;rx2LastHudAt=now;const el=$('rx2HudStatus');if(!el)return;const heat=rx2Heat>55?' 🔥'+Math.round(rx2Heat)+'%':'';el.textContent='Z.5 · '+rx2EffectiveName()+' · 🎒 '+rx2GadgetStock+' '+String(rx2Settings.gadget||'smoke').toUpperCase()+heat;const o=$('rx2Objective');o.textContent=mode==='objective'?rx2ObjectiveIndex<3?'📍 '+RX2_OBJECTIVES[rx2ObjectiveIndex].title+' ('+(rx2ObjectiveIndex+1)+'/3)':'OBJECTIVES COMPLETE':mode==='training'?'🎯 TARGET PRACTICE · '+rx2Kills+' DOWN':'';}
 function rx2Effective(){const preset=rx2Settings.preset;const mobileLimiter=mobile?2:4,profile=preset==='off'?0:preset==='balanced'?1:preset==='enhanced'?3:preset==='ultra'?4:mobile?1:v91Resolved()==='max'?3:2;return Math.max(0,Math.min(mobileLimiter,profile-rx2DynamicLevel));}
 function rx2EffectiveName(){return ['ECO','BALANCED','ENHANCED','ULTRA','CINEMATIC'][rx2Effective()]||'AUTO';}
 function rx2ShaderUniforms(){if(!gl||!program)return;const q=rx2Effective(),rain=rxWeather==='rain'||rxWeather==='storm',storm=rxWeather==='storm';if(uniform.rx2int)gl.uniform1f(uniform.rx2int,rx2Settings.materials?q*.25:0);if(uniform.rx2wet)gl.uniform1f(uniform.rx2wet,rx2Settings.reflections&&rx2Settings.weather&&rain?.9:0);if(uniform.rx2night)gl.uniform1f(uniform.rx2night,rx2Settings.lighting&&storm?.3:rx2MapSurprise===1?.12:0);if(uniform.rx2shade)gl.uniform1f(uniform.rx2shade,rx2Settings.shadows?q*.22:0);if(uniform.rx2light)gl.uniform1f(uniform.rx2light,rx2Settings.lighting?q*.22:0);const gold=gunFinishFor(pl.weapon);if(uniform.rx2godly)gl.uniform1f(uniform.rx2godly,rx2Settings.godly&&q>1&&gold&&['godly','silver','golden'].includes(gold.rarity)?q*.16:0);}
@@ -3591,7 +3622,7 @@ const RX2_TEXT={
  tr:{hub:'🎬 X.3 SÜRÜMÜ · ANİMASYON',training:'🎯 ATIŞ ALANI',objective:'📍 GÖREVLER',custom:'⚙️ ÖZEL MAÇ',gadget:'💨 TAKTİK CİHAZLAR',back:'GERİ',subtitle:'Geliştirilmiş oyun, grafik ve performans.'}
 };
 function rx2Translate(){const lang=RX2_TEXT[language]||RX2_TEXT.en;for(const node of document.querySelectorAll('[data-rx2]'))node.textContent=lang[node.dataset.rx2]||RX2_TEXT.en[node.dataset.rx2]||node.textContent;}
-function rx2Setup(){const open=$('rx2OpenBtn');if(!open)return;open.onclick=rx2Open;$('rx2BackBtn').onclick=()=>showScreen('mainMenu');$('rx2TrainingBtn').onclick=()=>rx2Start('training');$('rx2ObjectiveBtn').onclick=()=>rx2Start('objective');$('rx2CustomBtn').onclick=()=>rx2Start('custom');$('rx2GadgetBtn').onclick=()=>{const options=['smoke','flash','decoy','scanner'];rx2Settings.gadget=options[(options.indexOf(rx2Settings.gadget)+1)%options.length];rx2SaveSettings();toast('🧰 GADGET: '+rx2Settings.gadget.toUpperCase(),1200);};
+function rx2Setup(){const open=$('rx2OpenBtn');if(!open)return;open.onclick=rx2Open;$('rx2BackBtn').onclick=()=>showScreen('mainMenu');$('rx2TrainingBtn').onclick=()=>rx2Start('training');$('rx2ObjectiveBtn').onclick=()=>rx2Start('objective');$('rx2CustomBtn').onclick=()=>rx2Start('custom');$('rx2GadgetBtn').onclick=()=>{const options=['smoke','flash','decoy','scanner','emp','shield'];rx2Settings.gadget=options[(options.indexOf(rx2Settings.gadget)+1)%options.length];rx2SaveSettings();toast('🧰 GADGET: '+rx2Settings.gadget.toUpperCase(),1200);};
  $('rx2Preset').onchange=e=>{rx2Settings.preset=e.target.value;rx2SaveSettings();};$('rx2BotCount').oninput=e=>$('rx2BotCountValue').textContent=e.target.value;
  const toggles=$('rx2ShaderToggles');for(const [key,label] of [['autoBoost','Adaptive GPU'],['reflections','Reflections'],['lighting','Cinematic light'],['materials','PBR materials'],['weather','Weather shader'],['godly','Godly shader'],['particles','Extra particles'],['shadows','Enhanced shadows']]){let l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=!!rx2Settings[key];c.onchange=()=>{rx2Settings[key]=c.checked;rx2SaveSettings();};l.append(c,document.createTextNode(label));toggles.append(l);}
  $('rx2TouchGadget').onclick=()=>rx2Gadget();$('rx2TouchSlide').onclick=rx2Slide;
