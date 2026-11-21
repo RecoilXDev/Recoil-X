@@ -3519,7 +3519,7 @@ function rxCustomTick(dt,now){rxWeatherTick(now);rxInspectTick(now);rxMemoryDraw
 function rxModeResult(){if(mode==='infection'){rxInfectionOutcome=rxInfectionOutcome||'win';if(rxInfectionOutcome==='win'){addCoins(320);rxTrack('survivals');rxTrack('wins');}return rxInfectionOutcome;}if(mode==='duel'){rxDuelOutcome=rxDuelOutcome||'lose';if(rxDuelOutcome==='win'){addCoins(250);rxTrack('wins');}return rxDuelOutcome;}if(mode==='chaos'){rxTrack('wins');return 'win';}return null;}
 function rxFinishStats(){rxTrack('matches');if(mode==='solo'&&pl.kills>=30)rxTrack('wins');if(mode==='mystery'&&vxMysteryOutcome==='win')rxTrack('wins');if(mode==='boss'&&vxBossOutcome==='win'){rxTrack('wins');rxTrack('bosses');}if(rxSettings.weather&&rxWeather!=='clear')rxTrack('weather');rxInspectClear();rxWeatherSet('clear');}
 function rxOnGameplayStart(){rxInspectClear();rxWeatherStart();rxUpdateHud();}
-function rxAfterQuit(){rxInspectClear();rxWeatherSet('clear');rxUpdateHud();}
+function rxAfterQuit(){rx5AcademyActive=false;rxInspectClear();rxWeatherSet('clear');rxUpdateHud();}
 function rxRefreshX1(){for(const node of document.querySelectorAll('[data-rx12]'))node.textContent=rxT(node.dataset.rx12);if($('rxInspectBtn'))$('rxInspectBtn').textContent=rxT('inspect');if($('rxGuardBtn'))rxRenderSettings();}
 function rxSetupX1(){for(const [id,menu] of [['rxDailyBtn','rxDailyMenu'],['rxAchievementBtn','rxAchievementsMenu'],['rxSettingsBtn','rxSettingsMenu']])$(id).onclick=()=>rxShow(menu);
  for(const id of ['rxDailyBack','rxAchBack','rxSettingsBack'])$(id).onclick=()=>showScreen('mainMenu');$('rxInfectionBtn').onclick=rxStartInfection;$('rxDuelBtn').onclick=rxStartDuel;$('rxChaosBtn').onclick=rxStartChaos;
@@ -3541,6 +3541,7 @@ let rx2Kills=0,rx2GadgetStock=3,rx2GadgetReadyAt=0,rx2LastHudAt=0,rx2Killcam=[],
 let rx2TrainingAccuracy={shots:0,hits:0},rx2StoredLoadouts=Array.isArray(getStore('rx2_loadout_slots',[]))?getStore('rx2_loadout_slots',[]):[];
 let rx2MatchHistory=Array.isArray(getStore('rx2_match_history',[]))?getStore('rx2_match_history',[]):[];
 let rx2MyCustom={bots:8,seconds:480,difficulty:1};
+let rx5AcademyActive=false;
 let rx5AcademyLesson=getStore('rx5-academy-lesson','precision');if(!['precision','tracking','reaction'].includes(rx5AcademyLesson))rx5AcademyLesson='precision';
 const RX2_OBJECTIVES=[{x:28,z:15,title:'REACH SIGNAL POINT'},{x:-36,z:-25,title:'SECURE THE CRATE'},{x:0,z:48,title:'EXTRACT SAFELY'}];
 function rx2Wrap(a){return Math.atan2(Math.sin(a),Math.cos(a));}
@@ -3562,12 +3563,12 @@ function rx2RenderExtras(out,now){for(const c of rx2Covers)if(c.hp>0){const k=c.
  for(const g of rx2Gadgets){const age=now-g.started;if(age>g.duration)continue;const radius=g.type==='smoke'?2.4:1;const col=g.type==='smoke'?[.36,.44,.55]:g.type==='decoy'?[.90,.45,.24]:[.15,.91,.84];if(rx2Effective()>0){for(let i=0;i<(mobile?3:7);i++){let angle=i*6.283/7+now*.23;putBox(out,g.x+Math.cos(angle)*radius,g.type==='smoke'?1.1+Math.sin(i*2+now)*.38:.6,g.z+Math.sin(angle)*radius,.28,.38,.28,col);}}}
  if(rx2Effective()>1&&rx2Settings.godly&&rx2Settings.particles&&phase==='playing'&&pl.alive&&!spectating){if(v8Owned?.length){let n=mobile?2:6;for(let i=0;i<n;i++){const a=i*6.283/n+now*.8;putBox(out,pl.x+Math.cos(a)*.65,pl.y-.5+Math.sin(now*1.8+a)*.17,pl.z+Math.sin(a)*.65,.045,.055,.055,[.32,.90,.89]);}}}
 }
-function rx2BeforeStart(which){rx2Mode=which;rx2Kills=0;rx2Shots=0;rx2DamageReceived=0;rx2DamageDealt=0;rx2HitHead=0;rx2TrainingAccuracy={shots:0,hits:0};rx2GadgetStock=3;rx2ObjectiveIndex=0;rx2ModeStarted=performance.now()/1000;rx2Covers=[];rx2Gadgets=[];rx2Killcam=[];rx2Heat=0;rx2SlideUntil=0;rx2GunReadyAt=0;}
+function rx2BeforeStart(which){if(which!=='training')rx5AcademyActive=false;rx2Mode=which;rx2Kills=0;rx2Shots=0;rx2DamageReceived=0;rx2DamageDealt=0;rx2HitHead=0;rx2TrainingAccuracy={shots:0,hits:0};rx2GadgetStock=3;rx2ObjectiveIndex=0;rx2ModeStarted=performance.now()/1000;rx2Covers=[];rx2Gadgets=[];rx2Killcam=[];rx2Heat=0;rx2SlideUntil=0;rx2GunReadyAt=0;}
 function rx2AfterStart(which){rx2MakeCovers();const custom=which==='custom';if(custom){difficulty=rx2MyCustom.difficulty;bots.length=0;for(let i=0;i<rx2MyCustom.bots;i++)bots.push(spawnBot(i));gameSeconds=rx2MyCustom.seconds;}
- if(which==='training'){bots.length=0;for(let i=0;i<7;i++){let b=spawnBot(i);b.x=(i-3)*9;b.z=-23-(i%3)*7;b.hp=rx5AcademyLesson==='precision'?75:85;b.speed=1.9;b.nextShot=999;b.name='🎯 '+rx5AcademyLesson.toUpperCase()+' '+(i+1);bots.push(b);}gameSeconds=90;pl.weapon=rx5AcademyLesson==='precision'?2:rx5AcademyLesson==='tracking'?3:0;drawGunModel(pl.weapon);}
+ if(which==='training'){bots.length=0;for(let i=0;i<7;i++){let b=spawnBot(i);b.x=(i-3)*9;b.z=-23-(i%3)*7;b.hp=rx5AcademyActive?(rx5AcademyLesson==='precision'?75:85):90;b.speed=1.9;b.nextShot=999;b.name=rx5AcademyActive?'🎯 '+rx5AcademyLesson.toUpperCase()+' '+(i+1):'🎯 MOVING TARGET '+(i+1);bots.push(b);}gameSeconds=rx5AcademyActive?90:240;if(rx5AcademyActive){pl.weapon=rx5AcademyLesson==='precision'?2:rx5AcademyLesson==='tracking'?3:0;drawGunModel(pl.weapon);}}
  if(which==='objective'){gameSeconds=360;rx2ObjectiveIndex=0;rx2MakeCovers();}
  $('rx2Hud').classList.remove('hide');rx2UpdateHud();}
-function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.x=(b.id-3)*9;b.z=-23-(b.id%3)*7;b.hp=rx5AcademyLesson==='precision'?75:85;b.name='🎯 '+rx5AcademyLesson.toUpperCase()+' '+(b.id+1);b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35)+b.id)*dt*(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
+function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.x=(b.id-3)*9;b.z=-23-(b.id%3)*7;b.hp=rx5AcademyActive?(rx5AcademyLesson==='precision'?75:85):90;b.name=rx5AcademyActive?'🎯 '+rx5AcademyLesson.toUpperCase()+' '+(b.id+1):'🎯 MOVING TARGET '+(b.id+1);b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyActive?(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35):.6)+b.id)*dt*(rx5AcademyActive?(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6):.48);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
  if(mode==='objective'){if(!b.alive)return false;if(dist(b,pl)>17&&Math.random()<.08)b.strafedir*=-1;}return false;}
 function rx2OnBotKilled(bot,killer){if(mode==='training'){if(!bot.alive)return true;bot.hp=0;bot.alive=false;bot.respawn=performance.now()/1000+3;rx2TrainingAccuracy.hits++;rx2Kills++;toast('🎯 TARGET DOWN',550);return true;}rx2Kills++;return false;}
 function rx2MovePlayer(dx,dz,dt,running){const now=performance.now()/1000;let sp=1;if(now<rx2SlideUntil&&pl.jump<.01){sp=1.95;pl.crouched=true;}if(keys.Space&&pl.jump<=.01){const cover=rx2Covers.find(c=>c.hp>0&&Math.hypot(pl.x-c.x,pl.z-c.z)<3);if(cover){pl.vy=5.5;pl.jump=.04;toast('↗ VAULT',400);}}slide(pl,dx*sp,dz*sp,.47);}
@@ -12108,7 +12109,7 @@ const RX5_LESSONS={
 let rx5AcademyMedals=getStore(RX5_ACADEMY_KEY,{});
 if(!rx5AcademyMedals||typeof rx5AcademyMedals!=='object'||Array.isArray(rx5AcademyMedals))rx5AcademyMedals={};
 function rx5AcademyFinish(){
- if(mode!=='training')return;
+ if(mode!=='training'||!rx5AcademyActive)return;
  const hits=Math.max(0,Math.floor(pl.hits||0)),shots=Math.max(0,Math.floor(pl.shots||0));
  const accuracy=shots?Math.round(hits/shots*100):0,kills=Math.max(0,Math.floor(rx2Kills||0));
  const tier=kills>=14&&accuracy>=35?3:kills>=8&&accuracy>=25?2:kills>=3?1:0;
@@ -12129,7 +12130,7 @@ function rx5AcademyOpen(){
    const title=document.createElement('strong');title.textContent=lesson.title;
    const description=document.createElement('small');description.textContent=lesson.subtitle+' · Best: '+(mark?names[mark.tier]+' ('+mark.kills+' targets)':'not played');
    const action=document.createElement('button');action.type='button';action.textContent='START '+lesson.title.toUpperCase();
-   action.onclick=()=>{rx5AcademyLesson=key;setStore('rx5-academy-lesson',key);box.hidden=true;rx2Start('training');};
+   action.onclick=()=>{rx5AcademyActive=true;rx5AcademyLesson=key;setStore('rx5-academy-lesson',key);box.hidden=true;rx2Start('training');};
    tile.append(title,description,action);scores.append(tile);
  }
  box.hidden=false;document.exitPointerLock?.();
