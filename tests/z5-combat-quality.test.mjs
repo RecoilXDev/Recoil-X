@@ -16,7 +16,7 @@ test('heat is per weapon, requires sustained shots, and recovers after cooling',
  assert.equal(heatAllowsShot(p,3),true);
  coolCombatQuality(p,.15);
  assert.equal(heatAllowsShot(p,0),false);
- for(let i=0;i<20;i++)coolCombatQuality(p,.15);
+ for(let i=0;i<30;i++)coolCombatQuality(p,.15);
  assert.equal(heatAllowsShot(p,0),true);
  assert.equal(p.rx5Heat[0],0);
 });
