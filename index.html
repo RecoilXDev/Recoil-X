@@ -12177,6 +12177,14 @@ function rx5QualityMount(){
 }
 rx5QualityMount();
 rx5AcademyMount();
+window.RXZ5Gear={
+ options:['smoke','flash','decoy','scanner','emp','shield'],
+ current:()=>rx2Settings.gadget,
+ select:type=>{
+  if(!['smoke','flash','decoy','scanner','emp','shield'].includes(type))return false;
+  rx2Settings.gadget=type;rx2SaveSettings();rx2UpdateHud();return true;
+ }
+};
 
 runCrownGame();
 
