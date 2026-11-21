@@ -11952,7 +11952,7 @@ let rx5QualitySettings={localHeat:false,boldReticle:false,...rx5QualityRead(RX5Q
 let rx5Mastery={hits:[0,0,0,0],kills:[0,0,0,0],...rx5QualityRead(RX5MASTERKEY,{})};
 for(const key of ['hits','kills'])rx5Mastery[key]=Array.from({length:4},(_,i)=>Math.max(0,Math.min(1000000,Number(rx5Mastery[key]?.[i])||0)));
 const rx5LocalHeat=[0,0,0,0],rx5Hot=[false,false,false,false];
-const rx5Cost=[4.6,0,0,3.8];
+const rx5Cost=[8,0,0,6.5];
 let rx5RemoteHeat=0,rx5RemoteHot=false,rx5QualityLastHud=0,rx5QualityLastSave=0,rx5LowFrames=0;
 function rx5QualitySave(){try{localStorage.setItem(RX5QKEY,JSON.stringify(rx5QualitySettings));}catch{}}
 function rx5MasterySave(force=false){
@@ -12002,7 +12002,7 @@ function rx5QualityHud(){
 }
 function rx5ClientTick(dt,now){
  for(let i=0;i<4;i++){
-  if(rx5LocalHeat[i]>0)rx5LocalHeat[i]=Math.max(0,rx5LocalHeat[i]-34*Math.max(0,Math.min(.15,dt)));
+  if(rx5LocalHeat[i]>0)rx5LocalHeat[i]=Math.max(0,rx5LocalHeat[i]-26*Math.max(0,Math.min(.15,dt)));
   if(rx5Hot[i]&&rx5LocalHeat[i]<=35)rx5Hot[i]=false;
  }
  // Drop purely cosmetic effects first on constrained hardware.
