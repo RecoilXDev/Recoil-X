@@ -1,14 +1,14 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
-### Z.5 Combat & Quality staged pass (2026-11-21) — NOT LIVE
-- Development branch: `z5-combat-quality-20261121`. Existing production `main` remains unchanged until reviewed and merged.
+### Z.5 Combat & Quality pass (2026-11-21) — LIVE; remaining backlog incomplete
+- Merged via [pull request #13](https://github.com/RecoilXDev/Recoil-X/pull/13), commit `53bfeb5143594b0f88ce643cc549e7940234b85f`; [Alwaysdata deployment #44918624323](https://github.com/RecoilXDev/Recoil-X/actions/runs/44918624323) passed all phases, including upload, restart, live-page check and asset verification.
 - **Playable combat**: server-authoritative assault rifle/SMG overheat and cooldown in casual/nonseason multiplayer, with per-player heat HUD. Seasonal/ranked mode balance remains unchanged. Local offline tactical heat is optional in the simple menu.
 - **Progression**: local, cosmetic per-weapon mastery labels based on offline hits and bot eliminations. No existing coins, missions, accounts, achievements or server inventory are changed.
 - **Bots**: coordinated left/right flanking on Nightmare and peek goal constraints that respect the actual map size (rather than forcing all bots into a 66m area).
 - **Performance/accessibility**: cap low-priority tracer/particle lists on mobile, reduce internal render scale conservatively during sustained low FPS, reversible high-visibility reticle.
 - **Safety**: guard authoritative input snapshots at 120/second per player; neither client-requested position nor kills are accepted. No full anticheat claim.
-- **Verification**: automated unit/regression checks added; physical iPhone and multi-player load tests remain outstanding.
+- **Verification**: 93 automated tests passed in [Z.5 validation #44918403736](https://github.com/RecoilXDev/Recoil-X/actions/runs/44918403736); deployment succeeded; physical iPhone and multi-player load tests remain outstanding.
 - **Status**: this is a targeted quality pass, NOT completion of the original 85 features. All unrelated U/P items stay in the backlog.
 
 
@@ -34,11 +34,11 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |9|Parkour Race|P — five real server-validated checkpoints, 3D target marker and winner determination|
 |10|Duel Roulette|P — 1v1 server-selected equal weapons, timed rounds and first-to-three win|
 |11|Dual-Wield Weapons|U|
-|12|Weapon Overheating|U|
+|12|Weapon Overheating|P — casual multiplayer uses server-controlled heat; offline optional; physical playtesting pending|
 |13|Destructible Cover|E — offline X.2 temporary cover damage; full multiplayer destruction not built|
 |14|Bullet Ricochet|U|
 |15|Advanced Aim Academy|E — existing X.2 practice range; expanded lessons not implemented|
-|16|Weapon Mastery Challenges|U|
+|16|Weapon Mastery Challenges|P — local hits/kill rank labels; complete server-authoritative challenge track missing|
 |17|Melee Parry System|U|
 |18|EMP Grenades|U|
 |19|Deployable Shields|U|
@@ -106,7 +106,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |77|Accessibility Suite|P — Classic preference controls and reduced motion; full remapping not built|
 |78|Network Diagnostics|P — live five-request HTTP timing and range; actual WebSocket packet loss still unsupported|
 |79|Admin Audit Log|P — role-gated in-game Z.5 Admin console combines moderation ledger, coin grants, Z.5 activity and server health|
-|80|Anti-Cheat Foundations|U|
+|80|Anti-Cheat Foundations|P — 120 input/s server guard plus existing validation, no comprehensive security audit|
 
 ### C. Five foundation categories
 | # | Category | State |
