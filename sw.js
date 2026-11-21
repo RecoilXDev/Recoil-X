@@ -8,7 +8,7 @@ const shellPaths=new Set([scope.pathname,new URL(shell).pathname]);
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(cacheName).then(cache=>
-    cache.addAll(assets.map(url=>new Request(url,{cache:'reload'}))).then(()=>self.skipWaiting())));
+    cache.addAll(assets.map(url=>new Request(url,{cache:'reload'}))).then(()=>self.skipWaiting?.())));
 });
 
 self.addEventListener('activate',event=>{
