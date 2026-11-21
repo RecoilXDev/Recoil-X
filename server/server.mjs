@@ -495,7 +495,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.3',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
