@@ -8721,7 +8721,8 @@ const Z2_MODES={
   chess:'Chess Draft Duels',rescue:'Squad Rescue',escort:'Core Escort',hotzone:'Moving Hot Zone',
   elimination:'Elimination Rounds',budget:'Weapon Budget Draft',props:'Prop Hunt',jeep:'Jeep Relay',raid:'Co-op Crown Raids',
   gungame:'Z.5 Gun Game',onechamber:'Z.5 One in the Chamber',hardcore:'Z.5 Hardcore',
-  bounty:'Z.5 Bounty Hunt',chaos:'Z.5 Procedural Hazard Arena',parkour:'Z.5 Parkour Race'
+  bounty:'Z.5 Bounty Hunt',chaos:'Z.5 Procedural Hazard Arena',parkour:'Z.5 Parkour Race',
+  ctf:'Z.5 Capture the Flag',roulette:'Z.5 Duel Roulette'
 };
 const Z2_TEAM=[[.19,.80,.93],[.95,.37,.24]];
 const Z2_PINGS=['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
@@ -8800,6 +8801,7 @@ function z2RenderLobby(){
   const details={relic:'3 captures',chess:'Best of 3',escort:'Switch sides at halftime',hotzone:'60 control points',
     elimination:'First to 3 rounds',budget:'First to 3 rounds',props:'Switch sides at halftime',jeep:'4 gates',raid:'Two seals',
     gungame:'Advance through four weapons',onechamber:'Three lives · one bullet',hardcore:'60 HP and intense combat',
+    ctf:'Capture the enemy flag and return to base',roulette:'Random equal weapons · first to 3 rounds',
     bounty:'Defeat high-value opponents',chaos:'Randomized cover and timed hazards',parkour:'Reach all five checkpoints'};
   z2Text('p',(room.mode==='raid'?room.size+' players':room.size+'v'+room.size)+' · '+room.phase.toUpperCase()+
     ' · '+(details[room.mode]||room.limit+' eliminations'),root);
@@ -8949,7 +8951,7 @@ function z2Begin(event){
   $('z2MatchHud').classList.remove('hide');
   $('z2ReadyAim').classList.toggle('hide',mobile||!!document.pointerLockElement||event.team==null);
   $('z2MatchHint').textContent=event.team==null?'Spectating':
-    event.mode==='relic'?'Hold E / Use to take or return relics · deliver at home':
+    ['relic','ctf'].includes(event.mode)?'Hold E / Use to take or return flags · deliver at home':
     event.mode==='rescue'?'Hold E / Use near a downed teammate to drag and revive':
     event.mode==='chess'?'F / Ability · '+(match.names.get(z1Account?.id)?.draft||'Knight'):
     event.mode==='overcharge'?'Collect the electric cells to boost movement and fire':
@@ -10028,7 +10030,7 @@ function z2MountUI(){
   };
   const setTeamOptions=()=>{
     const mode=$('z2GameMode').value,tourney=Number($('z2Tournament').value),select=$('z2TeamSize');
-    const sizes=tourney?[1,2]:['chess','gungame','onechamber','bounty','parkour'].includes(mode)?[1]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:mode==='raid'?[2,3,4]:[1,2,3,5];
+    const sizes=tourney?[1,2]:['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?[1]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:mode==='raid'?[2,3,4]:[1,2,3,5];
     const chosen=Number(select.value);
     select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&mode==='raid'?n+' players':n+'v'+n);o.value=String(n);return o;}));
     select.value=String(sizes.includes(chosen)?chosen:sizes[0]);
