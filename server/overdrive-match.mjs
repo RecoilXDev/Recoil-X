@@ -373,7 +373,7 @@ export function updateMatch(m,now) {
     if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=input.fire||taps?.fire;
-    if(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0))reload(p,now);
+    if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(p,now);
     if(firing&&z5CanShoot(m)&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
       (m.mode!=='props'||p.team!==m.rule.half))fire(m,p,now);
   }
