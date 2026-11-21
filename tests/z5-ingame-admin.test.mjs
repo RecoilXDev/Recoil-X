@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync,mkdtempSync,rmSync } from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import { createRecoilServer } from '../server/server.mjs';
 const path=new URL('../server/',import.meta.url);
 const read=name=>readFileSync(new URL(name,path),'utf8');
@@ -49,4 +52,32 @@ test('staged server serves all three integrated menu assets and enforces auth on
   const unauthZ5=await fetch(base+'/rx-api/z5/admin/audit');
   assert.ok([401,403].includes(unauthZ5.status));
  }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+test('server denies nonadmins and revoked administrators even with a valid game token',{timeout:30000},async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'recoil-z5-role-')),file=join(dir,'players.sqlite');
+ const server=createRecoilServer({database:file,origins:[]});
+ let db;
+ try{
+  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
+  const base='http://127.0.0.1:'+server.address().port;
+  const r=await fetch(base+'/rx-api/register',{method:'POST',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Z5TestUser',password:'test_secure_2026_abc'})});
+  const data=await r.json();
+  assert.equal(r.status,200,JSON.stringify(data));
+  assert.equal(data.user.admin,false);
+  const headers={Authorization:'Bearer '+data.token};
+  const get=async(path)=>fetch(base+'/rx-api'+path,{headers});
+  assert.equal((await get('/me')).status,200);
+  assert.equal((await get('/admin/overview')).status,403);
+  assert.equal((await get('/z5/admin/health')).status,403);
+  db=new DatabaseSync(file);
+  db.prepare('UPDATE users SET admin=1 WHERE handle=?').run('z5testuser');
+  const elevated=await (await get('/me')).json();assert.equal(elevated.user.admin,true);
+  assert.equal((await get('/admin/overview')).status,200);
+  assert.equal((await get('/z5/admin/health')).status,200);
+  db.prepare('UPDATE users SET admin=0 WHERE handle=?').run('z5testuser');
+  assert.equal((await get('/admin/overview')).status,403);
+  assert.equal((await get('/z5/admin/health')).status,403);
+ }finally{db?.close();await new Promise(resolve=>server.close(resolve));rmSync(dir,{recursive:true,force:true});}
 });
