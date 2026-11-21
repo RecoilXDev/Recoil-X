@@ -916,6 +916,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 #rx5CombatSettings input{width:18px;height:18px}
 #rx5QualityNote{font-size:11px;color:#b9d2db;line-height:1.4}
 </style>
+<style id="rx5-blueprint-css">#rx5CombatSettings .rx5-blueprint-row{display:block;margin:9px 8px;color:#bce0e8;font-size:12px}#rx5BlueprintChoice{display:block;margin-top:6px;width:100%;padding:9px;border-radius:8px;border:1px solid #42697f;background:#092134;color:#fff}#rx5BlueprintInfo{margin:0 8px 8px}</style>
 </head>
 <body>
 <div id="rxStage">
@@ -1769,8 +1770,8 @@ else if(remotePlayers.has(target.id)){let rem=remotePlayers.get(target.id);rem.h
 return hits;}
 function killBot(bot,killer){if(rx2OnBotKilled(bot,killer))return;if(mode==='duel'){rxDuelBotKilled(bot,killer);return;}if(mode==='infection'){rxInfectionBotKilled(bot,killer);return;}if(mode==='mystery'){vxMysteryBotKill(bot,killer);return;}if(mode==='boss'){vxBossOnKill(bot,killer);return;}vxOnKill(killer);bot.deaths=(bot.deaths||0)+1;bot.alive=false;rx5MasteryKill(pl.weapon,killer);bot.respawn=performance.now()/1000+rand(3.5,6.5);killer.kills=(killer.kills||0)+1;addFeed(`${killer.name||username} ✦ ${bot.name}`);if(killer===pl)addCoins(Math.round(25*(equippedPet==='scarab'?1.2:1)*(performance.now()/1000<vxDoubleCoinUntil?2:1)));else if((mode==='host'||z1IsPartyHost())&&remoteConns.has(killer.id))remoteConns.get(killer.id)?.send({t:'coins',amount:25});toast('💥 '+tr('botKill')+' +25 🪙');hitFlash=.22;playSound('kill');if(mode==='host')broadcast({t:'feed',text:`${killer.name||username} ✦ ${bot.name}`});}
 function animateGun(anim,duration){let art=$('weaponArt');art.classList.remove('shoot','reload','switching');void art.offsetWidth;art.classList.add(anim);clearTimeout(gunAnimTimer);gunAnimTimer=setTimeout(()=>art.classList.remove(anim),duration);}
-function fire(now){if(rx5ClientOverheated(now))return;if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}pl.nextShot=now+w.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;rx5ClientShot(pl.weapon);pl.shots+=w.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
-if(mode==='guest'){if(hostConn?.open)hostConn.send({t:'fire',x:pl.x,z:pl.z,yaw:pl.yaw,pitch:pl.pitch,crouched:pl.crouched,weapon:pl.weapon});}else{const hits=fireCore(pl,w);pl.hits+=hits;rx5MasteryHits(pl.weapon,hits);if(hits){hitFlash=.14;$('crosshair').classList.add('hit');setTimeout(()=>$('crosshair').classList.remove('hit'),100);playSound('hit');}}
+function fire(now){if(rx5ClientOverheated(now))return;if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}const rx5ShotWeapon=rx5BlueprintWeapon(w,pl.weapon);pl.nextShot=now+rx5ShotWeapon.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;rx5ClientShot(pl.weapon);pl.shots+=rx5ShotWeapon.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
+if(mode==='guest'){if(hostConn?.open)hostConn.send({t:'fire',x:pl.x,z:pl.z,yaw:pl.yaw,pitch:pl.pitch,crouched:pl.crouched,weapon:pl.weapon});}else{const hits=fireCore(pl,rx5ShotWeapon);pl.hits+=hits;rx5MasteryHits(pl.weapon,hits);if(hits){hitFlash=.14;$('crosshair').classList.add('hit');setTimeout(()=>$('crosshair').classList.remove('hit'),100);playSound('hit');}}
 updateHUD();}
 function reload(now=performance.now()/1000){const rx3Started=pl&&pl.alive&&phase==='playing'&&now>=(pl.reloadEnd||0)&&pl.mags&&pl.stocks&&pl.mags[pl.weapon]<weapons[pl.weapon].max&&pl.stocks[pl.weapon]>0;if(!pl.alive||now<pl.reloadEnd)return;const w=weapons[pl.weapon],n=pl.weapon;if(pl.mags[n]>=w.max||pl.stocks[n]<=0)return;pl.reloadEnd=now+w.reload*(equippedPet==='cobra'?.84:1);toast('🔄 '+tr('reloadMsg'));animateGun('reload',w.reload*(equippedPet==='cobra'?.84:1)*1000);if(rx3Started)rx3ReloadStart(now,pl.reloadEnd);playSound('reload');}
 function changeWeapon(n){if(mode==='chaos'&&rxChaosType==='sniper')return;switchGunWithAnimation(n);}
@@ -3524,6 +3525,7 @@ let rx2Kills=0,rx2GadgetStock=3,rx2GadgetReadyAt=0,rx2LastHudAt=0,rx2Killcam=[],
 let rx2TrainingAccuracy={shots:0,hits:0},rx2StoredLoadouts=Array.isArray(getStore('rx2_loadout_slots',[]))?getStore('rx2_loadout_slots',[]):[];
 let rx2MatchHistory=Array.isArray(getStore('rx2_match_history',[]))?getStore('rx2_match_history',[]):[];
 let rx2MyCustom={bots:8,seconds:480,difficulty:1};
+let rx5AcademyLesson=getStore('rx5-academy-lesson','precision');if(!['precision','tracking','reaction'].includes(rx5AcademyLesson))rx5AcademyLesson='precision';
 const RX2_OBJECTIVES=[{x:28,z:15,title:'REACH SIGNAL POINT'},{x:-36,z:-25,title:'SECURE THE CRATE'},{x:0,z:48,title:'EXTRACT SAFELY'}];
 function rx2Wrap(a){return Math.atan2(Math.sin(a),Math.cos(a));}
 function rx2Face(b,t,dt){if(!t||!Number.isFinite(b.yaw))b.yaw=0;if(!t)return;let goal=Math.atan2(t.x-b.x,-(t.z-b.z));const per=b.personality==='guardian'?1.6:b.personality==='rusher'?3.7:2.4;
@@ -3598,7 +3600,7 @@ function rx2Tick(dt,now){if(phase!=='playing')return;rx2Covers=rx2Covers.filter(
  if(now>=rx2MapSurpriseAt){rx2MapSurpriseAt=now+65+Math.random()*30;rx2MapSurprise=Math.floor(Math.random()*3);if(rx2MapSurprise===1&&rx2Effective()>1)toast('⚡ MAP EVENT: POWER SURGE',1000);if(rx2MapSurprise===2)toast('🌪 MAP EVENT: DUST FRONT',1000);}
  if(mode==='boss'){const boss=bots.find(b=>b.alive&&b.isBoss);if(boss){const hp=boss.hp/Math.max(1,boss.maxHp||boss.hp);if(hp<.5&&!boss.rx2Enraged){boss.rx2Enraged=true;boss.speed*=1.36;boss.nextShot=Math.min(boss.nextShot,1.0);toast('🦂 TITAN PHASE 2 — FURY',2100);}if(hp<.25&&!boss.rx2LastStand){boss.rx2LastStand=true;boss.speed*=1.15;toast('🔥 TITAN FINAL PHASE',1500);}}}
 }
-function rx2FinishMatch(){if(!mode.startsWith('crown-')&&!['training','objective','custom','solo','boss','mystery','infection','duel','chaos'].includes(mode))return;rx2MatchHistory.unshift({mode,at:new Date().toISOString(),kills:pl.kills,shots:pl.shots,hits:pl.hits,headshots:rx2HitHead,received:Math.round(rx2DamageReceived),damage:Math.round(rx2DamageDealt),survived:Math.max(0,Math.round(performance.now()/1000-rx2ModeStarted)),objective:rx2ObjectiveIndex});rx2MatchHistory=rx2MatchHistory.slice(0,25);setStore('rx2_match_history',rx2MatchHistory);}
+function rx2FinishMatch(){if(mode==='training')rx5AcademyFinish();if(!mode.startsWith('crown-')&&!['training','objective','custom','solo','boss','mystery','infection','duel','chaos'].includes(mode))return;rx2MatchHistory.unshift({mode,at:new Date().toISOString(),kills:pl.kills,shots:pl.shots,hits:pl.hits,headshots:rx2HitHead,received:Math.round(rx2DamageReceived),damage:Math.round(rx2DamageDealt),survived:Math.max(0,Math.round(performance.now()/1000-rx2ModeStarted)),objective:rx2ObjectiveIndex});rx2MatchHistory=rx2MatchHistory.slice(0,25);setStore('rx2_match_history',rx2MatchHistory);}
 function rx2ShowMatchStats(){const el=$('rx2MatchStats');if(!el)return;const m=rx2MatchHistory[0];if(!m){el.replaceChildren();return;}el.innerHTML='<span>🎯 HITS '+m.hits+'/'+m.shots+'</span><span>💥 DMG '+m.damage+'</span><span>❤️ LOST '+m.received+'</span><span>⏱ '+m.survived+'s</span><span>✹ HEAD '+m.headshots+'</span>'+(mode==='objective'?'<span>📍 '+m.objective+'/3</span>':'');}
 function rx2UpdateHud(){if($('rx2TouchGadget')){$('rx2TouchGadget').textContent='⚙ '+String(rx2Settings.gadget||'smoke').toUpperCase();$('rx2TouchGadget').classList.toggle('hide',!mobile||phase!=='playing'||paused);$('rx2TouchSlide').classList.toggle('hide',!mobile||phase!=='playing'||paused);}const now=performance.now()/1000;if(now-rx2LastHudAt<.19)return;rx2LastHudAt=now;const el=$('rx2HudStatus');if(!el)return;const heat=rx2Heat>55?' 🔥'+Math.round(rx2Heat)+'%':'';el.textContent='Z.5 · '+rx2EffectiveName()+' · 🎒 '+rx2GadgetStock+' '+String(rx2Settings.gadget||'smoke').toUpperCase()+heat;const o=$('rx2Objective');o.textContent=mode==='objective'?rx2ObjectiveIndex<3?'📍 '+RX2_OBJECTIVES[rx2ObjectiveIndex].title+' ('+(rx2ObjectiveIndex+1)+'/3)':'OBJECTIVES COMPLETE':mode==='training'?'🎯 TARGET PRACTICE · '+rx2Kills+' DOWN':'';}
 function rx2Effective(){const preset=rx2Settings.preset;const mobileLimiter=mobile?2:4,profile=preset==='off'?0:preset==='balanced'?1:preset==='enhanced'?3:preset==='ultra'?4:mobile?1:v91Resolved()==='max'?3:2;return Math.max(0,Math.min(mobileLimiter,profile-rx2DynamicLevel));}
@@ -11993,7 +11995,7 @@ function rx5MasterySave(force=false){
  rx5QualityLastSave=now;
  try{localStorage.setItem(RX5MASTERKEY,JSON.stringify(rx5Mastery));}catch{}
 }
-function rx5OfflineCombat(){return ['solo','custom','survival','objective','builder'].includes(mode);}
+function rx5OfflineCombat(){return ['solo','custom','survival','objective','builder','training'].includes(mode);}
 function rx5ClientOverheated(){return rx5OfflineCombat()&&rx5QualitySettings.localHeat&&!!rx5Hot[pl.weapon];}
 function rx5ClientShot(weapon){
  if(!rx5OfflineCombat()||!rx5QualitySettings.localHeat||!rx5Cost[weapon])return;
@@ -12008,12 +12010,12 @@ function rx5ApplyRemoteHeat(packet){
 function rx5MasteryHits(weapon,count){
  if(!rx5OfflineCombat()||!Number.isInteger(weapon)||weapon<0||weapon>3||count<=0)return;
  rx5Mastery.hits[weapon]=Math.min(1000000,rx5Mastery.hits[weapon]+Math.min(count,12));
- rx5MasterySave();
+ rx5MasterySave();rx5BlueprintUpdateUI();
 }
 function rx5MasteryKill(weapon,killer){
  if(!rx5OfflineCombat()||killer!==pl||weapon<0||weapon>3)return;
  rx5Mastery.kills[weapon]=Math.min(1000000,rx5Mastery.kills[weapon]+1);
- rx5MasterySave();rx5QualityHud();
+ rx5MasterySave();rx5QualityHud();rx5BlueprintUpdateUI();
 }
 function rx5MasteryGrade(weapon){
  const points=(rx5Mastery.hits[weapon]||0)+(rx5Mastery.kills[weapon]||0)*5;
@@ -12030,7 +12032,7 @@ function rx5QualityHud(){
  root.querySelector('[data-rx5heat]').textContent=(hot?'OVERHEATED':'WEAPON HEAT')+' · '+Math.round(pct)+'%';
  root.querySelector('i').style.width=pct+'%';root.classList.toggle('hot',!!hot);
  rank.style.display=rx5OfflineCombat()?'':'none';
- rank.textContent=weapons[pl.weapon]?.name+' MASTERY · '+rx5MasteryGrade(pl.weapon);
+ rank.textContent=weapons[pl.weapon]?.name+' MASTERY · '+rx5MasteryGrade(pl.weapon);rx5BlueprintUpdateUI();
 }
 function rx5ClientTick(dt,now){
  for(let i=0;i<4;i++){
@@ -12046,6 +12048,39 @@ function rx5ClientTick(dt,now){
  }else rx5LowFrames=Math.max(0,rx5LowFrames-dt*2);
  if(now-rx5QualityLastHud>.25){rx5QualityLastHud=now;rx5QualityHud();}
 }
+
+// Offline weapon blueprints with actual fire-rate, precision and damage trade-offs.
+// Ranked and multiplayer weapon balance is never changed by a client blueprint.
+const RX5_BLUEPRINTS=[
+ ['standard','Standard · original stats',0,0],
+ ['steady','Steady · 28% tighter spread, 5% slower',25,0],
+ ['rapid','Rapid · 17% faster, 20% wider spread',65,0],
+ ['impact','Impact · 14% more damage, 20% slower',0,18]
+];
+let rx5BlueprintChoice=getStore('rx5-blueprint-choice','standard');
+if(!RX5_BLUEPRINTS.some(v=>v[0]===rx5BlueprintChoice))rx5BlueprintChoice='standard';
+function rx5BlueprintUnlocked(name,gun){
+ if(name==='standard')return true;
+ const bp=RX5_BLUEPRINTS.find(v=>v[0]===name);
+ return !!bp&&(rx5Mastery.hits[gun]||0)>=bp[2]&&(rx5Mastery.kills[gun]||0)>=bp[3];
+}
+function rx5BlueprintWeapon(base,gun){
+ if(!rx5OfflineCombat()||!rx5BlueprintUnlocked(rx5BlueprintChoice,gun))return base;
+ if(rx5BlueprintChoice==='steady')return {...base,spread:base.spread*.72,cadence:base.cadence*1.05};
+ if(rx5BlueprintChoice==='rapid')return {...base,spread:base.spread*1.20,cadence:base.cadence*.83};
+ if(rx5BlueprintChoice==='impact')return {...base,damage:base.damage*1.14,cadence:base.cadence*1.20};
+ return base;
+}
+function rx5BlueprintUpdateUI(){
+ const select=document.getElementById('rx5BlueprintChoice'),info=document.getElementById('rx5BlueprintInfo');
+ if(!select||!info||!pl?.mags?.length)return;
+ const gun=pl.weapon;
+ for(const option of select.options)option.disabled=!rx5BlueprintUnlocked(option.value,gun);
+ if(select.value!==rx5BlueprintChoice)select.value=rx5BlueprintChoice;
+ info.textContent=(rx5BlueprintUnlocked(rx5BlueprintChoice,gun)?'Active: ':'Locked for this gun: ')+rx5BlueprintChoice.toUpperCase()+
+   ' · '+(rx5Mastery.hits[gun]||0)+' hits, '+(rx5Mastery.kills[gun]||0)+' bot eliminations';
+}
+
 function rx5QualityMount(){
  const box=document.querySelector('#hud .ammo-box');
  if(box&&!document.getElementById('rx5HeatHud')){
@@ -12057,6 +12092,15 @@ function rx5QualityMount(){
  if(wrap&&!document.getElementById('rx5CombatSettings')){
   const details=document.createElement('details');details.id='rx5CombatSettings';
   details.innerHTML='<summary>Combat Quality & Mastery</summary><label><input type="checkbox" id="rx5LocalHeatSetting"> Enable tactical heat in local matches</label><label><input type="checkbox" id="rx5ReticleSetting"> High-visibility crosshair</label><div id="rx5QualityNote">Multiplayer heat is controlled by the server. Weapon mastery is a local cosmetic rank; no coins or account data are changed.</div>';
+  const blueprintRow=document.createElement('label');blueprintRow.className='rx5-blueprint-row';
+  blueprintRow.textContent='Weapon blueprint (offline only)';
+  const blueprint=document.createElement('select');blueprint.id='rx5BlueprintChoice';
+  for(const [key,title] of RX5_BLUEPRINTS){const option=document.createElement('option');option.value=key;option.textContent=title;blueprint.append(option);}
+  blueprint.value=rx5BlueprintChoice;
+  blueprint.onchange=()=>{rx5BlueprintChoice=blueprint.value;setStore('rx5-blueprint-choice',rx5BlueprintChoice);rx5BlueprintUpdateUI();};
+  blueprintRow.append(blueprint);
+  const info=document.createElement('small');info.id='rx5BlueprintInfo';info.style.display='block';info.style.color='#a3c6d5';
+  details.append(blueprintRow,info);
   wrap.append(details);
   const heat=document.getElementById('rx5LocalHeatSetting'),reticle=document.getElementById('rx5ReticleSetting');
   heat.checked=!!rx5QualitySettings.localHeat;reticle.checked=!!rx5QualitySettings.boldReticle;
