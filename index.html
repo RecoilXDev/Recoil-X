@@ -1771,7 +1771,7 @@ function respawn(x=null,z=null){vxResetStreak();clearDeathTimers();let options=(
 let rx5TacticalMode=(typeof getStore==='function'?getStore('rx5-bot-challenge','veteran'):'veteran');
 let rx5LastPlayerShot=null,rx5SquadIntel=null;
 function rx5BotTacticsEnabled(){
-  return rx5TacticalMode!=='standard'&&['solo','custom','objective','survival','builder'].includes(mode);
+  return rx5TacticalMode!=='standard'&&['solo','custom','objective','survival','builder','host'].includes(mode);
 }
 function rx5BotFindCover(b,target,now){
   let best=null,score=-Infinity,reviewed=0;
@@ -3478,7 +3478,9 @@ function rxDuelResolve(win){if(mode!=='duel'||phase!=='playing'||rxDuelReady)ret
  toast(win?'🏆 ROUND WON!':'💥 ROUND LOST!',1200);rxDuelReady=0;rxDuelNext();}
 function rxDuelBotKilled(b,killer){if(!b.alive)return;b.alive=false;b.hp=0;b.respawn=Infinity;pl.kills++;vxOnKill(pl);rxDuelResolve(true);}
 function rxDuelPlayerDown(){rxDuelResolve(false);}
-function rxDuelBot(b,dt,now){if(!b.alive)return;const d=dist(b,pl),dx=(pl.x-b.x)/Math.max(.1,d),dz=(pl.z-b.z)/Math.max(.1,d);if(d>10)slide(b,dx*b.speed*dt,dz*b.speed*dt,.5);else if(d<6)slide(b,-dx*dt*2,-dz*dt*2,.5);b.walk+=dt*3;rx2Face(b,pl,dt);b.nextShot-=dt;if(b.nextShot<=0&&d<34&&los(b.x,b.z,pl.x,pl.z)&&rx2Facing(b,pl,.24)){b.nextShot=1.65;if(Math.random()<.8)hurt(16);tracers.push({a:{x:b.x,y:1.5,z:b.z},b:{x:pl.x,y:pl.y,z:pl.z},t:.18,color:[1,.6,.15]});}}
+function rxDuelBot(b,dt,now){if(!b.alive)return;
+ if(rx5TacticalMode!=='standard'&&pl.alive){rx5BotTacticalStep(b,pl,dt,now,los(b.x,b.z,pl.x,pl.z));return;}
+ const d=dist(b,pl),dx=(pl.x-b.x)/Math.max(.1,d),dz=(pl.z-b.z)/Math.max(.1,d);if(d>10)slide(b,dx*b.speed*dt,dz*b.speed*dt,.5);else if(d<6)slide(b,-dx*dt*2,-dz*dt*2,.5);b.walk+=dt*3;rx2Face(b,pl,dt);b.nextShot-=dt;if(b.nextShot<=0&&d<34&&los(b.x,b.z,pl.x,pl.z)&&rx2Facing(b,pl,.24)){b.nextShot=1.65;if(Math.random()<.8)hurt(16);tracers.push({a:{x:b.x,y:1.5,z:b.z},b:{x:pl.x,y:pl.y,z:pl.z},t:.18,color:[1,.6,.15]});}}
 function rxStartChaos(){startGame('chaos');rxChaosType='';rxChaosCoinBoost=1;const [type,label]=RX_CHAOS[Math.floor(Math.random()*RX_CHAOS.length)];rxChaosType=type;rxChaosLabel=label;gameSeconds=240;if(type==='sniper'){pl.weapon=2;drawGunModel(2);}if(type==='fragile'){pl.hp=50;pl.shield=0;}rxUpdateHud();toast('💥 '+label,2300);}
 function rxCustomTick(dt,now){rxWeatherTick(now);rxInspectTick(now);rxMemoryDrawBudget();if(mode==='duel'&&gameSeconds<.02&&rxDuelOutcome===null)rxDuelResolve(false);if(mode==='chaos'&&rxChaosType==='sniper'&&pl.weapon!==2){pl.weapon=2;drawGunModel(2);}}
 function rxModeResult(){if(mode==='infection'){rxInfectionOutcome=rxInfectionOutcome||'win';if(rxInfectionOutcome==='win'){addCoins(320);rxTrack('survivals');rxTrack('wins');}return rxInfectionOutcome;}if(mode==='duel'){rxDuelOutcome=rxDuelOutcome||'lose';if(rxDuelOutcome==='win'){addCoins(250);rxTrack('wins');}return rxDuelOutcome;}if(mode==='chaos'){rxTrack('wins');return 'win';}return null;}
