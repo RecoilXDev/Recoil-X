@@ -14,14 +14,14 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |---|---|---|
 |1|Payload Escort|E — original expansion mode has escort rules|
 |2|Search & Destroy|U|
-|3|Capture the Flag|U|
+|3|Capture the Flag|P — dedicated 3D multiplayer menu using existing validated Relic flag/capture engine|
 |4|Gun Game|P — playable server-authoritative four-weapon progression, unverified on devices|
 |5|One in the Chamber|P — three lives, one starting bullet, refill only on validated elimination|
 |6|Bounty Hunt|P — live bonus scoring with short anti-repeat interval|
 |7|Hardcore Mode|P — low health and shorter spawn shield; fully reduced HUD not implemented|
 |8|PvP Extraction|U|
 |9|Parkour Race|P — five real server-validated checkpoints, 3D target marker and winner determination|
-|10|Duel Roulette|U|
+|10|Duel Roulette|P — 1v1 server-selected equal weapons, timed rounds and first-to-three win|
 |11|Dual-Wield Weapons|U|
 |12|Weapon Overheating|U|
 |13|Destructible Cover|U|
@@ -121,13 +121,13 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 - `.github/workflows/z5-validation.yml`: independent CI on the development branch, with no deployment action.
 
 ### Third implementation pass — full expansion branch (new, unmerged)
-- `server/z5-combat-modes.mjs`: six playable server-authoritative modes: Gun Game, One in the Chamber, Hardcore, Bounty, randomized-cover Chaos, and Parkour Race with validated checkpoints.
+- `server/z5-combat-modes.mjs`: eight playable server-authoritative modes: Gun Game, One in the Chamber, Hardcore, Bounty, randomized-cover Chaos, and Parkour Race with validated checkpoints.
 - `server/overdrive-match.mjs`, `server/overdrive.mjs`: shared combat/score/movement integration, fair size restrictions, public lobby discovery and room statistics.
 - `index.html`: real multiplayer menu options for all six modes, server-synchronized arena render markers for hazards and parkour targets.
 - `server/z5-operations.mjs`: privacy-gated past match archive, match-event recap and event timeline playback, diagnostics and admin-only server health.
 - `server/z5-matchhub.js`: accessible Match Hub with public lobby codes, personal match recaps, timeline playback and operational status.
 - `server/z5-panel.js` and `server/server.mjs`: navigation and authenticated server integration.
-- `tests/z5-combat-modes.test.mjs` and `tests/z5-operations.test.mjs`: mode scoring, permission and privacy checks.
+- `tests/z5-combat-modes.test.mjs`, `tests/z5-operations.test.mjs`, and `tests/z5-client-menu.test.cjs`: authoritative scoring, mode menus, JS syntax, permission and privacy checks.
 - `.github/workflows/z5-validation.yml`: Node 24 validation on this branch. No production deployment.
 
 **Important limitations**
@@ -135,7 +135,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 - Clan emblems, clan wars and friend parties are not implemented. Z.5-only trading and auctions exist but require wider integration and security/load testing.
 - Z.5 crafted cosmetics are persistent inventory records, not yet visual 3D weapons. Story chapters are not yet seasonal-calendar driven. New modes are implemented in the actual 3D engine but await live multi-device, multiplayer and performance QA. No full 10-player load benchmark or live-device FPS proof.
 - No production database was accessed or modified.
-- The existing >1 MB `index.html` is updated through Git blobs with the six new multiplayer options and objective markers; the Z.5 overlay scripts are still injected by the development server response.
+- The existing >1 MB `index.html` is updated through Git blobs with the eight new multiplayer options and objective markers; the Z.5 overlay scripts are still injected by the development server response.
 
 ## Data and release protection
 1. Preserve all existing accounts, credentials, ban records, friends, DMs, mission saves (all 500 levels), season content, maps and inventories.
