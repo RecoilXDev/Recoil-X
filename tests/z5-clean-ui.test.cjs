@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-CLEAN-5/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-CLEAN-5"/);
+ assert.match(js,/Z\.5-SAND-6/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-clean-5/);
+ assert.match(sw,/z5-sand-6/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-5');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -29,7 +29,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.ok(ui.querySelector('#rx5-native-advanced'));
  assert.ok(ui.querySelector('#rx5-native-pause'));
  const extras=ui.querySelectorAll('[data-rx5-open]');
- assert.equal(extras.length,16);
+ assert.equal(extras.length,17);
  for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleBotLevel'])
    assert.ok(ui.querySelector('#'+item),item+' must be retained');
  const admin=ui.querySelectorAll('[data-rx-admin-only]');
@@ -60,7 +60,7 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  const more=ui.querySelector('#rx5More');
  const pauseSettings=ui.querySelector('#rx5PauseSettings');
  assert.ok(main,'the original main menu remains accessible after device selection');
- assert.ok(ui.body.classList.contains('rx5-ui-polished'));
+ assert.ok(ui.body.classList.contains('rx5-sand'));
  assert.equal(strip.parentElement,heading,'release note link belongs in brand header, not ahead of Quick Play');
  assert.ok(simple.querySelector('#rxSimpleActions .rx-simple-grid'));
  assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
@@ -78,5 +78,49 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.ok(ui.querySelector('#rxSimpleLocker'));
  assert.ok(ui.querySelector('#rxSimpleFriends'));
  assert.equal(ui.querySelectorAll('[data-rx-admin-only]').filter(x=>!x.hidden).length,0);
- assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-ui-polished/);
+ assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-sand/);
+});
+
+test('Sandstorm home displays only useful top-level controls and opens settings when requested',()=>{
+ const h=makeHarness();
+ const js=read('server/z5-ingame.js');
+ new vm.Script(js,{filename:'sand-nav.js'}).runInContext(h.ctx);
+ const {ui}=h;
+ const panel=ui.querySelector('#rxSimplePanel');
+ const hero=ui.querySelector('#rx5-release-strip');
+ const more=ui.querySelector('#rx5More');
+ const settings=ui.querySelector('#rx5Options');
+ assert.ok(ui.body.classList.contains('rx5-sand'));
+ assert.ok(panel.querySelector('#rxSimpleQuick'));
+ assert.ok(panel.querySelector('#rxSimpleModes'));
+ assert.ok(panel.querySelector('#rxSimpleLocker'));
+ assert.ok(panel.querySelector('#rxSimpleFriends'));
+ assert.ok(panel.querySelector('#rxSimpleSettings'));
+ assert.equal(settings.open,undefined,'Settings starts closed');
+ assert.equal(more.open,undefined,'More starts closed');
+ assert.equal(hero.parentElement,panel.querySelector('.rx-simple-heading'));
+ assert.ok(ui.querySelector('#rx5OpenAdvanced'));
+ assert.ok(more.querySelector('#rx5OpenAdvanced'),'Classic menu is behind More');
+ assert.ok(more.querySelector('[data-rx5-open=news]'),'Patch notes are behind More');
+ ui.querySelector('#rxSimpleSettings').click();
+ assert.equal(settings.open,true,'Clicking Settings reveals its drawer');
+ assert.ok(!more.open,'Settings does not open More');
+ ui.querySelector('#rxSimpleSettings').click();
+ assert.equal(settings.open,false,'Clicking again collapses Settings');
+ assert.equal(ui.querySelectorAll('[data-rx-admin-only]').filter(x=>!x.hidden).length,0);
+});
+test('warm desert styling is present and legacy navy-only menu is not the active theme',()=>{
+ const js=read('server/z5-ingame.js');
+ const html=read('index.html');
+ const manifest=JSON.parse(read('manifest.webmanifest'));
+ const sw=read('sw.js');
+ assert.match(js,/RESTORED SANDSTORM DESIGN/);
+ assert.match(js,/body\.rx5-sand #overlay/);
+ assert.match(js,/#f9d99d/);
+ assert.doesNotMatch(js,/document\.body\.classList\.add\('rx5-ui-polished'\)/);
+ assert.match(js,/VERSION Z\.5/);
+ assert.match(html,/rx5-sand-ui-v6-visited/);
+ assert.match(html,/content="#312219"/);
+ assert.equal(manifest.theme_color,'#312219');
+ assert.match(sw,/z5-sand-6/);
 });
