@@ -1,6 +1,18 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Z.5 CLEAN-5 — focused UI polish (2026-11-22)
+- **Source:** `z5-clean-navigation-hud-20261122`; in branch verification until CI and live site check.
+- **Home:** single large Quick Play action; four clear shortcuts for Modes, Locker, Friends and Settings; compact release-note link in brand header instead of an attention-grabbing banner.
+- **Settings:** opens inline from the real Settings button. Combat/Accessibility and Tactical Gear remain reachable, with one row of real existing Graphics, Audio and Device controls. Advanced account/game content sits in a collapsed More Features drawer.
+- **Pause:** Resume and Main Menu remain the primary buttons; Quality/Performance are moved into a closed, reversible options drawer; all previous control IDs are preserved.
+- **HUD:** keeps health, shield, ammo, timer, score, crosshair and objectives; Focus HUD hides nonessential player count/coins/mastery text and reduces panel shadows. Existing Focus HUD preference controls visibility, and can be turned off at any time.
+- **Responsive styling:** restrained dark-navy/teal menu palette consistent with RECOIL X, fewer shadows/gradient decorations, tighter landscape-mobile layout, accessible keyboard focus and reduced-motion compatibility.
+- **Safety:** no gameplay rule changes, progress reset, removal of modes, player database migration or change to admin role restrictions. Cache and PWA theme refreshed for the new build.
+- **Outstanding:** browser/screenreader testing and physical iPhone/TV visual checks are not claimed by automated tests. Full 85-feature backlog remains unfinished.
+
+
+
 ### Seventh implementation: Z.5 Tactical Expansion & Quick Play cleanup (2026-11-21)
 - Branch: `z5-planned-features-tactical-ui-20261121`. **Status: DEPLOYED to Alwaysdata.** [PR #16](https://github.com/RecoilXDev/Recoil-X/pull/16) merged into main as `bf7ad1ff3dd8fdb36685e6342e81b469dd36874b`; [CI #44923199637](https://github.com/RecoilXDev/Recoil-X/actions/runs/44923199637) passed 102 tests, 0 failed; [Alwaysdata deployment #44923454751](https://github.com/RecoilXDev/Recoil-X/actions/runs/44923454751) passed 16 steps including live identity, gadget/UI assets and server restart.
 - **#18 EMP Grenades:** 3.25-second disable on nearby offline bots, proximity-limited and consumes shared gadget stock; ignored in multiplayer/host games to prevent client-only effects.
