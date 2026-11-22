@@ -2,9 +2,10 @@
 import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
 import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimination, z5Advance, z5Objective } from './z5-combat-modes.mjs';
 import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allowCombatInput} from './z5-combat-quality.mjs';
+import {isRaidMode,battleField,coverAlive,coverHit,surfaceBreathing,underwaterObjective,DESTRUCTIBLE_MODES} from './z5-battle-expansion.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
-export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES];
+export const MODES = ['arena','overcharge','relic','chess','rescue','clanwar','underwater',...EXPANSION_MODES,...Z5_MODES];
 export const DRAFTS = ['knight','rook','bishop'];
 export const PINGS = ['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
 export const ROOM_GRACE = 20000;
@@ -70,6 +71,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(mode==='escort')field={...field,cover:field.cover.filter(c=>c.x!==0)};
   if(mode==='props')field={...field,scenery:HUNT_SCENERY};
   if(mode==='chaos')field=z5Arena(field,rng);
+  field=battleField(mode,field);
   return {
     id,mode,season,field,rule,remake,
     limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
@@ -116,7 +118,7 @@ export function restorePlayer(m,id) {
 }
 
 function blocked(field,x,z) {
-  return field.cover.some(c=>Math.abs(x-c.x)<c.w/2+.42&&Math.abs(z-c.z)<c.d/2+.42);
+  return field.cover.some(c=>coverAlive(c)&&Math.abs(x-c.x)<c.w/2+.42&&Math.abs(z-c.z)<c.d/2+.42);
 }
 
 function move(field,p,dx,dz) {
@@ -140,11 +142,13 @@ function intersect(point,dir,low,high,max) {
   return from;
 }
 
-function obstruction(field,start,dir,max) {
+function obstruction(field,start,dir,max,hitRef=null) {
   let reach=max;
-  for(const c of field.cover){
+  for(let index=0;index<field.cover.length;index++){
+    const c=field.cover[index];
+    if(!coverAlive(c))continue;
     const metres=intersect(start,dir,[c.x-c.w/2,0,c.z-c.d/2],[c.x+c.w/2,c.h,c.z+c.d/2],reach);
-    if(metres<reach)reach=metres;
+    if(metres<reach){reach=metres;if(hitRef)hitRef.index=index;}
   }
   return reach;
 }
@@ -246,11 +250,12 @@ function fire(m,p,now) {
   const eye=[p.x,1.62+p.jump,p.z];
   let end;
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
-  if(m.mode==='raid'&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
+  if(isRaidMode(m.mode)&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
   for(let pellet=0;pellet<w.pellets&&!m.result;pellet++){
     const yaw=p.yaw+(m.rng()-.5)*w.spray,pitch=p.pitch+(m.rng()-.5)*w.spray;
     const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
-    let reach=obstruction(m.field,eye,dir,w.range),target=null;
+    const coverRef={index:-1};
+    let reach=obstruction(m.field,eye,dir,w.range,coverRef),target=null;
     for(const other of opponents) {
       const disguise=m.mode==='props'&&other.team===m.rule.half;
       const width=other.id<0?1.35:disguise?[.55,.4,.32][other.prop]:.45;
@@ -261,6 +266,13 @@ function fire(m,p,now) {
     }
     if(!end)end=eye.map((v,i)=>round(v+dir[i]*reach,100));
     if(target)hit(m,p,target,w.damage,now);
+    else if(coverRef.index>=0){
+      const impact=coverHit(m,coverRef.index,w.damage);
+      if(impact){
+        m.events.push({type:'z2:cover',...impact});
+        if(impact.destroyed)markEvent(m,now,'destruction',p.name+' destroyed arena cover',p.id);
+      }
+    }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
 }
@@ -334,9 +346,9 @@ export function updateMatch(m,now) {
   }
   if([...m.players.values()].some(p=>p.offlineAt&&p.remakeEligible&&!p.forfeited))return;
   const teams=[0,1].map(team=>[...m.players.values()].some(p=>p.team===team&&!p.forfeited));
-  if(!teams[0]||(!teams[1]&&m.mode!=='raid')){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
+  if(!teams[0]||(!teams[1]&&!isRaidMode(m.mode))){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
   if(now>=m.end){
-    if(m.mode==='raid'){finish(m,1,'time',now);return;}
+    if(isRaidMode(m.mode)){finish(m,1,'time',now);return;}
     if(m.tournament&&m.score[0]===m.score[1]&&!m.overtime){
       m.overtime=true;m.end=now+60000;
       m.events.push({type:'z2:notice',message:'Cup overtime · the next elimination wins.'});
@@ -359,6 +371,7 @@ export function updateMatch(m,now) {
   for(const p of m.players.values()){
     if(m.result||m.roundAt)break;
     coolCombatQuality(p,delta);
+    surfaceBreathing(m,p,now,delta);
     const taps=p.taps;
     p.taps=null;
     if(p.forfeited||p.offlineAt)continue;
@@ -369,7 +382,7 @@ export function updateMatch(m,now) {
     const carrying=['relic','ctf'].includes(m.mode)&&m.relics.some(r=>r.holder===p.id);
     const dragging=m.mode==='rescue'&&input.use&&[...m.players.values()]
       .some(other=>other.down&&other.team===p.team&&dist(other,p)<2.3);
-    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
+    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1)*(m.mode==='underwater'?.77:1);
     move(m.field,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
       (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
     if((input.jump||taps?.jump)&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
@@ -423,7 +436,8 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
     heat:viewer?.rx5Heat?.[viewer.weapon]??0,overheated:!!viewer?.rx5Overheated?.[viewer.weapon],
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
-    objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
+    objective:ruleView(m,viewer,now)??underwaterObjective(m,viewer)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
+    coverState:DESTRUCTIBLE_MODES.has(m.mode)?m.field.cover.map(c=>Math.ceil(c.hp??0)):undefined,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
     relics:['relic','ctf'].includes(m.mode)?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,
