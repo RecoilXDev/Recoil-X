@@ -12191,15 +12191,23 @@ window.RXZ5Gear={
 
 runCrownGame();
 
-})();
-</script>
-<script id="rx5-operation-simplicity">
+// The compact Sandstorm menu must share the main game's lexical scope:
+// getStore, rx5TacticalMode, chooseMap, startGame and updateHUD are private here.
+// Running this in a separate script caused ReferenceError before buttons could bind.
 (()=>{
   'use strict';
   const root=document.getElementById('mainMenu'),toggle=document.getElementById('rxSimpleToggle');
   if(!root||!toggle)return;
   let simplified=true;
-  try{simplified=getStore('rx5-simple-menu',true)!==false;}catch{}
+  try{
+    // One-time home-screen migration: show the requested clean Sandstorm menu.
+    // From the next visit onward, users can save their own Classic/Simple choice.
+    if(getStore('rx5-sand-ui-v6-welcome',false)!==true){
+      setStore('rx5-simple-menu',true);
+      setStore('rx5-sand-ui-v6-welcome',true);
+    }
+    simplified=getStore('rx5-simple-menu',true)!==false;
+  }catch{}
   function apply(value){
     simplified=!!value;
     root.classList.toggle('rx-simple-active',simplified);
@@ -12238,6 +12246,8 @@ runCrownGame();
     input.onchange=update;update();
   }
   apply(simplified);
+})();
+
 })();
 </script>
 </body>
