@@ -110,6 +110,8 @@ jobs:
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
+          grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
+          grep -Fq 'const pool=MAPS.filter(m=>!m.mysteryOnly' /tmp/recoil-z5-live.html
           grep -Fq 'content="Z.5-SAND-6.1"' /tmp/recoil-z5-live.html
           grep -Fq '<title>RECOIL X Z.5 · Sand Edition</title>' /tmp/recoil-z5-live.html
           grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
@@ -135,6 +137,8 @@ jobs:
           grep -Fq 'const api=window.RXZ5ClassicMenu' /tmp/recoil-z5-live.html
           grep -Fq 'rx5-sand-6-1-first-menu' /tmp/recoil-z5-live.html
           grep -Fq 'rx5LegacyMenuLink' /tmp/recoil-z5-ingame.js
+          grep -Fq 'rxSimpleCollection' /tmp/recoil-z5-ingame.js
+          grep -Fq 'COLLECTION' /tmp/recoil-z5-ingame.js
           grep -Fq 'more.append(hero)' /tmp/recoil-z5-ingame.js
           grep -Fq 'settings.hidden=true' /tmp/recoil-z5-ingame.js
           grep -Fq '#ffd08b' /tmp/recoil-z5-ingame.js
