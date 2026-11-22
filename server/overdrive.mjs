@@ -117,7 +117,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const self=match.players.get(member.id);
     emit(member.id,'begin',{id:match.id,mode:match.mode,ranked:!!match.season,team:self?.team??null,
       roster:[...match.players.values()].map(({id,name,team,draft})=>({id,name,team,draft})),
-      field:match.field,limit:match.limit,match:room.tournament?.index??null,clanWar:match.clanWar||null});
+      field:match.field,limit:match.limit,match:room.tournament?.index??null,clanWar:match.clanWar||null,preset:match.preset});
     const connection=client(member.id);
     if(connection)send(connection,snapshot(match,member.id,clock(),connection.compactState));
   }
