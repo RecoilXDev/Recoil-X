@@ -1,13 +1,13 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
-### Clan Wars / Underwater / Destruction / 3-Boss Raids — PR #24 (development branch)
+### Clan Wars / Underwater / Destruction / 3-Boss Raids — PR #24 merged (2026-11-22)
 - **#22 / Clan Wars:** signed-in clan membership is verified on the server when creating, joining and starting matches; opposing clan slots are locked and only official server-finished match results are saved once per match. Clan records appear in Career & Clans. This is a first competitive clan-war format; clan seasons, trophies and leaderboards across all clans remain unfinished.
 - **#58 / Underwater Combat:** new Flooded Abyss Laboratory arena in the existing 3D multiplayer engine with oxygen depletion, air stations requiring Use, swimming movement and server-side suffocation damage. Physics are simulated by the server; air-bubble visuals and mobile-device tests are still limited.
 - **#13/#51 / Multiplayer Destruction:** per-room destructible cover in Demolition, Clan Wars and Underwater, damaged only by server-validated shots; hit points and destruction synchronize in match snapshots, and collision geometry updates when broken. Not full voxel/terrain destruction across every map.
 - **#59 / Additional Bosses:** Co-op Crown Raid advances through **Rift Crown → Abyss Leviathan → Inferno Warden** with distinct model, HP and windup attack radius/timing, two-person shield seal mechanic and fifteen-minute raid. Not a full boss-map creator or world boss calendar.
 - **Safety:** additive clan-war database table is backed up before migration and has replay-safe unique match IDs. No old account, inventory, 500-mission, original map, season, and admin role rewrites.
-- **Status:** PR #24 is not production verified until regression tests, migration review, device QA and Alwaysdata live smoke checks pass.
+- **Status:** [PR #24](https://github.com/RecoilXDev/Recoil-X/pull/24) merged into `main` at `faafdd5853756d18af49cbca28b4ae6ad08dd52b`. [Validation #45036158464](https://github.com/RecoilXDev/Recoil-X/actions/runs/45036158464) passed 112/112 regressions and 27/27 foundation/economy tests. Alwaysdata live deployment and physical-device play still require separate confirmation.
 
 
 
@@ -129,7 +129,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |29|Shareable Match Recaps|P — private participant-only result archive and copyable recaps|
 |30|Community Challenge Board|P — verified daily check-in, match, win and elimination challenges|
 |31|Moving Train Map|U|
-|32|Flooded Laboratory|U|
+|32|Flooded Laboratory|P — PR #24: server-run flooded Abyss Laboratory arena, breath stations and movement; physical device QA pending|
 |33|Zero-Gravity Arena|P — merged-source Moonfall local low-gravity jumps, zero-G multiplayer arena still U|
 |34|Volcanic Eruption Event|U|
 |35|Titan Mech Raid|U|
