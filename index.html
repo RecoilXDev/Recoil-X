@@ -2,10 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<meta name="rx-build" content="Z.5-CLEAN-5" />
+<meta name="rx-build" content="Z.5-SAND-6" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<meta name="theme-color" content="#091725" />
-<title>RECOIL X Z.5 · Clean UI</title>
+<meta name="theme-color" content="#291c15" />
+<title>RECOIL X Z.5 · Desert Edition</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
@@ -917,6 +917,24 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 #rx5QualityNote{font-size:11px;color:#b9d2db;line-height:1.4}
 </style>
 <style id="rx5-blueprint-css">#rx5CombatSettings .rx5-blueprint-row{display:block;margin:9px 8px;color:#bce0e8;font-size:12px}#rx5BlueprintChoice{display:block;margin-top:6px;width:100%;padding:9px;border-radius:8px;border:1px solid #42697f;background:#092134;color:#fff}#rx5BlueprintInfo{margin:0 8px 8px}</style>
+
+<style id="rx5-sand-modals">
+/* Every player-facing Z.5 options overlay keeps the original sand identity. */
+#rx5AcademyDialog{background:#130d09e9}
+#rx5AcademyDialog .rx5-academy-dialog{
+ background:linear-gradient(150deg,#503422,#2e2017);
+ border:1px solid #b88654;color:#ffecd0;box-shadow:0 18px 60px #160b08ac;
+}
+#rx5AcademyDialog .rx5-academy-header h2{color:#ffcd7c}
+#rx5AcademyDialog .rx5-academy-header p{color:#d6bd94}
+#rx5AcademyDialog .rx5-academy-tile{background:#4d3221;border:1px solid #89603d}
+#rx5AcademyDialog .rx5-academy-tile strong{color:#ffe0a5}
+#rx5AcademyDialog .rx5-academy-tile small{color:#ddc09d}
+#rx5AcademyDialog button{color:#321d0f;background:#ebbd78;border:1px solid #ffe0a5}
+#rx5BlueprintChoice{background:#301f15;color:#fff0d4;border:1px solid #b88a57}
+#rx5BlueprintInfo{color:#d9bd92!important}
+</style>
+
 <style id="rx5-academy-css">
 #rx5AcademyDialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:#030915dd;z-index:2147482600;box-sizing:border-box}
 #rx5AcademyDialog[hidden]{display:none!important}
@@ -963,7 +981,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-CLEAN-5" aria-label="RECOIL X Classic menu">
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-6" aria-label="RECOIL X Classic menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · OG Futuristic Arena · 5-minute battle</small></button>
@@ -12199,7 +12217,10 @@ runCrownGame();
   const root=document.getElementById('mainMenu'),toggle=document.getElementById('rxSimpleToggle');
   if(!root||!toggle)return;
   let simplified=true;
-  try{simplified=getStore('rx5-simple-menu',true)!==false;}catch{}
+  try{const firstSandLaunch=getStore('rx5-sand-6-seen',false)!==true;
+    simplified=firstSandLaunch?true:getStore('rx5-simple-menu',true)!==false;
+    if(firstSandLaunch)setStore('rx5-sand-6-seen',true);
+  }catch{}
   function apply(value){
     simplified=!!value;
     root.classList.toggle('rx-simple-active',simplified);
