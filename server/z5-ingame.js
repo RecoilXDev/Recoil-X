@@ -142,14 +142,46 @@ if(grid&&!$('rxSimpleCollection')){
  collection.textContent='🎁 COLLECTION';
  collection.title='Gun boxes, knife boxes, weapons and collectibles';
  collection.setAttribute('aria-label','Collection — gun boxes, knives and collectibles');
- collection.addEventListener('click',()=>{
-  const locker=$('rxSimpleLocker');
-  if(locker){locker.click();return;}
-  const alternative=$('z1LockerBtn')||$('lockerBtn');
-  alternative?.click();
- });
+ collection.addEventListener('click',()=>{collectionHub.hidden=false;collectionHub.querySelector('[data-rx5-item]')?.focus();});
  grid.append(collection);
 }
+
+const collectionHub=document.createElement('div');
+collectionHub.id='rx5CollectionHub';
+collectionHub.hidden=true;
+collectionHub.setAttribute('role','dialog');
+collectionHub.setAttribute('aria-modal','true');
+collectionHub.setAttribute('aria-label','RECOIL X Collection');
+collectionHub.innerHTML='<section class="rx5-collection-shell"><header><div><strong>RECOIL X · COLLECTION</strong><small>Your original inventory, boxes, and gear — earned coins only</small></div><button type="button" id="rx5CollectionClose" aria-label="Close collection">✕</button></header><div class="rx5-collection-items"><button type="button" data-rx5-item="v8GunBtn">🔫 <b>Gun Boxes</b><small>Weapon cases & owned finishes</small></button><button type="button" data-rx5-item="vxKnivesBtn">🔪 <b>Knife Boxes</b><small>Knife cases & blade collection</small></button><button type="button" data-rx5-item="crateBtn">🎁 <b>Loot Crates</b><small>Original cosmetic crates</small></button><button type="button" data-rx5-item="shopBtn">🧥 <b>Outfits</b><small>Character skins & owned gear</small></button><button type="button" data-rx5-item="vxForgeBtn">⚒ <b>Weapon Forge</b><small>Craft with the existing shards</small></button><button type="button" data-rx5-item="passBtn">🏆 <b>Battle Pass</b><small>Existing earned rewards</small></button></div><p>Opening an item takes you to its existing game screen. Your inventory and coins are unchanged.</p></section>';
+document.body.append(collectionHub);
+const closeCollection=()=>{collectionHub.hidden=true;$('rxSimpleCollection')?.focus();};
+$('rx5CollectionClose')?.addEventListener('click',closeCollection);
+collectionHub.addEventListener('click',event=>{
+ if(event.target===collectionHub){closeCollection();return;}
+ const item=event.target.closest?.('[data-rx5-item]');if(!item)return;
+ const target=$(item.dataset.rx5Item);
+ if(target){collectionHub.hidden=true;target.click();}
+});
+document.addEventListener('keydown',event=>{
+ if(!collectionHub.hidden&&event.key==='Escape'){event.preventDefault();closeCollection();}
+},true);
+style.textContent+=String.raw`
+#rx5CollectionHub{position:fixed;inset:0;z-index:2147482505;display:flex;align-items:center;justify-content:center;padding:16px;background:#130b05ec;box-sizing:border-box}
+#rx5CollectionHub[hidden]{display:none!important}
+#rx5CollectionHub .rx5-collection-shell{width:min(680px,96vw);max-height:94dvh;overflow:auto;border:1px solid #a78150;border-radius:12px;background:linear-gradient(145deg,#4d3422,#302115);color:#ffe7c1;padding:18px;box-shadow:0 24px 70px #100802aa;font:14px system-ui}
+#rx5CollectionHub header{display:flex;justify-content:space-between;gap:12px;align-items:start}
+#rx5CollectionHub header strong{display:block;font-size:22px;letter-spacing:.08em}
+#rx5CollectionHub header small{display:block;color:#d4b891;margin-top:5px}
+#rx5CollectionHub button{cursor:pointer;color:#ffe9c7;border:1px solid #916a46;border-radius:9px;background:#63462d;padding:12px;font:700 14px system-ui}
+#rx5CollectionHub button:focus-visible{outline:3px solid #ffdd9d;outline-offset:2px}
+#rx5CollectionHub #rx5CollectionClose{padding:6px 11px}
+#rx5CollectionHub .rx5-collection-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+#rx5CollectionHub .rx5-collection-items button{text-align:left;min-height:92px}
+#rx5CollectionHub .rx5-collection-items small{display:block;color:#d7b990;font-weight:500;font-size:11px;margin-top:7px}
+#rx5CollectionHub p{font-size:11px;color:#d5b990}
+@media(max-width:530px){#rx5CollectionHub .rx5-collection-items{grid-template-columns:1fr}#rx5CollectionHub .rx5-collection-items button{min-height:65px}#rx5CollectionHub header strong{font-size:17px}}
+`;
+
 if(grid)grid.after(more);else simple.append(more);
 more.append(hero);
 const advancedLink=document.createElement('button');
