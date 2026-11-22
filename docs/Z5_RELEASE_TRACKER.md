@@ -1,6 +1,15 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Sand-6.1 — preserve restored sand UI; repair simple-menu startup (2026-11-22)
+- **This is an incremental patch** on top of the already-deployed warm Sand-6 redesign, not a second conflicting redesign.
+- **Root cause of inconsistent simple navigation:** the separate inline `rx5-operation-simplicity` JavaScript block referred to closure-private `getStore`, `setStore`, `rx5TacticalMode`, `chooseMap`, `startGame` and `updateHUD`. It could throw before activating the clean home. Added a bounded `window.RXZ5ClassicMenu` UI bridge with only read/write UI settings, bot challenge, and safe offline Quick Play actions.
+- **First Sand-6.1 load:** defaults the home menu to Simple even for old Advanced preference; the player can still toggle and save Advanced afterward. Preserves all other settings and account data.
+- **UI design unchanged from Sand-6:** one prominent gold Quick Play button, four shortcuts, Settings only on request, one More drawer, desert sand/bronze palette and HUD. No feature, account, 500-mission, currency, admin, or multiplayer changes.
+- **Release verification:** headless test executes the real separate menu script in the game's VM, and deployment checks require both bridge and first-load UI code. Physical devices are still unverified.
+
+
+
 ### Sand Edition — restoration of the Zone 90 / RECOIL X sand identity (2026-11-22)
 - **Source branch:** `z5-restore-sand-minimal-20261122`. Status: **LIVE, CI and deployment verified**. [PR #18](https://github.com/RecoilXDev/Recoil-X/pull/18) merged as `3553170d38e6ad445ac850d685bcfc4005ca4498`; [CI run #44974292029](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974292029) passed 103 tests; [Alwaysdata deployment #44974608691](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974608691) completed all 16 steps, including live sand build assets, server restart and cache verification.
 - **Design restoration:** warm sandstone and burnt-brown panels, pale cream typography, gold Quick Play button, muted sand action cards, original desert background treatments, amber HUD highlights; removes the previous navy/teal override.
