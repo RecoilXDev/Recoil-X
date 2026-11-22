@@ -6,6 +6,7 @@ const near=(p,x,z,r=3)=>Math.hypot(p.x-x,p.z-z)<=r;
 const weaponOrder=[0,3,1,2];
 const gates=[{x:0,z:-16},{x:10,z:-8},{x:0,z:0},{x:-10,z:8},{x:0,z:16}];
 export function z5Spawn(p,now){
+  if(p.matchMode==='underwater'){p.oxygen=100;p.drownAt=0;}
   if(p.matchMode==='hardcore'){p.hp=60;p.shieldUntil=now+350;}
   if(p.matchMode==='onechamber'){
     p.hp=75;p.weapon=2;p.loadout=2;p.ammo=[0,0,1,0];p.readyShot=now+230;
