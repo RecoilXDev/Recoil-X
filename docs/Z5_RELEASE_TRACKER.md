@@ -1,12 +1,12 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
-### Incremental Z.5 completion pass — PR #23 (2026-11-22, DEVELOPMENT ONLY)
+### Z.5 Sand-7 incremental expansion — PR #23 merged into main (2026-11-22)
 - **Collection:** the fifth home shortcut now opens a six-route hub for the existing Gun Boxes, Knife Boxes, Loot Crates, Outfits, Weapon Forge and Battle Pass. Original owned items, wallet and permissions are reused. No duplicate cosmetic economy or free item grants.
 - **#74 Custom HUD Layout:** actual local drag-and-drop and keyboard arrow positioning for Player, Timer, Map, and Health/Ammo UI groups; positions are capped, saved per browser, and reversible through Reset. Mobile and TV device QA is pending.
 - **#33 Moonfall low-gravity:** in solo/custom, the existing Moonfall map uses low-gravity jump velocity and descent; multiplayer still relies on its existing server physics. This is *not* a complete zero-gravity multiplayer arena.
 - **#71 Photo Mode increment:** the existing clean 3D canvas screenshot is reachable from pause menu. It is *not* a free-camera, cinematic photography system.
-- **Tests:** new Collection routing, HUD keyboard/persistence/reset and Moonfall regression checks; full PR CI must pass before merge. No production deployment is claimed here.
+- **Tests:** full [Z.5 CI run #45034345173](https://github.com/RecoilXDev/Recoil-X/actions/runs/45034345173) passed 106/106 regression tests, plus 27/27 foundation/economy tests. PR [#23](https://github.com/RecoilXDev/Recoil-X/pull/23) merged as `3ee6b1f33ffc85308084120506a4680ac6fd5e35`. **Alwaysdata deployment and physical-device play remain unverified here.**
 - **Preservation:** no account/database/migration/coins/season/calendar/admin edits; keep Quick Play random-map start and warm sand design. The remaining 85-feature gaps are still outstanding.
 
 
@@ -120,7 +120,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |30|Community Challenge Board|P — verified daily check-in, match, win and elimination challenges|
 |31|Moving Train Map|U|
 |32|Flooded Laboratory|U|
-|33|Zero-Gravity Arena|P — branch-only Moonfall local low-gravity jumps, zero-G multiplayer arena still U|
+|33|Zero-Gravity Arena|P — merged-source Moonfall local low-gravity jumps, zero-G multiplayer arena still U|
 |34|Volcanic Eruption Event|U|
 |35|Titan Mech Raid|U|
 |36|Time Fracture Event|U|
@@ -162,10 +162,10 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |68|Daily Login Rewards|P — server-side, idempotent Z.5 points, not existing coins|
 |69|Prestige System|P — up to ten separate Z.5 prestige levels, earned with match milestones and points; does not affect old level saves|
 |70|Player Titles|P — three unlock conditions and equipping, not integrated into global nameplates|
-|71|Photo Mode|P — branch-only paused clean screenshot shortcut reuses X.4 capture, full camera mode still U|
+|71|Photo Mode|P — merged-source paused clean screenshot shortcut reuses X.4 capture, full camera mode still U|
 |72|Weather 2.0|E — existing cosmetic weather; advanced lighting/interaction not built|
 |73|Character Customization|E — local suit/helmet/backpack; network model sync not verified|
-|74|Custom HUD Editor|P — branch-only persistent HUD drag/keyboard positioning and reset; device QA outstanding|
+|74|Custom HUD Editor|P — merged-source persistent HUD drag/keyboard positioning and reset; device QA outstanding|
 |75|Replay Theater|P — play/scrub recorded match-event timeline only; not full 3D footage|
 |76|Training Academy|P — Precision, Tracking and Reaction lessons with local medals; broader coursework unfinished|
 |77|Accessibility Suite|P — Classic preference controls and reduced motion; full remapping not built|
