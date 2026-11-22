@@ -2,7 +2,7 @@
 ## Scope, acceptance matrix and deployment safety
 
 ### Sand Edition — restoration of the Zone 90 / RECOIL X sand identity (2026-11-22)
-- **Source branch:** `z5-restore-sand-minimal-20261122`. Status: **pending CI and production verification**.
+- **Source branch:** `z5-restore-sand-minimal-20261122`. Status: **LIVE, CI and deployment verified**. [PR #18](https://github.com/RecoilXDev/Recoil-X/pull/18) merged as `3553170d38e6ad445ac850d685bcfc4005ca4498`; [CI run #44974292029](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974292029) passed 103 tests; [Alwaysdata deployment #44974608691](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974608691) completed all 16 steps, including live sand build assets, server restart and cache verification.
 - **Design restoration:** warm sandstone and burnt-brown panels, pale cream typography, gold Quick Play button, muted sand action cards, original desert background treatments, amber HUD highlights; removes the previous navy/teal override.
 - **Actual simplification:** only Quick Play + 4 shortcuts (Modes, Locker, Friends, Settings) are prominent. Settings drawer is not shown until selected. A single understated More drawer holds Academy, Career, Market, Match Hub, update notes and the **full classic menu escape hatch**. Advanced content is not deleted.
 - **Preservation:** original futuristic and desert maps, Z.5 tactical expansion, 500 missions, matchmaking, player accounts, inventory, events, and admin-only controls unchanged.
