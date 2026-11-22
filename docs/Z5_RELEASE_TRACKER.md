@@ -1,7 +1,7 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
-### Z.5 Wave 2 — genuine gameplay features (PR #25, development branch)
+### Z.5 Wave 2 Sand-8 — PR #25 merged into main (2026-11-22)
 - **#11 Dual-Wield Weapons:** new multiplayer Dual SMGs mode locks both-hand automatic combat to the existing SMG platform, consumes two real bullets per trigger and generates two validated projectiles. Two separate animated gun models remain unfinished.
 - **#14 Bullet Ricochet:** one server-validated bounce off actual collidable cover with reflected projectile physics, reduced hit damage and replayable shot tracers. No arbitrary infinite ricochets or client-authoritative impacts.
 - **#17 Melee Parry:** F / Ability gives a server-timed melee strike and 350ms defensive parry with cooldown; range, facing and hostile team validated. Full melee weapon animation/item system remains outstanding.
@@ -13,7 +13,8 @@
 - **#35 Titan Mech Raid:** co-op heavy Titan MK-IV with timed shield seals, heavy blasts and a dedicated rendered boss; not a bespoke animated mech rig.
 - **#39 Alien Invasion Mode:** three escalating co-op alien commanders with timed combat and progression, using existing animated guardian bodies; not yet swarm-AI armies.
 - **#40 World Boss Weekends:** server-only Friday/Saturday Oman-time availability and three rotating massive guardians; no seasonal event calendar/Battle Pass reward integration yet.
-- **Preservation and release gate:** no database migrations, player account rewrites, old inventory grants or admin-role changes. Mobile/device testing, gameplay balance, CI and live Alwaysdata verification remain separate release gates.
+- **Validation:** [PR #25](https://github.com/RecoilXDev/Recoil-X/pull/25) merged as `6c85293c2c39c34153ba5686b5b8a561b1d563c8`. [CI #45038686784](https://github.com/RecoilXDev/Recoil-X/actions/runs/45038686784) passed **129/129 regression/integration tests** plus **27/27 foundation/economy tests**. This verifies code behavior, not live deployment or device FPS.
+- **Preservation and release gate:** no database migrations, player account rewrites, old inventory grants or admin-role changes. Physical device tests, gameplay balance and Alwaysdata live verification remain outstanding.
 
 
 
@@ -124,36 +125,36 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |8|PvP Extraction|P — four-stage server-verified supply capture/extraction with combat|
 |9|Parkour Race|P — five real server-validated checkpoints, 3D target marker and winner determination|
 |10|Duel Roulette|P — 1v1 server-selected equal weapons, timed rounds and first-to-three win|
-|11|Dual-Wield Weapons|P — PR #25: server-authoritative dual SMG pair, 2 bullets per shot; separate 3D hand animations pending|
+|11|Dual-Wield Weapons|P — merged Sand-8: server-authoritative dual SMG pair, 2 bullets per shot; separate 3D hand animations pending|
 |12|Weapon Overheating|P — casual multiplayer uses server-controlled heat; offline optional; physical playtesting pending|
 |13|Destructible Cover|P — PR #24: server-authoritative cover HP and synchronized breakage in selected casual multiplayer modes|
-|14|Bullet Ricochet|P — PR #25: one ricochet from validated cover with reduced-damage hit test and tracer|
+|14|Bullet Ricochet|P — merged Sand-8: one ricochet from validated cover with reduced-damage hit test and tracer|
 |15|Advanced Aim Academy|P — three real offline 90-second lessons with weapons and saved medals; no online class progression|
 |16|Weapon Mastery Challenges|P — local hits/kill rank labels; complete server-authoritative challenge track missing|
-|17|Melee Parry System|P — PR #25: server-timed melee strike, 350ms defensive parry and ability cooldown|
+|17|Melee Parry System|P — merged Sand-8: server-timed melee strike, 350ms defensive parry and ability cooldown|
 |18|EMP Grenades|P — offline-only bot disable; server-side multiplayer integration not implemented|
 |19|Deployable Shields|P — offline destructible timed cover; multiplayer validation and sync absent|
 |20|Legendary Weapon Evolutions|U|
 |21|Clan System|P — new server clans/invites/membership; no clan emblem or clan achievements|
 |22|Clan Wars|P — PR #24: authenticated clan teams, live matches, persistent server-verified wins; clan seasons still U|
 |23|Player Rivalries|P — server-authoritative match statistics and rival records, not ranked rivalry challenges|
-|24|Custom Match Rules|P — PR #25: actual casual HP/speed/fire preset rules, blocked for ranked and clan wars|
-|25|Team Drafting|P — PR #25: host-controlled draft and swaps with team-capacity and access checks|
+|24|Custom Match Rules|P — merged Sand-8: actual casual HP/speed/fire preset rules, blocked for ranked and clan wars|
+|25|Team Drafting|P — merged Sand-8: host-controlled draft and swaps with team-capacity and access checks|
 |26|Broadcast Spectator Mode|U|
 |27|Match Rejoin Slots|E — existing overdrive reconnect logic; needs full testing|
 |28|Server Browser|P — real public, joinable rooms; copy-code joining through existing UI|
 |29|Shareable Match Recaps|P — private participant-only result archive and copyable recaps|
 |30|Community Challenge Board|P — verified daily check-in, match, win and elimination challenges|
-|31|Moving Train Map|P — PR #25: moving train model and server-controlled crossing damage, no train interior|
+|31|Moving Train Map|P — merged Sand-8: moving train model and server-controlled crossing damage, no train interior|
 |32|Flooded Laboratory|P — PR #24: server-run flooded Abyss Laboratory arena, breath stations and movement; physical device QA pending|
 |33|Zero-Gravity Arena|P — merged-source Moonfall local low-gravity jumps, zero-G multiplayer arena still U|
-|34|Volcanic Eruption Event|P — PR #25: telegraphed eruption and server-authoritative lava zones|
-|35|Titan Mech Raid|P — PR #25: co-op Titan MK-IV with guardian seals and barrage, bespoke rig pending|
-|36|Time Fracture Event|P — PR #25: alternating server-side speed and firing time fields|
+|34|Volcanic Eruption Event|P — merged Sand-8: telegraphed eruption and server-authoritative lava zones|
+|35|Titan Mech Raid|P — merged Sand-8: co-op Titan MK-IV with guardian seals and barrage, bespoke rig pending|
+|36|Time Fracture Event|P — merged Sand-8: alternating server-side speed and firing time fields|
 |37|Map Builder Lite|E — existing shared maps; full visual builder not verified|
 |38|Hidden Puzzle Vaults|U|
-|39|Alien Invasion Mode|P — PR #25: 3-wave alien co-op guardians, full alien-army AI pending|
-|40|World Boss Weekends|P — PR #25: rotating Fri/Sat Oman world bosses, separate season rewards not integrated|
+|39|Alien Invasion Mode|P — merged Sand-8: 3-wave alien co-op guardians, full alien-army AI pending|
+|40|World Boss Weekends|P — merged Sand-8: rotating Fri/Sat Oman world bosses, separate season rewards not integrated|
 |41|Server-Authoritative Hit Validation|E — existing server computes hits against cover and validates fire rates; not a complete anti-cheat audit|
 |42|Suspicious Movement Detection|U|
 |43|Adaptive Network Updates|U|
