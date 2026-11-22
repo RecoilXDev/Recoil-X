@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-TACTICS-4/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-TACTICS-4"/);
+ assert.match(js,/Z\.5-CLEAN-5/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-CLEAN-5"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-tactics-4/);
+ assert.match(sw,/z5-clean-5/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-TACTICS-4');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-5');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -44,4 +44,39 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  ui.querySelector('[data-rx5-close]').click();
  assert.equal(notes.hidden,true);
  assert.equal(ui.querySelector('#rxSimpleQuick').disabled,false);
+});
+
+test('Quick Play stays primary, Settings open in place and pause controls collapse safely',()=>{
+ const h=makeHarness();
+ const js=read('server/z5-ingame.js');
+ new vm.Script(js,{filename:'z5-ingame.js'}).runInContext(h.ctx);
+ const {ui}=h;
+ const main=ui.querySelector('#mainMenu');
+ const simple=ui.querySelector('#rxSimplePanel');
+ const quick=ui.querySelector('#rxSimpleQuick');
+ const heading=ui.querySelector('#rxSimplePanel .rx-simple-heading');
+ const strip=ui.querySelector('#rx5-release-strip');
+ const settings=ui.querySelector('#rx5Options');
+ const more=ui.querySelector('#rx5More');
+ const pauseSettings=ui.querySelector('#rx5PauseSettings');
+ assert.ok(main.classList.contains('rx-simple-active'));
+ assert.ok(ui.body.classList.contains('rx5-ui-polished'));
+ assert.equal(strip.parentElement,heading,'release note link belongs in brand header, not ahead of Quick Play');
+ assert.ok(simple.querySelector('#rxSimpleActions .rx-simple-grid'));
+ assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
+ assert.ok(simple.querySelector('#rx5More'));
+ assert.ok(!settings.open && !more.open,'advanced panels start collapsed');
+ assert.ok(quick.getAttribute('id')==='rxSimpleQuick');
+ assert.ok(pauseSettings);
+ for(const id of ['v9PauseQuality','v92PauseRow','v91PauseProfile'])
+   assert.ok(pauseSettings.querySelector('#'+id),id+' must be in collapsed pause settings');
+ assert.ok(ui.querySelector('#rx5-quick-system'));
+ assert.ok(ui.querySelector('#rx5GearSelect'));
+ assert.ok(ui.querySelector('#rx5FocusToggle'));
+ assert.ok(ui.querySelector('#rxSimpleSettings'));
+ assert.ok(ui.querySelector('#rxSimpleModes'));
+ assert.ok(ui.querySelector('#rxSimpleLocker'));
+ assert.ok(ui.querySelector('#rxSimpleFriends'));
+ assert.equal(ui.querySelectorAll('[data-rx-admin-only]').filter(x=>!x.hidden).length,0);
+ assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-ui-polished/);
 });
