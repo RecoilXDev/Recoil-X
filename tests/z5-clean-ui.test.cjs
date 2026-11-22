@@ -30,7 +30,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.ok(ui.querySelector('#rx5-native-pause'));
  const extras=ui.querySelectorAll('[data-rx5-open]');
  assert.equal(extras.length,16);
- for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleBotLevel'])
+ for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleColliten','rxSimpleBotLevel'])
    assert.ok(ui.querySelector('#'+item),item+' must be retained');
  const admin=ui.querySelectorAll('[data-rx-admin-only]');
  assert.equal(admin.length,3);
@@ -67,7 +67,8 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
  assert.ok(simple.querySelector('#rx5More'));
  assert.ok(settings.hidden && !settings.open && !more.open,'Settings stays invisible and More starts closed');
- assert.equal(simple.querySelector('.rx-simple-grid').children.length,4,'four core shortcuts');
+ assert.equal(simple.querySelector('.rx-simple-grid').children.length,5,'four existing shortcuts plus Colliten');
+ assert.ok(ui.querySelector('#rxSimpleColliten'),'Colliten shortcut is displayed');
  assert.ok(ui.querySelector('#rx5LegacyMenuLink'),'full classic menu remains accessible inside More');
  assert.ok(quick.getAttribute('id')==='rxSimpleQuick');
  assert.ok(pauseSettings);
