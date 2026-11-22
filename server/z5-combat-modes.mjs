@@ -7,6 +7,8 @@ const weaponOrder=[0,3,1,2];
 const gates=[{x:0,z:-16},{x:10,z:-8},{x:0,z:0},{x:-10,z:8},{x:0,z:16}];
 export function z5Spawn(p,now){
   if(p.matchMode==='underwater')p.oxygen=100;
+  if(p.matchMode==='dualwield'){p.weapon=3;p.loadout=3;p.readyShot=now+230;}
+  if(p.matchMode==='parry'){p.abilityAt=now+350;p.parryUntil=0;}
   if(p.matchMode==='hardcore'){p.hp=60;p.shieldUntil=now+350;}
   if(p.matchMode==='onechamber'){
     p.hp=75;p.weapon=2;p.loadout=2;p.ammo=[0,0,1,0];p.readyShot=now+230;
@@ -18,6 +20,7 @@ export function z5Spawn(p,now){
 }
 export function z5Weapon(m,p,inputWeapon){
   if(m.mode==='onechamber')return 2;
+  if(m.mode==='dualwield')return 3;
   if(m.mode==='roulette')return m.rule.weapon;
   if(m.mode==='gungame')return weaponOrder[Math.min(weaponOrder.length-1,p.kills)];
   return inputWeapon;
@@ -82,6 +85,8 @@ export function z5Elimination(m,victim,killer,now,{finish,mark}){
       if(m.score[killer.team]>=m.limit)finish(m,killer.team,'bounty',now);
       return true;
     }
+    case 'dualwield':case 'ricochet':case 'parry':
+    case 'train':case 'volcano':case 'timefracture':
     case 'chaos':
       m.score[killer.team]++;
       if(m.score[killer.team]>=m.limit)finish(m,killer.team,'chaos',now);
