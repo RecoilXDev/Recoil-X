@@ -1,4 +1,5 @@
-export const EXPANSION_MODES = ['escort', 'hotzone', 'elimination', 'budget', 'props', 'jeep', 'raid'];
+export const RAID_MODES=['raid','titanraid','alieninvasion','worldboss'];
+export const EXPANSION_MODES = ['escort', 'hotzone', 'elimination', 'budget', 'props', 'jeep', ...RAID_MODES];
 export const WEAPON_COSTS = [3, 5, 6, 1];
 export const PROP_NAMES = ['Crate', 'Barrel', 'Beacon'];
 export const HUNT_SCENERY = [
@@ -24,8 +25,28 @@ const RAID_GUARDIANS=[
  {name:'Abyss Leviathan',model:'water',hp:1180,attack:'tidal surge',radius:5.0,damage:36},
  {name:'Inferno Warden',model:'lava',hp:1360,attack:'eruption',radius:4.2,damage:42}
 ];
-const guardian=(index)=>({...RAID_GUARDIANS[index],id:-1,x:0,z:-3,team:1,jump:0,
- hp:RAID_GUARDIANS[index].hp,maxHp:RAID_GUARDIANS[index].hp,shieldUntil:Infinity});
+const TITAN_GUARDIANS=[{name:'Titan Mech MK-IV',model:'earth',hp:2600,attack:'plasma bombardment',radius:5.2,damage:54}];
+const ALIEN_GUARDIANS=[
+ {name:'Void Scout',model:'water',hp:710,attack:'ion pulse',radius:3.4,damage:23},
+ {name:'Phase Harvester',model:'earth',hp:1130,attack:'gravity burst',radius:4.4,damage:31},
+ {name:'Xeno Overmind',model:'lava',hp:1750,attack:'corrosive storm',radius:5.5,damage:42}
+];
+const WEEKEND_GUARDIANS=[
+ {name:'Dune Colossus',model:'earth',hp:2800,attack:'sand quake',radius:5.5,damage:48},
+ {name:'Tempest Serpent',model:'water',hp:2700,attack:'storm surge',radius:5.1,damage:46},
+ {name:'Infernal Behemoth',model:'lava',hp:3000,attack:'meteor crash',radius:6.0,damage:52}
+];
+function guardians(mode,now=0){
+ if(mode==='titanraid')return TITAN_GUARDIANS;
+ if(mode==='alieninvasion')return ALIEN_GUARDIANS;
+ if(mode==='worldboss')return [WEEKEND_GUARDIANS[Math.floor((now+4*3600000)/604800000)%WEEKEND_GUARDIANS.length]];
+ return RAID_GUARDIANS;
+}
+const guardian=(index,mode='raid',now=0)=>{
+ const profile=guardians(mode,now)[index];
+ return {...profile,id:-1,x:0,z:-3,team:1,jump:0,
+  hp:profile.hp,maxHp:profile.hp,shieldUntil:Infinity};
+};
 
 export function modeState(mode,now,players) {
   switch(mode) {
@@ -39,7 +60,7 @@ export function modeState(mode,now,players) {
       const lane=team?12:-12;
       return {team,lane,x:lane,z:23,yaw:0,speed:0,wheel:0,steer:0,gate:0,driver:players.find(p=>p.team===team)?.id};
     })};
-    case 'raid': return {boss:guardian(0),bossIndex:0,totalBosses:RAID_GUARDIANS.length,
+    case 'raid':case 'titanraid':case 'alieninvasion':case 'worldboss': return {boss:guardian(0,mode,now),bossIndex:0,totalBosses:guardians(mode,now).length,
       held:0,openUntil:0,windup:null,next:now+5000,phase:1,pads:[false,false]};
     default: return null;
   }
@@ -180,13 +201,13 @@ export function advanceMode(m,now,dt,{finish,spawn,move}) {
       }
       return false;
     }
-    case 'raid': {
+    case 'raid':case 'titanraid':case 'alieninvasion':case 'worldboss': {
       const boss=s.boss;
       if(boss.hp<=0){
         const conquered=s.bossIndex+1;
         markEvent(m,now,'boss',boss.name+' defeated · '+conquered+'/'+s.totalBosses);
         if(conquered>=s.totalBosses){m.score[0]=100;finish(m,0,'raid',now);return false;}
-        s.bossIndex=conquered;s.boss=guardian(s.bossIndex);
+        s.bossIndex=conquered;s.boss=guardian(s.bossIndex,m.mode,m.started);
         s.held=0;s.openUntil=0;s.windup=null;s.next=now+4600;s.phase=1;s.pads=[false,false];
         m.events.push({type:'z2:notice',message:'⚔ NEXT BOSS · '+s.boss.name+' · '+(conquered+1)+'/'+s.totalBosses});
         m.score[0]=Math.floor(100*conquered/s.totalBosses);
@@ -237,7 +258,7 @@ export function ruleView(m,who,now) {
     case 'props': return {hiders:s.half,phase:s.phase,deadline:s.deadline,prop:who?.prop};
     case 'jeep': return {cars:s.cars.map(c=>({team:c.team,x:c.x,z:c.z,yaw:c.yaw,wheel:c.wheel,
       steer:c.steer,speed:c.speed,gate:c.gate,driver:c.driver,next:vehicleGate(c)}))};
-    case 'raid': return {boss:{x:s.boss.x,z:s.boss.z,hp:Math.max(0,s.boss.hp),max:s.boss.maxHp,name:s.boss.name,model:s.boss.model,attack:s.boss.attack},index:s.bossIndex+1,total:s.totalBosses,phase:s.phase,
+    case 'raid':case 'titanraid':case 'alieninvasion':case 'worldboss': return {boss:{x:s.boss.x,z:s.boss.z,hp:Math.max(0,s.boss.hp),max:s.boss.maxHp,name:s.boss.name,model:s.boss.model,attack:s.boss.attack},index:s.bossIndex+1,total:s.totalBosses,phase:s.phase,
       shield:s.openUntil<=now,pads:PADS.map((p,i)=>({...p,active:s.pads[i]})),windup:s.windup};
     default:return undefined;
   }
