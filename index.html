@@ -9061,7 +9061,8 @@ const Z2_MODES={
   searchdestroy:'Z.5 Search & Destroy',extraction:'Z.5 PvP Extraction 2.0',
   clanwar:'⚔ Z.5 Clan Wars',underwater:'🌊 Z.5 Underwater Combat',demolition:'💥 Z.5 Multiplayer Destruction',
   dualwield:'🔫 Z.5 Dual SMGs',ricochet:'↗ Z.5 Ricochet Arena',parry:'⚔ Z.5 Melee Parry',
-  train:'🚆 Z.5 Moving Train Yard',volcano:'🌋 Z.5 Volcanic Eruption',timefracture:'⌛ Z.5 Time Fracture'
+  train:'🚆 Z.5 Moving Train Yard',volcano:'🌋 Z.5 Volcanic Eruption',timefracture:'⌛ Z.5 Time Fracture',
+  titanraid:'🤖 Z.5 Titan Mech Raid',alieninvasion:'👽 Z.5 Alien Invasion',worldboss:'🌍 Z.5 World Boss Weekend'
 };
 // Flooded arena screen tint applies only in an active online underwater match.
 const rx5WaterStyle=document.createElement('style');
@@ -9151,8 +9152,11 @@ function z2RenderLobby(){
     demolition:'Bullets destroy cover · servers synchronize rubble',
     dualwield:'Dual SMGs · two rounds per trigger',ricochet:'Bullets bounce once from cover',
     parry:'F / Ability · strike and timed parry',train:'Dodge moving armored train cars',
-    volcano:'Avoid server-timed volcanic vents',timefracture:'Alternating slow and fast combat'};
-  z2Text('p',(room.mode==='raid'?room.size+' players':room.size+'v'+room.size)+' · '+room.phase.toUpperCase()+
+    volcano:'Avoid server-timed volcanic vents',timefracture:'Alternating slow and fast combat',
+    titanraid:'Co-op · Titan MK-IV, synchronized seals and plasma bombardment',
+    alieninvasion:'Co-op · three escalating alien commanders',
+    worldboss:'Co-op · Fri–Sat Oman · rotating colossal guardian'};
+  z2Text('p',(['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)?room.size+' players':room.size+'v'+room.size)+' · '+room.phase.toUpperCase()+
     ' · '+(details[room.mode]||room.limit+' eliminations'),root);
   if(room.code){
     const code=z2Text('strong','Invite code '+room.code+(room.password?' · Password required':''),root);
@@ -9162,7 +9166,7 @@ function z2RenderLobby(){
       catch{z2Say('Invite code '+room.code);}
     }));
   }
-  const list=room.members.map(p=>[p.name,p.spectator?'Spectator':room.mode==='raid'?'Raid party':z2Name(p.team,isTournament),
+  const list=room.members.map(p=>[p.name,p.spectator?'Spectator':['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)?'Raid party':z2Name(p.team,isTournament),
     p.away?'Reconnecting':p.id===room.host?'Host':'Ready',
     room.mode==='chess'?p.draft:room.votes.includes(p.id)?'Voted rematch':'']);
   z2Table(root,['Player','Team','Status',room.mode==='chess'?'Draft':'Vote'],list);
@@ -9298,7 +9302,7 @@ function z2Begin(event){
   $('rxStage').classList.add('z2-playing');
   $('rxStage').classList.toggle('z5-underwater-active',event.mode==='underwater');
   $('rxStage').classList.toggle('z2-watching',event.team==null);
-  for(const kind of ['rescue','relic','chess','raid'])$('rxStage').classList.toggle('z2-'+kind,event.mode===kind);
+  for(const kind of ['rescue','relic','chess','raid'])$('rxStage').classList.toggle('z2-'+kind,kind==='raid'?['raid','titanraid','alieninvasion','worldboss'].includes(event.mode):event.mode===kind);
   $('z2MatchHud').classList.remove('hide');
   $('z2ReadyAim').classList.toggle('hide',mobile||!!document.pointerLockElement||event.team==null);
   $('z2MatchHint').textContent=event.team==null?'Spectating':
@@ -9360,7 +9364,7 @@ function z2ApplyState(event){
 function z2Hud(){
   if(!z2IsMatch()||!z2Live.snapshot)return;
   const snap=z2Live.snapshot;
-  $('z2MatchScore').textContent=z2Live.match.mode==='raid'?'Crown · '+(snap.objective?.boss.hp??0)+' HP':
+  $('z2MatchScore').textContent=['raid','titanraid','alieninvasion','worldboss'].includes(z2Live.match.mode)?'Boss · '+(snap.objective?.boss.hp??0)+' HP':
     z2Name(0).toUpperCase()+' '+snap.score[0]+'  ·  '+snap.score[1]+' '+z2Name(1).toUpperCase();
   z2LatencyLabel(z2Online());
   $('z2MatchPing').textContent=z2Live.ping?.until>performance.now()?z2Live.ping.message:'';
@@ -10393,9 +10397,9 @@ function z2MountUI(){
   };
   const setTeamOptions=()=>{
     const mode=$('z2GameMode').value,tourney=Number($('z2Tournament').value),select=$('z2TeamSize');
-    const sizes=tourney?[1,2]:['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?[1]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:mode==='raid'?[2,3,4]:[1,2,3,5];
+    const sizes=tourney?[1,2]:['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?[1]:mode==='rescue'?[2,3,5]:mode==='jeep'?[2]:['raid','titanraid','alieninvasion','worldboss'].includes(mode)?[2,3,4]:[1,2,3,5];
     const chosen=Number(select.value);
-    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&mode==='raid'?n+' players':n+'v'+n);o.value=String(n);return o;}));
+    select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&['raid','titanraid','alieninvasion','worldboss'].includes(mode)?n+' players':n+'v'+n);o.value=String(n);return o;}));
     select.value=String(sizes.includes(chosen)?chosen:sizes[0]);
     $('z2GameMode').disabled=!!tourney;
     const fixed=!tourney&&!['arena','overcharge','rescue'].includes(mode);
@@ -10708,7 +10712,7 @@ function z3MatchView(event){
       const car=s.cars.find(c=>c.team===match.team);
       hint=car?(car.driver===z1Account?.id?'Drive with movement · Jump brakes':'Passenger · Your turn at the next gate')+' · Gate '+(car.gate+1)+'/4':'Jeep Relay';break;
     }
-    case 'raid':
+    case 'raid':case 'titanraid':case 'alieninvasion':case 'worldboss':
       hint=s.boss.name+' · BOSS '+s.index+'/'+s.total+' · '+Math.ceil(s.boss.hp)+'/'+s.boss.max+' HP · '+
         (s.shield?'Hold Use at BOTH seals':'Shield open · FIRE!');break;
     case 'underwater':
@@ -10785,10 +10789,19 @@ function z3MatchWorld(out,now){
     if(car.next)crownOutline(out,{...car.next,r:3.25},Z2_TEAM[car.team],.08);
   }
   if(m.mode==='props'&&m.team===s.hiders&&pl.alive)z3DrawProp(out,pl.x,pl.z,s.prop,pl.jump);
-  if(m.mode==='raid'){
+  if(['raid','titanraid','alieninvasion','worldboss'].includes(m.mode)){
     if(s.boss.hp>0){
       const boss={...s.boss,id:-1,crownModel:s.boss.model||'earth',alive:true,crownUnarmed:true,yaw:Math.atan2(pl.x-s.boss.x,s.boss.z-pl.z)};
       crownDrawActor(out,boss,Math.hypot(boss.x-pl.x,boss.z-pl.z),now);
+      if(m.mode==='titanraid'){
+        putBox(out,boss.x,3.9,boss.z,3.2,.85,2.7,[.43,.46,.52]);
+        putBox(out,boss.x-1.65,2.2,boss.z,1.0,1.7,1.0,[.86,.23,.13]);
+        putBox(out,boss.x+1.65,2.2,boss.z,1.0,1.7,1.0,[.86,.23,.13]);
+      }
+      if(m.mode==='alieninvasion'){
+        putBox(out,boss.x,.1,boss.z,2.4,.22,2.4,[.23,.88,.36]);
+        putBox(out,boss.x,4.25,boss.z,.4,.9,.4,[.58,.95,.44]);
+      }
       if(s.shield)crownOutline(out,{x:boss.x,z:boss.z,r:3},[.39,.84,.93],.08);
     }
     for(const pad of s.pads)crownOutline(out,{x:pad.x,z:pad.z,r:2.4},pad.active?[.33,.96,.55]:[.78,.63,.28],.11);
