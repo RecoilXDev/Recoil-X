@@ -335,6 +335,12 @@ for(const id of ['v9PauseQuality','v92PauseRow']){const el=$(id);if(el)pauseSett
 const perf=$('v91PauseProfile')?.parentElement;if(perf)pauseSettings.append(perf);
 const pauseGroup=document.createElement('div');pauseGroup.id='rx5-native-pause';
 pauseMore.append(pauseGroup);pause.append(pauseMore);
+const photoButton=document.createElement('button');
+photoButton.type='button';photoButton.id='rx5PhotoCapture';
+photoButton.textContent='📸 SAVE CLEAN GAME SCREENSHOT';
+photoButton.style.cssText='display:block;margin:9px auto;padding:10px 14px;border:1px solid #c39a64;border-radius:8px;background:#65462c;color:#ffebc9;font-weight:750;cursor:pointer';
+photoButton.addEventListener('click',()=>{if(!window.RXZ5CapturePhoto?.())console.warn('Screenshot only available during gameplay');});
+pauseMore.append(photoButton);
 for(const target of [simpleGroup,advancedGroup,pauseGroup]){
  makeButton(target,'academy','🎓 Training Academy');
  makeButton(target,'career','🏅 Career & Clans');
