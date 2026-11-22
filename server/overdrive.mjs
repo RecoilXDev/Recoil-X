@@ -4,11 +4,12 @@ import {
   setOffline, restorePlayer, updateMatch, prepareSnapshot, snapshot, tacticalPing, canSee
 } from './overdrive-match.mjs';
 import { seasonAt } from './overdrive-store.mjs';
-import { draftBudget, propSelection } from './expansion-modes.mjs';
+import { draftBudget, propSelection, RAID_MODES } from './expansion-modes.mjs';
 import { pairRanked, makeVeto, banField } from './expansion-ranked.mjs';
 
 const letters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const idleTime = 15 * 60 * 1000;
+const isOmanWeekend=now=>[5,6].includes(new Date(now+4*3600000).getUTCDay());
 const maxRooms = 80;
 const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
@@ -29,7 +30,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return result;
   }
 
-  function teamCount(room) {return room.squad||room.mode==='raid'?1:room.tournament?.teams||2;}
+  function teamCount(room) {return room.squad||RAID_MODES.includes(room.mode)?1:room.tournament?.teams||2;}
   function capacity(room) { return room.size*teamCount(room); }
   function players(room) { return [...room.members.values()].filter(p=>!p.spectator); }
   function filled(room) {
@@ -120,6 +121,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   }
 
   function start(room,now,contestants) {
+    if(room.mode==='worldboss')demand(isOmanWeekend(now),403,'World Boss battles unlock Friday and Saturday, Oman time.');
     const seats=contestants||players(room);
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
       limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern});
@@ -183,8 +185,9 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const squad=data.squad===true&&!tournament?{queued:false}:null;
     const mode=tournament||squad?'arena':data.mode;
     demand(MODES.includes(mode),400,'Choose a supported match mode.');
+    if(mode==='worldboss')demand(isOmanWeekend(now),403,'World Boss weekends run Friday and Saturday, Oman time.');
     const size=['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?1:mode==='jeep'?2:data.size;
-    const sizes=tournament?[1,2]:mode==='raid'?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
+    const sizes=tournament?[1,2]:RAID_MODES.includes(mode)?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
     demand(sizes.includes(size),400,'Choose a supported team size.');
     const limit=data.limit??15;
     demand(Number.isInteger(limit)&&limit>=1&&limit<=50,400,'Choose a kill limit from 1 to 50.');
