@@ -1,6 +1,17 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Z.5 SAND-6 — restored Sandstorm interface (2026-11-22)
+- **Status:** development branch `z5-desert-clean-ui-20261122`, pending CI and live verification.
+- **User-directed design correction:** removed the newer navy/teal override and restored the earlier desert/Sandstorm color direction: deep sandstone panels, warm golden-tan Quick Play, clay buttons, brown game HUD and subdued dune-toned surroundings.
+- **Actual information hierarchy:** the opening screen now displays brand, a single primary Quick Play, Modes/Locker/Friends/Settings, and exactly one collapsed More drawer. The release/update link, full classic/advanced menu, Academy, Forge, Career/Clans and Match Hub are placed behind More; all remain accessible.
+- **Settings:** hidden until users activate the Settings shortcut, which expands and collapses the original tactical, bot, accessibility, graphics, audio and device controls in-place; no duplicated visible settings panels.
+- **Prior choice compatibility:** first entry in this UI version selects the new simple menu once for returning users, then allows saving their personal choice of Classic/Advanced for later visits.
+- **Pause & HUD:** compact warm Sandstorm pause screen and warm health/ammo panels, while retaining the existing Focus HUD switch and preserving health, score, ammo, timer, selected tactical gadget and crosshair.
+- **Safety and non-scope:** no new gameplay or multiplayer rule changes; no removal of modes, 500 missions, event calendar or account data, no database migration. Real-device screenshot/performance QA still outstanding.
+
+
+
 ### Z.5 CLEAN-5 — focused UI polish (2026-11-22)
 - **Source:** `z5-clean-navigation-hud-20261122`; in branch verification until CI and live site check.
 - **Home:** single large Quick Play action; four clear shortcuts for Modes, Locker, Friends and Settings; compact release-note link in brand header instead of an attention-grabbing banner.
