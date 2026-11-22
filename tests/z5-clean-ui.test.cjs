@@ -122,7 +122,10 @@ test('Collection opens existing gun/knife/loot screens without changing inventor
  entry.click();assert.equal(hub.hidden,false,'Collection shortcut opens the real hub');
  for(const id of ['v8GunBtn','vxKnivesBtn','crateBtn','shopBtn','vxForgeBtn','passBtn'])
   assert.ok(hub.querySelector('[data-rx5-item="'+id+'"]'),'existing inventory route: '+id);
+ let knifeOpened=false;
+ ui.querySelector('#vxKnivesBtn').onclick=()=>{knifeOpened=true;};
  hub.dispatchEvent({type:'click',target:hub.querySelector('[data-rx5-item="vxKnivesBtn"]')});
+ assert.equal(knifeOpened,true,'Collection forwards to original knife screen handler');
  assert.equal(hub.hidden,true,'choosing knives closes the hub and returns to game routing');
  assert.equal(h.local.getItem('coins'),null,'Collection must not modify coins');
 });
