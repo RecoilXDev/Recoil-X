@@ -23,7 +23,8 @@ test('Operation Simplicity adds selectable OG futuristic map and offline quick p
  assert.match(html,/addObstacle\(0,t\*39,80,1\.8,7,metal\)/);
  assert.match(html,/id="rxSimpleQuick"/);
  assert.match(html,/id="rxSimpleToggle"/);
- assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/);\n assert.match(html,/chooseMap\(chosen\?\.id\|\|'dunes'\);startGame\('solo'\);gameSeconds=300/);
+ assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/);
+ assert.match(html,/chooseMap\(chosen\?\.id\|\|'dunes'\);startGame\('solo'\);gameSeconds=300/);
  assert.match(html,/mainMenu\.rx-simple-active/);
  assert.match(html,/rx5-simple-menu/);
  assert.match(html,/rxSimpleBotLevel/);
