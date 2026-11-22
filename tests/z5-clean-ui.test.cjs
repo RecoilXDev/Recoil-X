@@ -8,8 +8,8 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-SAND-6\.1/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6\.1"/);
+ assert.match(js,/Z\.5-SAND-7/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-7"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
  assert.match(sw,/z5-sand-7/);
