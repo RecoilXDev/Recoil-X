@@ -12207,6 +12207,14 @@ window.RXZ5Gear={
  }
 };
 
+// Public, bounded UI bridge for the legacy simple menu script.
+// Core game functions remain private inside this module.
+window.RXZ5ClassicMenu={
+ read:(key,fallback)=>getStore(key,fallback),
+ write:(key,value)=>setStore(key,value),
+ setBotMode:value=>{if(['standard','veteran','nightmare'].includes(value))rx5TacticalMode=value;},
+ playQuick:()=>{chooseMap('og-future');startGame('solo');gameSeconds=300;updateHUD();}
+};
 runCrownGame();
 
 })();
@@ -12215,27 +12223,28 @@ runCrownGame();
 (()=>{
   'use strict';
   const root=document.getElementById('mainMenu'),toggle=document.getElementById('rxSimpleToggle');
-  if(!root||!toggle)return;
+  const api=window.RXZ5ClassicMenu;
+  if(!root||!toggle||!api)return;
   let simplified=true;
-  try{const firstSandLaunch=getStore('rx5-sand-6-seen',false)!==true;
-    simplified=firstSandLaunch?true:getStore('rx5-simple-menu',true)!==false;
-    if(firstSandLaunch)setStore('rx5-sand-6-seen',true);
+  try{const firstSandLaunch=api.read('rx5-sand-6-seen',false)!==true;
+    simplified=firstSandLaunch?true:api.read('rx5-simple-menu',true)!==false;
+    if(firstSandLaunch)api.write('rx5-sand-6-seen',true);
   }catch{}
   function apply(value){
     simplified=!!value;
     root.classList.toggle('rx-simple-active',simplified);
     toggle.textContent=simplified?'◈ ADVANCED MODE':'← SIMPLE MODE';
     toggle.setAttribute('aria-pressed',String(simplified));
-    try{setStore('rx5-simple-menu',simplified);}catch{}
+    try{api.write('rx5-simple-menu',simplified);}catch{}
   }
   const level=document.getElementById('rxSimpleBotLevel');
-  try{const saved=getStore('rx5-bot-challenge','veteran');level.value=['standard','veteran','nightmare'].includes(saved)?saved:'veteran';}catch{level.value='veteran'}
-  rx5TacticalMode=level.value;
-  level.onchange=()=>{rx5TacticalMode=level.value;try{setStore('rx5-bot-challenge',level.value)}catch{}};
+  try{const saved=api.read('rx5-bot-challenge','veteran');level.value=['standard','veteran','nightmare'].includes(saved)?saved:'veteran';}catch{level.value='veteran'}
+  api.setBotMode(level.value);
+  level.onchange=()=>{api.setBotMode(level.value);try{api.write('rx5-bot-challenge',level.value)}catch{}};
   toggle.onclick=()=>apply(!simplified);
   document.getElementById('rxSimpleQuick').onclick=()=>{
     // Quick Play intentionally bypasses vote screens and remains local/offline.
-    chooseMap('og-future');startGame('solo');gameSeconds=300;updateHUD();
+    api.playQuick();
   };
   document.getElementById('rxSimpleModes').onclick=()=>document.getElementById('rx2OpenBtn')?.click();
   document.getElementById('rxSimpleLocker').onclick=()=>document.getElementById('shopBtn')?.click();
@@ -12252,10 +12261,10 @@ runCrownGame();
     const input=document.getElementById(id);
     if(!input)continue;
     let preferred=defaults;
-    try{preferred=getStore('rx5-a11y-'+key,defaults)===true;}catch{}
+    try{preferred=api.read('rx5-a11y-'+key,defaults)===true;}catch{}
     input.checked=preferred;
     const update=()=>{document.body.classList.toggle(cls,key==='minimap'||key==='killfeed'?!input.checked:input.checked);
-      try{setStore('rx5-a11y-'+key,input.checked);}catch{}};
+      try{api.write('rx5-a11y-'+key,input.checked);}catch{}};
     input.onchange=update;update();
   }
   apply(simplified);
