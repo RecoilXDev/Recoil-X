@@ -110,8 +110,8 @@ jobs:
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
-          grep -Fq 'content="Z.5-CLEAN-5"' /tmp/recoil-z5-live.html
-          grep -Fq '<title>RECOIL X Z.5 · Clean UI</title>' /tmp/recoil-z5-live.html
+          grep -Fq 'content="Z.5-SAND-6"' /tmp/recoil-z5-live.html
+          grep -Fq '<title>RECOIL X Z.5 · Sand Edition</title>' /tmp/recoil-z5-live.html
           grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
             echo 'Legacy Z.3 startup branding unexpectedly present' >&2; exit 1
@@ -126,12 +126,19 @@ jobs:
           grep -Fq 'Career & Clans' /tmp/recoil-z5-ingame.js
           grep -Fq 'Forge & Market' /tmp/recoil-z5-ingame.js
           grep -Fq 'Match Hub' /tmp/recoil-z5-ingame.js
-          grep -Fq 'Z.5-CLEAN-5' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Z.5-SAND-6' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5-release-strip' /tmp/recoil-z5-ingame.js
-          grep -Fq 'rx5-ui-polished' /tmp/recoil-z5-ingame.js
+          grep -Fq 'rx5-sand-ui' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5PauseSettings' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5-quick-system' /tmp/recoil-z5-ingame.js
-          grep -Fq "window.RXZ5InGame={open,showNews,version:'Z.5-CLEAN-5'}" /tmp/recoil-z5-ingame.js
+          grep -Fq 'rx5LegacyMenuLink' /tmp/recoil-z5-ingame.js
+          grep -Fq 'more.append(hero)' /tmp/recoil-z5-ingame.js
+          grep -Fq 'settings.hidden=true' /tmp/recoil-z5-ingame.js
+          grep -Fq '#ffd08b' /tmp/recoil-z5-ingame.js
+          if grep -Fq 'body.rx5-ui-polished #overlay' /tmp/recoil-z5-ingame.js; then echo 'Old navy design still active' >&2; exit 1; fi
+          curl --fail --silent --show-error --location --output /tmp/recoil-z5-manifest.json https://recoil-x.alwaysdata.net/manifest.webmanifest
+          grep -Fq '"theme_color": "#291c15"' /tmp/recoil-z5-manifest.json
+          grep -Fq "window.RXZ5InGame={open,showNews,version:'Z.5-SAND-6'}" /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5WhatsNew' /tmp/recoil-z5-ingame.js
           grep -Fq 'Training Academy' /tmp/recoil-z5-ingame.js
           grep -Fq 'EMP grenade (solo)' /tmp/recoil-z5-ingame.js
@@ -153,7 +160,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'z5-clean-5' /tmp/recoil-z5-sw.js
+          grep -Fq 'z5-sand-6' /tmp/recoil-z5-sw.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."

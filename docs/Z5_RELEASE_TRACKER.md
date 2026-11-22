@@ -1,6 +1,17 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Sand Edition — restoration of the Zone 90 / RECOIL X sand identity (2026-11-22)
+- **Source branch:** `z5-restore-sand-minimal-20261122`. Status: **pending CI and production verification**.
+- **Design restoration:** warm sandstone and burnt-brown panels, pale cream typography, gold Quick Play button, muted sand action cards, original desert background treatments, amber HUD highlights; removes the previous navy/teal override.
+- **Actual simplification:** only Quick Play + 4 shortcuts (Modes, Locker, Friends, Settings) are prominent. Settings drawer is not shown until selected. A single understated More drawer holds Academy, Career, Market, Match Hub, update notes and the **full classic menu escape hatch**. Advanced content is not deleted.
+- **Preservation:** original futuristic and desert maps, Z.5 tactical expansion, 500 missions, matchmaking, player accounts, inventory, events, and admin-only controls unchanged.
+- **Accessibility:** keyboard focus cues, responsive compact landscape layout, Focus HUD preferences, reduced-motion behavior and an accessible route back to classic full navigation.
+- **Cache safety:** new `Z.5-SAND-6` build, service worker version `z5-sand-6`, original warm browser/PWA theme `#291c15`. CI tests and live-asset checks required.
+- **Limitations:** automated DOM checks and deployment smoke checks are not the same as a physical iPhone/TV visual inspection.
+
+
+
 ### Z.5 CLEAN-5 — focused UI polish (2026-11-22)
 - **Source:** `z5-clean-navigation-hud-20261122`; in branch verification until CI and live site check.
 - **Home:** single large Quick Play action; four clear shortcuts for Modes, Locker, Friends and Settings; compact release-note link in brand header instead of an attention-grabbing banner.

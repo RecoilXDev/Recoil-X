@@ -27,7 +27,7 @@ test('old Z.3 global version reassignment cannot reappear in source',()=>{
  const html=read('index.html'),server=read('server/server.mjs');
  assert.doesNotMatch(html,/querySelector\('\.brandchip'\)\.textContent='Z\.3'/);
  assert.doesNotMatch(html,/querySelector\('\.brandchip'\)\.textContent='RECOIL X · Z\.3'/);
- assert.match(html,/RECOIL X Z\.5 · Clean UI/);
- assert.match(html,/Z\.5-CLEAN-5/);
+ assert.match(html,/RECOIL X Z\.5 · Sand Edition/);
+ assert.match(html,/Z\.5-SAND-6/);
  assert.match(server,/recoil:'Z\.5'/);
 });
