@@ -1,6 +1,14 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Sandstorm compact menu functional wiring fix (2026-11-22)
+- **Root cause:** The original `rx5-operation-simplicity` script executed in a separate lexical scope from game-internal `getStore`, `rx5TacticalMode`, `chooseMap`, `startGame` and `updateHUD`, so its initialization could throw a ReferenceError and leave Quick Play/Modes/Locker/Friends/Settings without handlers.
+- **Correction:** The entire compact menu bootstrap now runs inside the existing game closure after `runCrownGame()`; no new global functions or gameplay rules. A one-time menu-only preference migration sends returning users to the uncluttered Sandstorm home, after which Classic preference can still be saved.
+- **Cache:** `z5-sand-6-wired` PWA service worker shell, and live checks reject a stale external bootstrap; new tests verify real main button handlers and saved preference round-trip.
+- **Non-scope:** player inventory, accounts, progress, server and all original game modes unaffected.
+
+
+
 ### Sand Edition — restoration of the Zone 90 / RECOIL X sand identity (2026-11-22)
 - **Source branch:** `z5-restore-sand-minimal-20261122`. Status: **LIVE, CI and deployment verified**. [PR #18](https://github.com/RecoilXDev/Recoil-X/pull/18) merged as `3553170d38e6ad445ac850d685bcfc4005ca4498`; [CI run #44974292029](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974292029) passed 103 tests; [Alwaysdata deployment #44974608691](https://github.com/RecoilXDev/Recoil-X/actions/runs/44974608691) completed all 16 steps, including live sand build assets, server restart and cache verification.
 - **Design restoration:** warm sandstone and burnt-brown panels, pale cream typography, gold Quick Play button, muted sand action cards, original desert background treatments, amber HUD highlights; removes the previous navy/teal override.
