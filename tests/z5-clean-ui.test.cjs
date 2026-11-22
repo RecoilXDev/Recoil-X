@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-SAND-6/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6"/);
+ assert.match(js,/Z\.5-SAND-6\.1/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6\.1"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-sand-6/);
+ assert.match(sw,/z5-sand-6-1/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6.1');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -92,4 +92,20 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.equal(settings.open,false);
  assert.ok(ui.querySelector('#rxSimpleToggle'),'legacy menu can be restored');
 
+});
+
+test('Sand-6.1 executes real legacy simple-menu script after main closure and rescues Advanced state',()=>{
+ const h=makeHarness({'zone90v2_rx5-simple-menu':'false'});
+ const html=read('index.html');
+ const legacy=html.match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/);
+ assert.ok(legacy,'actual separate simple menu script exists');
+ assert.equal(typeof h.ctx.RXZ5ClassicMenu.playQuick,'function');
+ assert.doesNotThrow(()=>new vm.Script(legacy[1]).runInContext(h.ctx));
+ const root=h.ui.querySelector('#mainMenu'),toggle=h.ui.querySelector('#rxSimpleToggle'),quick=h.ui.querySelector('#rxSimpleQuick');
+ assert.equal(root.classList.contains('rx-simple-active'),true,'patch defaults to the clean four-button home');
+ assert.equal(h.local.getItem('zone90v2_rx5-sand-6-1-first-menu'),'true');
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'true');
+ assert.equal(typeof quick.onclick,'function','Quick Play must have a working game callback');
+ toggle.click();assert.equal(root.classList.contains('rx-simple-active'),false,'classic view can still be selected');
+ toggle.click();assert.equal(root.classList.contains('rx-simple-active'),true,'clean home can be restored');
 });
