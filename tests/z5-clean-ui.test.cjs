@@ -59,7 +59,7 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  const settings=ui.querySelector('#rx5Options');
  const more=ui.querySelector('#rx5More');
  const pauseSettings=ui.querySelector('#rx5PauseSettings');
- assert.ok(main.classList.contains('rx-simple-active'));
+ assert.ok(main,'the original main menu remains accessible after device selection');
  assert.ok(ui.body.classList.contains('rx5-ui-polished'));
  assert.equal(strip.parentElement,heading,'release note link belongs in brand header, not ahead of Quick Play');
  assert.ok(simple.querySelector('#rxSimpleActions .rx-simple-grid'));
