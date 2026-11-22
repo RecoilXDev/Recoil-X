@@ -28,6 +28,6 @@ test('old Z.3 global version reassignment cannot reappear in source',()=>{
  assert.doesNotMatch(html,/querySelector\('\.brandchip'\)\.textContent='Z\.3'/);
  assert.doesNotMatch(html,/querySelector\('\.brandchip'\)\.textContent='RECOIL X · Z\.3'/);
  assert.match(html,/RECOIL X Z\.5 · Sand Edition/);
- assert.match(html,/Z\.5-SAND-6/);
+ assert.match(html,/Z\.5-SAND-6\.1/);
  assert.match(server,/recoil:'Z\.5'/);
 });
