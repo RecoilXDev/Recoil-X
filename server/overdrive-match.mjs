@@ -79,7 +79,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
     id,mode,season,field,rule,remake,
     limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
-    end:now+360000,last:now,score:[0,0],result:null,roundAt:0,rng,
+    end:now+(mode==='raid'?900000:360000),last:now,score:[0,0],result:null,roundAt:0,rng,
     relics:[0,1].map(team=>({team,x:0,z:team?24:-24,holder:null,home:true,returnAt:0})),
     power:[{x:0,z:0,ready:now},{x:-10,z:16,ready:now},{x:10,z:-16,ready:now}],
     events:[],timeline:[{at:0,kind:'start',text:'Match started',actor:null}],focus:null,lastLead:null,
