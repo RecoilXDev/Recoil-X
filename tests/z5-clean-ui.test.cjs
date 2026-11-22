@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-CLEAN-5/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-CLEAN-5"/);
+ assert.match(js,/Z\.5-SAND-6/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-clean-5/);
+ assert.match(sw,/z5-sand-6/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-5');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -79,4 +79,40 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.ok(ui.querySelector('#rxSimpleFriends'));
  assert.equal(ui.querySelectorAll('[data-rx-admin-only]').filter(x=>!x.hidden).length,0);
  assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-ui-polished/);
+});
+
+test('Sand-6 restores original warm desert theme, not the previous navy redesign',()=>{
+ const h=makeHarness();
+ const js=read('server/z5-ingame.js'),html=read('index.html'),manifest=read('manifest.webmanifest');
+ new vm.Script(js).runInContext(h.ctx);
+ const css=h.ui.querySelector('#rx5-clean-ui-styles').textContent;
+ assert.match(css,/--rx5-sand:#e8ba76/);
+ assert.match(css,/background:#23170f/);
+ assert.match(css,/background:linear-gradient\(118deg,#ffe1a3,#ebb261\)/);
+ assert.match(css,/border:1px solid #ab7b4e/);
+ assert.doesNotMatch(css,/background:#35cbbd/);
+ assert.doesNotMatch(css,/rgba\(11,24,38/);
+ assert.match(html,/<meta name="theme-color" content="#291c15"/);
+ assert.match(html,/<title>RECOIL X Z\.5 · Desert Edition<\/title>/);
+ assert.match(manifest,/"theme_color": "#291c15"/);
+ assert.ok(h.ui.querySelector('#rxSimpleQuick'));
+ assert.ok(h.ui.querySelector('#rx5More'));
+ assert.ok(h.ui.querySelector('#rx5Options'));
+});
+test('Fresh Sand-6 release actually activates simple menu despite persisted advanced preference',()=>{
+ const h=makeHarness({'zone90v2_rx5-simple-menu':'false'});
+ const html=read('index.html');
+ const m=html.match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/);
+ assert.ok(m,'simple-menu startup script must be present');
+ assert.equal(typeof h.ctx.RXZ5ClassicMenu.playQuick,'function','main script must export safe menu bridge');
+ assert.doesNotThrow(()=>new vm.Script(m[1]).runInContext(h.ctx));
+ const root=h.ui.querySelector('#mainMenu'),toggle=h.ui.querySelector('#rxSimpleToggle');
+ assert.ok(root.classList.contains('rx-simple-active'),'the new release should start with Quick Play visible');
+ assert.equal(h.local.getItem('zone90v2_rx5-sand-6-seen'),'true');
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'true');
+ assert.equal(typeof h.ui.querySelector('#rxSimpleQuick').onclick,'function');
+ toggle.click();
+ assert.equal(root.classList.contains('rx-simple-active'),false,'advanced is still accessible');
+ toggle.click();
+ assert.ok(root.classList.contains('rx-simple-active'),'can return to original simple menu');
 });
