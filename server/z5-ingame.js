@@ -142,14 +142,46 @@ if(grid&&!$('rxSimpleCollection')){
  collection.textContent='🎁 COLLECTION';
  collection.title='Gun boxes, knife boxes, weapons and collectibles';
  collection.setAttribute('aria-label','Collection — gun boxes, knives and collectibles');
- collection.addEventListener('click',()=>{
-  const locker=$('rxSimpleLocker');
-  if(locker){locker.click();return;}
-  const alternative=$('z1LockerBtn')||$('lockerBtn');
-  alternative?.click();
- });
+ collection.addEventListener('click',()=>{collectionHub.hidden=false;collectionHub.querySelector('[data-rx5-item]')?.focus();});
  grid.append(collection);
 }
+
+const collectionHub=document.createElement('div');
+collectionHub.id='rx5CollectionHub';
+collectionHub.hidden=true;
+collectionHub.setAttribute('role','dialog');
+collectionHub.setAttribute('aria-modal','true');
+collectionHub.setAttribute('aria-label','RECOIL X Collection');
+collectionHub.innerHTML='<section class="rx5-collection-shell"><header><div><strong>RECOIL X · COLLECTION</strong><small>Your original inventory, boxes, and gear — earned coins only</small></div><button type="button" id="rx5CollectionClose" aria-label="Close collection">✕</button></header><div class="rx5-collection-items"><button type="button" data-rx5-item="v8GunBtn">🔫 <b>Gun Boxes</b><small>Weapon cases & owned finishes</small></button><button type="button" data-rx5-item="vxKnivesBtn">🔪 <b>Knife Boxes</b><small>Knife cases & blade collection</small></button><button type="button" data-rx5-item="crateBtn">🎁 <b>Loot Crates</b><small>Original cosmetic crates</small></button><button type="button" data-rx5-item="shopBtn">🧥 <b>Outfits</b><small>Character skins & owned gear</small></button><button type="button" data-rx5-item="vxForgeBtn">⚒ <b>Weapon Forge</b><small>Craft with the existing shards</small></button><button type="button" data-rx5-item="passBtn">🏆 <b>Battle Pass</b><small>Existing earned rewards</small></button></div><p>Opening an item takes you to its existing game screen. Your inventory and coins are unchanged.</p></section>';
+document.body.append(collectionHub);
+const closeCollection=()=>{collectionHub.hidden=true;$('rxSimpleCollection')?.focus();};
+$('rx5CollectionClose')?.addEventListener('click',closeCollection);
+collectionHub.addEventListener('click',event=>{
+ if(event.target===collectionHub){closeCollection();return;}
+ const item=event.target.closest?.('[data-rx5-item]');if(!item)return;
+ const target=$(item.dataset.rx5Item);
+ if(target){collectionHub.hidden=true;target.click();}
+});
+document.addEventListener('keydown',event=>{
+ if(!collectionHub.hidden&&event.key==='Escape'){event.preventDefault();closeCollection();}
+},true);
+style.textContent+=String.raw`
+#rx5CollectionHub{position:fixed;inset:0;z-index:2147482505;display:flex;align-items:center;justify-content:center;padding:16px;background:#130b05ec;box-sizing:border-box}
+#rx5CollectionHub[hidden]{display:none!important}
+#rx5CollectionHub .rx5-collection-shell{width:min(680px,96vw);max-height:94dvh;overflow:auto;border:1px solid #a78150;border-radius:12px;background:linear-gradient(145deg,#4d3422,#302115);color:#ffe7c1;padding:18px;box-shadow:0 24px 70px #100802aa;font:14px system-ui}
+#rx5CollectionHub header{display:flex;justify-content:space-between;gap:12px;align-items:start}
+#rx5CollectionHub header strong{display:block;font-size:22px;letter-spacing:.08em}
+#rx5CollectionHub header small{display:block;color:#d4b891;margin-top:5px}
+#rx5CollectionHub button{cursor:pointer;color:#ffe9c7;border:1px solid #916a46;border-radius:9px;background:#63462d;padding:12px;font:700 14px system-ui}
+#rx5CollectionHub button:focus-visible{outline:3px solid #ffdd9d;outline-offset:2px}
+#rx5CollectionHub #rx5CollectionClose{padding:6px 11px}
+#rx5CollectionHub .rx5-collection-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+#rx5CollectionHub .rx5-collection-items button{text-align:left;min-height:92px}
+#rx5CollectionHub .rx5-collection-items small{display:block;color:#d7b990;font-weight:500;font-size:11px;margin-top:7px}
+#rx5CollectionHub p{font-size:11px;color:#d5b990}
+@media(max-width:530px){#rx5CollectionHub .rx5-collection-items{grid-template-columns:1fr}#rx5CollectionHub .rx5-collection-items button{min-height:65px}#rx5CollectionHub header strong{font-size:17px}}
+`;
+
 if(grid)grid.after(more);else simple.append(more);
 more.append(hero);
 const advancedLink=document.createElement('button');
@@ -183,6 +215,106 @@ for(const [name,target] of [['Graphics','graphicsBtn'],['Audio','soundBtn'],['De
  b.addEventListener('click',()=>$(target)?.click());quickSystem.append(b);
 }
 settings.append(quickSystem);
+
+// Z.5 HUD Layout Editor: keyboard/touch/desktop controls, browser-local and reversible.
+const hudParts={
+ top:{selector:'.hud-top',x:14,y:15,name:'Player'},
+ center:{selector:'.hud-center',x:51,y:15,name:'Timer'},
+ left:{selector:'.hud-left',x:15,y:48,name:'Map'},
+ bottom:{selector:'.hud-bottom',x:51,y:82,name:'Health & Ammo'}
+};
+const hudLayoutKey='rx5-hud-layout-v1';
+const hudClamp=(n,lim)=>Math.max(-lim,Math.min(lim,Math.round((Number(n)||0)*10)/10));
+let hudOffsets={};
+try{
+ const stored=JSON.parse(localStorage.getItem(hudLayoutKey)||'{}');
+ if(stored&&typeof stored==='object'&&!Array.isArray(stored))
+  for(const key of Object.keys(hudParts)){
+   if(stored[key]&&typeof stored[key]==='object')
+    hudOffsets[key]={x:hudClamp(stored[key].x,25),y:hudClamp(stored[key].y,20)};
+  }
+}catch{}
+function applyHudLayout(){
+ for(const [key,part] of Object.entries(hudParts)){
+  const target=document.querySelector(part.selector);if(!target)continue;
+  const pos=hudOffsets[key]||{x:0,y:0};
+  // CSS translate operates independently of the game's transform rules.
+  target.style.translate=pos.x||pos.y?pos.x+'vw '+pos.y+'vh':'';
+ }
+}
+applyHudLayout();
+const hudEditor=document.createElement('div');
+hudEditor.id='rx5HudEditor';hudEditor.hidden=true;
+hudEditor.setAttribute('role','dialog');hudEditor.setAttribute('aria-modal','true');
+hudEditor.setAttribute('aria-label','Custom HUD Layout');
+hudEditor.innerHTML='<section class="rx5-hud-shell"><header><div><strong>CUSTOM HUD LAYOUT</strong><small>Drag each tile or use the arrow keys. Changes apply to the gameplay HUD.</small></div><button type="button" id="rx5HudClose">DONE ✕</button></header><div id="rx5HudPreview" aria-label="HUD layout preview"><button type="button" data-rx5-hud="top">PLAYER</button><button type="button" data-rx5-hud="center">TIMER</button><button type="button" data-rx5-hud="left">MAP</button><button type="button" data-rx5-hud="bottom">HEALTH / AMMO</button></div><footer><button type="button" id="rx5HudReset">RESET HUD POSITIONS</button><small>Saved only on this device. Your game account and other settings are unchanged.</small></footer></section>';
+document.body.append(hudEditor);
+const hudPreview=$('rx5HudPreview');
+function hudRefresh(){
+ for(const [key,part] of Object.entries(hudParts)){
+  const tile=hudPreview.querySelector('[data-rx5-hud="'+key+'"]');
+  if(!tile)continue;
+  const pos=hudOffsets[key]||{x:0,y:0};
+  tile.style.left=Math.max(7,Math.min(93,part.x+pos.x))+'%';
+  tile.style.top=Math.max(10,Math.min(90,part.y+pos.y))+'%';
+ }
+ applyHudLayout();
+}
+function saveHudLayout(){
+ try{localStorage.setItem(hudLayoutKey,JSON.stringify(hudOffsets));}catch{}
+}
+const openHud=()=>{hudEditor.hidden=false;hudRefresh();hudPreview.querySelector('[data-rx5-hud]')?.focus();};
+const closeHud=()=>{hudEditor.hidden=true;$('rx5HudLayoutButton')?.focus();};
+const hudOpenButton=document.createElement('button');
+hudOpenButton.type='button';hudOpenButton.id='rx5HudLayoutButton';
+hudOpenButton.textContent='🎛 CUSTOM HUD LAYOUT';
+hudOpenButton.addEventListener('click',openHud);
+settings.append(hudOpenButton);
+$('rx5HudClose')?.addEventListener('click',closeHud);
+$('rx5HudReset')?.addEventListener('click',()=>{hudOffsets={};saveHudLayout();hudRefresh();});
+let hudDrag=null;
+hudPreview.addEventListener('pointerdown',event=>{
+ const tile=event.target.closest?.('[data-rx5-hud]');if(!tile)return;
+ const key=tile.dataset.rx5Hud,pos=hudOffsets[key]||{x:0,y:0};
+ hudDrag={key,tile,x:event.clientX,y:event.clientY,baseX:pos.x,baseY:pos.y};
+ tile.setPointerCapture?.(event.pointerId);event.preventDefault();
+});
+hudPreview.addEventListener('pointermove',event=>{
+ if(!hudDrag)return;
+ const rect=hudPreview.getBoundingClientRect();
+ const x=hudClamp(hudDrag.baseX+(event.clientX-hudDrag.x)/Math.max(1,rect.width)*100,25);
+ const y=hudClamp(hudDrag.baseY+(event.clientY-hudDrag.y)/Math.max(1,rect.height)*100,20);
+ hudOffsets[hudDrag.key]={x,y};hudRefresh();
+});
+const hudDrop=()=>{if(hudDrag){hudDrag=null;saveHudLayout();}};
+hudPreview.addEventListener('pointerup',hudDrop);
+hudPreview.addEventListener('pointercancel',hudDrop);
+hudPreview.addEventListener('keydown',event=>{
+ const tile=event.target.closest?.('[data-rx5-hud]');if(!tile)return;
+ const dirs={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+ if(!dirs[event.key])return;event.preventDefault();
+ const key=tile.dataset.rx5Hud,delta=dirs[event.key],pos=hudOffsets[key]||{x:0,y:0};
+ hudOffsets[key]={x:hudClamp(pos.x+delta[0],25),y:hudClamp(pos.y+delta[1],20)};
+ saveHudLayout();hudRefresh();
+});
+document.addEventListener('keydown',event=>{if(!hudEditor.hidden&&event.key==='Escape'){event.preventDefault();closeHud();}},true);
+style.textContent+=String.raw`
+#rx5HudLayoutButton{display:block;width:calc(100% - 20px);margin:10px;background:#755232;color:#fff1d6;border:1px solid #b58a51;border-radius:9px;padding:12px;cursor:pointer;font-weight:800}
+#rx5HudEditor{position:fixed;inset:0;z-index:2147482506;display:flex;align-items:center;justify-content:center;background:#100b07ed;padding:14px}
+#rx5HudEditor[hidden]{display:none!important}
+#rx5HudEditor .rx5-hud-shell{box-sizing:border-box;width:min(710px,96vw);max-height:94dvh;overflow:auto;border:1px solid #a27c4f;border-radius:13px;background:#402c1d;color:#ffe8c2;padding:15px;font:13px system-ui}
+#rx5HudEditor header{display:flex;align-items:start;justify-content:space-between;gap:10px}
+#rx5HudEditor header strong{display:block;font-size:20px}
+#rx5HudEditor header small,#rx5HudEditor footer small{display:block;color:#dbb98f;margin-top:5px}
+#rx5HudEditor button{cursor:pointer;border:1px solid #ba8e56;color:#ffe7bc;background:#67482e;border-radius:8px;padding:9px;font:700 12px system-ui}
+#rx5HudEditor button:focus-visible{outline:3px solid #ffe2a5;outline-offset:2px}
+#rx5HudPreview{height:clamp(180px,35vh,300px);position:relative;background:linear-gradient(145deg,#192a31,#293324);border:1px solid #7d694a;border-radius:10px;margin:16px 0;touch-action:none;overflow:hidden}
+#rx5HudPreview:after{content:'GAMEPLAY PREVIEW';position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);font:700 11px system-ui;color:#b6a67c70;pointer-events:none}
+#rx5HudPreview [data-rx5-hud]{position:absolute;transform:translate(-50%,-50%);touch-action:none;z-index:2;white-space:nowrap;user-select:none;min-width:85px}
+#rx5HudEditor footer{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+@media(max-width:530px){#rx5HudEditor header strong{font-size:15px}#rx5HudPreview [data-rx5-hud]{font-size:10px;min-width:70px}}
+`;
+
 const simpleSettings=$('rxSimpleSettings');
 if(simpleSettings)simpleSettings.onclick=()=>{
  const isOpen=!settings.hidden&&settings.open;
@@ -203,6 +335,12 @@ for(const id of ['v9PauseQuality','v92PauseRow']){const el=$(id);if(el)pauseSett
 const perf=$('v91PauseProfile')?.parentElement;if(perf)pauseSettings.append(perf);
 const pauseGroup=document.createElement('div');pauseGroup.id='rx5-native-pause';
 pauseMore.append(pauseGroup);pause.append(pauseMore);
+const photoButton=document.createElement('button');
+photoButton.type='button';photoButton.id='rx5PhotoCapture';
+photoButton.textContent='📸 SAVE CLEAN GAME SCREENSHOT';
+photoButton.style.cssText='display:block;margin:9px auto;padding:10px 14px;border:1px solid #c39a64;border-radius:8px;background:#65462c;color:#ffebc9;font-weight:750;cursor:pointer';
+photoButton.addEventListener('click',()=>{if(!window.RXZ5CapturePhoto?.())console.warn('Screenshot only available during gameplay');});
+pauseMore.append(photoButton);
 for(const target of [simpleGroup,advancedGroup,pauseGroup]){
  makeButton(target,'academy','🎓 Training Academy');
  makeButton(target,'career','🏅 Career & Clans');
@@ -229,6 +367,6 @@ async function open(key){
  }catch(error){console.warn('RECOIL X Z.5 navigation:',error);try{await career();}catch{}}
 }
 document.body.classList.add('rx5-sand-ui');
-window.RXZ5InGame={open,showNews,version:'Z.5-SAND-6.1'};
+window.RXZ5InGame={open,showNews,version:'Z.5-SAND-7'};
 window.RXZ5Admin?.refresh();
 })();

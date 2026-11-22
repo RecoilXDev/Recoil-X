@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-SAND-6\.1/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6\.1"/);
+ assert.match(js,/Z\.5-SAND-7/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-7"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-sand-6-1/);
+ assert.match(sw,/z5-sand-7/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6.1');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-7');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -111,4 +111,39 @@ test('Sand-6.1 executes real legacy simple-menu script after main closure and re
  assert.equal(typeof quick.onclick,'function','Quick Play must have a working game callback');
  toggle.click();assert.equal(root.classList.contains('rx-simple-active'),false,'classic view can still be selected');
  toggle.click();assert.equal(root.classList.contains('rx-simple-active'),true,'clean home can be restored');
+});
+
+
+test('Collection opens existing gun/knife/loot screens without changing inventory',()=>{
+ const h=makeHarness();
+ new vm.Script(read('server/z5-ingame.js')).runInContext(h.ctx);
+ const {ui}=h,hub=ui.querySelector('#rx5CollectionHub'),entry=ui.querySelector('#rxSimpleCollection');
+ assert.ok(hub&&hub.hidden,'Collection hub is hidden by default');
+ entry.click();assert.equal(hub.hidden,false,'Collection shortcut opens the real hub');
+ for(const id of ['v8GunBtn','vxKnivesBtn','crateBtn','shopBtn','vxForgeBtn','passBtn'])
+  assert.ok(hub.querySelector('[data-rx5-item="'+id+'"]'),'existing inventory route: '+id);
+ let knifeOpened=false;
+ ui.querySelector('#vxKnivesBtn').onclick=()=>{knifeOpened=true;};
+ hub.dispatchEvent({type:'click',target:hub.querySelector('[data-rx5-item="vxKnivesBtn"]')});
+ assert.equal(knifeOpened,true,'Collection forwards to original knife screen handler');
+ assert.equal(hub.hidden,true,'choosing knives closes the hub and returns to game routing');
+ assert.equal(h.local.getItem('coins'),null,'Collection must not modify coins');
+});
+test('Custom HUD layout persists accessible keyboard edits and supports reset',()=>{
+ const h=makeHarness();
+ new vm.Script(read('server/z5-ingame.js')).runInContext(h.ctx);
+ const {ui,local}=h,editor=ui.querySelector('#rx5HudEditor'),start=ui.querySelector('#rx5HudLayoutButton');
+ assert.ok(editor.hidden);
+ start.click();assert.equal(editor.hidden,false);
+ const preview=ui.querySelector('#rx5HudPreview'),tile=preview.querySelector('[data-rx5-hud="top"]');
+ preview.dispatchEvent({type:'keydown',target:tile,key:'ArrowRight',preventDefault(){}});
+ const moved=JSON.parse(local.getItem('rx5-hud-layout-v1'));
+ assert.equal(moved.top.x,1);
+ assert.match(ui.querySelector('.hud-top').style.translate,/1vw/);
+ ui.querySelector('#rx5HudReset').click();
+ assert.equal(local.getItem('rx5-hud-layout-v1'),'{}');
+ assert.equal(ui.querySelector('.hud-top').style.translate,'');
+ ui.querySelector('#rx5HudClose').click();
+ assert.equal(editor.hidden,true);
+ assert.ok(ui.querySelector('#rx5PhotoCapture'),'clean screenshot remains reachable in Pause More');
 });

@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<meta name="rx-build" content="Z.5-SAND-6.1" />
+<meta name="rx-build" content="Z.5-SAND-7" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
 <title>RECOIL X Z.5 · Sand Edition</title>
@@ -963,7 +963,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-6.1" aria-label="RECOIL X Classic menu">
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-7" aria-label="RECOIL X Classic menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
@@ -1966,8 +1966,10 @@ if(running){pl.sprintUsed=Math.min(10,pl.sprintUsed+dt*(1-.14*(x4Data.skills.sta
 if(pl.sprintLockedUntil&&now>=pl.sprintLockedUntil){pl.sprintLockedUntil=0;pl.sprintUsed=0;toast('⚡ '+tr('sprintReady'),900);}
 let speed=(pl.crouched?2.65:running?8.7:5.7)*(equippedPet==='fox'?1.10:1)*(now<vxSpeedUntil?1.25:1)*(mode==='chaos'&&rxChaosType==='superspeed'?1.75:1);let dx=(Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*r)*speed*dt,dz=(-Math.cos(pl.yaw)*f+Math.sin(pl.yaw)*r)*speed*dt;
 rx2MovePlayer(dx,dz,dt,running);pl.walk+=Math.hypot(dx,dz)*8;
-if(!pl.crouched&&jumpPressed()&&pl.jump<=.001){pl.vy=mode==='chaos'&&rxChaosType==='lowgravity'?9.6:6.6;pl.jump=.01;playSound('jump');}
-if(pl.jump>0||pl.vy>0){pl.jump+=pl.vy*dt;pl.vy-=(mode==='chaos'&&rxChaosType==='lowgravity'?9.4:17.9)*dt;if(pl.jump<0){pl.jump=0;pl.vy=0;}}
+// Moonfall's gravity field is a local training mechanic; multiplayer physics remain server authoritative.
+const rx5LowG=(mode==='chaos'&&rxChaosType==='lowgravity')||(['solo','custom'].includes(mode)&&activeMap()?.special==='moon');
+if(!pl.crouched&&jumpPressed()&&pl.jump<=.001){pl.vy=rx5LowG?9.6:6.6;pl.jump=.01;playSound('jump');}
+if(pl.jump>0||pl.vy>0){pl.jump+=pl.vy*dt;pl.vy-=(rx5LowG?9.4:17.9)*dt;if(pl.jump<0){pl.jump=0;pl.vy=0;}}
 pl.y=(1.63-.58*rx3CrouchBlend)+pl.jump+rx3LandVisual+((mag>.1&&pl.jump===0)?Math.sin(pl.walk)*(pl.crouched?.016:.047):0);$('weaponArt').classList.toggle('sneaking',pl.crouched);$('touchcrouch').classList.toggle('active',pl.crouched);$('touchsprint').classList.toggle('active',running);
 if(mouseDown||mobileFire)fire(now);if(mode==='mystery'&&vxRole==='murderer'&&keys.KeyE&&!keys.vxThrowLatch){if(now>=vxMysteryNextThrow)vxMysteryThrow(pl,now);keys.vxThrowLatch=true;}if(!keys.KeyE)keys.vxThrowLatch=false;
 if(pl.reloadEnd&&now>=pl.reloadEnd){const w=weapons[pl.weapon],n=pl.weapon,take=Math.min(w.max-pl.mags[n],pl.stocks[n]);pl.mags[n]+=take;pl.stocks[n]-=take;pl.reloadEnd=0;updateHUD();}
@@ -12191,6 +12193,8 @@ window.RXZ5Gear={
 
 // A small, intentionally bounded UI interface for the separate sand menu script.
 // Previously the external script referenced private game functions and aborted at startup.
+// Existing X.4 camera screenshot, exposed safely to current Z.5 pause controls.
+window.RXZ5CapturePhoto=()=>{if(phase!=='playing')return false;x4Photo();return true;};
 window.RXZ5ClassicMenu={
  read:(key,fallback)=>getStore(key,fallback),
  write:(key,value)=>setStore(key,value),
