@@ -15,6 +15,7 @@ import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
 import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 import { createZ5Operations } from './z5-operations.mjs';
 import { startZ5Backups } from './z5-backups.mjs';
+import { migrateClanWars,createClanWars } from './z5-clan-wars.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -113,6 +114,7 @@ export function createRecoilServer(options = {}) {
     const hadEconomy=!!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx5_economy_version'").get();
     migrateZ5Economy(db,filename,existing&&!upgraded&&!needMission&&hadZ5);
     migrateZ5Challenges(db,filename,existing&&!upgraded&&!needMission&&hadZ5&&hadEconomy);
+    migrateClanWars(db,filename,existing&&!upgraded&&!needMission&&hadZ5&&hadEconomy);
   }
   catch(error) {db.close();throw error;}
   const origins = new Set(options.origins ?? []);
@@ -127,9 +129,11 @@ export function createRecoilServer(options = {}) {
   const z5 = createZ5Core(db);
   const economy = createZ5Economy(db);
   const challenges = createZ5Challenges(db);
+  const clanWars = createClanWars(db);
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
-    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{challenges.onMatchSettled(result,now);}}
+    clanFor:id=>clanWars.clanFor(id),
+    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{clanWars.onMatchSettled(result,now);}}}
   });
 
   const operations = createZ5Operations(db,{online:()=>clients.size,roomStats:()=>overdrive.statistics()});
@@ -335,6 +339,7 @@ export function createRecoilServer(options = {}) {
       if (path === '/z5/challenges') return challenges.board(user);
       if (path === '/z5/status') return z5.status(user);
       if (path === '/z5/clan') return z5.clan(user);
+       if (path === '/z5/clan/wars') return clanWars.dashboard(user);
       if (path === '/z5/titles') return z5.titles(user);
       if (path === '/z5/ping') return z5.ping();
       if (path === '/z5/admin/audit') return z5.adminAudit(user);
