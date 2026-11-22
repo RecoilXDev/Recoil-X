@@ -93,3 +93,28 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.ok(ui.querySelector('#rxSimpleToggle'),'legacy menu can be restored');
 
 });
+
+
+test('Sandstorm Quick Play and main shortcuts are really initialized in the game closure',()=>{
+ const h=makeHarness();
+ const {ui,local}=h;
+ const main=ui.querySelector('#mainMenu');
+ assert.ok(main.classList.contains('rx-simple-active'),'The clean menu must be selected at first visit');
+ for(const id of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleToggle']){
+  assert.equal(typeof ui.querySelector('#'+id).onclick,'function',id+' must have a working game handler');
+ }
+ assert.equal(local.getItem('zone90v2_rx5-sand-ui-v6-welcome'),'true');
+});
+test('prior Advanced preference gets one-time clean-menu migration and remains editable',()=>{
+ const pref={
+  'zone90v2_rx5-simple-menu':'false'
+ };
+ const h=makeHarness(pref);
+ const main=h.ui.querySelector('#mainMenu');
+ const toggle=h.ui.querySelector('#rxSimpleToggle');
+ assert.ok(main.classList.contains('rx-simple-active'));
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'true');
+ toggle.click();
+ assert.ok(!main.classList.contains('rx-simple-active'),'Classic mode is still reachable');
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'false');
+});
