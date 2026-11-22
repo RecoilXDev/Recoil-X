@@ -9,6 +9,7 @@ on:
       - 'sw.js'
       - 'recoil-icon-*.png'
       - 'server/**'
+      - 'tests/z5-simplicity-bots.test.cjs'
       - '.github/workflows/deploy-alwaysdata.yml'
   workflow_dispatch:
 
