@@ -112,3 +112,35 @@ test('Sand-6.1 executes real legacy simple-menu script after main closure and re
  toggle.click();assert.equal(root.classList.contains('rx-simple-active'),false,'classic view can still be selected');
  toggle.click();assert.equal(root.classList.contains('rx-simple-active'),true,'clean home can be restored');
 });
+
+
+test('Collection opens existing gun/knife/loot screens without changing inventory',()=>{
+ const h=makeHarness();
+ new vm.Script(read('server/z5-ingame.js')).runInContext(h.ctx);
+ const {ui}=h,hub=ui.querySelector('#rx5CollectionHub'),entry=ui.querySelector('#rxSimpleCollection');
+ assert.ok(hub&&hub.hidden,'Collection hub is hidden by default');
+ entry.click();assert.equal(hub.hidden,false,'Collection shortcut opens the real hub');
+ for(const id of ['v8GunBtn','vxKnivesBtn','crateBtn','shopBtn','vxForgeBtn','passBtn'])
+  assert.ok(hub.querySelector('[data-rx5-item="'+id+'"]'),'existing inventory route: '+id);
+ hub.dispatchEvent({type:'click',target:hub.querySelector('[data-rx5-item="vxKnivesBtn"]')});
+ assert.equal(hub.hidden,true,'choosing knives closes the hub and returns to game routing');
+ assert.equal(h.local.getItem('coins'),null,'Collection must not modify coins');
+});
+test('Custom HUD layout persists accessible keyboard edits and supports reset',()=>{
+ const h=makeHarness();
+ new vm.Script(read('server/z5-ingame.js')).runInContext(h.ctx);
+ const {ui,local}=h,editor=ui.querySelector('#rx5HudEditor'),start=ui.querySelector('#rx5HudLayoutButton');
+ assert.ok(editor.hidden);
+ start.click();assert.equal(editor.hidden,false);
+ const preview=ui.querySelector('#rx5HudPreview'),tile=preview.querySelector('[data-rx5-hud="top"]');
+ preview.dispatchEvent({type:'keydown',target:tile,key:'ArrowRight',preventDefault(){}});
+ const moved=JSON.parse(local.getItem('rx5-hud-layout-v1'));
+ assert.equal(moved.top.x,1);
+ assert.match(ui.querySelector('.hud-top').style.translate,/1vw/);
+ ui.querySelector('#rx5HudReset').click();
+ assert.equal(local.getItem('rx5-hud-layout-v1'),'{}');
+ assert.equal(ui.querySelector('.hud-top').style.translate,'');
+ ui.querySelector('#rx5HudClose').click();
+ assert.equal(editor.hidden,true);
+ assert.ok(ui.querySelector('#rx5PhotoCapture'),'clean screenshot remains reachable in Pause More');
+});
