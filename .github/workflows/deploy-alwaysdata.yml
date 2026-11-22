@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out RECOIL X
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Validate deployment settings
         env:
@@ -53,7 +53,7 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
 
       - name: Select supported Node.js for validation
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -62,7 +62,7 @@ jobs:
 
       - name: Validate server and game before deploying
         run: |
-          for f in server/*.mjs server/*.js; do node --check "$f"; done
+          for f in server/*.mjs server/*.js tests/*.test.mjs tests/*.test.cjs; do node --check "$f"; done
           node --test tests/*.test.mjs tests/*.test.cjs
 
       - name: Upload the game page and offline files
