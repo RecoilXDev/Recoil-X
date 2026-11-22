@@ -28,6 +28,8 @@ test('Operation Simplicity adds selectable OG futuristic map and offline quick p
  assert.match(html,/mainMenu\.rx-simple-active/);
  assert.match(html,/rx5-simple-menu/);
  assert.match(html,/rxSimpleBotLevel/);
+ assert.match(html,/const rx5LowG=.*activeMap\(\)\?\.special==='moon'/,'Moonfall local gravity field exists');
+ assert.match(html,/pl\.vy=rx5LowG\?9\.6:6\.6/,'jump velocity responds to low gravity');
 });
 test('tactical bots search genuine occluding cover positions near themselves',()=>{
  const f=tacticsFixture();f.context.obstacles.push({x:5,z:0,w:4,d:4,h:3});
