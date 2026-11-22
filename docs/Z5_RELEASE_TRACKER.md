@@ -1,6 +1,17 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Z.5 SAND-6 — desert theme restoration and working Quick Play (2026-11-22)
+- **Release state: pending verification** on branch `z5-desert-sand-clean-home-20261122`.
+- **Restored visual identity:** original warm dark-brown/sand backgrounds, golden amber CTA, bronze borders, sandstone menu cards, warm device chooser, sand-styled Academy and blueprints. Removed stacked teal/navy look rather than adding another dark overlay.
+- **Actual simplicity:** one big Quick Play, four direct main choices, collapsible Settings and More Features, discreet Z.5 update link; no extra large floating buttons. Existing advanced view and all previously delivered modes remain accessible.
+- **Fixed root cause:** separate simple-menu script previously referenced private functions in the game's main JS closure and could throw before activating Quick Play. New limited `window.RXZ5ClassicMenu` bridge exposes safe read/write/bot-difficulty/Quick-Play actions, without exposing server permissions or player data. The first Sand-6 launch defaults to Simple UI even for users whose prior version left the advanced-menu preference selected; subsequent manual mode preferences persist.
+- **HUD:** keeps all critical combat indicators; Focus HUD keeps a compact warm palette and can be switched off.
+- **No gameplay, player economy, account, mission, multiplayer, event-date or admin-role changes.** Existing account database and client saves remain unchanged; only a one-time UI preference key is added.
+- **Verification:** mandatory headless QA for the actual simple-menu startup and desert palette plus live site release marker and PWA cache checks. Physical-device screenshot comparison and iPhone FPS checks not yet performed.
+
+
+
 ### Z.5 CLEAN-5 — focused UI polish (2026-11-22)
 - **Source:** `z5-clean-navigation-hud-20261122`; in branch verification until CI and live site check.
 - **Home:** single large Quick Play action; four clear shortcuts for Modes, Locker, Friends and Settings; compact release-note link in brand header instead of an attention-grabbing banner.
