@@ -8,11 +8,11 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-CLEAN-5/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-CLEAN-5"/);
+ assert.match(js,/Z\.5-SAND-6/);
+ assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-clean-5/);
+ assert.match(sw,/z5-sand-6/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-CLEAN-5');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
@@ -60,12 +60,15 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  const more=ui.querySelector('#rx5More');
  const pauseSettings=ui.querySelector('#rx5PauseSettings');
  assert.ok(main,'the original main menu remains accessible after device selection');
- assert.ok(ui.body.classList.contains('rx5-ui-polished'));
- assert.equal(strip.parentElement,heading,'release note link belongs in brand header, not ahead of Quick Play');
+ assert.ok(ui.body.classList.contains('rx5-sand-ui'));
+ assert.equal(strip.parentElement,more,'release notes must stay inside the closed More drawer');
+ assert.ok(heading,'brand heading stays simple');
  assert.ok(simple.querySelector('#rxSimpleActions .rx-simple-grid'));
  assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
  assert.ok(simple.querySelector('#rx5More'));
- assert.ok(!settings.open && !more.open,'advanced panels start collapsed');
+ assert.ok(settings.hidden && !settings.open && !more.open,'Settings stays invisible and More starts closed');
+ assert.equal(simple.querySelector('.rx-simple-grid').children.length,4,'four core shortcuts');
+ assert.ok(ui.querySelector('#rx5LegacyMenuLink'),'full classic menu remains accessible inside More');
  assert.ok(quick.getAttribute('id')==='rxSimpleQuick');
  assert.ok(pauseSettings);
  for(const id of ['v9PauseQuality','v92PauseRow','v91PauseProfile'])
@@ -78,5 +81,15 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.ok(ui.querySelector('#rxSimpleLocker'));
  assert.ok(ui.querySelector('#rxSimpleFriends'));
  assert.equal(ui.querySelectorAll('[data-rx-admin-only]').filter(x=>!x.hidden).length,0);
- assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-ui-polished/);
+ assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/rx5-sand-ui/);
+ assert.match(ui.querySelector('#rx5-clean-ui-styles').textContent,/ffdfa1/,'sand-and-gold Quick Play');
+ const settingsButton=ui.querySelector('#rxSimpleSettings');
+ settingsButton.click();
+ assert.equal(settings.hidden,false,'Settings button should reveal the drawer');
+ assert.equal(settings.open,true,'Settings drawer should be open');
+ settingsButton.click();
+ assert.equal(settings.hidden,true,'second Settings click should cleanly hide drawer');
+ assert.equal(settings.open,false);
+ assert.ok(ui.querySelector('#rxSimpleToggle'),'legacy menu can be restored');
+
 });
