@@ -371,6 +371,6 @@ async function open(key){
  }catch(error){console.warn('RECOIL X Z.5 navigation:',error);try{await career();}catch{}}
 }
 document.body.classList.add('rx5-sand-ui');
-window.RXZ5InGame={open,showNews,version:'Z.5-SAND-7'};
+window.RXZ5InGame={open,showNews,version:'Z.5-SAND-8'};
 window.RXZ5Admin?.refresh();
 })();
