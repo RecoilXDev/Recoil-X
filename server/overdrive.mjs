@@ -5,6 +5,7 @@ import {
 } from './overdrive-match.mjs';
 import { seasonAt } from './overdrive-store.mjs';
 import { draftBudget, propSelection, RAID_MODES } from './expansion-modes.mjs';
+import {validPreset,canCustomizeMode,pickTeam} from './z5-lobby-custom.mjs';
 import { pairRanked, makeVeto, banField } from './expansion-ranked.mjs';
 
 const letters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -44,6 +45,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
       limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
       password:!!room.secret,expires:room.expires,phase:room.phase,veto,squad:room.squad,
+      preset:room.preset,draftTeams:room.draftTeams,
       clanWar:room.clanTeams?.every(Boolean)?room.clanTeams.map(id=>({id})):undefined,
       members:[...room.members.values()].map(({id,name,team,spectator,draft,away,ready})=>
         ({id,name,team,spectator,draft,away:!!away,ready:!!ready})),
@@ -101,10 +103,10 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return member;
   }
 
-  function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null,squad=null,modern=false},now) {
+  function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null,squad=null,modern=false,preset='classic',draftTeams=false},now) {
     const room={code:code(),phase:'lobby',host,mode,size,limit,ranked,tournament,secret,
       locked:false,expires:now+idleTime,members:new Map(),votes:new Set(),match:null,result:null,
-      squad,modern,field:FIELD,veto:null,clanTeams:mode==='clanwar'?[null,null]:null};
+      squad,modern,field:FIELD,veto:null,preset,draftTeams,clanTeams:mode==='clanwar'?[null,null]:null};
     rooms.set(room.code,room);
     return room;
   }
@@ -124,7 +126,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(room.mode==='worldboss')demand(isOmanWeekend(now),403,'World Boss battles unlock Friday and Saturday, Oman time.');
     const seats=contestants||players(room);
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
-      limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern});
+      limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern,preset:room.preset});
     if(room.mode==='clanwar'){
       const clans=room.clanTeams;
       demand(clans?.[0]&&clans?.[1]&&clans[0]!==clans[1]&&seats.every(p=>p.clan===clans[p.team]&&clanOf(p.id)?.clan===p.clan),
@@ -189,6 +191,11 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const size=['chess','gungame','onechamber','bounty','parkour','roulette'].includes(mode)?1:mode==='jeep'?2:data.size;
     const sizes=tournament?[1,2]:RAID_MODES.includes(mode)?[2,3,4]:mode==='rescue'||squad?[2,3,5]:TEAM_SIZES;
     demand(sizes.includes(size),400,'Choose a supported team size.');
+    const preset=data.preset??'classic';
+    demand(validPreset(preset),400,'Choose a supported casual rule preset.');
+    demand(preset==='classic'||(!tournament&&!squad&&canCustomizeMode(mode)),400,'Custom rules are for supported unranked casual modes only.');
+    const draftTeams=data.draftTeams===true;
+    demand(!draftTeams||(!tournament&&!squad&&canCustomizeMode(mode)&&size>=2),400,'Team draft requires a two-sided casual lobby.');
     const limit=data.limit??15;
     demand(Number.isInteger(limit)&&limit>=1&&limit<=50,400,'Choose a kill limit from 1 to 50.');
     const password=readPassword(data.password);
@@ -201,7 +208,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       demand(!tournament&&!squad,400,'Clan Wars use two verified clan teams, not tournament or squad matchmaking.');
       demand(!!clanOf(user.id),403,'Join a clan before hosting a Clan War.');
     }
-    const room=buildRoom({host:c.id,mode,size,limit,tournament,secret,squad},now);
+    const room=buildRoom({host:c.id,mode,size,limit,tournament,secret,squad,preset,draftTeams},now);
     if(mode==='clanwar')room.clanTeams[0]=clanOf(user.id).clan;
     add(room,c,user,0);
     publish(room);
@@ -355,11 +362,15 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       return;
     }
     if(action==='team'){
-      demand(room.phase==='lobby'&&!room.ranked&&!member.spectator&&room.mode!=='clanwar',409,'Teams are locked.');
+      demand(room.phase==='lobby'&&!room.ranked&&!member.spectator&&room.mode!=='clanwar'&&!room.draftTeams,409,'Teams are locked.');
       const team=data.team;
       demand(Number.isInteger(team)&&team>=0&&team<teamCount(room)&&space(room,team,c.id),
         409,'That team is unavailable.');
       member.team=team;room.expires=now+idleTime;publish(room);return;
+    }
+    if(action==='pickteam'){
+      demand(pickTeam(room,user,data.id,data.team),403,'Host-managed team drafting is not available for this pick.');
+      room.expires=now+idleTime;publish(room);return;
     }
     demand(c.id===room.host&&!room.ranked,403,'Only the lobby host can do that.');
     if(action==='lock'){room.locked=data.locked===true;publish(room);return;}
