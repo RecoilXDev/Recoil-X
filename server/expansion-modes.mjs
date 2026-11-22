@@ -19,6 +19,14 @@ export function markEvent(m,now,kind,text,actor=null) {
   if(actor!==null)m.focus={id:actor,until:now+4500};
 }
 
+const RAID_GUARDIANS=[
+ {name:'The Rift Crown',model:'earth',hp:960,attack:'shockwave',radius:3.4,damage:32},
+ {name:'Abyss Leviathan',model:'water',hp:1180,attack:'tidal surge',radius:5.0,damage:36},
+ {name:'Inferno Warden',model:'lava',hp:1360,attack:'eruption',radius:4.2,damage:42}
+];
+const guardian=(index)=>({...RAID_GUARDIANS[index],id:-1,x:0,z:-3,team:1,jump:0,
+ hp:RAID_GUARDIANS[index].hp,maxHp:RAID_GUARDIANS[index].hp,shieldUntil:Infinity});
+
 export function modeState(mode,now,players) {
   switch(mode) {
     case 'escort': return {half:0,deadline:now+75000,progress:0,totals:[0,0]};
@@ -31,8 +39,8 @@ export function modeState(mode,now,players) {
       const lane=team?12:-12;
       return {team,lane,x:lane,z:23,yaw:0,speed:0,wheel:0,steer:0,gate:0,driver:players.find(p=>p.team===team)?.id};
     })};
-    case 'raid': return {boss:{id:-1,name:'The Rift Crown',x:0,z:-3,hp:960,team:1,
-      jump:0,shieldUntil:Infinity},held:0,openUntil:0,windup:null,next:now+5000,phase:1,pads:[false,false]};
+    case 'raid': return {boss:guardian(0),bossIndex:0,totalBosses:RAID_GUARDIANS.length,
+      held:0,openUntil:0,windup:null,next:now+5000,phase:1,pads:[false,false]};
     default: return null;
   }
 }
@@ -174,34 +182,43 @@ export function advanceMode(m,now,dt,{finish,spawn,move}) {
     }
     case 'raid': {
       const boss=s.boss;
-      if(boss.hp<=0){m.score[0]=100;finish(m,0,'raid',now);return false;}
+      if(boss.hp<=0){
+        const conquered=s.bossIndex+1;
+        markEvent(m,now,'boss',boss.name+' defeated · '+conquered+'/'+s.totalBosses);
+        if(conquered>=s.totalBosses){m.score[0]=100;finish(m,0,'raid',now);return false;}
+        s.bossIndex=conquered;s.boss=guardian(s.bossIndex);
+        s.held=0;s.openUntil=0;s.windup=null;s.next=now+4600;s.phase=1;s.pads=[false,false];
+        m.events.push({type:'z2:notice',message:'⚔ NEXT BOSS · '+s.boss.name+' · '+(conquered+1)+'/'+s.totalBosses});
+        m.score[0]=Math.floor(100*conquered/s.totalBosses);
+        return true;
+      }
       if(!people.length){
         if(![...m.players.values()].some(p=>!p.forfeited&&p.hp>0))finish(m,1,'raid',now);
         return false;
       }
-      s.phase=boss.hp>640?1:boss.hp>320?2:3;
+      s.phase=boss.hp>boss.maxHp*2/3?1:boss.hp>boss.maxHp/3?2:3;
       const occupiers=PADS.map(pad=>people.find(p=>p.input.use&&close(p,pad,2.4)));
       s.pads=occupiers.map(Boolean);
       if(s.openUntil<=now&&occupiers.every(Boolean)&&occupiers[0]!==occupiers[1]){
         s.held+=dt;
         if(s.held>=1.15){
           s.held=0;s.openUntil=now+13500;boss.shieldUntil=now;
-          markEvent(m,now,'raid','Both seals opened the Crown shield',occupiers[0].id);
+          markEvent(m,now,'raid','Both seals opened '+boss.name+' shield',occupiers[0].id);
         }
       }else s.held=0;
       if(s.openUntil<=now)boss.shieldUntil=Infinity;
       if(!s.windup&&now>=s.next){
         const target=people[(m.tick+s.phase)%people.length];
-        s.windup={x:target.x,z:target.z,r:3.4+s.phase*.55,at:now+1400};
+        s.windup={x:target.x,z:target.z,r:boss.radius+s.phase*.55,at:now+(s.bossIndex===1?1800:1400),attack:boss.attack};
       }
       if(s.windup&&s.windup.at<=now){
         for(const p of people)if(close(p,s.windup,s.windup.r)){
-          p.hp=Math.max(0,p.hp-(32+s.phase*6));
+          p.hp=Math.max(0,p.hp-(boss.damage+s.phase*6));
           if(!p.hp){p.deaths++;p.spawnAt=now+7400;p.down=null;}
         }
         s.windup=null;s.next=now+5600-s.phase*900;
       }
-      m.score[0]=100-Math.ceil(boss.hp/9.6);
+      m.score[0]=Math.floor(100*(s.bossIndex+(1-Math.max(0,boss.hp)/boss.maxHp))/s.totalBosses);
       return true;
     }
     default: return true;
@@ -220,7 +237,7 @@ export function ruleView(m,who,now) {
     case 'props': return {hiders:s.half,phase:s.phase,deadline:s.deadline,prop:who?.prop};
     case 'jeep': return {cars:s.cars.map(c=>({team:c.team,x:c.x,z:c.z,yaw:c.yaw,wheel:c.wheel,
       steer:c.steer,speed:c.speed,gate:c.gate,driver:c.driver,next:vehicleGate(c)}))};
-    case 'raid': return {boss:{x:s.boss.x,z:s.boss.z,hp:s.boss.hp,max:960},phase:s.phase,
+    case 'raid': return {boss:{x:s.boss.x,z:s.boss.z,hp:Math.max(0,s.boss.hp),max:s.boss.maxHp,name:s.boss.name,model:s.boss.model,attack:s.boss.attack},index:s.bossIndex+1,total:s.totalBosses,phase:s.phase,
       shield:s.openUntil<=now,pads:PADS.map((p,i)=>({...p,active:s.pads[i]})),windup:s.windup};
     default:return undefined;
   }
