@@ -90,18 +90,18 @@ test('live Clan War room rejects outsiders and tampered team selection',()=>{
  const clans=new Map([[1,{clan:10}],[2,{clan:20}]]),users=[
   {id:1,name:'Alpha'},{id:2,name:'Beta'},{id:3,name:'Outsider'}];
  const error=(status,message)=>Object.assign(new Error(message),{status});
- const svc=createOverdrive({client:id=>clients.get(id),send:(client,data)=>out.push({id:client?.id,...data}),
+ const svc=createOverdrive({client:id=>clients.get(id),send:(client,data)=>out.push({receiver:client?.id,...data}),
    store:{settle:()=>({}),muted:()=>false},fail:error,allowed:()=>true,leaveLegacy:()=>{},cleanChat:s=>s,
    clanOf:id=>clans.get(id)||null,clock:()=>1000});
  try{
   svc.packet(clients.get(1),users[0],{type:'z2:create',mode:'clanwar',size:1,limit:10});
-  const code=out.find(x=>x.type==='z2:lobby'&&x.id===1)?.code;
+  const code=out.find(x=>x.type==='z2:lobby'&&x.receiver===1)?.code;
   assert.ok(code,'verified leader can create a Clan War lobby');
   assert.throws(()=>svc.packet(clients.get(3),users[2],{type:'z2:join',code}),{status:403});
   svc.packet(clients.get(2),users[1],{type:'z2:join',code});
   assert.throws(()=>svc.packet(clients.get(2),users[1],{type:'z2:team',team:0}),{status:409});
   svc.packet(clients.get(1),users[0],{type:'z2:start'});
-  const begin=out.find(x=>x.type==='z2:begin'&&x.id===1);
+  const begin=out.find(x=>x.type==='z2:begin'&&x.receiver===1);
   assert.deepEqual(begin?.clanWar?.clans,[10,20]);
  }finally{svc.close();}
 });
