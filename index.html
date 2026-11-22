@@ -966,7 +966,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-6.1" aria-label="RECOIL X Classic menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
-    <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · OG Futuristic Arena · 5-minute battle</small></button>
+    <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
       <button type="button" id="rxSimpleModes">⚔ MODES</button>
       <button type="button" id="rxSimpleLocker">◈ LOCKER</button>
@@ -12195,7 +12195,7 @@ window.RXZ5ClassicMenu={
  read:(key,fallback)=>getStore(key,fallback),
  write:(key,value)=>setStore(key,value),
  setBotMode:value=>{if(['standard','veteran','nightmare'].includes(value))rx5TacticalMode=value;},
- playQuick:()=>{chooseMap('og-future');startGame('solo');gameSeconds=300;updateHUD();}
+ playQuick:()=>{const pool=MAPS.filter(m=>!m.mysteryOnly&&!m.eventOnly&&!m.specialOnly);const chosen=pool[Math.floor(Math.random()*pool.length)]||MAPS.find(m=>m.id==='og-future');chooseMap(chosen?.id||'dunes');startGame('solo');gameSeconds=300;updateHUD();}
 };
 runCrownGame();
 
