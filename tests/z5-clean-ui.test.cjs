@@ -30,7 +30,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.ok(ui.querySelector('#rx5-native-pause'));
  const extras=ui.querySelectorAll('[data-rx5-open]');
  assert.equal(extras.length,16);
- for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleColliten','rxSimpleBotLevel'])
+ for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleCollection','rxSimpleBotLevel'])
    assert.ok(ui.querySelector('#'+item),item+' must be retained');
  const admin=ui.querySelectorAll('[data-rx-admin-only]');
  assert.equal(admin.length,3);
@@ -67,8 +67,8 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
  assert.ok(simple.querySelector('#rx5More'));
  assert.ok(settings.hidden && !settings.open && !more.open,'Settings stays invisible and More starts closed');
- assert.equal(simple.querySelector('.rx-simple-grid').children.length,5,'four existing shortcuts plus Colliten');
- assert.ok(ui.querySelector('#rxSimpleColliten'),'Colliten shortcut is displayed');
+ assert.equal(simple.querySelector('.rx-simple-grid').children.length,5,'four existing shortcuts plus Collection');
+ assert.ok(ui.querySelector('#rxSimpleCollection'),'Collection shortcut is displayed');
  assert.ok(ui.querySelector('#rx5LegacyMenuLink'),'full classic menu remains accessible inside More');
  assert.ok(quick.getAttribute('id')==='rxSimpleQuick');
  assert.ok(pauseSettings);
@@ -101,6 +101,8 @@ test('Sand-6.1 executes real legacy simple-menu script after main closure and re
  const legacy=html.match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/);
  assert.ok(legacy,'actual separate simple menu script exists');
  assert.equal(typeof h.ctx.RXZ5ClassicMenu.playQuick,'function');
+ assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/,'Quick Play must use eligible random maps');
+ assert.match(html,/Classic · Random map · 5-minute battle/);
  assert.doesNotThrow(()=>new vm.Script(legacy[1]).runInContext(h.ctx));
  const root=h.ui.querySelector('#mainMenu'),toggle=h.ui.querySelector('#rxSimpleToggle'),quick=h.ui.querySelector('#rxSimpleQuick');
  assert.equal(root.classList.contains('rx-simple-active'),true,'patch defaults to the clean four-button home');
