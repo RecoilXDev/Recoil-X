@@ -4,6 +4,7 @@ import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimin
 import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allowCombatInput} from './z5-combat-quality.mjs';
 import {underwaterField,destructibleField,coverShot,oxygenStep} from './z5-environment.mjs';
 import {WAVE2_MODES,wave2State,wave2Movement,wave2FireCooldown,wave2Objective,wave2Advance,wave2Melee,wave2Ricochet} from './z5-wave2.mjs';
+import {CUSTOM_PRESETS} from './z5-lobby-custom.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
 export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES,...WAVE2_MODES];
@@ -51,15 +52,16 @@ function spawn(p, now) {
     weapon:p.budget?3:0,loadout:p.budget?3:0,prop:0,
     ammo:weapons.map(w=>w.ammo),reloadAt:0,reloadGun:0,input:neutral(),taps:null,inputAt:now});
   z5Spawn(p,now);
+  p.hp=Math.min(p.hp,p.rx5Rules?.hp??100);
   initCombatQuality(p);
 }
 
-export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random}) {
+export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random,preset='classic'}) {
   const placed=[0,0];
   const members=new Map();
   for(const record of players) {
     const p={...record,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',matchMode:mode,
-      inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0};
+      inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0,rx5Rules:CUSTOM_PRESETS[preset]||CUSTOM_PRESETS.classic};
     p.spawnX=(p.slot-(players.filter(other=>other.team===p.team).length-1)/2)*3.65;
     spawn(p,now);
     members.set(p.id,p);
@@ -80,7 +82,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(!season&&!tournament&&['demolition','clanwar','underwater'].includes(mode))field=destructibleField(field);
   else field={...field,cover:field.cover.map(c=>({...c}))};
   return {
-    id,mode,season,field,rule,remake,
+    id,mode,season,field,rule,remake,preset:CUSTOM_PRESETS[preset]?preset:'classic',
     limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
     end:now+(RAID_MODES.includes(mode)?900000:360000),last:now,score:[0,0],result:null,roundAt:0,rng,
@@ -210,7 +212,7 @@ function finish(m,winner,reason,now) {
     (b.kills*120+b.damage+b.revives*80)-(a.kills*120+a.damage+a.revives*80)||a.deaths-b.deaths||a.id-b.id);
   m.result={id:m.id,mode:m.mode,season:m.season,winner,reason,score:m.score.slice(),
     clanWar:m.clanWar?{clans:m.clanWar.clans.slice()}:undefined,
-    duration:Math.max(0,now-m.started),players,mvp:candidates[0]?.name||null,highlight:m.finalKill,
+    duration:Math.max(0,now-m.started),players,mvp:candidates[0]?.name||null,highlight:m.finalKill,preset:m.preset,
     field:m.field.name,timeline:m.timeline.slice()};
 }
 
@@ -252,7 +254,7 @@ function fire(m,p,now) {
   const w=weapons[p.weapon];
   const dual=m.mode==='dualwield',projectiles=dual?Math.min(2,p.ammo[p.weapon]):w.pellets;
   p.ammo[p.weapon]-=dual?projectiles:1;
-  p.readyShot=now+w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.boost>now ? .74 : 1);
+  p.readyShot=now+w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1);
   if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
     m.events.push({type:'z2:notice',only:p.id,message:'Weapon overheated · release fire to cool down.'});
   }
@@ -413,7 +415,7 @@ export function updateMatch(m,now) {
         if(!p.hp){eliminate(m,p,null,now);continue;}
       }
     }
-    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1)*wave2Movement(m)*
+    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1)*(p.rx5Rules?.speed??1)*wave2Movement(m)*
       (m.mode==='underwater'?.72:1);
     move(m.field,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
       (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
