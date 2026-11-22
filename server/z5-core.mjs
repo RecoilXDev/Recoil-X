@@ -51,9 +51,23 @@ export function migrateZ5(db,filename,existing=true){
   }catch(error){db.exec('ROLLBACK');throw error;}
 }
 
+
+// Incremental schema: independent, backup-protected and replay-safe clan war results.
+export function migrateZ5ClanWars(db,filename=':memory:',existing=false){
+ const present=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx5_clan_wars'").get();
+ if(present)return false;
+ if(existing&&filename!==':memory:')backupBeforeMigration(db,filename,'z5-clan-wars');
+ db.exec('BEGIN IMMEDIATE');
+ try{
+  db.exec("CREATE TABLE IF NOT EXISTS rx5_clan_wars (match_id TEXT PRIMARY KEY, clan0 INTEGER NOT NULL, clan1 INTEGER NOT NULL, winner INTEGER NOT NULL CHECK(winner IN (-1,0,1)), score0 INTEGER NOT NULL, score1 INTEGER NOT NULL, created INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS rx5_clan_wars_latest ON rx5_clan_wars(created DESC)");
+  db.exec('COMMIT');return true;
+ }catch(e){db.exec('ROLLBACK');throw e;}
+}
+
 export function createZ5Core(db,{clock=Date.now}={}){
   const sql=s=>db.prepare(s);
   const member=sql('SELECT m.clan,m.role,c.name,c.slug,c.leader FROM rx5_members m JOIN rx5_clans c ON m.clan=c.id WHERE m.account=?');
+  const clanById=sql('SELECT m.clan,c.name,c.slug FROM rx5_members m JOIN rx5_clans c ON c.id=m.clan WHERE m.account=?');
   const progress=sql('SELECT points,checkins,streak,last_day,title FROM rx5_progress WHERE account=?');
   const audit=sql('INSERT INTO rx5_actions(actor,action,details,created) VALUES(?,?,?,?)');
   const getPlayer=sql('SELECT id,name,banned FROM users WHERE handle=?');
@@ -146,7 +160,33 @@ export function createZ5Core(db,{clock=Date.now}={}){
       return {claimed:true,earned:points,...one(user.id),nextDay:today};
     });
   }
+  // Match outcomes can only originate from the server's finished match callback.
+  function clanFor(account){return clanById.get(account)||null;}
+  function recordClanWar(result,now=clock()){
+    const cw=result?.clanWar;
+    if(result?.mode!=='clanwar'||!cw||result.reason==='remake'||!Array.isArray(cw.clans)||
+       cw.clans.length!==2||cw.clans[0]===cw.clans[1]||!cw.clans.every(x=>Number.isSafeInteger(x)&&x>0)||
+       !Array.isArray(result.score)||![-1,0,1].includes(result.winner??-1)||
+       !Array.isArray(result.players)||!result.players.some(p=>p.team===0)||!result.players.some(p=>p.team===1))
+      return {recorded:false};
+    const stmt=sql('INSERT OR IGNORE INTO rx5_clan_wars(match_id,clan0,clan1,winner,score0,score1,created) VALUES(?,?,?,?,?,?,?)');
+    const out=stmt.run(result.id,cw.clans[0],cw.clans[1],result.winner??-1,
+      Math.max(0,Math.min(100000,Number(result.score[0])||0)),
+      Math.max(0,Math.min(100000,Number(result.score[1])||0)),now);
+    return {recorded:out.changes===1};
+  }
+  function clanWars(user){
+    const mine=clanFor(user.id);
+    if(!mine)return {clan:null,wins:0,losses:0,draws:0,recent:[]};
+    const records=sql('SELECT match_id,clan0,clan1,winner,score0,score1,created FROM rx5_clan_wars WHERE clan0=? OR clan1=? ORDER BY created DESC LIMIT 40').all(mine.clan,mine.clan);
+    const tally=sql('SELECT COUNT(*) AS total, SUM(CASE WHEN winner=-1 THEN 1 ELSE 0 END) AS draws, SUM(CASE WHEN (clan0=? AND winner=0) OR (clan1=? AND winner=1) THEN 1 ELSE 0 END) AS wins FROM rx5_clan_wars WHERE clan0=? OR clan1=?').get(mine.clan,mine.clan,mine.clan,mine.clan);
+    const recent=records.slice(0,10).map(w=>({id:w.match_id,opponent:sql('SELECT name FROM rx5_clans WHERE id=?').get(w.clan0===mine.clan?w.clan1:w.clan0)?.name||'Former clan',
+      score:w.clan0===mine.clan?[w.score0,w.score1]:[w.score1,w.score0],
+      outcome:w.winner===-1?'draw':(w.winner===0?w.clan0:w.clan1)===mine.clan?'win':'loss',at:w.created}));
+    return {clan:mine.name,wins:tally.wins||0,losses:(tally.total||0)-(tally.wins||0)-(tally.draws||0),draws:tally.draws||0,recent};
+  }
+
   function status(user){return {version:'Z.5 development',...one(user.id),...clan(user),titles:titles(user),today:omaniDay(clock()),pointsNote:'Z.5 points are separate from existing in-game coins and cannot yet be spent.'};}
   function adminAudit(user){if(!user.admin)throw fail(403,'Administrator access required.');return {actions:sql('SELECT a.action,a.details,a.created,u.name AS actor FROM rx5_actions a JOIN users u ON u.id=a.actor ORDER BY a.id DESC LIMIT 80').all()};}
-  return {clan,createClan,invite,accept,leave,kick,titles,equip,checkin,status,adminAudit,ping:()=>({serverTime:clock(),version:'Z.5 development'})};
+  return {clan,clanFor,clanWars,recordClanWar,createClan,invite,accept,leave,kick,titles,equip,checkin,status,adminAudit,ping:()=>({serverTime:clock(),version:'Z.5 development'})};
 }

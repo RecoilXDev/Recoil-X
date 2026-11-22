@@ -1,6 +1,16 @@
 # RECOIL X Z.5 — EVOLUTION + ASCENSION
 ## Scope, acceptance matrix and deployment safety
 
+### Clan Wars / Underwater / Destruction / 3-Boss Raids — PR #24 (development branch)
+- **#22 / Clan Wars:** signed-in clan membership is verified on the server when creating, joining and starting matches; opposing clan slots are locked and only official server-finished match results are saved once per match. Clan records appear in Career & Clans. This is a first competitive clan-war format; clan seasons, trophies and leaderboards across all clans remain unfinished.
+- **#58 / Underwater Combat:** new Flooded Abyss Laboratory arena in the existing 3D multiplayer engine with oxygen depletion, air stations requiring Use, swimming movement and server-side suffocation damage. Physics are simulated by the server; air-bubble visuals and mobile-device tests are still limited.
+- **#13/#51 / Multiplayer Destruction:** per-room destructible cover in Demolition, Clan Wars and Underwater, damaged only by server-validated shots; hit points and destruction synchronize in match snapshots, and collision geometry updates when broken. Not full voxel/terrain destruction across every map.
+- **#59 / Additional Bosses:** Co-op Crown Raid advances through **Rift Crown → Abyss Leviathan → Inferno Warden** with distinct model, HP and windup attack radius/timing, two-person shield seal mechanic and fifteen-minute raid. Not a full boss-map creator or world boss calendar.
+- **Safety:** additive clan-war database table is backed up before migration and has replay-safe unique match IDs. No old account, inventory, 500-mission, original map, season, and admin role rewrites.
+- **Status:** PR #24 is not production verified until regression tests, migration review, device QA and Alwaysdata live smoke checks pass.
+
+
+
 ### Z.5 Sand-7 incremental expansion — PR #23 merged into main (2026-11-22)
 - **Collection:** the fifth home shortcut now opens a six-route hub for the existing Gun Boxes, Knife Boxes, Loot Crates, Outfits, Weapon Forge and Battle Pass. Original owned items, wallet and permissions are reused. No duplicate cosmetic economy or free item grants.
 - **#74 Custom HUD Layout:** actual local drag-and-drop and keyboard arrow positioning for Player, Timer, Map, and Health/Ammo UI groups; positions are capped, saved per browser, and reversible through Reset. Mobile and TV device QA is pending.
@@ -100,7 +110,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |10|Duel Roulette|P — 1v1 server-selected equal weapons, timed rounds and first-to-three win|
 |11|Dual-Wield Weapons|U|
 |12|Weapon Overheating|P — casual multiplayer uses server-controlled heat; offline optional; physical playtesting pending|
-|13|Destructible Cover|E — offline X.2 temporary cover damage; full multiplayer destruction not built|
+|13|Destructible Cover|P — PR #24: server-authoritative cover HP and synchronized breakage in selected casual multiplayer modes|
 |14|Bullet Ricochet|U|
 |15|Advanced Aim Academy|P — three real offline 90-second lessons with weapons and saved medals; no online class progression|
 |16|Weapon Mastery Challenges|P — local hits/kill rank labels; complete server-authoritative challenge track missing|
@@ -109,7 +119,7 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 |19|Deployable Shields|P — offline destructible timed cover; multiplayer validation and sync absent|
 |20|Legendary Weapon Evolutions|U|
 |21|Clan System|P — new server clans/invites/membership; no clan emblem or clan achievements|
-|22|Clan Wars|U|
+|22|Clan Wars|P — PR #24: authenticated clan teams, live matches, persistent server-verified wins; clan seasons still U|
 |23|Player Rivalries|P — server-authoritative match statistics and rival records, not ranked rivalry challenges|
 |24|Custom Match Rules|U|
 |25|Team Drafting|U|
@@ -142,15 +152,15 @@ Legend: **P** = partial working source in this branch, not end-to-end verified; 
 ### B. New Z.5 selected features (30)
 | # | Feature | State |
 |---|---|---|
-|51|Dynamic Destruction|U|
+|51|Dynamic Destruction|P — PR #24: synchronized destructible cover; full terrain/building simulation still U|
 |52|Advanced Parkour|P — server checkpoint race added; wall running and climbing still missing|
 |53|Weapon Evolution|U|
 |54|Killcam 2.0|U|
 |55|Tactical Gadgets|E — existing offline X.2 smoke/flash/decoy/scanner; networked version not built|
 |56|Procedural Arenas|P — randomized server-generated cover in Chaos mode; full arena generator not complete|
 |57|Map Hazards|P — timed central damage corridor in Chaos mode with notices/indicator|
-|58|Underwater Combat|U|
-|59|Boss Raids|E — original raid mode exists, broader requirements unverified|
+|58|Underwater Combat|P — PR #24: flooded arena, oxygen, air stations, underwater movement and HUD|
+|59|Boss Raids|P — PR #24: 3-stage co-op raid with Rift Crown, Abyss Leviathan and Inferno Warden|
 |60|Extraction Mode 2.0|P — four-checkpoint PvP Extraction; advanced inventory extraction not built|
 |61|Clan System|P — same shared server system as #21|
 |62|Friend Parties|U|

@@ -1,11 +1,12 @@
 // RECOIL X Z.5 playable authoritative multiplayer rules.
 // Reuses the existing movement, cover, networking and result settlement engine.
-export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour','roulette','ctf','searchdestroy','extraction'];
+export const Z5_MODES=['gungame','onechamber','hardcore','bounty','chaos','parkour','roulette','ctf','searchdestroy','extraction','clanwar','underwater','demolition'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const near=(p,x,z,r=3)=>Math.hypot(p.x-x,p.z-z)<=r;
 const weaponOrder=[0,3,1,2];
 const gates=[{x:0,z:-16},{x:10,z:-8},{x:0,z:0},{x:-10,z:8},{x:0,z:16}];
 export function z5Spawn(p,now){
+  if(p.matchMode==='underwater')p.oxygen=100;
   if(p.matchMode==='hardcore'){p.hp=60;p.shieldUntil=now+350;}
   if(p.matchMode==='onechamber'){
     p.hp=75;p.weapon=2;p.loadout=2;p.ammo=[0,0,1,0];p.readyShot=now+230;
@@ -198,6 +199,9 @@ export function z5Advance(m,now,{finish,mark,spawn=()=>{}}){
   return !m.result;
 }
 export function z5Objective(m,who,now){
+  if(m.mode==='underwater')return {type:'underwater',oxygen:Math.round(who?.oxygen??100),stations:m.field.airStations};
+  if(m.mode==='demolition')return {type:'demolition',coverLeft:m.field.cover.filter(c=>c.hp>0).length,coverTotal:m.field.cover.length};
+  if(m.mode==='clanwar')return {type:'clanwar',clans:m.clanWar?.clans||[],score:m.score};
   if(m.mode==='searchdestroy'){
     const s=m.rule;
     return {type:'searchdestroy',phase:s.phase,round:s.round,site:s.site,armed:s.armed,

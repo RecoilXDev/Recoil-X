@@ -14,7 +14,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -43,6 +43,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
       limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
       password:!!room.secret,expires:room.expires,phase:room.phase,veto,squad:room.squad,
+      clanWar:room.clanTeams?.every(Boolean)?room.clanTeams.map(id=>({id})):undefined,
       members:[...room.members.values()].map(({id,name,team,spectator,draft,away,ready})=>
         ({id,name,team,spectator,draft,away:!!away,ready:!!ready})),
       votes:[...room.votes],tournament:tournament&&{
@@ -79,6 +80,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(room.squad)cancelEntry(queue.get('s:'+room.code),'The squad changed. Ready up to search again.');
     membership.delete(id);
     room.members.delete(id);
+    if(room.mode==='clanwar'&&room.clanTeams?.[1]&& !players(room).some(p=>p.team===1))room.clanTeams[1]=null;
     room.votes.delete(id);
     setOffline(room.match,id,now,true);
     if(room.host===id)room.host=players(room)[0]?.id??null;
@@ -91,7 +93,8 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function add(room,c,user,team,spectator=false) {
     leaveLegacy(c);
     queue.delete(c.id);
-    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0,ready:false};
+    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0,ready:false,
+      clan:room.mode==='clanwar'?clanOf(user.id)?.clan:null};
     room.members.set(c.id,member);
     membership.set(c.id,room);
     return member;
@@ -100,7 +103,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function buildRoom({host=null,mode,size,limit,ranked=false,tournament=null,secret=null,squad=null,modern=false},now) {
     const room={code:code(),phase:'lobby',host,mode,size,limit,ranked,tournament,secret,
       locked:false,expires:now+idleTime,members:new Map(),votes:new Set(),match:null,result:null,
-      squad,modern,field:FIELD,veto:null};
+      squad,modern,field:FIELD,veto:null,clanTeams:mode==='clanwar'?[null,null]:null};
     rooms.set(room.code,room);
     return room;
   }
@@ -111,7 +114,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const self=match.players.get(member.id);
     emit(member.id,'begin',{id:match.id,mode:match.mode,ranked:!!match.season,team:self?.team??null,
       roster:[...match.players.values()].map(({id,name,team,draft})=>({id,name,team,draft})),
-      field:match.field,limit:match.limit,match:room.tournament?.index??null});
+      field:match.field,limit:match.limit,match:room.tournament?.index??null,clanWar:match.clanWar||null});
     const connection=client(member.id);
     if(connection)send(connection,snapshot(match,member.id,clock(),connection.compactState));
   }
@@ -120,6 +123,12 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const seats=contestants||players(room);
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
       limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern});
+    if(room.mode==='clanwar'){
+      const clans=room.clanTeams;
+      demand(clans?.[0]&&clans?.[1]&&clans[0]!==clans[1]&&seats.every(p=>p.clan===clans[p.team]&&clanOf(p.id)?.clan===p.clan),
+        409,'Clan War requires two distinct verified clans.');
+      room.match.clanWar={clans:clans.slice()};
+    }
     for(const p of seats)if(p.away)setOffline(room.match,p.id,p.away);
     room.phase='playing';room.result=null;room.votes.clear();room.veto=null;
     publish(room);
@@ -185,7 +194,12 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     const secret=password?{salt,key:passwordKey(password,salt)}:null;
     demand(!['playing','veto'].includes(roomFor(c.id)?.phase),409,'Leave your active match first.');
     drop(c.id,now);
+    if(mode==='clanwar'){
+      demand(!tournament&&!squad,400,'Clan Wars use two verified clan teams, not tournament or squad matchmaking.');
+      demand(!!clanOf(user.id),403,'Join a clan before hosting a Clan War.');
+    }
     const room=buildRoom({host:c.id,mode,size,limit,tournament,secret,squad},now);
+    if(mode==='clanwar')room.clanTeams[0]=clanOf(user.id).clan;
     add(room,c,user,0);
     publish(room);
   }
@@ -203,11 +217,15 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       demand(timingSafeEqual(passwordKey(pass,room.secret.salt),room.secret.key),403,'Incorrect match password.');
     }
     demand(!spectator||room.tournament,400,'Spectating is available in tournaments.');
-    const team=spectator?null:availableTeam(room,c.id);
-    demand(spectator?room.members.size-players(room).length<6:team!==undefined,409,'This lobby is full.');
+    const verifiedClan=room.mode==='clanwar'?clanOf(user.id):null;
+    if(room.mode==='clanwar')demand(!spectator&&!!verifiedClan,403,'Clan Wars require an active clan membership.');
+    const team=room.mode==='clanwar'?(verifiedClan?.clan===room.clanTeams[0]?0:
+      !room.clanTeams[1]||verifiedClan?.clan===room.clanTeams[1]?1:undefined):spectator?null:availableTeam(room,c.id);
+    demand(spectator?room.members.size-players(room).length<6:team!==undefined&&space(room,team,c.id),409,'This lobby is full.');
     demand(!['playing','veto'].includes(roomFor(c.id)?.phase),409,'Leave your active match first.');
     drop(c.id,now);
     const member=add(room,c,user,team,spectator);
+    if(room.mode==='clanwar'&&team===1&&!room.clanTeams[1])room.clanTeams[1]=verifiedClan.clan;
     room.expires=now+idleTime;
     publish(room);
     if(room.phase==='playing')announceMatch(room,member);
@@ -334,7 +352,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       return;
     }
     if(action==='team'){
-      demand(room.phase==='lobby'&&!room.ranked&&!member.spectator,409,'Teams are locked.');
+      demand(room.phase==='lobby'&&!room.ranked&&!member.spectator&&room.mode!=='clanwar',409,'Teams are locked.');
       const team=data.team;
       demand(Number.isInteger(team)&&team>=0&&team<teamCount(room)&&space(room,team,c.id),
         409,'That team is unavailable.');

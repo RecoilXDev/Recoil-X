@@ -2,6 +2,7 @@
 import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
 import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimination, z5Advance, z5Objective } from './z5-combat-modes.mjs';
 import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allowCombatInput} from './z5-combat-quality.mjs';
+import {underwaterField,destructibleField,coverShot,oxygenStep} from './z5-environment.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
 export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES];
@@ -70,11 +71,15 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(mode==='escort')field={...field,cover:field.cover.filter(c=>c.x!==0)};
   if(mode==='props')field={...field,scenery:HUNT_SCENERY};
   if(mode==='chaos')field=z5Arena(field,rng);
+  if(mode==='underwater')field=underwaterField(field);
+  // Clone per-room cover; never mutate shared or ranked arena geometry.
+  if(!season&&!tournament&&['demolition','clanwar','underwater'].includes(mode))field=destructibleField(field);
+  else field={...field,cover:field.cover.map(c=>({...c}))};
   return {
     id,mode,season,field,rule,remake,
     limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
-    end:now+360000,last:now,score:[0,0],result:null,roundAt:0,rng,
+    end:now+(mode==='raid'?900000:360000),last:now,score:[0,0],result:null,roundAt:0,rng,
     relics:[0,1].map(team=>({team,x:0,z:team?24:-24,holder:null,home:true,returnAt:0})),
     power:[{x:0,z:0,ready:now},{x:-10,z:16,ready:now},{x:10,z:-16,ready:now}],
     events:[],timeline:[{at:0,kind:'start',text:'Match started',actor:null}],focus:null,lastLead:null,
@@ -116,7 +121,7 @@ export function restorePlayer(m,id) {
 }
 
 function blocked(field,x,z) {
-  return field.cover.some(c=>Math.abs(x-c.x)<c.w/2+.42&&Math.abs(z-c.z)<c.d/2+.42);
+  return field.cover.some(c=>(c.hp===undefined||c.hp>0)&&Math.abs(x-c.x)<c.w/2+.42&&Math.abs(z-c.z)<c.d/2+.42);
 }
 
 function move(field,p,dx,dz) {
@@ -143,6 +148,7 @@ function intersect(point,dir,low,high,max) {
 function obstruction(field,start,dir,max) {
   let reach=max;
   for(const c of field.cover){
+    if(c.hp!==undefined&&c.hp<=0)continue;
     const metres=intersect(start,dir,[c.x-c.w/2,0,c.z-c.d/2],[c.x+c.w/2,c.h,c.z+c.d/2],reach);
     if(metres<reach)reach=metres;
   }
@@ -199,6 +205,7 @@ function finish(m,winner,reason,now) {
   const candidates=players.filter(p=>!p.forfeited).sort((a,b)=>
     (b.kills*120+b.damage+b.revives*80)-(a.kills*120+a.damage+a.revives*80)||a.deaths-b.deaths||a.id-b.id);
   m.result={id:m.id,mode:m.mode,season:m.season,winner,reason,score:m.score.slice(),
+    clanWar:m.clanWar?{clans:m.clanWar.clans.slice()}:undefined,
     duration:Math.max(0,now-m.started),players,mvp:candidates[0]?.name||null,highlight:m.finalKill,
     field:m.field.name,timeline:m.timeline.slice()};
 }
@@ -261,6 +268,13 @@ function fire(m,p,now) {
     }
     if(!end)end=eye.map((v,i)=>round(v+dir[i]*reach,100));
     if(target)hit(m,p,target,w.damage,now);
+    else if(m.field.destructible){
+      const impact=coverShot(m.field,eye,dir,w.range,w.damage);
+      if(impact?.broken){
+        m.events.push({type:'z2:notice',message:'💥 COVER DESTROYED · line of sight opened'});
+        m.events.push({type:'z2:cover',id:impact.id,hp:0});
+      }
+    }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
 }
@@ -369,11 +383,19 @@ export function updateMatch(m,now) {
     const carrying=['relic','ctf'].includes(m.mode)&&m.relics.some(r=>r.holder===p.id);
     const dragging=m.mode==='rescue'&&input.use&&[...m.players.values()]
       .some(other=>other.down&&other.team===p.team&&dist(other,p)<2.3);
-    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1);
+    if(m.mode==='underwater'){
+      const air=oxygenStep(p,m.field,delta,!!input.use);
+      if(air.damage>0){
+        p.hp=Math.max(0,p.hp-air.damage);
+        if(!p.hp){eliminate(m,p,null,now);continue;}
+      }
+    }
+    const speed=(input.sprint?7.9:5.8)*(p.boost>now?1.24:1)*(carrying ? .63 : dragging ? .55 : 1)*
+      (m.mode==='underwater'?.72:1);
     move(m.field,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
       (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
     if((input.jump||taps?.jump)&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
-    p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/680)*Math.PI)*.97):0;
+    p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/(m.mode==='underwater'?1150:680))*Math.PI)*(m.mode==='underwater'?1.65:.97)):0;
     if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(m,p,now);
     powerOrRelic(m,p,now);
     const weapon=m.mode==='budget'?p.loadout:z5Weapon(m,p,input.weapon);
@@ -424,6 +446,7 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
     heat:viewer?.rx5Heat?.[viewer.weapon]??0,overheated:!!viewer?.rx5Overheated?.[viewer.weapon],
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
     objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
+    cover:m.field.destructible?m.field.cover.map(c=>[c.id,c.hp]):undefined,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
     relics:['relic','ctf'].includes(m.mode)?m.relics.map(r=>[r.team,round(r.x,10),round(r.z,10),r.holder,r.home]):undefined,

@@ -150,6 +150,11 @@ test('Crown Raids require two teammates on separate seals',()=>{
   Object.assign(a,{x:0,z:3,yaw:0,readyShot:0});
   m.rule.boss.hp=22;
   step(m,100,{1:{fire:true}});
+  assert.equal(m.rule.bossIndex,1,'First guardian defeated, second boss begins');
+  assert.equal(m.result,null);
+  m.rule.boss.hp=0;step(m,100);
+  assert.equal(m.rule.bossIndex,2,'Abyss Leviathan defeated, third boss begins');
+  m.rule.boss.hp=0;step(m,100);
   assert.equal(m.result.winner,0);
   assert.equal(m.result.score[0],100);
   assert(m.result.timeline.some(e=>e.kind==='raid'));
