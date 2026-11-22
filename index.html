@@ -9157,7 +9157,7 @@ function z2RenderLobby(){
     alieninvasion:'Co-op · three escalating alien commanders',
     worldboss:'Co-op · Fri–Sat Oman · rotating colossal guardian'};
   z2Text('p',(['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)?room.size+' players':room.size+'v'+room.size)+' · '+room.phase.toUpperCase()+
-    ' · '+(details[room.mode]||room.limit+' eliminations'),root);
+    ' · '+(details[room.mode]||room.limit+' eliminations')+(room.preset&&room.preset!=='classic'?' · Rules: '+room.preset.toUpperCase():'')+(room.draftTeams?' · HOST TEAM DRAFT':''),root);
   if(room.code){
     const code=z2Text('strong','Invite code '+room.code+(room.password?' · Password required':''),root);
     code.className='z2-code';
@@ -9173,7 +9173,7 @@ function z2RenderLobby(){
   const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
   if(room.phase==='lobby'&&!room.ranked){
     const me=room.members.find(p=>p.id===z1Account?.id);
-    if(me&&!me.spectator&&room.mode!=='raid'){
+    if(me&&!me.spectator&&!['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)&&!room.draftTeams){
       for(let i=0;i<(room.tournament?.teams||2);i++){
         const b=z2SmallButton(z2Name(i,isTournament),()=>z2Send('team',{team:i}));
         b.disabled=i===me.team||room.members.filter(p=>!p.spectator&&p.team===i).length>=room.size;
@@ -9189,6 +9189,12 @@ function z2RenderLobby(){
       z2Text('summary','Lobby settings',manage);
       const controls=document.createElement('div');controls.className='z2-actions';manage.append(controls);
       controls.append(z2SmallButton(room.locked?'Unlock lobby':'Lock lobby',()=>z2Send('lock',{locked:!room.locked})));
+      if(room.draftTeams)for(const player of room.members.filter(p=>!p.spectator)){
+        for(const team of [0,1]){
+          const pick=z2SmallButton('Draft '+player.name+' → '+z2Name(team),()=>z2Send('pickteam',{id:player.id,team}));
+          pick.disabled=player.team===team;controls.append(pick);
+        }
+      }
       for(const p of room.members.filter(p=>p.id!==room.host)){
         controls.append(z2SmallButton('Remove '+p.name,()=>z2Send('remove',{id:p.id})));
       }
@@ -10286,6 +10292,8 @@ function z2MountUI(){
       </form>
       <form id="z2Create" class="z2-block z2-lobby-fields">
         <label>Mode<select id="z2GameMode">${createOptions}</select></label>
+        <label id="z2PresetRow">Casual rules<select id="z2Preset"><option value="classic">Classic</option><option value="blitz">Blitz · 80 HP / faster</option><option value="precision">Precision · 75 HP</option><option value="fortress">Fortress · slower combat</option></select></label>
+        <label id="z2DraftRow" class="z2-check"><input type="checkbox" id="z2DraftTeams"> Host-managed team draft</label>
         <label>Size<select id="z2TeamSize">${countOptions}</select></label>
         <label id="z3LimitField">Kill limit<input id="z2KillLimit" type="number" min="1" max="50" value="15" required></label>
         <label>Room password (optional)<input id="z2CreatePass" type="password" minlength="4" maxlength="64" autocomplete="off"></label>
@@ -10392,7 +10400,7 @@ function z2MountUI(){
   $('z2Create').onsubmit=event=>{
     event.preventDefault();
     const mode=$('z2GameMode').value,teams=Number($('z2Tournament').value),size=Number($('z2TeamSize').value);
-    if(z2Send('create',{mode,teams,size,limit:Number($('z2KillLimit').value),password:$('z2CreatePass').value}))
+    if(z2Send('create',{mode,teams,size,limit:Number($('z2KillLimit').value),password:$('z2CreatePass').value,preset:$('z2Preset').value,draftTeams:$('z2DraftTeams').checked}))
       $('z2CreatePass').value='';
   };
   const setTeamOptions=()=>{
@@ -10402,6 +10410,12 @@ function z2MountUI(){
     select.replaceChildren(...sizes.map(n=>{const o=z2Text('option',!tourney&&['raid','titanraid','alieninvasion','worldboss'].includes(mode)?n+' players':n+'v'+n);o.value=String(n);return o;}));
     select.value=String(sizes.includes(chosen)?chosen:sizes[0]);
     $('z2GameMode').disabled=!!tourney;
+    const casual=!tourney&&['arena','overcharge','demolition','dualwield','ricochet','parry','train','volcano','timefracture'].includes(mode);
+    $('z2Preset').disabled=!casual;$('z2PresetRow').classList.toggle('hide',!casual);
+    if(!casual)$('z2Preset').value='classic';
+    $('z2DraftTeams').disabled=!casual||sizes.length===1||Number(select.value)<2;
+    $('z2DraftRow').classList.toggle('hide',$('z2DraftTeams').disabled);
+    if($('z2DraftTeams').disabled)$('z2DraftTeams').checked=false;
     const fixed=!tourney&&!['arena','overcharge','rescue'].includes(mode);
     $('z2KillLimit').disabled=fixed;$('z3LimitField').classList.toggle('hide',fixed);
   };
