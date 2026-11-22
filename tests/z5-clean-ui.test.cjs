@@ -12,7 +12,7 @@ test('clean UI source has valid syntax and explicit current release identity',()
  assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-6\.1"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-sand-6-1/);
+ assert.match(sw,/z5-sand-7/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-6.1');
+ assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-7');
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));
