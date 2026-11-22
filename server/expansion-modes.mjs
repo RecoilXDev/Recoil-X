@@ -1,4 +1,5 @@
-export const EXPANSION_MODES = ['escort', 'hotzone', 'elimination', 'budget', 'props', 'jeep', 'raid'];
+import { RAID_VARIANTS, EXTRA_RAIDS, isRaidMode } from './z5-battle-expansion.mjs';
+export const EXPANSION_MODES = ['escort', 'hotzone', 'elimination', 'budget', 'props', 'jeep', 'raid',...EXTRA_RAIDS];
 export const WEAPON_COSTS = [3, 5, 6, 1];
 export const PROP_NAMES = ['Crate', 'Barrel', 'Beacon'];
 export const HUNT_SCENERY = [
@@ -31,8 +32,15 @@ export function modeState(mode,now,players) {
       const lane=team?12:-12;
       return {team,lane,x:lane,z:23,yaw:0,speed:0,wheel:0,steer:0,gate:0,driver:players.find(p=>p.team===team)?.id};
     })};
-    case 'raid': return {boss:{id:-1,name:'The Rift Crown',x:0,z:-3,hp:960,team:1,
-      jump:0,shieldUntil:Infinity},held:0,openUntil:0,windup:null,next:now+5000,phase:1,pads:[false,false]};
+    case 'raid':
+    case 'raid-titan':
+    case 'raid-leviathan':
+    case 'raid-inferno': {
+      const spec=RAID_VARIANTS[mode];
+      return {boss:{id:-1,name:spec.name,x:0,z:-3,hp:spec.hp,maxHp:spec.hp,team:1,
+        jump:0,shieldUntil:Infinity},held:0,openUntil:0,windup:null,
+        next:now+spec.cooldown,phase:1,pads:[false,false],variant:mode};
+    }
     default: return null;
   }
 }
@@ -172,14 +180,18 @@ export function advanceMode(m,now,dt,{finish,spawn,move}) {
       }
       return false;
     }
-    case 'raid': {
+    case 'raid':
+    case 'raid-titan':
+    case 'raid-leviathan':
+    case 'raid-inferno': {
+      const spec=RAID_VARIANTS[m.mode];
       const boss=s.boss;
       if(boss.hp<=0){m.score[0]=100;finish(m,0,'raid',now);return false;}
       if(!people.length){
         if(![...m.players.values()].some(p=>!p.forfeited&&p.hp>0))finish(m,1,'raid',now);
         return false;
       }
-      s.phase=boss.hp>640?1:boss.hp>320?2:3;
+      s.phase=boss.hp>boss.maxHp*2/3?1:boss.hp>boss.maxHp/3?2:3;
       const occupiers=PADS.map(pad=>people.find(p=>p.input.use&&close(p,pad,2.4)));
       s.pads=occupiers.map(Boolean);
       if(s.openUntil<=now&&occupiers.every(Boolean)&&occupiers[0]!==occupiers[1]){
@@ -192,16 +204,16 @@ export function advanceMode(m,now,dt,{finish,spawn,move}) {
       if(s.openUntil<=now)boss.shieldUntil=Infinity;
       if(!s.windup&&now>=s.next){
         const target=people[(m.tick+s.phase)%people.length];
-        s.windup={x:target.x,z:target.z,r:3.4+s.phase*.55,at:now+1400};
+        s.windup={x:target.x,z:target.z,r:spec.radius+(s.phase-1)*.5,at:now+spec.telegraph};
       }
       if(s.windup&&s.windup.at<=now){
         for(const p of people)if(close(p,s.windup,s.windup.r)){
-          p.hp=Math.max(0,p.hp-(32+s.phase*6));
+          p.hp=Math.max(0,p.hp-(spec.impact+(s.phase-1)*6));
           if(!p.hp){p.deaths++;p.spawnAt=now+7400;p.down=null;}
         }
-        s.windup=null;s.next=now+5600-s.phase*900;
+        s.windup=null;s.next=now+Math.max(1900,spec.cooldown-(s.phase-1)*700);
       }
-      m.score[0]=100-Math.ceil(boss.hp/9.6);
+      m.score[0]=Math.max(0,100-Math.ceil(boss.hp/boss.maxHp*100));
       return true;
     }
     default: return true;
@@ -220,7 +232,10 @@ export function ruleView(m,who,now) {
     case 'props': return {hiders:s.half,phase:s.phase,deadline:s.deadline,prop:who?.prop};
     case 'jeep': return {cars:s.cars.map(c=>({team:c.team,x:c.x,z:c.z,yaw:c.yaw,wheel:c.wheel,
       steer:c.steer,speed:c.speed,gate:c.gate,driver:c.driver,next:vehicleGate(c)}))};
-    case 'raid': return {boss:{x:s.boss.x,z:s.boss.z,hp:s.boss.hp,max:960},phase:s.phase,
+    case 'raid':
+    case 'raid-titan':
+    case 'raid-leviathan':
+    case 'raid-inferno': return {type:'bossraid',boss:{name:s.boss.name,x:s.boss.x,z:s.boss.z,hp:s.boss.hp,max:s.boss.maxHp},phase:s.phase,
       shield:s.openUntil<=now,pads:PADS.map((p,i)=>({...p,active:s.pads[i]})),windup:s.windup};
     default:return undefined;
   }
