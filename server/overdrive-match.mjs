@@ -1,5 +1,5 @@
 // Movement, hits, ammo, objectives and results use server time and state.
-import { EXPANSION_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
+import { EXPANSION_MODES, RAID_MODES, modeState, advanceMode, ruleView, markEvent, HUNT_SCENERY } from './expansion-modes.mjs';
 import { Z5_MODES, z5Spawn, z5Weapon, z5CanShoot, z5ModeState, z5Arena, z5Elimination, z5Advance, z5Objective } from './z5-combat-modes.mjs';
 import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allowCombatInput} from './z5-combat-quality.mjs';
 import {underwaterField,destructibleField,coverShot,oxygenStep} from './z5-environment.mjs';
@@ -83,7 +83,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
     id,mode,season,field,rule,remake,
     limit:['relic','ctf','elimination','budget','onechamber','roulette'].includes(mode)?3:mode==='gungame'?4:mode==='parkour'?5:mode==='chess'?2:mode==='hotzone'?60:mode==='jeep'?4:limit,
     players:members,started:now,
-    end:now+(mode==='raid'?900000:360000),last:now,score:[0,0],result:null,roundAt:0,rng,
+    end:now+(RAID_MODES.includes(mode)?900000:360000),last:now,score:[0,0],result:null,roundAt:0,rng,
     relics:[0,1].map(team=>({team,x:0,z:team?24:-24,holder:null,home:true,returnAt:0})),
     power:[{x:0,z:0,ready:now},{x:-10,z:16,ready:now},{x:10,z:-16,ready:now}],
     events:[],timeline:[{at:0,kind:'start',text:'Match started',actor:null}],focus:null,lastLead:null,
@@ -259,7 +259,7 @@ function fire(m,p,now) {
   const eye=[p.x,1.62+p.jump,p.z];
   let end;
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
-  if(m.mode==='raid'&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
+  if(RAID_MODES.includes(m.mode)&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
   for(let pellet=0;pellet<projectiles&&!m.result;pellet++){
     const yaw=p.yaw+(m.rng()-.5)*w.spray+(dual?(pellet===0?-.03:.03):0),pitch=p.pitch+(m.rng()-.5)*w.spray;
     const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
@@ -369,9 +369,9 @@ export function updateMatch(m,now) {
   }
   if([...m.players.values()].some(p=>p.offlineAt&&p.remakeEligible&&!p.forfeited))return;
   const teams=[0,1].map(team=>[...m.players.values()].some(p=>p.team===team&&!p.forfeited));
-  if(!teams[0]||(!teams[1]&&m.mode!=='raid')){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
+  if(!teams[0]||(!teams[1]&&!RAID_MODES.includes(m.mode))){finish(m,teams[0]?0:teams[1]?1:null,'forfeit',now);return;}
   if(now>=m.end){
-    if(m.mode==='raid'){finish(m,1,'time',now);return;}
+    if(RAID_MODES.includes(m.mode)){finish(m,1,'time',now);return;}
     if(m.tournament&&m.score[0]===m.score[1]&&!m.overtime){
       m.overtime=true;m.end=now+60000;
       m.events.push({type:'z2:notice',message:'Cup overtime · the next elimination wins.'});
