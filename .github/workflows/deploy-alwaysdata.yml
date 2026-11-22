@@ -110,6 +110,10 @@ jobs:
             --output /tmp/recoil-z5-live.html https://recoil-x.alwaysdata.net/
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
+          grep -Fq 'Z.5 Clan Wars' /tmp/recoil-z5-live.html
+          grep -Fq 'Z.5 Underwater Combat' /tmp/recoil-z5-live.html
+          grep -Fq 'Z.5 Multiplayer Destruction' /tmp/recoil-z5-live.html
+          grep -Fq 'rx5LowG' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
           grep -Fq 'const pool=MAPS.filter(m=>!m.mysteryOnly' /tmp/recoil-z5-live.html
@@ -154,6 +158,8 @@ jobs:
           grep -Fq "window.RXZ5InGame={open,showNews,version:'Z.5-SAND-7'}" /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5WhatsNew' /tmp/recoil-z5-ingame.js
           grep -Fq 'Training Academy' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Abyss Leviathan' /tmp/recoil-z5-ingame.js
+          grep -Fq 'Inferno Warden' /tmp/recoil-z5-ingame.js
           grep -Fq 'EMP grenade (solo)' /tmp/recoil-z5-ingame.js
           grep -Fq 'Deployable shield (solo)' /tmp/recoil-z5-ingame.js
           grep -Fq 'function rx5AcademyFinish' /tmp/recoil-z5-live.html
@@ -173,7 +179,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'z5-sand-7' /tmp/recoil-z5-sw.js
+          grep -Fq 'z5-sand-7-bosses-1' /tmp/recoil-z5-sw.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
