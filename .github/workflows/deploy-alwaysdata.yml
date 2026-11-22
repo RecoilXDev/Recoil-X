@@ -111,6 +111,9 @@ jobs:
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
           grep -Fq 'content="Z.5-SAND-6"' /tmp/recoil-z5-live.html
+          grep -Fq 'rx5-sand-ui-v6-welcome' /tmp/recoil-z5-live.html
+          grep -Fq 'toggle.onclick=()=>apply(!simplified)' /tmp/recoil-z5-live.html
+          if grep -Fq '<script id="rx5-operation-simplicity">' /tmp/recoil-z5-live.html; then echo 'Old broken external menu script still present' >&2; exit 1; fi
           grep -Fq '<title>RECOIL X Z.5 · Sand Edition</title>' /tmp/recoil-z5-live.html
           grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
@@ -160,7 +163,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'z5-sand-6' /tmp/recoil-z5-sw.js
+          grep -Fq 'z5-sand-6-wired' /tmp/recoil-z5-sw.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
