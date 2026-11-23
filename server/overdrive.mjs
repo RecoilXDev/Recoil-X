@@ -16,7 +16,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{}}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map()}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -125,8 +125,9 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function start(room,now,contestants) {
     if(room.mode==='worldboss')demand(isOmanWeekend(now),403,'World Boss battles unlock Friday and Saturday, Oman time.');
     const seats=contestants||players(room);
+    const weaponLevels=loadEvolutionLevels(seats.map(player=>player.id));
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
-      limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern,preset:room.preset});
+      limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern,preset:room.preset,weaponLevels});
     if(room.mode==='clanwar'){
       const clans=room.clanTeams;
       demand(clans?.[0]&&clans?.[1]&&clans[0]!==clans[1]&&seats.every(p=>p.clan===clans[p.team]&&clanOf(p.id)?.clan===p.clan),

@@ -5,6 +5,7 @@ import {initCombatQuality,coolCombatQuality,recordCombatShot,heatAllowsShot,allo
 import {underwaterField,destructibleField,coverShot,oxygenStep} from './z5-environment.mjs';
 import {WAVE2_MODES,wave2State,wave2Movement,wave2FireCooldown,wave2Objective,wave2Advance,wave2Melee,wave2Ricochet} from './z5-wave2.mjs';
 import {CUSTOM_PRESETS} from './z5-lobby-custom.mjs';
+import {matchEvolutionBonuses} from './z5-weapon-evolution.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
 export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES,...WAVE2_MODES];
@@ -56,11 +57,16 @@ function spawn(p, now) {
   initCombatQuality(p);
 }
 
-export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random,preset='classic'}) {
+export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random,preset='classic',weaponLevels=null}) {
   const placed=[0,0];
   const members=new Map();
   for(const record of players) {
-    const p={...record,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',matchMode:mode,
+    // Only levels loaded from the authenticated server database are trusted.
+    // Ignore any look-alike mastery fields supplied by matchmaking clients.
+    const saved=weaponLevels instanceof Map?weaponLevels.get(record.id):null;
+    const mastery=Array.from({length:weapons.length},(_,i)=>
+      Number.isInteger(saved?.[i])&&saved[i]>=1&&saved[i]<=5?saved[i]:1);
+    const p={...record,rx5WeaponLevels:mastery,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',matchMode:mode,
       inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0,rx5Rules:CUSTOM_PRESETS[preset]||CUSTOM_PRESETS.classic};
     p.spawnX=(p.slot-(players.filter(other=>other.team===p.team).length-1)/2)*3.65;
     spawn(p,now);
@@ -251,10 +257,11 @@ function hit(m,shooter,victim,damage,now) {
 }
 
 function fire(m,p,now) {
-  const w=weapons[p.weapon];
+  const w=weapons[p.weapon],bonus=matchEvolutionBonuses(m,p,p.weapon);
+  const scaledDamage=amount=>Math.round(amount*bonus.damageMultiplier*10)/10;
   const dual=m.mode==='dualwield',projectiles=dual?Math.min(2,p.ammo[p.weapon]):w.pellets;
   p.ammo[p.weapon]-=dual?projectiles:1;
-  p.readyShot=now+w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1);
+  p.readyShot=now+Math.ceil(w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1)*bonus.fireIntervalMultiplier);
   if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
     m.events.push({type:'z2:notice',only:p.id,message:'Weapon overheated · release fire to cool down.'});
   }
@@ -263,7 +270,7 @@ function fire(m,p,now) {
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
   if(RAID_MODES.includes(m.mode)&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
   for(let pellet=0;pellet<projectiles&&!m.result;pellet++){
-    const yaw=p.yaw+(m.rng()-.5)*w.spray+(dual?(pellet===0?-.03:.03):0),pitch=p.pitch+(m.rng()-.5)*w.spray;
+    const yaw=p.yaw+(m.rng()-.5)*w.spray*bonus.spreadMultiplier+(dual?(pellet===0?-.03:.03):0),pitch=p.pitch+(m.rng()-.5)*w.spray*bonus.spreadMultiplier;
     const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
     let reach=obstruction(m.field,eye,dir,w.range),target=null;
     for(const other of opponents) {
@@ -275,7 +282,7 @@ function fire(m,p,now) {
       if(first<reach){reach=first;target=other;}
     }
     if(!end)end=eye.map((v,i)=>round(v+dir[i]*reach,100));
-    if(target)hit(m,p,target,dual?11:w.damage,now);
+    if(target)hit(m,p,target,scaledDamage(dual?11:w.damage),now);
     else if(m.mode==='ricochet'){
       const bounced=wave2Ricochet(m.field,eye,dir,w.range);
       if(bounced&&Math.abs(bounced.distance-reach)<.08){
@@ -286,7 +293,7 @@ function fire(m,p,now) {
             [other.x+.45,other.jump+1.96,other.z+.45],secondReach);
           if(first<secondReach){secondReach=first;victim=other;}
         }
-        if(victim)hit(m,p,victim,w.damage*.55,now);
+        if(victim)hit(m,p,victim,scaledDamage(w.damage*.55),now);
         m.events.push({type:'z2:shot',origin:p.id,team:p.team,
           a:bounced.at.map(v=>round(v,100)),b:begin.map((v,i)=>round(v+bounced.dir[i]*secondReach,100))});
       }
@@ -302,9 +309,9 @@ function fire(m,p,now) {
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
 }
 
-function reload(p,now) {
-  const w=weapons[p.weapon];
-  if(!p.reloadAt&&p.ammo[p.weapon]<w.ammo){p.reloadAt=now+w.reload;p.reloadGun=p.weapon;}
+function reload(m,p,now) {
+  const w=weapons[p.weapon],bonus=matchEvolutionBonuses(m,p,p.weapon);
+  if(!p.reloadAt&&p.ammo[p.weapon]<w.ammo){p.reloadAt=now+Math.ceil(w.reload*bonus.reloadMultiplier);p.reloadGun=p.weapon;}
 }
 
 function powerOrRelic(m,p,now) {
@@ -428,7 +435,7 @@ export function updateMatch(m,now) {
     if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=input.fire||taps?.fire;
-    if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(p,now);
+    if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(m,p,now);
     if(firing&&z5CanShoot(m)&&(m.season||m.tournament||heatAllowsShot(p,p.weapon))&&!p.reloadAt&&p.readyShot<=now&&p.ammo[p.weapon]>0&&!dragging&&!m.result&&
       (m.mode!=='props'||p.team!==m.rule.half))fire(m,p,now);
   }

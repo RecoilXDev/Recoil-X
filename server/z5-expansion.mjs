@@ -4,7 +4,7 @@ import {createFriendParties} from './z5-parties.mjs';
 import {createAntiCheat} from './z5-anti-cheat.mjs';
 import {createKillcam} from './z5-killcam.mjs';
 import {createBroadcastSpectating} from './z5-spectating.mjs';
-import {evolutionForXp} from './z5-weapon-evolution.mjs';
+import {evolutionForXp,evolutionBonuses} from './z5-weapon-evolution.mjs';
 
 const digest=x=>createHash('sha256').update(x).digest();
 const codePattern=/^[a-f0-9]{64}$/;
@@ -34,6 +34,16 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   const dropRecovery=db.prepare('DELETE FROM rx5_recovery WHERE player=?');
   const changePassword=db.prepare('UPDATE users SET salt=?,secret=? WHERE id=?');
   const revokeSessions=db.prepare('DELETE FROM sessions WHERE account=?');
+  function loadEvolutionLevels(playerIds){
+    const result=new Map();
+    for(const id of playerIds){
+      const levels=[1,1,1,1];
+      for(const row of selectXp.all(id))if(Number.isInteger(row.weapon)&&row.weapon>=0&&row.weapon<4)
+        levels[row.weapon]=evolutionForXp(row.xp).level;
+      result.set(id,levels);
+    }
+    return result;
+  }
   const list=()=>[...streamMeta.values()].filter(m=>m.ends>clock()).map(({code,mode})=>({code,mode}));
   function onStart({matchId}){usedWeapons.set(matchId,new Map());}
   function onInput(id,data){const room=overdrive.roomInfo(id),matchId=room?.matchId;
@@ -81,8 +91,10 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   }
   function get(user,path,request){
     if(path==='/z5/party')return partyView(user);
-    if(path==='/z5/evolutions')return {weapons:selectXp.all(user.id).map(row=>({weapon:row.weapon,...evolutionForXp(row.xp)})),
-      note:'Server-awarded cosmetic progression; no damage multiplier.'};
+    if(path==='/z5/evolutions')return {weapons:selectXp.all(user.id)
+      .filter(row=>Number.isInteger(row.weapon)&&row.weapon>=0&&row.weapon<4)
+      .map(row=>({weapon:row.weapon,...evolutionForXp(row.xp),bonuses:evolutionBonuses(evolutionForXp(row.xp).level)})),
+      note:'Earned reload, accuracy, fire-rate and damage perks activate in casual matches only; disabled in ranked, tournaments, Clan Wars and specialist modes.'};
     if(path==='/z5/spectate')return {streams:list()};
     if(path==='/z5/spectate/frame'){
       const params=new URL(request.url,'http://localhost').searchParams;
@@ -186,5 +198,5 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
     cutConnection(clients.get(user.id),'Password recovered. Sign in again.');
     return {ok:true,message:'Password updated. Sign in with your new password.'};
   }
-  return {get,post,reset,onStart,onInput,onFrame,onEnd};
+  return {get,post,reset,onStart,onInput,onFrame,onEnd,loadEvolutionLevels};
 }
