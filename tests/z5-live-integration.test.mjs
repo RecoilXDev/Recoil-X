@@ -4,7 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {createZ5Expansion} from '../server/z5-expansion.mjs';
 function fixture(){
  const db=new DatabaseSync(':memory:');
- db.exec("PRAGMA foreign_keys=ON;CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT,handle TEXT,admin INTEGER);CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,account INTEGER,expires INTEGER);INSERT INTO users VALUES(1,'Alpha','alpha',1),(2,'Beta','beta',0),(3,'Gamma','gamma',0)");
+ db.exec("PRAGMA foreign_keys=ON;CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT,handle TEXT,admin INTEGER,salt TEXT,secret TEXT);CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,account INTEGER,expires INTEGER);INSERT INTO users(id,name,handle,admin) VALUES(1,'Alpha','alpha',1),(2,'Beta','beta',0),(3,'Gamma','gamma',0)");
  const users=new Map([[1,{id:1,name:'Alpha',admin:1}],[2,{id:2,name:'Beta',admin:0}],[3,{id:3,name:'Gamma',admin:0}]]);
  let now=1000;const clients=new Map([[1,{id:1}],[2,{id:2}],[3,{id:3}]]);
  const posted=[],room={code:'P12345',matchId:'m1',host:1,phase:'playing',mode:'arena'};
