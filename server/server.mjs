@@ -148,7 +148,7 @@ export function createRecoilServer(options = {}) {
   const findFriend = st('SELECT requester,accepted FROM friends WHERE lo=? AND hi=?');
   const session = st(`SELECT u.*,s.expires,s.token_hash FROM sessions s JOIN users u ON s.account=u.id
     WHERE s.token_hash=? AND s.expires>?`);
-  expansion=createZ5Expansion({db,fail,allowed,clients,isFriend,contact,overdrive,byId,byName,
+  expansion=createZ5Expansion({db,fail,allowed,clients,isFriend:(a,b)=>isFriend(a,b),contact,overdrive,byId,byName,
     canonical,passwordHash,send,cutConnection});
   const roster = st(`SELECT u.id,u.name,u.joins,u.banned,f.accepted,f.requester
     FROM friends f JOIN users u ON u.id=CASE WHEN f.lo=? THEN f.hi ELSE f.lo END WHERE f.lo=? OR f.hi=? ORDER BY u.handle`);
