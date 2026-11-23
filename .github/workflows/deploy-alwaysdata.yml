@@ -138,6 +138,10 @@ jobs:
           curl --fail --silent --show-error --location \
             --output /tmp/recoil-z5-hub.js https://recoil-x.alwaysdata.net/z5-matchhub.js
           grep -Fq 'MATCH HUB' /tmp/recoil-z5-hub.js
+          curl --fail --silent --show-error --location \
+            --output /tmp/recoil-z5-expansion.js https://recoil-x.alwaysdata.net/z5-expansion.js
+          grep -Fq 'Z.5 Parties & More' /tmp/recoil-z5-expansion.js
+          grep -Fq 'Broadcast spectating' /tmp/recoil-z5-expansion.js
           grep -Fq 'script src="/z5-ingame.js" defer' /tmp/recoil-z5-live.html
           curl --fail --silent --show-error --location \
             --output /tmp/recoil-z5-ingame.js https://recoil-x.alwaysdata.net/z5-ingame.js
