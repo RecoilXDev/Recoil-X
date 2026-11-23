@@ -133,6 +133,7 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
     onLiveInput:(...args)=>expansion?.onInput(...args),
     onLiveFrame:e=>expansion?.onFrame(e),
