@@ -311,7 +311,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(action==='queue'){queuePlayer(c,user,data,now);return;}
     if(action==='leave'){drop(c.id,now);return;}
     const room=roomFor(c.id);
-    if(action==='input'){if(room?.phase==='playing'){onLiveInput(c.id,data,now);inputMatch(room.match,c.id,data,now);}return;}
+    if(action==='input'){if(room?.phase==='playing'&&inputMatch(room.match,c.id,data,now))onLiveInput(c.id,data,now);return;}
     if(action==='resync'){attach(c);return;}
     demand(room,404,'Join a multiplayer lobby first.');
     const member=room.members.get(c.id);
