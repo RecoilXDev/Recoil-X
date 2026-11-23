@@ -15,6 +15,7 @@ import { createZ5Economy, migrateZ5Economy } from './z5-economy.mjs';
 import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 import { createZ5Operations } from './z5-operations.mjs';
 import { startZ5Backups } from './z5-backups.mjs';
+import { createZ5Expansion } from './z5-expansion.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -120,6 +121,7 @@ export function createRecoilServer(options = {}) {
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
   const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
+  let expansion;
   let passwordJobs = 0;
   let lastExpiry = 0;
   const overdriveData = overdriveStore(db,fail);
@@ -131,6 +133,10 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    onLiveStart:e=>expansion?.onStart(e),
+    onLiveInput:(...args)=>expansion?.onInput(...args),
+    onLiveFrame:e=>expansion?.onFrame(e),
+    onLiveEnd:(...args)=>expansion?.onEnd(...args),
     onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{z5.recordClanWar(result,now);}}}
   });
 
@@ -142,6 +148,8 @@ export function createRecoilServer(options = {}) {
   const findFriend = st('SELECT requester,accepted FROM friends WHERE lo=? AND hi=?');
   const session = st(`SELECT u.*,s.expires,s.token_hash FROM sessions s JOIN users u ON s.account=u.id
     WHERE s.token_hash=? AND s.expires>?`);
+  expansion=createZ5Expansion({db,fail,allowed,clients,isFriend,contact,overdrive,byId,byName,
+    canonical,passwordHash,send,cutConnection});
   const roster = st(`SELECT u.id,u.name,u.joins,u.banned,f.accepted,f.requester
     FROM friends f JOIN users u ON u.id=CASE WHEN f.lo=? THEN f.hi ELSE f.lo END WHERE f.lo=? OR f.hi=? ORDER BY u.handle`);
 
@@ -319,10 +327,14 @@ export function createRecoilServer(options = {}) {
   async function endpoint(req, path) {
     if ((path === '/register' || path === '/login') && req.method === 'POST')
       return credentials(req,await readJson(req),path === '/register');
+    if (path === '/recovery/reset' && req.method === 'POST')
+      return expansion.reset(req,await readJson(req));
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
     if (req.method === 'GET') {
+      if (['/z5/party','/z5/evolutions','/z5/spectate','/z5/spectate/frame','/z5/anti-cheat/review'].includes(path))
+        return expansion.get(user,path,req);
       if (path === '/z5/rooms') {
         const params=new URL(req.url,'http://localhost').searchParams;
         const size=params.has('size')?Number(params.get('size')):null;
@@ -373,6 +385,7 @@ export function createRecoilServer(options = {}) {
     if (req.method === 'POST') {
       if (path.startsWith('/z5/')) {
         if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
+        if (['/z5/party','/z5/spectate','/z5/recovery/create'].includes(path))return expansion.post(user,path,body);
         if (path === '/z5/checkin') {const claim=z5.checkin(user);economy.onDailyCheckin(user,claim);challenges.onCheckin(user,claim);return claim;}
         if (path === '/z5/challenges/claim') return challenges.claimDaily(user,body);
         if (path === '/z5/story/claim') return challenges.claimStory(user,body);
@@ -454,6 +467,13 @@ export function createRecoilServer(options = {}) {
         res.end(req.method==='HEAD'?undefined:js);
       }catch{res.writeHead(404).end();}return;
     }
+    if (path === '/z5-expansion.js') {
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./z5-expansion.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/z5-matchhub.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./z5-matchhub.js',import.meta.url));
@@ -485,7 +505,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
@@ -513,6 +533,10 @@ export function createRecoilServer(options = {}) {
     if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
       overdrive.drop(c.id,sqlTime(),'This session ended.');
       cutConnection(c,'Sign in again.');return;
+    }
+    if(data.type==='z5:quality-ping'){
+      if(!Number.isSafeInteger(data.seq)||data.seq<0)throw fail(400,'Invalid ping sequence.');
+      send(c,{type:'z5:quality-pong',seq:data.seq,serverAt:sqlTime()});return;
     }
     if (typeof data.type==='string'&&data.type.startsWith('z2:')) {
       overdrive.packet(c,current,data);return;
