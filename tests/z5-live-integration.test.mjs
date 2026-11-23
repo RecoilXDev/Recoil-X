@@ -33,12 +33,12 @@ test('Z5 party invites only accepted friends and assembles an existing squad',()
 });
 test('Z5 weapon XP is awarded only on verified match settlement, at most once',()=>{
  const f=fixture(),alpha=f.users.get(1);
- f.x.onStart({matchId:'m2'});
+ f.x.onStart({matchId:'m1'});
  f.x.onInput(1,{weapon:3});
- f.x.onEnd('m2',{winner:0,reason:'score',players:[{id:1,team:0,kills:3,forfeited:false,inputs:20}]});
+ f.x.onEnd('m1',{winner:0,reason:'score',players:[{id:1,team:0,kills:3,forfeited:false,inputs:20}]});
  const first=f.x.get(alpha,'/z5/evolutions').weapons;
  assert.equal(first.length,1);assert.equal(first[0].xp,175);
- f.x.onEnd('m2',{winner:0,reason:'score',players:[{id:1,team:0,kills:3,forfeited:false,inputs:20}]});
+ f.x.onEnd('m1',{winner:0,reason:'score',players:[{id:1,team:0,kills:3,forfeited:false,inputs:20}]});
  assert.equal(f.x.get(alpha,'/z5/evolutions').weapons[0].xp,175);
  f.db.close();
 });
