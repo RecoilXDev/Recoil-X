@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 const format='recoil-x-local-backup-v1';
 const maxItems=100,maxValue=300000,maxTotal=1500000;
 const safeKey=/^(?:recoil(?:[-_ ]?x)?|rx(?:5|z|_5)|zone[-_ ]?90|mission[-_])/i;
-const blocked=/(?:token|auth|session|password|secret|credential|recovery|private[-_]?key|bearer|oauth|email|phone|address)/i;
+const blocked=/(?:token|auth|session|password|secret|credential|recovery|private[-_]?key|bearer|oauth|email|phone|address|chat|message|account|profile|username|friend)/i;
 const confidentialValue=/(?:["'](?:token|access_token|refresh_token|password|secret|session|recoveryCode)["']\s*:|Bearer\s+[A-Za-z0-9_-]{12,})/i;
 function eligible(key,value){
  return typeof key==='string'&&safeKey.test(key)&&!blocked.test(key)&&typeof value==='string'&&
