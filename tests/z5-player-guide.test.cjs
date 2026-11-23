@@ -47,3 +47,20 @@ test('server source includes a non-cacheable guide endpoint and script on the ga
  assert.doesNotMatch(code,/sessionStorage\.getItem/);
  assert.match(code,/this file is not uploaded to a server/i);
 });
+
+
+test('guest backup import applies eligible keys only and can be undone',async()=>{
+ const h=makeHarness({'zone90v2_rx5-simple-menu':'true'});
+ new vm.Script(code).runInContext(h.ctx);
+ h.ctx.RXZ5PlayerGuide.open('backup');
+ const file=h.ui.querySelector('#rx-guide-import');
+ assert.ok(file);
+ const before=h.local.getItem('zone90v2_rx5-simple-menu');
+ file.files=[{size:210,text:async()=>JSON.stringify({format:'recoil-x-local-backup-v1',version:1,
+   items:[{key:'zone90v2_rx5-simple-menu',value:'false'}]})}];
+ h.ui.querySelector('#rx-guide-shell').dispatchEvent({type:'change',target:file});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'false');
+ h.ui.querySelector('#rx-guide-shell').dispatchEvent({type:'click',target:h.ui.querySelector('[data-guide="undo"]')});
+ assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),before);
+});
