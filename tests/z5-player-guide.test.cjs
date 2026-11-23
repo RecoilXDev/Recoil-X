@@ -6,6 +6,7 @@ const {makeHarness}=require('./helpers/dom-harness.cjs');
 const code=fs.readFileSync(__dirname+'/../server/z5-player-guide.js','utf8');
 test('guide loads with the existing sand menu, without adding a new top-level shortcut',()=>{
  const h=makeHarness({'zone90v2_rx5-simple-menu':'true'});
+ new vm.Script(fs.readFileSync(__dirname+'/../server/z5-ingame.js','utf8')).runInContext(h.ctx);
  const original=h.ui.querySelector('#rxSimpleQuick');
  new vm.Script(code,{filename:'z5-player-guide.js'}).runInContext(h.ctx);
  assert.equal(h.ui.querySelector('#rxSimpleQuick'),original);
