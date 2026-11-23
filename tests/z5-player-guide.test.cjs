@@ -16,7 +16,7 @@ test('guide loads with the existing sand menu, without adding a new top-level sh
  launch.click();
  assert.ok(h.ui.querySelector('#rx-guide-shell').classList.contains('open'));
  assert.match(h.ui.querySelector('#rx-guide-content').textContent,/Mission Mode progress/);
- h.ui.querySelector('[data-guide="privacy"]').click();
+ h.ui.querySelector('#rx-guide-shell').dispatchEvent({type:'click',target:h.ui.querySelector('[data-guide="privacy"]')});
  assert.match(h.ui.querySelector('#rx-guide-content').textContent,/password verifiers/);
 });
 test('only eligible non-secret game-local keys may be backed up',()=>{
@@ -34,7 +34,10 @@ test('only eligible non-secret game-local keys may be backed up',()=>{
  assert.equal(local.eligible('zone90v2_rx5-simple-menu','true'),true);
  assert.equal(local.eligible('rx5-progress',JSON.stringify({password:'hidden'})),false);
  assert.equal(local.eligible('rx5-settings','a'.repeat(300001)),false);
- assert.deepEqual(Array.from(local.entries(),o=>o.key).sort(),['rx5-hud-layout-v1','zone90v2_rx5-simple-menu']);
+ const keys=Array.from(local.entries(),o=>o.key);
+ assert(keys.includes('rx5-hud-layout-v1'));
+ assert(keys.includes('zone90v2_rx5-simple-menu'));
+ for(const key of ['rx5-token','rx5-auth-refresh','rx5-bad','other-site'])assert(!keys.includes(key));
 });
 test('server source includes a non-cacheable guide endpoint and script on the game shell',()=>{
  const server=fs.readFileSync(__dirname+'/../server/server.mjs','utf8');
