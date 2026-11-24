@@ -128,8 +128,18 @@ get('rx-admin-find').addEventListener('submit',async e=>{e.preventDefault();
  get('rx-admin-player-info').innerHTML='<div class="card"><b>'+esc(p.name)+'</b> '+(p.admin?'(ADMIN)':'')+
  '<p class="muted">ID '+esc(p.id)+'</p><p>Ban: '+(p.banned?'ACTIVE':'none')+' '+esc(p.banReason)+'</p>'+
  '<p>Mute: '+(p.muted?'ACTIVE':'none')+' '+esc(p.muteReason)+'</p><p>Server wallet: '+esc(p.coins)+' coins</p>'+
- '<button class="action secondary" id="rx-admin-select">Moderate this player</button></div>';
+ '<button class="action secondary" id="rx-admin-select">Moderate this player</button><button class="action secondary" id="rx-admin-input-review">Review rejected inputs</button><div id="rx-admin-input-evidence" aria-live="polite"></div></div>';
  get('rx-admin-select').onclick=()=>{get('rx-admin-moderate').elements.name.value=p.name;msg('Selected '+p.name);};
+ get('rx-admin-input-review').onclick=async()=>{
+  const output=get('rx-admin-input-evidence');
+  output.textContent='Loading review evidence…';
+  try{
+   const report=await api('z5/anti-cheat/review?name='+encodeURIComponent(p.name));
+   const rows=report.rejectedInputs||[],flags=report.evidence||[];
+   output.innerHTML='<p class="muted">'+esc(report.notice)+'</p><p>'+rows.length+' recent rejected-input entries · '+flags.length+' movement/shot evidence entries</p>'+
+    (rows.length?'<table><tr><th>Time</th><th>Reason</th></tr>'+rows.map(r=>'<tr><td>'+esc(new Date(r.at).toLocaleString())+'</td><td>'+esc(r.kind)+'</td></tr>').join('')+'</table>':'<p>No rejected-input evidence recorded.</p>');
+  }catch(error){output.textContent=error.message;}
+ };
  }catch(err){msg(err.message,true);}});
 get('rx-admin-moderate').addEventListener('submit',async e=>{e.preventDefault();const b=read(e.target);
  if(!confirm('Confirm '+b.action+' for '+b.name+'?'))return;
