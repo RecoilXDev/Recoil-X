@@ -206,4 +206,10 @@ jobs:
           if grep -Fq '100.5%' /tmp/recoil-z5-live.html; then echo 'Outdated odds adjustment remains' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
+          grep -Fq 'priority-reliability-1' /tmp/recoil-z5-health.json
+          grep -Fq 'Review rejected inputs' /tmp/recoil-z5-admin.js
+          curl --fail --silent --show-error --location --output /tmp/recoil-z5-priority.js https://recoil-x.alwaysdata.net/z5-expansion.js
+          grep -Fq 'Mean HTTP RTT' /tmp/recoil-z5-priority.js
+          curl --fail --silent --show-error --location --output /tmp/recoil-z5-priority-guide.js https://recoil-x.alwaysdata.net/z5-player-guide.js
+          grep -Fq 'Copy game invitation' /tmp/recoil-z5-priority-guide.js
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
