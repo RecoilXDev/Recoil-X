@@ -3,23 +3,57 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {makeHarness}=require('./helpers/dom-harness.cjs');
-test('Update A control center opens and closes without replacing the Sand quick-play menu',async()=>{
+test('game features open inline from their native screens and return to the same menu',async()=>{
  const h=makeHarness();
- new vm.Script(fs.readFileSync(__dirname+'/../server/z5-ingame.js','utf8')).runInContext(h.ctx);
- const quick=h.ui.querySelector('#rxSimpleQuick');
- new vm.Script(fs.readFileSync(__dirname+'/../server/a-control-center.js','utf8')).runInContext(h.ctx);
- assert.equal(h.ui.querySelector('#rxSimpleQuick'),quick);
- assert.ok(h.ui.querySelector('#rx-a-entry').closest('#rx5-native-main'));
- await h.ctx.RXUpdateA.open();
- assert.equal(h.ui.querySelector('#rx-a').hidden,false);
- assert.match(h.ui.querySelector('#rx-a-body').textContent,/Make every match count/);
- await h.ctx.RXUpdateA.open('security');
- assert.match(h.ui.querySelector('#rx-a-body').textContent,/Sign in through Career/);
- h.ctx.RXUpdateA.close();
- assert.equal(h.ui.querySelector('#rx-a').hidden,true);
- assert.equal(h.ui.querySelector('#rx-a-body').textContent,'');
-});
+ const load=name=>new vm.Script(fs.readFileSync(__dirname+'/../server/'+name,'utf8')).runInContext(h.ctx);
+ load('z5-panel.js');load('z5-ingame.js');load('a-curator.js');load('a-control-center.js');
+ const button=(parent,key)=>h.ui.querySelector(parent+' [data-game-feature="'+key+'"]');
+ for(const [parent,keys] of [
+  ['#z1PlayMenu',['curator']],['#z1Locker',['pass','seasonkills']],
+  ['#z1FriendsMenu',['community','security']],['#z1SettingsMenu',['network']],
+  ['#z2Menu',['combat','shield']],['#rx5-shell',['progression']]
+ ])for(const key of keys)assert.ok(button(parent,key),key+' is accessible from '+parent);
+ assert.equal(h.ui.querySelector('#rx-a-entry'),null);
+ assert.equal(h.ui.querySelector('#z1Home [data-game-feature]'),null);
 
+ h.ui.getElementById('z1PlayBtn').click();h.ui.getElementById('z1TrainingTab').click();
+ const curator=button('#z1PlayMenu','curator');
+ await curator.onclick();
+ const feature=h.ui.querySelector('#rx-a');
+ assert.equal(feature.closest('#z1PlayMenu'),h.ui.getElementById('z1PlayMenu'));
+ assert.match(feature.textContent,/Curator Studio/);
+ assert.ok(feature.querySelector('canvas'));
+ await curator.onclick();
+ assert.equal(curator.getAttribute('aria-expanded'),'false');
+ assert.equal(feature.hidden,true);
+ assert.equal(h.ui.getElementById('z1PlayMenu').classList.contains('hide'),false);
+
+ h.ui.querySelector('#z1PlayMenu .z1-back').click();
+ h.ui.getElementById('z1CollectionBtn').click();
+ assert.equal(h.ui.getElementById('z1CollectionMenu').classList.contains('hide'),false);
+ const pass=button('#z1Locker','pass');
+ await pass.onclick();
+ assert.match(feature.textContent,/Sign in through Friends/);
+ await pass.onclick();
+ h.ctx.sessionStorage.setItem('rx5-token','test-session');
+ let equipped=null;
+ const requests=[];
+ h.ctx.fetch=async(path,options)=>{
+  requests.push(path);
+  if(path==='/rx-api/a/season/pass/equip')equipped=JSON.parse(options.body).tier;
+  return {ok:true,json:async()=>({state:'active',xp:130,equipped,rewards:[{title:'Dawn Recruit',tier:1,xp:100,claimed:true}]})};
+ };
+ await pass.onclick();
+ assert.equal(feature.closest('#z1Locker'),h.ui.getElementById('z1Locker'));
+ const equip=feature.querySelector('[data-a-action="pass-equip"]');
+ assert.equal(equip.textContent,'Equip title');
+ await feature.handlers.click[0]({target:equip});
+ assert.deepEqual(requests,['/rx-api/a/season/pass','/rx-api/a/season/pass/equip','/rx-api/a/season/pass']);
+ assert.equal(feature.querySelector('[data-a-action="pass-equip"]').textContent,'Unequip');
+ await feature.handlers.click[0]({target:h.ui.getElementById('rx-a-close')});
+ assert.equal(feature.hidden,true);
+ assert.equal(h.ui.getElementById('rx-a-body').textContent,'');
+});
 
 test('server-confirmed hit UI accepts only current match damage and does not flash',()=>{
  const bridge="globalThis.aHitTest={enter:()=>{mode='crown-overdrive';phase='playing';paused=false;pl.alive=true;z2Live.match={id:'current-match'};},packet:z2Packet,end:()=>{z2Live.match=null;},live:z2Live};";

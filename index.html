@@ -898,7 +898,29 @@ body.rx5-reduce-motion #hurtfx{opacity:0!important}
 #rxSimplePanel .rx-simple-toggle{width:100%;margin-top:6px;min-height:36px;font-size:12px;background:#132a40}
 #mainMenu:not(.rx-simple-active) #rxSimplePanel{max-width:260px;margin:5px auto 16px;padding:6px;background:transparent;border:0;box-shadow:none}
 #mainMenu:not(.rx-simple-active) #rxSimplePanel .rx-simple-heading,#mainMenu:not(.rx-simple-active) #rxSimpleActions{display:none}
-#mainMenu:not(.rx-simple-active) #rxSimpleToggle{min-height:33px}
+#mainMenu:not(.rx-simple-active) #rxSimpleToggle{min-height:44px}
+#mainMenu:not(.rx-simple-active) #rxSimplePanel{margin:8px auto 0;padding:0}
+#mainMenu button#z1CityEntry{
+ display:flex;position:relative;flex-direction:column;align-items:flex-start;justify-content:flex-end;
+ width:100%;min-height:clamp(112px,16vh,145px);margin:0 0 10px;padding:18px 20px;
+ border:1px solid #a38153;border-radius:10px;overflow:hidden;cursor:pointer;
+ background-color:#47382b;background-image:linear-gradient(90deg,#211612db,transparent 77%),url('server/recoil-city-cover.webp');
+ background-position:center 60%;background-size:cover;text-align:start;color:#fff1d7;
+ box-shadow:inset 0 -24px 30px -20px #100c0b;letter-spacing:0;text-transform:none;
+}
+#mainMenu button#z1CityEntry strong{font:800 clamp(27px,4.5vw,36px)/1.06 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:-.025em}
+#mainMenu button#z1CityEntry small{color:#fff0cf;font:700 11px/1.35 system-ui,sans-serif;letter-spacing:.07em;margin:0 0 4px}
+#mainMenu button#z1CityEntry::after{content:'›';position:absolute;inset-inline-end:16px;bottom:17px;display:grid;place-items:center;width:32px;height:32px;border:1px solid #e5c49d;border-radius:50%;color:#fff4e0;background:#2d211cc9;font:26px/1 Arial}
+[dir=rtl] #mainMenu button#z1CityEntry{background-image:linear-gradient(270deg,#211612db,transparent 77%),url('server/recoil-city-cover.webp')}
+[dir=rtl] #mainMenu button#z1CityEntry::after{transform:rotate(180deg)}
+#mainMenu button#z1CityEntry:hover,#mainMenu button#z1CityEntry:focus-visible{border-color:#ffe0aa}
+#mainMenu:not(.rx-simple-active) .z1-home-front{grid-template-columns:repeat(3,minmax(0,1fr))}
+#mainMenu:not(.rx-simple-active) #z1Home button:not(#z1CityEntry){border-radius:9px;line-height:1.22}
+#mainMenu:not(.rx-simple-active) #z1Home .z1-home-front button{margin:0;min-height:53px}
+#mainMenu:not(.rx-simple-active) #z1Home .z1-home-shortcuts button{min-height:45px}
+@media(max-width:540px){#mainMenu button#z1CityEntry{padding:13px;min-height:106px}#mainMenu:not(.rx-simple-active) #z1Home .z1-home-front button strong{font-size:14px}}
+@media(max-height:480px){#mainMenu button#z1CityEntry{min-height:76px;padding:9px 14px}#mainMenu button#z1CityEntry strong{font-size:24px}}
+
 @media(max-width:430px){#rxSimplePanel{padding:12px}#rxSimplePanel .rx-simple-difficulty{flex-direction:column}#rxSimplePanel select{max-width:100%}}
 @media(prefers-reduced-motion:reduce){#rxSimplePanel *{animation:none!important;transition:none!important}}
 </style>
@@ -963,7 +985,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="RECOIL X Classic menu">
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
   <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
@@ -989,7 +1011,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
     </details>
     <p class="rx-simple-note">Fewer menus, smarter enemies. All advanced content is still available.</p>
   </div>
-  <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Advanced menu</button>
+  <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Compact menu</button>
 </div>
   <div class="topline"><span class="brandchip">RECOIL X // VERSION Z.5 · EVOLUTION</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">Five classic maps, plus expansion and mystery arenas. Play solo or online.</div>
@@ -1107,8 +1129,10 @@ function rxRotated(){return document.body.classList.contains('rx-soft-landscape'
 function rxVW(){return rxRotated()?window.innerHeight:window.innerWidth;}
 function rxVH(){return rxRotated()?window.innerWidth:window.innerHeight;}
 function rxClientPoint(e){return rxRotated()?{x:e.clientY,y:window.innerWidth-e.clientX}:{x:e.clientX,y:e.clientY};}
+function rxWantsLandscape(){return mobile&&phase!=='menu'&&window.innerHeight>window.innerWidth;}
+function rxSyncPlayOrientation(){if(rxRotated()!==rxWantsLandscape())rxSyncStage();}
 function rxSyncStage(){
- const rotate=mobile&&window.innerHeight>window.innerWidth;
+ const rotate=rxWantsLandscape();
  document.body.classList.toggle('rx-soft-landscape',rotate);
  const style=document.documentElement.style;
  style.setProperty('--rx-phys-w',window.innerWidth+'px');
@@ -2462,7 +2486,7 @@ for(const p of players){let d=Math.hypot(p.x-eye[0],p.z-eye[2]);if(d>31)continue
 let aNextPresent=0,aLastCap=0,aLastScene=0;
 function loop(ts){
  requestAnimationFrame(loop);
- if(document.hidden){lastFrame=ts;lastPresented=ts;aNextPresent=0;return;}
+ if(document.hidden||window.RecoilCity?.active){lastFrame=ts;lastPresented=ts;aNextPresent=0;return;}
  const cap=v91FpsTarget(),interval=1000/cap;
  if(cap!==aLastCap){aLastCap=cap;aNextPresent=0;}
  if(aNextPresent&&ts<aNextPresent-1)return;
@@ -2499,8 +2523,8 @@ function cycleSpectator(step){spectateIndex+=step;updateSpectatorUI();}
 function enterSpectator(){if(mode==='solo'||phase!=='playing'){toast(tr('noPlayers'));return;}if(!availableSpectators().length){toast(tr('noPlayers'));return;}spectating=true;spectateIndex=0;mouseDown=false;mobileFire=false;mobileSprint=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();hideOverlay();updateSpectatorUI();}
 function exitSpectator(){if(z1IsPartyGuest()&&z1Room.watch)return;spectating=false;updateSpectatorUI();if(phase==='playing'&&!pl.alive){showScreen('deadMenu');}else if(phase==='playing'&&mode==='host'){hideOverlay();}else if(phase==='playing'){hideOverlay();}if(phase==='playing'&&pl.alive)capturePointer();updateHUD();}
 
-function showScreen(screen){if(screen==='vxEventMenu'&&!vxEventLive())screen='mainMenu';if(screen==='rxseHubMenu'&&!rxseActive().length)screen='mainMenu';if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen))setMusic('lobby');$('overlay').classList.remove('hidden');for(const id of ['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','pauseMenu','endMenu','deadMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'])$(id).classList.add('hide');$(screen).classList.remove('hide');if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen)){phase='menu';$('hud').classList.remove('active');$('crosshair').classList.remove('active');$('weaponArt').classList.remove('active');$('mobileControls').classList.remove('active');}else{paused=true;}mouseDown=false;mobileFire=false;}
-function hideOverlay(){$('overlay').classList.add('hidden');paused=false;}
+function showScreen(screen){if(screen==='vxEventMenu'&&!vxEventLive())screen='mainMenu';if(screen==='rxseHubMenu'&&!rxseActive().length)screen='mainMenu';if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen))setMusic('lobby');$('overlay').classList.remove('hidden');for(const id of ['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','pauseMenu','endMenu','deadMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'])$(id).classList.add('hide');$(screen).classList.remove('hide');if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen)){phase='menu';$('hud').classList.remove('active');$('crosshair').classList.remove('active');$('weaponArt').classList.remove('active');$('mobileControls').classList.remove('active');}else{paused=true;}mouseDown=false;mobileFire=false;rxSyncPlayOrientation();}
+function hideOverlay(){$('overlay').classList.add('hidden');paused=false;rxSyncPlayOrientation();}
 function capturePointer(){
  if(mobile||rxTvMouseEnabled)return;
  if(document.pointerLockElement===canvas)return;
@@ -9002,6 +9026,7 @@ function mountMenuTabs(label,tabs){
 function z1MenuPlay(){
   const p=z1MakeScreen('z1PlayMenu','Play','<p id="z1PlayParty" class="hide"></p>');
   const quick=z1MenuGroup(p,'Quick play',[
+    ['Quick Play','Five-minute bot match on a random map',()=>window.RXZ5ClassicMenu.playQuick(),'z1InstantPlay'],
     ['Bot Arena','Vote for a battleground',showVoteSolo,'z1PlaySolo'],
     ['Jeep Rally','Five gates at Wadi Rally',z1StartRally,'z1PlayJeep'],
     ['Murder Mystery','Random roles with bots',vxShowMysteryMenu,'z1PlayMystery'],
@@ -9063,7 +9088,14 @@ function z1BuildHome(){
   }
   const stats=document.createElement('div');stats.className='z1-career';
   stats.innerHTML='<span id="z1CareerText"></span><span class="z1-career-track"><i id="z1CareerBar"></i></span>';
-  root.append(stats,front,shortcuts);
+  const cityName=document.createElement('strong'),cityType=document.createElement('small');
+  const city=crownButton('',()=>{
+    if(window.RecoilCity?.open())return;
+    const retry={ar:'تعذّر تحميل المدينة. أعد تحميل اللعبة للمحاولة مجددًا.',es:'No se pudo cargar la ciudad. Recarga el juego para reintentar.',fr:'La ville n’a pas chargé. Rechargez le jeu pour réessayer.',tr:'Şehir yüklenemedi. Tekrar denemek için oyunu yeniden yükle.'};
+    cityType.textContent=retry[language]||'City files could not load. Reload the game to try again.';
+  },'z1-city-entry','z1CityEntry');
+  cityName.textContent='Recoil City';cityType.id='z1CityType';cityType.setAttribute('role','status');city.append(cityType,cityName);
+  root.append(stats,city,front,shortcuts);
   main.querySelector('.menu-stats').after(root);
   const events=$('zzLiveEventTab');
   root.append(events);events.onclick=z1OpenLiveEvents;
@@ -9086,6 +9118,7 @@ function z1BuildHome(){
 function z1SyncNavigation(){
   const words=z1HomeWords();
   for(const node of $('z1Home').querySelectorAll('[data-z1-label]'))node.textContent=words[node.dataset.z1Label];
+  $('z1CityType').textContent=({ar:'عالم مفتوح',es:'Mundo abierto',fr:'Monde ouvert',tr:'Açık dünya'})[language]||'Open world';
   $('z1PlaySub').textContent=z1IsPartyHost()?words[7]:words[6];
   const status=$('z1PlayParty');
   status.classList.toggle('hide',!z1IsPartyHost());
@@ -12448,23 +12481,31 @@ runCrownGame();
   const root=document.getElementById('mainMenu'),toggle=document.getElementById('rxSimpleToggle');
   const api=window.RXZ5ClassicMenu;
   if(!root||!toggle||!api)return;
-  let simplified=true;
-  try{const firstSandStart=api.read('rx5-sand-6-1-first-menu',false)!==true;
-    simplified=firstSandStart?true:api.read('rx5-simple-menu',true)!==false;
-    if(firstSandStart)api.write('rx5-sand-6-1-first-menu',true);
-  }catch{}
+  // The older preferences selected Sand Edition's compact layout automatically.
+  // Migrate every profile to classic until the player explicitly chooses a layout here.
+  let simplified=false;
+  try{simplified=api.read('rx-home-layout-v2','classic')==='compact';}catch{}
+  const panel=document.getElementById('rxSimplePanel'),city=document.getElementById('z1CityEntry');
+  root.append(panel);
   function apply(value){
     simplified=!!value;
     root.classList.toggle('rx-simple-active',simplified);
-    toggle.textContent=simplified?'◈ ADVANCED MODE':'← SIMPLE MODE';
+    if(simplified)document.getElementById('rxSimpleQuick').after(city);
+    else document.querySelector('#z1Home .z1-home-front').before(city);
+    toggle.textContent=simplified?'Classic menu':'Compact menu';
     toggle.setAttribute('aria-pressed',String(simplified));
-    try{api.write('rx5-simple-menu',simplified);}catch{}
+    root.dispatchEvent(new Event('rx-menu-layout'));
   }
   const level=document.getElementById('rxSimpleBotLevel');
   try{const saved=api.read('rx5-bot-challenge','veteran');level.value=['standard','veteran','nightmare'].includes(saved)?saved:'veteran';}catch{level.value='veteran'}
   api.setBotMode(level.value);
   level.onchange=()=>{api.setBotMode(level.value);try{api.write('rx5-bot-challenge',level.value)}catch{}};
-  toggle.onclick=()=>apply(!simplified);
+  toggle.onclick=()=>{
+    apply(!simplified);
+    try{api.write('rx-home-layout-v2',simplified?'compact':'classic');}catch{}
+    const first=document.getElementById(simplified?'rxSimpleQuick':'z1CityEntry');
+    first?.focus();
+  };
   document.getElementById('rxSimpleQuick').onclick=()=>{
     // Quick Play intentionally bypasses vote screens and remains local/offline.
     api.playQuick();
@@ -12493,5 +12534,8 @@ runCrownGame();
   apply(simplified);
 })();
 </script>
+<script src="server/recoil-city-world.js" defer></script>
+<script src="server/recoil-city-view.js" defer></script>
+<script src="server/recoil-city.js" defer></script>
 </body>
 </html>

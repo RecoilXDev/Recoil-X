@@ -9,7 +9,7 @@ if(!menu||!simple||!pause)return;
 const style=document.createElement('style');
 style.id='rx5-clean-ui-styles';
 style.textContent=[
-'#rxSimplePanel{border:1px solid #335d75!important;border-radius:19px!important;background:linear-gradient(155deg,#0b1c2eee,#101d30fa)!important;box-shadow:0 18px 54px #0009!important}',
+'#mainMenu.rx-simple-active #rxSimplePanel{border:1px solid #335d75!important;border-radius:19px!important;background:linear-gradient(155deg,#0b1c2eee,#101d30fa)!important;box-shadow:0 18px 54px #0009!important}',
 '#mainMenu.rx-simple-active #rxSimplePanel{width:min(670px,96%);max-width:670px;margin:0 auto;padding:clamp(13px,3vw,26px)}',
 '#rxSimplePanel .rx-simple-brand{letter-spacing:.11em;font-size:clamp(28px,6vw,43px)}',
 '#rxSimplePanel .rx-simple-motto{margin-bottom:12px;color:#9db4c6}',
@@ -130,7 +130,7 @@ document.addEventListener('keydown',event=>{if(!news.hidden&&event.key==='Escape
 news.querySelector('#rx5-news-options').addEventListener('click',()=>{
  hideNews();
  const details=$('rx5Options');
- if(details){details.open=true;details.scrollIntoView?.({block:'nearest',behavior:'auto'});}
+ if(details){if(!menu.classList.contains('rx-simple-active'))$('z1SettingsBtn')?.click();details.hidden=false;details.open=true;details.scrollIntoView?.({block:'nearest',behavior:'auto'});}
 });
 function makeButton(parent,key,label,admin=false){
  const button=document.createElement('button');button.type='button';button.textContent=label;
@@ -331,10 +331,34 @@ if(simpleSettings)simpleSettings.onclick=()=>{
  if(isOpen){settings.open=false;settings.hidden=true;}
  else{settings.hidden=false;settings.open=true;more.open=false;settings.scrollIntoView?.({block:'nearest'});}
 };
-settings.addEventListener('toggle',()=>{if(!settings.open)settings.hidden=true;});
+settings.addEventListener('toggle',()=>{if(!settings.open&&menu.classList.contains('rx-simple-active'))settings.hidden=true;});
 const advancedGroup=document.createElement('div');advancedGroup.id='rx5-native-advanced';
-advancedGroup.setAttribute('aria-label','Advanced RECOIL X shortcuts');
-menu.append(advancedGroup);
+advancedGroup.setAttribute('aria-label','More game features');
+$('z1Home').append(advancedGroup);
+const classicSettings=$('z1SettingsMenu').querySelector('.z1-screen-body');
+function placeMenuTools(){
+ const compact=menu.classList.contains('rx-simple-active');
+ more.open=false;settings.open=false;settings.hidden=compact;advancedLink.hidden=!compact;
+ if(compact){
+   grid.after(more);more.before(settings);
+ }else{
+   advancedGroup.append(more);
+   classicSettings.append(settings);
+ }
+}
+menu.addEventListener('rx-menu-layout',placeMenuTools);
+placeMenuTools();
+style.textContent+=`
+body.rx5-sand-ui #overlay #mainMenu:not(.rx-simple-active) .game-title{font-size:clamp(46px,8vw,88px);line-height:1.05;margin:2px 0 7px}
+body.rx5-sand-ui #mainMenu:not(.rx-simple-active) #rxSimpleToggle{min-height:44px;padding:4px 10px;border:0!important;box-shadow:none;background:transparent!important;text-decoration:underline;text-underline-offset:3px;color:#d3b48a!important}
+body.rx5-sand-ui #mainMenu:not(.rx-simple-active) #rxSimpleToggle:hover{color:#fff0d8!important}
+#z1Home #rx5-native-advanced{display:block;margin:10px 0 0;padding:0;border:0}
+#z1Home #rx5More{margin:0}
+#z1Home #rx5More>summary{min-height:44px}
+#z1Home #rx5More button[hidden]{display:none!important}
+#z1SettingsMenu #rx5Options{margin:12px 0}
+#z1SettingsMenu #rx5Options>summary{min-height:44px}
+`;
 const pauseMore=document.createElement('details');pauseMore.id='rx5PauseMore';
 pauseMore.innerHTML='<summary>MORE FEATURES · Z.5</summary>';
 const pauseControls=pause.querySelector('.mode-grid');
@@ -351,14 +375,14 @@ photoButton.textContent='📸 SAVE CLEAN GAME SCREENSHOT';
 photoButton.style.cssText='display:block;margin:9px auto;padding:10px 14px;border:1px solid #c39a64;border-radius:8px;background:#65462c;color:#ffebc9;font-weight:750;cursor:pointer';
 photoButton.addEventListener('click',()=>{if(!window.RXZ5CapturePhoto?.())console.warn('Screenshot only available during gameplay');});
 pauseMore.append(photoButton);
-for(const target of [simpleGroup,advancedGroup,pauseGroup]){
+for(const target of [simpleGroup,pauseGroup]){
  makeButton(target,'academy','🎓 Training Academy');
  makeButton(target,'career','🏅 Career & Clans');
  makeButton(target,'market','⚒ Forge & Market');
  makeButton(target,'matches','🌐 Match Hub');
  makeButton(target,'admin','🛡 Admin',true);
 }
-makeButton(advancedGroup,'news','✦ What\'s New');
+
 const pauseNews=document.createElement('button');
 pauseNews.type='button';pauseNews.textContent='✦ Z.5 UPDATE NOTES';
 pauseNews.addEventListener('click',showNews);

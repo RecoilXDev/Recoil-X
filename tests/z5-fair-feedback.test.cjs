@@ -62,10 +62,10 @@ test('battle pass is half price and legacy purchasers get one credit only',()=>{
 });
 
 test('PWA cache renews without losing accessible sand theme and existing game options',()=>{
- assert.match(sw,/z5-sand-8-fair-loot/);
+ assert.match(sw,/recoil-city-1/);
  assert.match(html,/id="rxSimpleQuick"/);
  assert.match(html,/content="Z\.5-SAND-8"/);
- assert.match(html,/rx5-sand-6-1-first-menu/);
+ assert.match(html,/rx-home-layout-v2/);
  assert.match(html,/const RX_PITY_LIMIT=25/);
  assert.match(html,/rxChestFairStreakV1/);
 });

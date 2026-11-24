@@ -27,7 +27,7 @@ test('Operation Simplicity adds selectable OG futuristic map and offline quick p
  assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/);
  assert.match(html,/chooseMap\(chosen\?\.id\|\|'dunes'\);startGame\('solo'\);gameSeconds=300/);
  assert.match(html,/mainMenu\.rx-simple-active/);
- assert.match(html,/rx5-simple-menu/);
+ assert.match(html,/rx-home-layout-v2/);
  assert.match(html,/rxSimpleBotLevel/);
  assert.match(html,/const rx5LowG=.*activeMap\(\)\?\.special==='moon'/,'Moonfall local gravity field exists');
  assert.match(html,/pl\.vy=rx5LowG\?9\.6:6\.6/,'jump velocity responds to low gravity');
