@@ -2,9 +2,9 @@
 (() => {
   'use strict';
 
-  const roadsX = [120, 360, 600, 840, 1080];
-  const roadsY = [120, 360, 600, 840];
-  const width = 1200, height = 960, roadWidth = 76;
+  const roadsX = Array.from({length:10},(_,i)=>120+240*i);
+  const roadsY = Array.from({length:8},(_,i)=>120+240*i);
+  const width = 2400, height = 1920, roadWidth = 76;
   const jobRadius = 34, carRadius = 12, footRadius = 5;
   const garage = {name: 'Sandline Customs', x: 298, y: 150, radius: 40};
   const resprayPrice = 45;
@@ -19,7 +19,8 @@
     {name: 'Canal Ward', x: 0, y: 480, w: 600, h: 480},
     {name: 'South Docks', x: 600, y: 480, w: 600, h: 480}
   ];
-  const districtAt = (x, y) => districts[Number(x >= 600) + 2 * Number(y >= 480)].name;
+  for(const [name,x,y,w,h] of [['East Market',1200,0,600,480],['Airport Quarter',1800,0,600,480],['Industrial Park',1200,480,600,480],['East Beach',1800,480,600,480],['Garden Estates',0,960,600,480],['Police Quarter',600,960,600,480],['Sunset Farms',1200,960,600,480],['Marina East',1800,960,600,480],['South Village',0,1440,600,480],['West Coast',600,1440,600,480],['Highway Ward',1200,1440,600,480],['Southern Bay',1800,1440,600,480]])districts.push({name,x,y,w,h});
+  const districtAt = (x,y) => districts.find(d=>x>=d.x&&y>=d.y&&x<d.x+d.w&&y<d.y+d.h)?.name||'City outskirts';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   function makeBlocks() {
@@ -49,11 +50,12 @@
     ['cinema', 'Starline Cinema', 892, 150], ['station', 'North Station', 1070, 325],
     ['market', 'Copper Market', 280, 385], ['gardens', 'Canal Gardens', 460, 570],
     ['theater', 'Marina Theater', 880, 630], ['docks', 'Pier Nine', 1000, 810],
-    ['works', 'Tideworks', 330, 748], ['wharf', 'West Wharf', 150, 805]
+    ['works', 'Tideworks', 330, 748], ['wharf', 'West Wharf', 150, 805], ['east','East Market',1320,150],['airport','Airport Quarter',2040,150],['estate','Garden Estates',360,1110],['marina','Marina East',2040,1350],['south','Southern Bay',2280,1830]
   ].map(([id, name, x, y]) => ({id, name, x, y, district: districtAt(x, y)}));
   const shops = [
     {id: 'cafe', name: 'Copper Café', x: 279, y: 399, price: 12},
-    {id: 'repair', name: 'Pier Nine Motors', x: 1000, y: 798, price: 30}
+    {id: 'repair', name: 'Pier Nine Motors', x: 1000, y: 798, price: 30},
+    {id:'eastshop',name:'East Market Store',x:1320,y:165,price:12},{id:'southshop',name:'Southern Bay Store',x:2280,y:1845,price:12}
   ];
   const secrets = [
     {id: 'airwave', name: 'The lost airwave', kind: 'radio', x: 240, y: 233},
@@ -62,9 +64,12 @@
   ];
   const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets, blocks: makeBlocks()};
   const buildings = map.blocks.filter(block => block.kind === 'building');
+  const cellSize=240,buildingCells=new Map();
+  for(const b of buildings)for(let i=Math.floor(b.x/cellSize);i<=Math.floor((b.x+b.w)/cellSize);i++)for(let j=Math.floor(b.y/cellSize);j<=Math.floor((b.y+b.h)/cellSize);j++){const k=i+','+j;if(!buildingCells.has(k))buildingCells.set(k,[]);buildingCells.get(k).push(b);}
+  function localBuildings(x,y,r){const found=new Set();for(let i=Math.floor((x-r)/cellSize);i<=Math.floor((x+r)/cellSize);i++)for(let j=Math.floor((y-r)/cellSize);j<=Math.floor((y+r)/cellSize);j++)for(const b of buildingCells.get(i+','+j)||[])found.add(b);return found;}
   function clearOfBuildings(x, y, radius) {
     if (x < radius || y < radius || x > width - radius || y > height - radius) return false;
-    return !buildings.some(b => {
+    return ![...localBuildings(x,y,radius)].some(b => {
       const dx = x - clamp(x, b.x, b.x + b.w), dy = y - clamp(y, b.y, b.y + b.h);
       return dx * dx + dy * dy < radius * radius;
     });
@@ -165,7 +170,7 @@
   }
   function stepPedestrians(state, dt) {
     for (const p of state.locals) {
-      if (p.hp <= 0) continue;
+      if (p.hp <= 0 || p.stunUntil>state.elapsed) continue;
       const player = state.player;
       if (p.alarm > 0) {
         p.alarm -= dt;
@@ -202,7 +207,7 @@
       player: {x: 135, y: 169, z: 0, vz: 0, hp: 100, angle: 0, phase: 0, motion: 'idle', vehicleId: null},
       weapons, weapon: clamp(equipped | 0, 0, Math.max(0, weapons.length - 1)),
       ammo: weapons.map(w => ({mag: w.max, stock: w.reserve})), nextShot: 0, reloadAt: 0,
-      vehicles: fleet, pedestrians: createPedestrians(), career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
+      vehicles: fleet, pedestrians: createPedestrians(), officers: [], stores: shops.map((s,i)=>({...s,keeper:{id:10000+i,x:s.x+6,y:s.y,angle:Math.PI,color:'#af8050',hp:70,phase:0},cooldown:0})), interior:null, deathUntil:0, deathLabel:'', career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
       district: '', patrolId: 0, heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0};
     populate(state);
     makeOffer(state);
@@ -234,6 +239,7 @@
   }
   function interact(state) {
     const player = state.player, car = driven(state);
+    if(state.interior)return false;
     if (car) {
       if (Math.abs(car.speed) > 36) { setNotice(state, 'Slow down to step out.'); return false; }
       for (const offset of [-Math.PI / 2, Math.PI / 2, Math.PI, 0]) {
@@ -385,8 +391,20 @@
         if (other) damageCar(state, other, (impact - 25) * .26);
         if (car.hp <= 0) return;
       }
-    } else { car.x = x; car.y = y; }
+    } else { const oldX=car.x,oldY=car.y;car.x=x;car.y=y;vehicleImpact(state,car,oldX,oldY); }
     Object.assign(state.player, {x: car.x, y: car.y, angle: car.angle});
+  }
+  function vehicleImpact(state,car,oldX,oldY){
+    const speed=Math.abs(car.speed);if(speed<18)return;
+    const dx=car.x-oldX,dy=car.y-oldY,l=dx*dx+dy*dy||1;
+    for(const npc of [...state.locals,...state.officers]){
+      if(npc.hp<=0||npc.stunUntil>state.elapsed)continue;
+      const t=clamp(((npc.x-oldX)*dx+(npc.y-oldY)*dy)/l,0,1);
+      if(Math.hypot(npc.x-oldX-t*dx,npc.y-oldY-t*dy)>13)continue;
+      npc.angle=Math.atan2(dy,dx);npc.stunUntil=state.elapsed+2.5;
+      if(speed>=52){npc.hp=0;npc.downUntil=state.elapsed+34;npc.mood='down';}
+      if(state.hitCooldown<=0){heatUp(state,'Vehicle impact reported.');state.hitCooldown=1.6;}
+    }
   }
   function advanceToward(v, goal, amount) {
     const dx = goal.x - v.x, dy = goal.y - v.y, gap = Math.hypot(dx, dy);
@@ -434,6 +452,10 @@
   }
   function patrol(state, car, dt) {
     const target = state.player;
+    if(car.dismounted)return;
+    if(!target.vehicleId&&distance(car,target)<70&&state.officers.length<(state.quality==='low'?2:4)){
+      for(const a of [car.angle+Math.PI/2,car.angle-Math.PI/2,car.angle+Math.PI]){const x=car.x+Math.cos(a)*19,y=car.y+Math.sin(a)*19;if(!clearOfBuildings(x,y,footRadius))continue;car.dismounted=true;car.speed=0;state.officers.push({id:20000+state.patrolId+state.officers.length,x,y,angle:a,hp:100,color:'#38576e',phase:0,mood:'defend',nextShot:state.elapsed+1,unit:car.id});return;}
+    }
     if (!car.goal || distance(car, car.goal) < 1) {
       const nearest = (lines, pos) => lines.reduce((best, v) => Math.abs(v - pos) < Math.abs(best - pos) ? v : best);
       const ix = roadsX.indexOf(nearest(roadsX, car.x)), iy = roadsY.indexOf(nearest(roadsY, car.y));
@@ -454,11 +476,15 @@
     car.speed = 70 + 14 * state.heat;
     advanceToward(car, car.goal, car.speed * dt);
     car.contact = distance(car, target) < 26 ? car.contact + dt : 0;
-    if (car.contact > 1.8) {
-      state.heat = 0;
-      const v = driven(state);
-      if (v) v.speed *= .2;
-      setNotice(state, 'Patrol check complete. The streets are clear.');
+    if(car.contact>1.8&&target.vehicleId){const v=driven(state);if(v)v.speed*=.8;car.contact=0;}
+  }
+  function stepOfficers(state,dt){
+    const p=state.player;
+    for(const o of state.officers){if(o.hp<=0||o.stunUntil>state.elapsed||!state.heat||state.interior)continue;
+      const dx=p.x-o.x,dy=p.y-o.y,gap=Math.hypot(dx,dy)||1;
+      o.angle=Math.atan2(dy,dx);
+      if(gap>38){const x=o.x+dx/gap*42*dt,y=o.y+dy/gap*42*dt;if(clearOfBuildings(x,o.y,footRadius))o.x=x;if(clearOfBuildings(o.x,y,footRadius))o.y=y;o.phase=Math.sin(state.elapsed*8);}
+      if(gap<105&&state.elapsed>=o.nextShot&&wallDistance(o.x,o.y,dx/gap,dy/gap,gap)>=gap){o.nextShot=state.elapsed+1.5;const head=state.random()<.16;effect(state,'return',{x:o.x,y:o.y,z:9}, {x:p.x,y:p.y,z:head?12:8},8);if(p.vehicleId)damageCar(state,driven(state),8);else{p.hp=Math.max(0,p.hp-(head?100:12));if(!p.hp){state.deathUntil=state.elapsed+2.4;state.deathLabel='DEAD';}}}
     }
   }
   function step(state, input = {}, seconds = 0) {
@@ -467,19 +493,21 @@
       const dt = Math.min(remaining, 1 / 60);
       remaining -= dt;
       state.elapsed += dt;
+      if(state.deathUntil){if(state.elapsed>=state.deathUntil){state.deathUntil=0;state.deathLabel='';recover(state);}continue;}
       if (state.elapsed >= state.populationAt) populate(state);
       if (state.elapsed >= state.nextTrafficCheck) replenishTraffic(state);
       stepPedestrians(state, dt);
       if (state.reloadAt && state.elapsed >= state.reloadAt) finishReload(state);
       if (input.fire) fire(state, input.aim);
-      if (state.player.hp <= 0) recover(state);
+      if (state.player.hp <= 0) {state.deathUntil=state.elapsed+2.4;state.deathLabel='DEAD';continue;}
       while (state.effects.length && state.effects[0].until <= state.elapsed) state.effects.shift();
       state.noticeSeconds = Math.max(0, state.noticeSeconds - dt);
       if (!state.noticeSeconds) state.notice = '';
       state.hitCooldown = Math.max(0, state.hitCooldown - dt);
       if (state.job) state.job.elapsed += dt;
       const vehicle = driven(state);
-      if (vehicle) drive(state, vehicle, input, dt); else walk(state, input, dt);
+      if(state.interior)walkInterior(state,input,dt);else if (vehicle) drive(state, vehicle, input, dt); else walk(state, input, dt);
+      stepOfficers(state,dt);
       for (const car of state.vehicles) {
         if (car.hp <= 0) {
           if (car.home && car.restoreAt <= state.elapsed && distance(car, state.player) > 80 && distance(car.home, state.player) > 65 && clearOfCars(state, car.home.x, car.home.y, carRadius, car)) {
@@ -495,7 +523,7 @@
         state.heatTime -= dt;
         if (state.heatTime <= 0) { state.heat--; state.heatTime = 9; }
       }
-      if (!state.heat && state.vehicles.some(v => v.kind === 'patrol')) state.vehicles = state.vehicles.filter(v => v.kind !== 'patrol');
+      if (!state.heat){state.officers.length=0;if(state.vehicles.some(v=>v.kind==='patrol'))state.vehicles=state.vehicles.filter(v=>v.kind!=='patrol');}
     }
     discover(state);
     updateNearby(state);
@@ -530,7 +558,10 @@
       setNotice(state, 'Discovered ' + spot.name + ' · ' + state.career.discoveries.length + '/' + secrets.length);
     }
   }
-  function nearbyShop(state) { return shops.find(s => distance(s,state.player) <= 28); }
+  function nearbyShop(state) { return state.interior||state.stores.find(s=>distance(s,state.player)<=28); }
+  function enterShop(state){const p=state.player;if(state.deathUntil||p.vehicleId)return false;if(state.interior){const s=state.interior;state.interior=null;Object.assign(p,{x:s.x,y:s.y,z:0,vz:0});return true;}const s=nearbyShop(state);if(!s||s.id==='repair')return false;if(s.cooldown<=state.elapsed&&s.keeper.hp<=0)s.keeper.hp=70;state.interior=s;Object.assign(p,{x:s.x-10,y:s.y,z:0,vz:0,angle:0});return true;}
+  function walkInterior(state,input,dt){const p=state.player,s=state.interior,dx=clamp(Number(input.walkX)||0,-1,1),dy=clamp(Number(input.walkY)||0,-1,1),n=Math.max(1,Math.hypot(dx,dy));p.x=clamp(p.x+dx*60*dt/n,s.x-14,s.x+14);p.y=clamp(p.y+dy*60*dt/n,s.y-10,s.y+10);p.motion=dx||dy?'walking':'idle';p.phase+=dt*5;}
+  function robShop(state){const s=state.interior;if(!s||state.deathUntil)return false;if(s.cooldown>state.elapsed){setNotice(state,'Register unavailable.');return false;}s.cooldown=state.elapsed+90;state.career.cash=Math.min(1e9,state.career.cash+75);heatUp(state,'Shop alarm · patrol responding.');return true;}
   function shop(state) {
     const store = nearbyShop(state), car = driven(state);
     if (!store) return false;
@@ -545,6 +576,7 @@
   }
   function recover(state) {
     const p = state.player, car = driven(state);
+    state.interior=null;state.officers.length=0;
     if (car) car.speed = 0;
     Object.assign(p,{x:135,y:169,z:0,vz:0,hp:100,vehicleId:null,motion:'idle'});
     state.heat = 0; state.reloadAt = 0;
@@ -574,7 +606,7 @@
   // Slab intersection shared by the follow camera, sight checks and weapon contacts.
   function wallDistance(x, y, dx, dy, limit, z = 8, dz = 0, padding = 0) {
     let closest = limit;
-    for (const b of buildings) {
+    for (const b of localBuildings(x+dx*limit/2,y+dy*limit/2,limit/2+padding+2)) {
       let enter = 0, leave = closest;
       const axes = [[x,dx,b.x-padding,b.x+b.w+padding],[y,dy,b.y-padding,b.y+b.h+padding],[z,dz,-1,buildingHeight(b)+padding]];
       for (const [origin,dir,lo,hi] of axes) {
@@ -604,22 +636,22 @@
     a.stock -= take; a.mag += take; state.reloadAt = 0;
   }
   function trace(state, origin, dx, dy, dz, range) {
-    let reach = wallDistance(origin.x,origin.y,dx,dy,range,origin.z,dz), hit = null;
+    let reach = state.interior?Math.min(range,35):wallDistance(origin.x,origin.y,dx,dy,range,origin.z,dz), hit = null;
     if (dz < -.0001) reach = Math.min(reach, -origin.z/dz);
     function test(body, h, r, offset = 0) {
       const t = state.rayHit(origin.x,origin.y,origin.z,dx,dy,dz,
         body.x + Math.cos(body.angle)*offset,body.y + Math.sin(body.angle)*offset,h,r);
       if (t < reach) { reach = t; hit = body; }
     }
-    for (const p of state.locals) if (p.hp > 0) { test(p,8,3.7); test(p,12,2.5); test(p,3,3); }
-    for (const car of state.vehicles) if (car.hp > 0 && car.id !== state.player.vehicleId) {
+    for (const p of (state.interior?[state.interior.keeper]:[...state.locals,...state.officers])) if (p.hp > 0) { test(p,8,3.7); test(p,12,2.5); test(p,3,3); }
+    for (const car of (state.interior?[]:state.vehicles)) if (car.hp > 0 && car.id !== state.player.vehicleId) {
       test(car,4,5.7,5.3); test(car,5,6); test(car,4,5.7,-5.3);
     }
     return {x:origin.x+dx*reach,y:origin.y+dy*reach,z:origin.z+dz*reach,hit};
   }
   function fire(state, aim) {
     const p = state.player, w = state.weapons[state.weapon], ammo = state.ammo[state.weapon];
-    if (!w || !state.rayHit || p.vehicleId || state.reloadAt || state.nextShot > state.elapsed) return false;
+    if (state.deathUntil || !w || !state.rayHit || p.vehicleId || state.reloadAt || state.nextShot > state.elapsed) return false;
     if (!ammo.mag) { reload(state); return false; }
     const yaw = aim?.yaw ?? p.angle, pitch = aim?.pitch || 0, range = w.range * 5;
     p.angle = yaw; p.aimUntil = state.elapsed + .28; ammo.mag--; state.nextShot = state.elapsed + w.cadence;
@@ -638,7 +670,7 @@
         if (end.hit.kind) damageCar(state,end.hit,w.damage);
         else {
           end.hit.hp = Math.max(0,end.hit.hp-w.damage);
-          if (!end.hit.hp) { end.hit.downUntil = state.elapsed+34; end.hit.mood = 'down'; }
+          if (!end.hit.hp) { end.hit.downUntil = state.elapsed+34; end.hit.mood = 'down';if(state.interior)state.interior.cooldown=Math.max(state.interior.cooldown,state.elapsed+90); }
         }
       }
       if (i < 3) effect(state,'shot',muzzle,end,9);
@@ -652,5 +684,5 @@
     }
     return true;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, jump, reload, selectWeapon, buildingHeight, wallDistance});
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance});
 })();
