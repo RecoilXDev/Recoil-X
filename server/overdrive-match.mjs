@@ -262,7 +262,7 @@ function fire(m,p,now) {
   const w=weapons[p.weapon],bonus=matchEvolutionBonuses(m,p,p.weapon);
   const scaledDamage=amount=>Math.round(amount*bonus.damageMultiplier*10)/10;
   const dual=m.mode==='dualwield',projectiles=dual?Math.min(2,p.ammo[p.weapon]):w.pellets;
-  const metrics=p.aCombat[p.weapon];metrics.triggers++;
+  const metrics=p.aCombat[p.weapon],damageBefore=metrics.damage,hitsBefore=metrics.hits;metrics.triggers++;
   p.ammo[p.weapon]-=dual?projectiles:1;
   p.readyShot=now+Math.ceil(w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1)*bonus.fireIntervalMultiplier);
   if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
@@ -311,6 +311,7 @@ function fire(m,p,now) {
     }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
+  if(metrics.hits>hitsBefore)m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
 }
 
 function reload(m,p,now) {
