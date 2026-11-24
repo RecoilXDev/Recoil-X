@@ -2848,7 +2848,33 @@ let v8ThirdPerson=!!getStore('v8ThirdPerson',false),v8GunFireAt=-10,v8GunChangeA
 if(gl)document.body.classList.add('v8-webgl');
 // An earned Desert Token unlocks all newly-added shop cosmetics as well.
 function v8GrantArmoryWithToken(){if(desertTokens>0){v8Owned=V8_GUN_FINISHES.map(f=>f.id);setStore('v8GunOwned',v8Owned);}}
-function gunFinishFor(n){const gun=V8_GUN_IDS[n]||'ar';return V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun])||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
+// Account-only season cosmetics: never enter browser-owned inventory, loot tables or trade pools.
+let aSeasonReward=null;
+const A_SEASON_COLORS=Object.freeze({
+ gold:['#b88623','#fff0a2','#634013'],
+ silver:['#a4b5ca','#f1fcff','#39475a'],
+ bronze:['#a76640','#ffbd82','#533023'],
+ blue:['#2458b4','#75d7ff','#112855']
+});
+function aSeasonFinish(tier){
+ const colors=Object.hasOwn(A_SEASON_COLORS,tier)?A_SEASON_COLORS[tier]:null;
+ const original=V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent');
+ if(!colors||!original)return null;
+ return {...original,id:'a_s1_sandwyrm_'+tier,name:'New Dawn Sandwyrm · '+tier.toUpperCase(),base:colors[0],glow:colors[1],shadow:colors[2],seasonOnly:true};
+}
+async function aRefreshSeasonReward(){
+ const token=z1Token,account=z1Account?.id;
+ if(!token||!account){aSeasonReward=null;return;}
+ try{
+  const data=await z1Fetch('/a/season/reward');
+  if(token!==z1Token||account!==z1Account?.id)return;
+  const r=data?.reward;
+  aSeasonReward=r?.base==='Sandwyrm'&&aSeasonFinish(r.tier)?r:null;
+  setWeaponSkin();
+ }catch{if(token===z1Token&&account===z1Account?.id)aSeasonReward=null;}
+}
+window.RXSeasonGodly={refresh:aRefreshSeasonReward,preview:tier=>{const f=aSeasonFinish(tier);return f?v8Svg(f):'';}};
+function gunFinishFor(n){const gun=V8_GUN_IDS[n]||'ar';if(gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}return V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun])||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
 function v8Localized(f){return language==='ar'?f.ar:f.name;}
 function v8RarityName(r){return tr(RARITIES.find(f=>f.id===r)?.key||'rarityCommon');}
 function v8CaseRoll(gun){const rarity=rxPityRoll('gun',rollRarity),pool=V8_GUN_FINISHES.filter(f=>f.gun===gun&&f.rarity===rarity&&!f.seasonOnly&&!['g8_sniper_omega','g8_sniper_oman_falcon'].includes(f.id));return pool[randomInt(pool.length)];}
@@ -8235,7 +8261,9 @@ function z1RestoreSession(){
 }
 
 function z1UseAccount(profile){
+  aSeasonReward=null;
   z1Account=profile;
+  void aRefreshSeasonReward();
   missionSetAccount();
   z1StoreSession();
   z1ConnectLive();
@@ -8285,6 +8313,7 @@ async function z1SignOut(){
 }
 
 function z1ClearAccount(){
+  aSeasonReward=null;
   z1Token='';z1Account=null;z1StoreSession();missionSetAccount();
   if(z1Socket){const socket=z1Socket;z1Socket=null;socket.close();}
   z1SocketReady=false;clearTimeout(z1SocketRetry);
@@ -8455,7 +8484,7 @@ function z1HostParty(){
 function z1LiveMessage(event){
   if(!event||typeof event!=='object')return;
   if(event.type==='ready'){
-    z1SocketReady=true;z1Account=event.user;z1RenderFriends();z1RefreshFriends();return;
+    z1SocketReady=true;z1Account=event.user;void aRefreshSeasonReward();z1RenderFriends();z1RefreshFriends();return;
   }
   if(event.type==='error'){
     if(z1Room.role==='pending')z1Room.role='off';
