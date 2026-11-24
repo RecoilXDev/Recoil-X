@@ -17,3 +17,6 @@ This is a separate development build. Do not change the production Z.5 version n
 - No promotional claims of lower ping, higher FPS, or full anti-cheat coverage without measurements.
 
 Production remains Z.5 while A is in development. The rest of Update A is not implemented by this pull request.
+
+## Physics Breaker
+Original casual knockback mode on Skydeck. Player-facing name: **Physics Breaker**. The internal mode identifier `pawblast` remains stable for compatibility. Ring-outs, charge, respawns and existing controls are unchanged.
