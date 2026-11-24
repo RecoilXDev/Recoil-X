@@ -20,7 +20,7 @@ export function createCuratorRooms(fail,{clock=Date.now,maxRooms=20}={}){
  if(r.result||!p.alive||now-p.lastMove<350)return view(r);p.lastMove=now;const x=p.x+b.dx,z=p.z+b.dz;
  if(Math.abs(x)>8||Math.abs(z)>8)return view(r);const o=r.cells.get(key(x,z));
  if(o&&['block','wall','tree'].includes(o.type))return view(r);p.x=x;p.z=z;
- if(o?.type==='hazard'){if(r.project.rules?.hazard==='respawn'){const spawn=r.spawn;p.x=spawn.x;p.z=spawn.z;}else p.alive=false;}
+ if(o?.type==='hazard'){if(['respawn','penalty'].includes(r.project.rules?.hazard)){const spawn=r.spawn;p.x=spawn.x;p.z=spawn.z;if(r.project.rules.hazard==='penalty'){r.ends=Math.max(now,r.ends-5000);update(r);if(r.result)return view(r);}}else p.alive=false;}
  if(o?.type==='target'&&!r.found.has(key(x,z))){r.found.add(key(x,z));r.ends=Math.min(r.hardEnd,r.ends+(r.project.rules?.targetBonus||0)*1000);}
  if(r.project.mode==='collect'&&r.found.size===r.targetCount)r.result='All targets collected';
  else if(![...r.players.values()].some(v=>v.alive))r.result='All players eliminated';return view(r);},
