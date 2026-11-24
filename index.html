@@ -5385,7 +5385,7 @@ function crownPartBuilder(bones) {
   return {bones,index,parts,part,rings,skin,ellipsoid,gem,prism,plate,strut};
 }
 
-function crownFighterMesh(model,lod,variant) {
+function crownFighterMesh(model,lod,variant,civilian=false) {
   const proportion={
     lava:[1.09,1.04],ice:[1.02,1.07],darkness:[.91,1.07],earth:[1.24,.91],water:[.99,1.10],
     knight:[1.02,1.08],bishop:[.87,1.13],rook:[1.25,.88],queen:[.91,1.09],king:[1.13,1.02],titan:[1.22,.96]
@@ -5419,9 +5419,9 @@ function crownFighterMesh(model,lod,variant) {
   m.skin('spine','chest',detail?tone.cloth:0,size(torso,width),sides,false,true);
   m.ellipsoid('neck',tone.skin,0,.079,.002,.094,.128,.094,detail?6:4,.88,'head',.18);
   const collar=[[-.157,.209],[.157,.209],[.170,.271],[.108,.299],[-.108,.299],[-.170,.271]];
-  if(detail)m.plate('chest',2,collar,-.141,.102,.88);
+  if(detail&&!civilian)m.plate('chest',2,collar,-.141,.102,.88);
 
-  if(detail){
+  if(detail&&!civilian){
     const contour=[[-.165,-.197],[.165,-.197],[.255,-.101],[.331,.104],[.273,.183],
       [.176,.202],[-.176,.202],[-.273,.183],[-.331,.104],[-.255,-.101]];
     m.plate('chest',0,contour.map(([x,y])=>[x*width,y]),-.229,.100,.87);
@@ -5443,7 +5443,11 @@ function crownFighterMesh(model,lod,variant) {
     }
   }
 
-  crownHumanHead(m,model,variant,close,detail,tone);
+  if(civilian){
+    crownHumanHead(m,model,variant,close,detail,tone);
+    for(let i=m.parts.length-1;i>=0;i--){const p=m.parts[i];if(p.joint===m.index.head&&p.color!==tone.skin&&p.color!==tone.shade)m.parts.splice(i,1);}
+    m.ellipsoid('head',1,0,.145,.025,.174,.092,.16,detail?6:4,.72);
+  }else crownHumanHead(m,model,variant,close,detail,tone);
   for(const s of [-1,1]){
     const side=s>0?'R':'L';
     const shoulder='shoulder'+side,elbow='elbow'+side,hand='hand'+side;
@@ -5470,7 +5474,7 @@ function crownFighterMesh(model,lod,variant) {
 
     // Gloves and boots overlap the tips of the sleeves so the hands and feet
     // stay attached during sharp bends in reload, jump and crouch poses.
-    m.rings(m.part(hand,2),detail?[
+    m.rings(m.part(hand,civilian?tone.skin:2),detail?[
       [s*.009,-.111,-.029,.061,.059],[s*.010,-.049,-.026,.077,.080],[0,.025,-.013,.065,.069]
     ]:[[s*.009,-.108,-.029,.068,.070],[0,.022,-.013,.067,.071]],detail?6:4,Math.PI/(detail?6:4));
     m.rings(m.part(foot,2),detail?[
@@ -5478,7 +5482,7 @@ function crownFighterMesh(model,lod,variant) {
       [0,.020,-.048,.098,.139],[0,.066,-.004,.071,.084]
     ]:[[0,-.092,-.073,.107,.166],[0,.057,-.038,.079,.104]],detail?6:4,Math.PI/(detail?6:4));
 
-    if(detail){
+    if(detail&&!civilian){
       const shoulderPad=width>1.12?.174:.149;
       m.ellipsoid(shoulder,0,s*.043,.004,.003,shoulderPad,.132,.143,6,.72);
       m.plate(elbow,0,[[-.067,-.266],[.067,-.266],[.094,-.172],[.073,-.088],[-.073,-.088],[-.094,-.172]],
@@ -5494,6 +5498,7 @@ function crownFighterMesh(model,lod,variant) {
       }
     }
   }
+  if(civilian)return m;
   if(regular){
     if(detail&&(variant===1||variant===3))m.strut('head',1,[-.172,.123,.066],[-.224,.278,.104],.031,.011,4);
     if(detail&&(variant===2||variant===3))m.ellipsoid('chest',0,0,.032,.166,.210,.178,.103,6,.70);
@@ -5870,6 +5875,37 @@ function crownActorSpec(b,distance) {
   return {model,id,variant,lod,scale:CROWN_SCALES[model]||1};
 }
 
+// City civilians reuse the FPS fighter body mesh and skeleton, without armor.
+const cityCivilianMeshes=new Map();
+window.RecoilCityCharacter=Object.freeze({
+  emit(person,time,detail,out){
+    const lod=detail==='high'?1:2,key=lod+':'+Number(!!person.shorts);
+    let mesh=cityCivilianMeshes.get(key);
+    if(!mesh){
+      mesh=crownFighterMesh('fighter',lod,0,true);
+      for(const part of mesh.parts){
+        const joint=CROWN_BONES[part.joint][0];
+        if(joint==='hips'||joint.startsWith('thigh'))part.color=4;
+        if(joint.startsWith('knee'))part.color=person.shorts?6:4;
+        if(joint.startsWith('elbow')||joint.startsWith('hand'))part.color=6;
+      }
+      cityCivilianMeshes.set(key,mesh);
+    }
+    const swing=Number(person.phase)||0,aim=person.mood==='defend';
+    const down=person.hp<=0||person.stunUntil>time;
+    const pose={root:[0,-(person.angle||0),down?1.45:0,0,down?.55:0,0]};
+    for(const sign of [-1,1]){
+      const side=sign>0?'R':'L',step=swing*sign;
+      pose['thigh'+side]=[step*.42,0,sign*.03];
+      pose['knee'+side]=[-Math.max(0,-step)*.55,0,0];
+      pose['shoulder'+side]=[aim?1.05:-step*.36,0,sign*.12];
+      pose['elbow'+side]=[aim?.84:.28,0,0];
+    }
+    const skin=hexRgb(person.skinTone||'#c4926d'),shirt=hexRgb(person.color||'#327d79'),pants=hexRgb(person.pants||'#405572'),hair=hexRgb(person.hair||'#362a27');
+    crownEmitRig(out,mesh,pose,[shirt,hair,[.16,.18,.20],shirt,pants,shirt,skin,[.32,.21,.17]],6.5);
+    return out;
+  }
+});
 function crownDrawActor(out,b,distance,now,kind='bot') {
   if(b.alive===false||(kind==='remote'&&!(b.hp>0)))return;
   const {model,id,variant,lod,scale}=crownActorSpec(b,distance);

@@ -153,11 +153,13 @@
     g.box(x+dx,y+dy,16.4,2.2,1.5,.65,'#ead5a8');
   }
   function rect(g,x,y,w,h,z,c){g.face([[x,y,z],[x+w,y,z],[x+w,y+h,z],[x,y+h,z]],c);}
-  function scenery(map) {
+  function scenery(map,region) {
+    const close=(x,y,r=0)=>!region||Math.abs(x-region.x)<=region.radius+r&&Math.abs(y-region.y)<=region.radius+r;
     const groups=[];
     function chunk(x,y,r,ground=false){const m=mesh();Object.assign(m,{x,y,r,ground});groups.push(m);return local(m);}
     // Street tiles keep the depth range and cost of the software renderer bounded.
     for(let y=0;y<map.height;y+=60)for(let x=0;x<map.width;x+=60){
+      if(!close(x+30,y+30,47))continue;
       const g=chunk(x+30,y+30,47,true);
       rect(g,x,y,60,60,-.37,'#cbbda7');
       for(const rx of map.roadsX)if(rx+37>x&&rx-37<x+60){
@@ -168,16 +170,19 @@
       }
     }
     for(const x of map.roadsX)for(let y=5;y<map.height;y+=20){
+      if(!close(x,y,45))continue;
       if(map.roadsY.some(ry=>Math.abs(y+5-ry)<43))continue;
       const g=chunk(x,y,45,true);rect(g,x-.47,y,.94,9,-.09,'#e2bd7c');
       for(const d of [-34.8,34.4])rect(g,x+d,y,.4,19.6,-.09,'#d2cbb9');
     }
     for(const y of map.roadsY)for(let x=5;x<map.width;x+=20){
+      if(!close(x,y,45))continue;
       if(map.roadsX.some(rx=>Math.abs(x+5-rx)<43))continue;
       const g=chunk(x,y,45,true);rect(g,x,y-.47,9,.94,-.09,'#e2bd7c');
       for(const d of [-34.8,34.4])rect(g,x,y+d,19.6,.4,-.09,'#d2cbb9');
     }
     for(const x of map.roadsX)for(const y of map.roadsY){
+      if(!close(x,y,120))continue;
       const g=chunk(x,y,62,true);
       for(let i=-29;i<=30;i+=6)for(const side of [-1,1]){
         rect(g,x+i,y+side*35-2.5,2.8,5,-.06,'#d4cfc0');rect(g,x+side*35-2.5,y+i,5,2.8,-.06,'#d4cfc0');
@@ -195,6 +200,7 @@
       }
     }
     map.blocks.forEach((b,i)=>{
+      if(!close(b.x+b.w/2,b.y+b.h/2,Math.hypot(b.w,b.h)/2+30))return;
       const g=chunk(b.x+b.w/2,b.y+b.h/2,Math.hypot(b.w,b.h)/2+30);
       if(b.kind==='park'){
         rect(g,b.x,b.y,b.w,b.h,.01,'#82a778');
@@ -205,8 +211,9 @@
       }else building(g,b,i);
     });
     for(const s of [map.garage,...map.shops]){
+      if(!close(s.x,s.y,60))continue;
       const g=chunk(s.x,s.y,37), repair=s.id==='repair', tile=s.id==='cafe'?1:repair?12:2;
-      const y=repair?791:s.id==='cafe'?410:171, d=repair?1:-1, x=s.x;
+      const y=repair?791:s.id==='cafe'?410:s===map.garage?171:s.y+11, d=repair?1:-1, x=s.x;
       g.box(x,y,0,22,2.45,12.5,'#9f967f');
       const front=y+d*1.3, a=repair?x+11:x-11, b=repair?x-11:x+11;
       const u=tileUV(tile),row=Math.floor(tile/4)*256;
@@ -225,6 +232,7 @@
       g.box(x-12,front+d*2,6.8,2.45,1.12,2.1,'#388574');
     }
     for(const s of map.secrets){
+      if(!close(s.x,s.y,19))continue;
       const g=chunk(s.x,s.y,19),x=s.x,y=s.y;
       if(s.kind==='radio'){
         g.box(x+4,y,0,5.4,2.5,3.5,'#82694e');g.box(x+4,y,3.5,5.8,3,.33,'#c8a173');
@@ -266,8 +274,19 @@
   }
   function actor(m,p,hero,time,weaponId) {
     const base=local(m,p.x,p.y,0,p.angle);shadow(base,hero?2.8:2.15,hero?2:1.65);
+    const shared=window.RecoilCityCharacter;
+    if(shared){
+      const data=shared.emit(hero?{...p,color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
+      for(let i=0;i<data.length;i+=27){
+        const rgb=data.slice(i+3,i+6),shade=.70+.30*Math.max(0,data[i+7]),c={rgb:rgb.map(v=>Math.min(1,v*shade)),css:'rgb('+rgb.map(v=>Math.round(Math.min(1,v*shade)*255)).join(',')+')'};
+        const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
+        m.faces.push({p:points,c,solid:false,uv:null});
+      }
+      if(p.hp>0&&p.mood==='defend'){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
+      return;
+    }
     const g=local(m,p.x,p.y,p.z||0,p.angle), coat=hero?'#327d79':p.color, pants=hero?'#354256':'#474956';
-    if(p.hp<=0){g.box(0,0,.4,7,2.8,2.2,coat);g.box(4.1,0,.5,2.3,2,1.7,'#bc8a69');return;}
+    if(p.hp<=0||p.stunUntil>time){g.box(0,0,.4,5,2.8,2.2,coat);g.box(3.6,0,.5,2.3,2,1.7,'#bc8a69');for(const side of [-1,1]){g.box(-3.8,side*.9,.35,3.6,1,.85,pants);g.box(.1,side*2,.45,2.8,.8,.8,coat);}return;}
     const jumping=p.motion==='jumping', sprint=p.motion==='sprinting'||p.mood==='flee', aiming=(p.aimUntil||0)>time||p.mood==='defend';
     const swing=hero?(p.motion==='idle'?0:Math.sin(p.phase)):p.phase;
     const stride=jumping?1.7:swing*(sprint?2.3:1.45),bob=jumping?0:Math.abs(swing)*.34;
@@ -368,10 +387,11 @@
     }
   }
   function dynamic(state,cam) {
-    const m=mesh(), p=state.player, first=cam.mode==='first';
+    const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;
     const near=v=>Math.hypot(v.x-cam.x,v.y-cam.y)<cam.far;
+    if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}else{
     for(const v of state.vehicles)if(near(v))automobile(m,v,v.id===p.vehicleId,state.elapsed,first&&v.id===p.vehicleId);
-    for(const person of state.locals)if(near(person))actor(m,person,false,state.elapsed);
+    for(const person of [...state.locals,...state.officers])if(near(person))actor(m,person,false,state.elapsed,'ar');}
     if(!first&&!p.vehicleId)actor(m,p,true,state.elapsed,state.weapons[state.weapon]?.id);
     if(first&&!p.vehicleId){
       const hands=local(m,p.x,p.y,p.z,cam.yaw);
@@ -380,7 +400,7 @@
       hands.bar([.9,1.34,9.65+sway],[3.67,1.12,10.14+sway],.33,'#ba9474');
       heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id);
     }
-    const g=local(m),goal=state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff);
+    const g=local(m),goal=!state.interior&&state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff);
     if(goal&&near(goal)){
       g.bar([goal.x,goal.y,.2],[goal.x,goal.y,.38],6.5,'#edb955',10);
       const z=11+Math.sin(state.elapsed*2)*.9;
@@ -391,7 +411,7 @@
     return m;
   }
   function camera(state,options) {
-    const p=state.player,car=!!p.vehicleId,first=options.mode==='first',yaw=options.yaw;
+    const p=state.player,car=!!p.vehicleId,first=!!state.interior||options.mode==='first',yaw=options.yaw;
     const pitch=clamp(options.tilt+(first?-.045:car?-.15:-.115),-.78,.62);
     const cx=Math.cos(yaw),sy=Math.sin(yaw), focus=p.z+(car?7.45:11.6);
     let x=p.x,y=p.y,z=focus;
@@ -405,7 +425,7 @@
       const scale=Math.max(0,wall-.35)/len;
       x+=dx*scale;y+=dy*scale;z+=dz*scale;
     }
-    return {x,y,z,yaw,pitch,cx,sy,cp:Math.cos(pitch),sp:Math.sin(pitch),far:tiers[state.quality].far,mode:options.mode};
+    return {x,y,z,yaw,pitch,cx,sy,cp:Math.cos(pitch),sp:Math.sin(pitch),far:state.interior?45:tiers[state.quality].far,mode:first?'first':options.mode};
   }
   function viewPoint(p,c) {
     const x=p[0]-c.x,y=p[1]-c.y,z=p[2]-c.z,front=x*c.cx+y*c.sy;
@@ -475,8 +495,7 @@
     const attributes=['p','color','uv'].map(name=>gl.getAttribLocation(program,name));
     const uniforms=['eye','turn','lens'].map(name=>gl.getUniformLocation(program,name));
     const fixed=gl.createBuffer(),moving=gl.createBuffer(),tex=gl.createTexture();
-    const vertices=pack(groups);gl.bindBuffer(gl.ARRAY_BUFFER,fixed);gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
-    const count=vertices.length/8;
+    let count=0;function replace(groups){const vertices=pack(groups);gl.bindBuffer(gl.ARRAY_BUFFER,fixed);gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);count=vertices.length/8;}replace(groups);
     gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlas);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
     gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(0,0,0,0);
@@ -485,6 +504,7 @@
       attributes.forEach((a,i)=>{gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,i===2?2:3,gl.FLOAT,false,32,i*12);});
     }
     return {
+      replace,
       frame(cam,w,h,m){
         const f=1/Math.tan(.525);gl.viewport(0,0,w,h);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
         gl.uniform3f(uniforms[0],cam.x,cam.y,cam.z);gl.uniform4f(uniforms[1],cam.cx,cam.sy,cam.cp,cam.sp);gl.uniform3f(uniforms[2],f*h/w,f,cam.far);
@@ -513,7 +533,7 @@
     ctx.transform(a,b,c,d,p[0]-a*p[2]-c*p[3],p[1]-b*p[2]-d*p[3]);ctx.drawImage(atlas,0,0);ctx.restore();
   }
   function software(ctx,groups,atlas) {
-    return {frame(cam,w,h,m){
+    return {replace(next){groups=next;},frame(cam,w,h,m){
       ctx.clearRect(0,0,w,h);const f=h*.5/Math.tan(.525), ground=[],objects=[];
       function collect(group) {
         const list=group.ground?ground:objects;
@@ -568,14 +588,14 @@
     const w=canvas.clientWidth,h=canvas.clientHeight;if(w<=0||h<=0)return;
     let renderer=renderers.get(canvas);
     if(!renderer){
-      const groups=scenery(state.map),atlas=facadeAtlas();
+      const groups=[],atlas=facadeAtlas();
       const gl=canvas.getContext('webgl',{alpha:true,antialias:false,premultipliedAlpha:true,powerPreference:'low-power'});
       const make=()=>gl?gpu(gl,groups,atlas):software(canvas.getContext('2d'),groups,atlas);
-      renderer={engine:make(),gl,lost:false};renderers.set(canvas,renderer);
+      renderer={engine:make(),gl,lost:false,region:null};renderers.set(canvas,renderer);
       canvas.dataset.renderer=gl?'webgl':'software';
       if(gl){
         canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();renderer.lost=true;});
-        canvas.addEventListener('webglcontextrestored',()=>{renderer.engine=make();renderer.lost=false;});
+        canvas.addEventListener('webglcontextrestored',()=>{renderer.engine=make();renderer.region=null;renderer.lost=false;});
       }
     }
     if(renderer.lost)return;
@@ -584,6 +604,8 @@
     const bw=Math.max(1,Math.round(w*scale)),bh=Math.max(1,Math.round(h*scale));
     if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
     if(!renderer.gl)cam={...cam,far:Math.min(cam.far,350)};
+    const region=state.interior?'inside':Math.floor(cam.x/240)+','+Math.floor(cam.y/240)+','+state.quality;
+    if(renderer.region!==region){renderer.engine.replace(state.interior?[]:scenery(state.map,{x:Math.floor(cam.x/240)*240+120,y:Math.floor(cam.y/240)*240+120,radius:cam.far+160}));renderer.region=region;}
     sky(backdrop,cam);renderer.engine.frame(cam,bw,bh,dynamic(state,cam));
   }
   function release(canvas) {
