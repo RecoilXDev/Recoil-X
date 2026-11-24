@@ -1,0 +1,21 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const {makeHarness}=require('./helpers/dom-harness.cjs');
+test('Update A control center opens and closes without replacing the Sand quick-play menu',async()=>{
+ const h=makeHarness();
+ new vm.Script(fs.readFileSync(__dirname+'/../server/z5-ingame.js','utf8')).runInContext(h.ctx);
+ const quick=h.ui.querySelector('#rxSimpleQuick');
+ new vm.Script(fs.readFileSync(__dirname+'/../server/a-control-center.js','utf8')).runInContext(h.ctx);
+ assert.equal(h.ui.querySelector('#rxSimpleQuick'),quick);
+ assert.ok(h.ui.querySelector('#rx-a-entry').closest('#rx5-native-main'));
+ await h.ctx.RXUpdateA.open();
+ assert.equal(h.ui.querySelector('#rx-a').hidden,false);
+ assert.match(h.ui.querySelector('#rx-a-body').textContent,/Make every match count/);
+ await h.ctx.RXUpdateA.open('security');
+ assert.match(h.ui.querySelector('#rx-a-body').textContent,/Sign in through Career/);
+ h.ctx.RXUpdateA.close();
+ assert.equal(h.ui.querySelector('#rx-a').hidden,true);
+ assert.equal(h.ui.querySelector('#rx-a-body').textContent,'');
+});
