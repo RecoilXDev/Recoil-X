@@ -14,9 +14,10 @@ export function createServerShield(db,{clock=Date.now,memory=()=>process.memoryU
    add.run(now,kind,actor);trim.run();
  }
  const queue=new Map();let offered=null;
+ const limits=[maxPlayers,maxPending,maxRss,maxAuthJobs,maxQueue,queueTtl,offerTtl];if(limits.some(n=>!Number.isSafeInteger(n)||n<=0))throw Error('Invalid Server Shield limits.');
  function prune(){const now=clock();for(const [id,last] of queue)if(now-last>=queueTtl)queue.delete(id);if(offered&&(!queue.has(offered.id)||now>=offered.until)){queue.delete(offered.id);offered=null;}}
- function offer(online){prune();if(!maintenance&&!pressure()&&online<maxPlayers&&!offered&&queue.size)offered={id:queue.keys().next().value,until:clock()+offerTtl};}
- function queueStatus(user,online,join=false){offer(online);if(join&&!queue.has(user.id)){if(queue.size>=maxQueue)throw error(503,'Waiting queue is full.');queue.set(user.id,clock());}else if(join)queue.set(user.id,clock());offer(online);return {position:queue.has(user.id)?[...queue.keys()].indexOf(user.id)+1:null,ready:offered?.id===user.id,waiting:queue.size,offerExpires:offered?.id===user.id?offered.until:null,retryAfterSeconds:5};}
+ function offer(online){if(maintenance||pressure()||online>=maxPlayers)offered=null;prune();if(!maintenance&&!pressure()&&online<maxPlayers&&!offered&&queue.size)offered={id:queue.keys().next().value,until:clock()+offerTtl};}
+ function queueStatus(user,online,join=false){offer(online);if(join&&queue.has(user.id))queue.set(user.id,clock());if(join&&!queue.has(user.id)){if(queue.size>=maxQueue)throw error(503,'Waiting queue is full.');queue.set(user.id,clock());}else if(join)queue.set(user.id,clock());offer(online);return {position:queue.has(user.id)?[...queue.keys()].indexOf(user.id)+1:null,ready:offered?.id===user.id,waiting:queue.size,offerExpires:offered?.id===user.id?offered.until:null,retryAfterSeconds:5};}
  function leaveQueue(user){queue.delete(user.id);if(offered?.id===user.id)offered=null;return {ok:true};}
  function pressure(){return memory()>=maxRss;}
  function reject(kind,status,message){denied++;note(kind);throw error(status,message);}
@@ -29,6 +30,7 @@ export function createServerShield(db,{clock=Date.now,memory=()=>process.memoryU
    if(id!==null)leaveQueue({id});
  }
  function reserveUpgrade(){
+   if(pressure())reject('upgrade-memory-pressure',503,'Server is busy. Retry shortly.');
    if(pending>=maxPending)reject('pending-limit',503,'Too many pending connections.');
    pending++;let released=false;return ()=>{if(!released){released=true;pending--;}};
  }
@@ -49,6 +51,6 @@ export function createServerShield(db,{clock=Date.now,memory=()=>process.memoryU
    if(elapsed>=1000){cpuPercent=Math.round((next.user+next.system-lastCpu.user-lastCpu.system)/(elapsed*10));lastCpu=next;lastAt=now;}
    return {...status(online),rssMB:Math.round(memory()/1048576),rssLimitMB:Math.round(maxRss/1048576),cpuPercent,denied,events:recent.all(),notice:'CPU is process usage, possibly above 100% on multiple cores. RSS guard is admission control, not a hard RAM limit.'};
  }
- function setMaintenance(user,value){admin(user);if(typeof value!=='boolean')throw error(400,'Choose maintenance on or off.');write.run(+value);maintenance=value;note(value?'maintenance-enabled':'maintenance-disabled',user.id);return {maintenance};}
+ function setMaintenance(user,value){admin(user);if(typeof value!=='boolean')throw error(400,'Choose maintenance on or off.');write.run(+value);maintenance=value;if(value)offered=null;note(value?'maintenance-enabled':'maintenance-disabled',user.id);return {maintenance};}
  return {admission,reserveUpgrade,hashJob,packet,status,inspect,setMaintenance,note,queueStatus,leaveQueue};
 }
