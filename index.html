@@ -1861,6 +1861,8 @@ function rx5BotFindCover(b,target,now){
   return best;
 }
 // Update A: bounded route probes, cached per bot. No navigation search on every frame.
+let aBotPlanFrame=-1,aBotPlanCount=0;
+function aBotPlanBudget(now){if(now!==aBotPlanFrame){aBotPlanFrame=now;aBotPlanCount=0;}const limit=v91EffectiveGraphics()===0?1:2;return aBotPlanCount++<limit;}
 function aBotSegmentClear(ax,az,bx,bz){
  const length=Math.hypot(bx-ax,bz-az),steps=Math.min(128,Math.max(1,Math.ceil(length/.65)));
  for(let i=1;i<=steps;i++)if(blocked(ax+(bx-ax)*i/steps,az+(bz-az)*i/steps,.57))return false;
@@ -1877,10 +1879,13 @@ function aBotWaypoint(b,goal,side){
  for(const o of nearby)for(const x of [-1,1])for(const z of [-1,1])add(o.x+x*(o.w/2+1),o.z+z*(o.d/2+1));
  let best=null,score=Infinity;
  const reachable=candidates.filter(p=>aBotSegmentClear(b.x,b.z,p.x,p.z)).sort((a,c)=>Math.hypot(a.x-goal.x,a.z-goal.z)-Math.hypot(c.x-goal.x,c.z-goal.z)).slice(0,8);
- for(const p of reachable){
+ // Try direct continuation first. Only explore extra hops if no simple route exists.
+ for(const p of reachable){const travel=Math.hypot(p.x-b.x,p.z-b.z),remain=Math.hypot(p.x-goal.x,p.z-goal.z);if(travel+remain<score&&aBotSegmentClear(p.x,p.z,goal.x,goal.z)){score=travel+remain;best=p;}}
+ if(best)return best;
+ for(const p of reachable.slice(0,4)){
   const travel=Math.hypot(p.x-b.x,p.z-b.z),remain=Math.hypot(p.x-goal.x,p.z-goal.z);
   let cost=travel+remain+(aBotSegmentClear(p.x,p.z,goal.x,goal.z)?0:24);
-  for(const q of candidates.slice(0,20)){if(q===p)continue;const d=Math.hypot(q.x-p.x,q.z-p.z),tail=Math.hypot(q.x-goal.x,q.z-goal.z);if(travel+d+tail>=cost)continue;if(aBotSegmentClear(p.x,p.z,q.x,q.z)&&aBotSegmentClear(q.x,q.z,goal.x,goal.z))cost=travel+d+tail;}
+  for(const q of candidates.slice(0,12)){if(q===p)continue;const d=Math.hypot(q.x-p.x,q.z-p.z),tail=Math.hypot(q.x-goal.x,q.z-goal.z);if(travel+d+tail>=cost)continue;if(aBotSegmentClear(p.x,p.z,q.x,q.z)&&aBotSegmentClear(q.x,q.z,goal.x,goal.z))cost=travel+d+tail;}
   if(cost<score){score=cost;best=p;}
  }
  return best;
@@ -1946,9 +1951,10 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
     }
   }
   if(m.goal){
-    if(m.routeGoal!==m.goal||now>=(m.routeNext||0)){
+    if(m.mode==='hide'){m.waypoint=null;m.routeGoal=null;}
+    else if((m.routeGoal!==m.goal||now>=(m.routeNext||0))&&aBotPlanBudget(now)){
       m.routeGoal=m.goal;m.routeNext=now+1.5+(Math.abs(Number(b.id)||0)%7)*.1;
-      m.waypoint=m.mode==='hide'?null:aBotWaypoint(b,m.goal,m.peekSide);
+      m.waypoint=aBotWaypoint(b,m.goal,m.peekSide);
     }
     if(m.waypoint&&Math.hypot(b.x-m.waypoint.x,b.z-m.waypoint.z)<.8){m.waypoint=null;m.routeNext=0;}
     let dx=(m.waypoint||m.goal).x-b.x,dz=(m.waypoint||m.goal).z-b.z,remain=Math.hypot(dx,dz);
