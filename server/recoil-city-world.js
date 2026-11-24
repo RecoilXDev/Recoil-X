@@ -170,7 +170,7 @@
   }
   function stepPedestrians(state, dt) {
     for (const p of state.locals) {
-      if (p.hp <= 0 || p.stunUntil>state.elapsed) continue;
+      if (state.interior||p.hp <= 0 || p.stunUntil>state.elapsed) continue;
       const player = state.player;
       if (p.alarm > 0) {
         p.alarm -= dt;
@@ -266,7 +266,7 @@
       alertLocals(state, nearest);
       // The driver leaves on the nearest sidewalk rather than remaining in the vehicle.
       const driver = state.pedestrians.find(p => p.driver === nearest.routeName);
-      if (!driver && !patrolTaken) {
+      if (!driver && !patrolTaken && state.pedestrians.filter(p=>p.driver).length<12) {
         const route = state.pedestrians.reduce((best, p) => sidewalkGap(p, nearest) < sidewalkGap(best, nearest) ? p : best);
         const newcomer = {...route, id: state.pedestrians.length, driver: nearest.routeName, hp: 70, downUntil: 0, distance: sidewalkPoint(route, nearest), mood: 'flee', alarm: 6};
         placeWalker(newcomer); state.pedestrians.push(newcomer); populate(state);
@@ -346,7 +346,7 @@
   }
   function jump(state) {
     const p = state.player;
-    if (p.vehicleId || p.z || p.vz) return false;
+    if (state.interior||state.deathUntil||p.vehicleId || p.z || p.vz) return false;
     p.vz = 48; p.motion = 'jumping'; state.sound('jump'); return true;
   }
   function heatUp(state, reason) {
@@ -520,7 +520,7 @@
         if (car.kind === 'patrol' && state.heat) patrol(state, car, dt);
       }
       if (state.heat) {
-        state.heatTime -= dt;
+        if(!state.interior)state.heatTime -= dt;
         if (state.heatTime <= 0) { state.heat--; state.heatTime = 9; }
       }
       if (!state.heat){state.officers.length=0;if(state.vehicles.some(v=>v.kind==='patrol'))state.vehicles=state.vehicles.filter(v=>v.kind!=='patrol');}
@@ -559,13 +559,14 @@
     }
   }
   function nearbyShop(state) { return state.interior||state.stores.find(s=>distance(s,state.player)<=28); }
-  function enterShop(state){const p=state.player;if(state.deathUntil||p.vehicleId)return false;if(state.interior){const s=state.interior;state.interior=null;Object.assign(p,{x:s.x,y:s.y,z:0,vz:0});return true;}const s=nearbyShop(state);if(!s||s.id==='repair')return false;if(s.cooldown<=state.elapsed&&s.keeper.hp<=0)s.keeper.hp=70;state.interior=s;Object.assign(p,{x:s.x-10,y:s.y,z:0,vz:0,angle:0});return true;}
+  function enterShop(state){const p=state.player;if(state.deathUntil||p.vehicleId)return false;if(state.interior){const s=state.interior;state.interior=null;Object.assign(p,{x:s.x,y:s.y,z:0,vz:0});return true;}const s=nearbyShop(state);if(!s||s.id==='repair')return false;if(s.cooldown<=state.elapsed&&s.keeper.hp<=0){s.keeper.hp=70;s.keeper.mood='calm';s.keeper.downUntil=0;}state.interior=s;Object.assign(p,{x:s.x-10,y:s.y,z:0,vz:0,angle:0});return true;}
   function walkInterior(state,input,dt){const p=state.player,s=state.interior,dx=clamp(Number(input.walkX)||0,-1,1),dy=clamp(Number(input.walkY)||0,-1,1),n=Math.max(1,Math.hypot(dx,dy));p.x=clamp(p.x+dx*60*dt/n,s.x-14,s.x+14);p.y=clamp(p.y+dy*60*dt/n,s.y-10,s.y+10);p.motion=dx||dy?'walking':'idle';p.phase+=dt*5;}
   function robShop(state){const s=state.interior;if(!s||state.deathUntil)return false;if(s.cooldown>state.elapsed){setNotice(state,'Register unavailable.');return false;}s.cooldown=state.elapsed+90;state.career.cash=Math.min(1e9,state.career.cash+75);heatUp(state,'Shop alarm · patrol responding.');return true;}
   function shop(state) {
     const store = nearbyShop(state), car = driven(state);
     if (!store) return false;
     const repair = store.id === 'repair';
+    if(!repair&&store.keeper.hp<=0){setNotice(state,'Shop temporarily closed.');return false;}
     const reason = repair && (!car || Math.abs(car.speed) > 20) ? 'Park a vehicle here for service.' :
       (repair ? car.hp : state.player.hp) >= 100 ? (repair ? 'Vehicle is in good condition.' : 'You already have full health.') :
       state.career.cash < store.price ? 'Requires $' + store.price + ' in city earnings.' : '';
