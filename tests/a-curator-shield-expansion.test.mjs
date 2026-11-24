@@ -21,8 +21,8 @@ test('public discovery requires approval of current saved version',()=>{
  const c=createCurator(db,fail),u={id:1},admin={id:2,admin:true};
  const p=c.save(u,project).project;c.share(u,{id:p.id,published:true});c.submit(u,{id:p.id});
  assert.equal(c.discover().projects.length,0);assert.throws(()=>c.pending(u),e=>e.status===403);
- assert.throws(()=>c.moderate(u,{id:p.id,state:'approved',reason:''}),e=>e.status===403);
- c.moderate(admin,{id:p.id,state:'approved',reason:''});assert.equal(c.discover().projects.length,1);
+ assert.throws(()=>c.moderate(u,{id:p.id,updated:p.updated,state:'approved',reason:''}),e=>e.status===403);
+ c.moderate(admin,{id:p.id,updated:p.updated,state:'approved',reason:''});assert.equal(c.discover().projects.length,1);
  c.save(u,{...project,id:p.id});assert.equal(c.discover().projects.length,0);
  }finally{db.close();}
 });
