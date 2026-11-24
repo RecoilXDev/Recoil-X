@@ -16,7 +16,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveRejected=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map()}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveRejected=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map(),canSendSnapshot=()=>true}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -457,7 +457,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
           onLiveFrame({matchId:match.id,code:room.code,host:room.host,mode:room.mode,match,frame,now});
           for(const p of room.members.values())if(!p.away){
             const connection=client(p.id);
-            if(connection)send(connection,snapshot(match,p.id,now,connection.compactState,frame));
+            if(connection&&canSendSnapshot(connection))send(connection,snapshot(match,p.id,now,connection.compactState,frame));
           }
         }
       }catch(error){
