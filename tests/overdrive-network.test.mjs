@@ -76,6 +76,17 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
     thirdParty.prepare('UPDATE users SET admin=1 WHERE id=?').run(moderator.user.id);
     thirdParty.close();
     assert.equal((await api('/me',undefined,moderator.token)).value.user.admin,true);
+    const extraLogin=await api('/login',{name:a.user.name,password});
+    assert.equal(extraLogin.status,200);
+    const sessions=await api('/a/sessions',undefined,a.token);
+    assert.equal(sessions.value.active,2);
+    assert(!JSON.stringify(sessions.value).includes(a.token));
+    assert.equal((await api('/a/sessions/revoke-others',{},a.token)).value.active,1);
+    assert.equal((await api('/me',undefined,extraLogin.value.token)).status,401);
+    assert.equal((await api('/me',undefined,b.token)).status,200);
+    assert.equal((await api('/a/connection',undefined,a.token)).value.connected,true);
+    assert.equal((await api('/a/connection',{profile:'economy'},a.token)).value.profile,'economy');
+    assert.equal((await api('/a/connection',{profile:'standard'},a.token)).value.profile,'standard');
 
     for(const size of [1,2,3,5]){
       const count=size*2,round=players.slice(0,count);
@@ -134,6 +145,11 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
         }
         const result=await until(()=>last(guest,'z2:result'),'Score result received by both players');
         assert.equal(result.winner,0);assert.equal(result.score[0],1);
+        const report=(await api('/z5/matches/'+result.id,undefined,a.token)).value;
+        assert.equal(report.combat[0].hits,5);
+        assert.equal(report.combat[0].accuracy,100);
+        assert.equal((await api('/z5/matches/'+result.id,undefined,moderator.token)).status,404);
+        assert.ok((await api('/a/connection',undefined,a.token)).value.stateBytes>0);
         assert(result.highlight.frames.length);
         assert.equal(last(guest,'z2:killcam').replay.killer,a.user.id);
         packet(host,'rematch');packet(guest,'rematch');
