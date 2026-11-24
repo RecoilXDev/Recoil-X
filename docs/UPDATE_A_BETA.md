@@ -1,4 +1,4 @@
-# Update A — Beta candidate (B4)
+# Update A — Beta candidate (B5)
 This branch inherits all Alpha workstreams. It is not a certified Beta release and must not deploy to the public Z.5 server.
 ## Run a separate instance
 From repository root, using Node 24:
@@ -57,3 +57,9 @@ The health endpoint /rx-api/health reports channel beta and readyForProduction f
 - Server Shield counts malformed/binary/oversized messages before JSON parsing, rejects stale sockets, and disconnects hard-backlogged sockets before skipping replaceable state. Unauthenticated upgrade timeout closes the underlying transport.
 - Curator co-op retries transient state polling failures up to five times, uses eight-second request timeout, distinguishes authorization/not-found responses, and uses indexed grid collision and cached target/spawn metadata.
 - Smoke checks passed: two inline game scripts parsed; four changed/test modules parsed; low/other graphics planning limits and reachable obstacle detour; indexed Curator blocked movement and objective completion. Full CI, device GPU/FPS, real multiplayer and staging are not verified. No production deployment.
+
+## B5 — low-end first
+- All 13 workstreams retain Beta candidate implementations. B5 expands two previously unfinished subfeatures: server-owned seasonal title inventory with equip/unequip and a validated Curator hazard respawn/time-penalty rule in solo and co-op. The title equip state is shown in the private reward track; not yet a global nameplate title. Curator save revisions strictly increase even for same-millisecond saves.
+- Hard internal framebuffer caps: Pi Lite 320k, School/TV 650k, Balanced 1.6m, Max 3.6m pixels; mobile thermal caps can reduce them further. TV user agents and desktops with no hardware hints auto-select conservative School profile unless already identified as Pi. User-selected profiles remain available. No effect on multiplayer simulation, hitboxes or network protocol.
+- Fractional frame pacing avoids rounding a 24/45 FPS target down to a fixed divisor of the display refresh; menu and paused 3D drawing capped at approximately 8/12 FPS, while service loop continues. Low shader fast path skips expensive material math when advanced effects are inactive. Shader objects released after linking; oversized dynamic GPU/CPU buffers reset on map transitions.
+- Smoke checks: both inline scripts and seven changed/test modules parsed; 12 framebuffer dimension cases passed; Curator penalty and respawn executed successfully. SQLite title ownership test committed but not executed here. Pixel caps are workload limits, not measured device FPS. New full themed weapon crates, richer community features, GPU asset streaming and host-side CAPTCHA/DDoS protections remain outside this candidate scope. Full CI, actual low-end hardware QA and multiplayer staging remain release blockers.
