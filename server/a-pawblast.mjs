@@ -1,4 +1,4 @@
-// Pawblast: original team knockback arena. All impulses and ring-outs are server-owned.
+// Physics Breaker (stable internal mode ID: pawblast): original team knockback arena. All impulses and ring-outs are server-owned.
 export const PAWBLAST_HALF=20;
 export function resetPawblast(p){
  p.paw={vx:0,vz:0,charge:0,by:null,until:0};
