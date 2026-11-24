@@ -16,7 +16,11 @@ export function validateProject(input,fail){
  });
  if(objects.filter(o=>o.type==='spawn').length!==1)bad('Place exactly one spawn.');
  if(input.mode==='collect'&&!objects.some(o=>o.type==='target'))bad('Collect mode requires a target.');
- return {name,mode:input.mode,seconds:input.seconds,objects};
+ const rules=input.rules??{};
+ if(!rules||typeof rules!=='object'||Array.isArray(rules))bad('Invalid rules.');
+ const hazard=rules.hazard??'eliminate',targetBonus=rules.targetBonus??0;
+ if(!['eliminate','respawn'].includes(hazard)||![0,5,10].includes(targetBonus))bad('Invalid rule action.');
+ return {name,mode:input.mode,seconds:input.seconds,objects,...(input.rules?{rules:{hazard,targetBonus}}:{})};
 }
 export function createCurator(db,fail){
  db.exec(`CREATE TABLE IF NOT EXISTS a_curator_projects (
