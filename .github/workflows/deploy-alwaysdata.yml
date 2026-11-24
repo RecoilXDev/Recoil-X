@@ -206,7 +206,11 @@ jobs:
           if grep -Fq '100.5%' /tmp/recoil-z5-live.html; then echo 'Outdated odds adjustment remains' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
-          grep -Fq 'priority-reliability-1' /tmp/recoil-z5-health.json
+          node -e "if (require('/tmp/recoil-z5-health.json').release !== 'update-a-b6') process.exit(1)"
+          for asset in a-control-center.js a-curator.js; do
+            curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/$asset?build=$GITHUB_SHA"
+            cmp "server/$asset" "/tmp/live-$asset"
+          done
           grep -Fq 'Review rejected inputs' /tmp/recoil-z5-admin.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-priority.js https://recoil-x.alwaysdata.net/z5-expansion.js
           grep -Fq 'Mean HTTP RTT' /tmp/recoil-z5-priority.js

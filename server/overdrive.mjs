@@ -16,7 +16,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveRejected=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map()}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveRejected=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map(),canSendSnapshot=()=>true,loadCuratorField=null,displayTitle=()=>null}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -45,10 +45,10 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     return {code:room.ranked?'':room.code,host:room.host,mode:room.mode,size:room.size,
       limit:room.limit,ranked:room.ranked,locked:room.locked,capacity:capacity(room),
       password:!!room.secret,expires:room.expires,phase:room.phase,veto,squad:room.squad,
-      preset:room.preset,draftTeams:room.draftTeams,
+      preset:room.preset,draftTeams:room.draftTeams,curator:room.field.curator===true,
       clanWar:room.clanTeams?.every(Boolean)?room.clanTeams.map(id=>({id})):undefined,
-      members:[...room.members.values()].map(({id,name,team,spectator,draft,away,ready})=>
-        ({id,name,team,spectator,draft,away:!!away,ready:!!ready})),
+      members:[...room.members.values()].map(({id,name,title,team,spectator,draft,away,ready})=>
+        ({id,name,title:title||undefined,team,spectator,draft,away:!!away,ready:!!ready})),
       votes:[...room.votes],tournament:tournament&&{
         teams:tournament.teams,matches:tournament.bracket.map(({a,b,winner,mvp,score})=>({a,b,winner,mvp,score})),
         index:tournament.index,champion:tournament.champion
@@ -67,6 +67,14 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     }
   }
   function roomFor(id) {return membership.get(id);}
+  function refreshTitle(id) {
+    const room=roomFor(id);
+    if(!room)return;
+    const member=room.members.get(id),title=displayTitle(id);
+    if(member.title===title)return;
+    member.title=title;
+    publish(room);
+  }
   function space(room, team, ignore) {
     return players(room).filter(p=>p.team===team&&p.id!==ignore).length<room.size;
   }
@@ -96,7 +104,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function add(room,c,user,team,spectator=false) {
     leaveLegacy(c);
     queue.delete(c.id);
-    const member={id:c.id,name:user.name,team,spectator,draft:'knight',away:0,ready:false,
+    const member={id:c.id,name:user.name,title:displayTitle(c.id),team,spectator,draft:'knight',away:0,ready:false,
       clan:room.mode==='clanwar'?clanOf(user.id)?.clan:null};
     room.members.set(c.id,member);
     membership.set(c.id,room);
@@ -125,7 +133,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function start(room,now,contestants) {
     if(room.mode==='worldboss')demand(isOmanWeekend(now),403,'World Boss battles unlock Friday and Saturday, Oman time.');
     const seats=contestants||players(room);
-    const weaponLevels=loadEvolutionLevels(seats.map(player=>player.id));
+    const weaponLevels=room.field.curator?null:loadEvolutionLevels(seats.map(player=>player.id));
     room.match=makeMatch({id:randomUUID(),mode:room.mode,season:room.ranked?seasonAt(now):null,
       limit:room.limit,players:seats,now,tournament:!!room.tournament,field:room.field,remake:room.modern,preset:room.preset,weaponLevels});
     if(room.mode==='clanwar'){
@@ -202,6 +210,9 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     demand(Number.isInteger(limit)&&limit>=1&&limit<=50,400,'Choose a kill limit from 1 to 50.');
     const password=readPassword(data.password);
     demand(!data.password||password.length>=4,400,'Use a room password of 4–64 characters.');
+    const custom=data.curatorId!==undefined;
+    demand(!custom||(mode==='arena'&&!tournament&&!squad&&preset==='classic'&&!draftTeams&&password.length>=4&&typeof loadCuratorField==='function'),400,'Curator FPS requires a password-protected classic Arena lobby.');
+    const customField=custom?loadCuratorField(user,data.curatorId):null;
     const salt=password?randomBytes(16):null;
     const secret=password?{salt,key:passwordKey(password,salt)}:null;
     demand(!['playing','veto'].includes(roomFor(c.id)?.phase),409,'Leave your active match first.');
@@ -211,6 +222,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
       demand(!!clanOf(user.id),403,'Join a clan before hosting a Clan War.');
     }
     const room=buildRoom({host:c.id,mode,size,limit,tournament,secret,squad,preset,draftTeams},now);
+    if(customField)room.field=customField;
     if(mode==='clanwar')room.clanTeams[0]=clanOf(user.id).clan;
     add(room,c,user,0);
     publish(room);
@@ -421,11 +433,12 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
 
   function settle(room,now) {
     const result=room.match.result;
-    const deltas=store.settle(result,now);
+    const custom=room.match.field.curator===true;
+    const deltas=custom?{}:store.settle(result,now);
     // Rewards are server-generated and idempotent. A rewards error must not end a match.
-    try{onSettled(result,now);}catch(error){onError(error);}
-    room.result={...result,deltas};
-    try{onLiveEnd(room.match.id,result);}catch(error){onError(error);}
+    if(!custom)try{onSettled(result,now);}catch(error){onError(error);}
+    room.result={...result,deltas,...(custom?{curator:true}: {})};
+    try{onLiveEnd(room.match.id,custom?{...result,curator:true}:result);}catch(error){onError(error);}
     room.expires=now+Math.min(idleTime,180000);
     if(room.tournament){
       const t=room.tournament, current=t.bracket[t.index], recordedWinner=result.winner===1?current.b:current.a;
@@ -457,7 +470,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
           onLiveFrame({matchId:match.id,code:room.code,host:room.host,mode:room.mode,match,frame,now});
           for(const p of room.members.values())if(!p.away){
             const connection=client(p.id);
-            if(connection)send(connection,snapshot(match,p.id,now,connection.compactState,frame));
+            if(connection&&canSendSnapshot(connection))send(connection,snapshot(match,p.id,now,connection.compactState,frame));
           }
         }
       }catch(error){
@@ -506,5 +519,5 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   const timer=setInterval(tick,50);
   timer.unref();
   const roomInfo=id=>{const room=roomFor(id);return room?{code:room.code,matchId:room.match?.id??null,host:room.host,phase:room.phase,mode:room.mode,size:room.size}:null;};
-  return {packet,attach,disconnect,drop,browse,statistics,roomInfo,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
+  return {packet,attach,disconnect,drop,browse,statistics,roomInfo,refreshTitle,inRoom:id=>!!roomFor(id),close:()=>clearInterval(timer)};
 }

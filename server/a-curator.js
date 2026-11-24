@@ -1,0 +1,234 @@
+(()=>{'use strict';
+const types=['block','wall','ramp','spawn','target','hazard','tree'];
+const palette={block:'#aa8060',wall:'#dcc5a0',ramp:'#9e8d7b',spawn:'#53c99b',target:'#ffd15d',hazard:'#e86452',tree:'#528b65'};
+const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n};
+const button=(label,fn)=>{const b=el('button',label);b.type='button';b.onclick=fn;return b};
+function renderer(canvas,objects,angle,weapon=false){
+ const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+ if(!c)return; c.clearRect(0,0,w,h);c.fillStyle='#191510';c.fillRect(0,0,w,h);
+ const scale=weapon?Math.min(w/12,h/6):Math.min(w/27,h/18),sin=Math.sin(angle),cos=Math.cos(angle);
+ const project=([x,y,z])=>{const a=x*cos-z*sin,b=x*sin+z*cos;return [w/2+a*scale,h*(weapon ? .53 : .46)+(b*.48-y)*scale,b+y*.15]};
+ const faces=[];
+ function mesh(v,fs,color){for(const [i,f] of fs.entries()){const p=f.map(j=>project(v[j]));faces.push({p,d:p.reduce((a,b)=>a+b[2],0)/p.length,color,shade:[.68,.85,1,.78,.91,.58][i%6]});}}
+ function box(x,y,z,a,b,d,color){const v=[[x-a/2,y,z-d/2],[x+a/2,y,z-d/2],[x+a/2,y,z+d/2],[x-a/2,y,z+d/2],[x-a/2,y+b,z-d/2],[x+a/2,y+b,z-d/2],[x+a/2,y+b,z+d/2],[x-a/2,y+b,z+d/2]];mesh(v,[[0,1,2,3],[0,4,5,1],[4,5,6,7],[1,5,6,2],[2,6,7,3],[3,7,4,0]],color);}
+ function wedge(x,z,color){mesh([[x-.45,0,z-.45],[x+.45,0,z-.45],[x+.45,0,z+.45],[x-.45,0,z+.45],[x-.45,.8,z+.45],[x+.45,.8,z+.45]],[[0,1,2,3],[0,1,5,4],[1,2,5],[2,3,4,5],[3,0,4]],color);}
+ if(weapon){
+  const color=objects[0].color;box(-.5,0,0,3.2,.72,.72,color);box(1.3,.08,0,1.4,.55,.57,color);box(2.8,.23,0,1.8,.19,.24,'#4b4845');box(3.8,.17,0,.48,.31,.33,color);
+  box(-2.6,.1,0,1.1,.58,.48,color);box(-2.95,-.19,0,.33,.95,.56,'#383434');box(-.7,-.78,0,.53,.78,.47,'#50453e');box(.45,-.76,0,.63,.84,.52,color);box(-.3,.74,0,.5,.14,.35,'#171717');box(.5,.74,0,.55,.25,.45,color);
+  for(let i=0;i<6;i++){box(-1.4+i*.52,.24,.4,.33,.17,.08,'#f0dbc0');box(-1.4+i*.52,.24,-.4,.33,.17,.08,'#f0dbc0');}
+ }else{
+  c.strokeStyle='#514334';c.lineWidth=1;
+  for(let k=-8.5;k<=8.5;k++){for(const a of [[[k,0,-8.5],[k,0,8.5]],[[-8.5,0,k],[8.5,0,k]]]){const p=project(a[0]),q=project(a[1]);c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1]);c.stroke();}}
+  for(const o of objects){const {x,z,type}=o,color=palette[type]||'#80caff';
+   if(type==='ramp')wedge(x,z,color);
+   else if(type==='tree'){box(x,0,z,.16,.8,.16,'#8a6545');box(x,.65,z,.7,.7,.7,color);}
+   else if(type==='player'){box(x,0,z,.55,.8,.55,'#80caff');box(x,.8,z,.38,.35,.38,'#d6efff');}
+   else box(x,0,z,type==='wall'?.23:.88,({block:1,wall:1.6,spawn:.12,target:.55,hazard:.12})[type]||.3,.88,color);
+  }
+ }
+ faces.sort((a,b)=>a.d-b.d);
+ for(const f of faces){c.beginPath();f.p.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fillStyle=f.color;c.fill();c.fillStyle='rgba(0,0,0,'+(1-f.shade)+')';c.fill();c.strokeStyle='#100c0866';c.stroke();}
+}
+// Edits replace the objects array. Reuse its geometry between playtest moves and turns.
+const firstPersonScenes=new WeakMap();
+function firstPersonScene(objects){
+ let scene=firstPersonScenes.get(objects);
+ if(scene)return scene;
+ scene={walls:new Array(17*17),sprites:[]};
+ for(const object of objects){
+  const {x,z,type}=object;
+  if(type==='block'||type==='wall'||type==='tree')scene.walls[(z+8)*17+x+8]=palette[type];
+  else scene.sprites.push(object);
+ }
+ firstPersonScenes.set(objects,scene);
+ return scene;
+}
+function firstPerson(canvas,objects,found,player,yaw){
+ const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;if(!c||!player)return;
+ const sky=c.createLinearGradient(0,0,0,h/2);sky.addColorStop(0,'#46617d');sky.addColorStop(1,'#e4bd86');
+ c.fillStyle=sky;c.fillRect(0,0,w,h/2);c.fillStyle='#796449';c.fillRect(0,h/2,w,h/2);
+ const scene=firstPersonScene(objects),sin=Math.sin(yaw),cos=Math.cos(yaw);
+ const columns=Math.min(320,w),cw=w/columns,depth=new Float32Array(columns),proj=w/2;
+ for(let i=0;i<columns;i++){
+  // A ray advances one unit in camera depth per unit of t, even off-axis.
+  const side=2*(i+.5)/columns-1,dx=sin+side*cos,dz=-cos+side*sin;
+  const stepX=Math.sign(dx),stepZ=Math.sign(dz),deltaX=Math.abs(1/dx),deltaZ=Math.abs(1/dz);
+  let x=Math.floor(player.x+.5),z=Math.floor(player.z+.5);
+  let nextX=dx?(x+stepX*.5-player.x)/dx:Infinity;
+  let nextZ=dz?(z+stepZ*.5-player.z)/dz:Infinity;
+  let distance=0,wall;
+  while(Math.abs(x)<=8&&Math.abs(z)<=8){
+   wall=scene.walls[(z+8)*17+x+8];
+   if(wall)break;
+   distance=Math.min(nextX,nextZ);
+   // A ray through a corner enters the diagonal cell.
+   if(nextX<=distance+1e-12){x+=stepX;nextX+=deltaX;}
+   if(nextZ<=distance+1e-12){z+=stepZ;nextZ+=deltaZ;}
+  }
+  const corrected=Math.max(.08,distance);depth[i]=corrected;const ht=Math.min(h*5,proj/corrected);
+  c.fillStyle=wall||'#564638';c.fillRect(i*cw,h/2-ht/2,cw+1,ht);c.fillStyle='rgba(0,0,0,'+Math.min(.75,corrected/30)+')';c.fillRect(i*cw,h/2-ht/2,cw+1,ht);
+ }
+ const sprites=scene.sprites.filter(o=>o.type!=='target'||!found.has(o.x+','+o.z)).map(o=>{const x=o.x-player.x,z=o.z-player.z;return {o,d:x*sin-z*cos,side:x*cos+z*sin};}).filter(s=>s.d>.2).sort((a,b)=>b.d-a.d);
+ for(const s of sprites){const cx=w/2+s.side*proj/s.d,size=Math.min(h,proj*.55/s.d),left=cx-size/2,right=cx+size/2,base=h/2+proj*.5/s.d;
+  c.fillStyle=palette[s.o.type];for(let i=Math.max(0,Math.floor(left/cw));i<Math.min(columns,Math.ceil(right/cw));i++){if(s.d<depth[i])c.fillRect(i*cw,base-size,cw+1,size);}
+ }
+ c.strokeStyle='#fff';c.beginPath();c.moveTo(w/2-7,h/2);c.lineTo(w/2+7,h/2);c.moveTo(w/2,h/2-7);c.lineTo(w/2,h/2+7);c.stroke();
+}
+async function api(path,data){const t=sessionStorage.getItem('rx5-token');if(!t)throw Error('Sign in through Career & Clans to save or share.');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const r=await fetch('/rx-api/a/curator'+path,{signal:controller.signal,method:data===undefined?'GET':'POST',headers:{Authorization:'Bearer '+t,...(data===undefined?{}:{'Content-Type':'application/json'})},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const d=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status});if(!d)throw Error('Invalid server response.');return d;}finally{clearTimeout(timeout);}}
+window.RXCurator={mount(host,signal){
+ let p={name:'My Arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:3,z:2}]},angle=.65,firstView=false,yaw=0,playing=false,player=null,timer=null,remaining=0,bonusUsed=0,found=new Set(),busy=false;
+ const panel=el('section');panel.className='card';host.replaceChildren(panel);
+ panel.append(el('h3','Curator Studio · 3D map & mini-game builder'),el('p','Build, test and save account-owned projects. Share an unlisted code with friends. No ranked XP or currency.'));
+ const status=el('p');status.setAttribute('role','status');const msg=t=>status.textContent=t;
+ const canvas=el('canvas');canvas.width=760;canvas.height=440;canvas.style.cssText='width:100%;height:auto;border:1px solid #806549;border-radius:10px';canvas.setAttribute('aria-label','3D preview of your arena');
+ const field=(label,type,value)=>{const wrap=el('label',label+' '),n=el('input');n.type=type;n.value=value;n.style.cssText='max-width:100%;padding:8px;background:#191510;color:white;border:1px solid #806549';wrap.append(n);return [wrap,n]};
+ const [nl,name]=field('Name','text',p.name);name.maxLength=48;
+ const [tl,seconds]=field('Seconds','number',p.seconds);seconds.min=15;seconds.max=300;
+ const select=(vals)=>{const n=el('select');for(const v of vals){const o=el('option',v);o.value=v;n.append(o);}return n};
+ const mode=select(['collect','survive','explore']),kind=select(types),hazard=select(['eliminate','respawn','penalty']),bonus=select(['0','5','10']);
+ const [xl,x]=field('X','number',0),[zl,z]=field('Z','number',0);for(const n of [x,z]){n.min=-8;n.max=8;n.step=1;}
+ const row=(...nodes)=>{const n=el('div');n.className='row';n.append(...nodes);return n};
+ const draw=()=>firstView&&playing&&!room?firstPerson(canvas,p.objects,found,player,yaw):room?renderer(canvas,[...room.project.objects.filter(o=>!room.found.includes(o.x+','+o.z)),...room.players.filter(p=>p.alive).map(p=>({type:'player',x:p.x,z:p.z}))],angle):renderer(canvas,[...p.objects.filter(o=>!playing||!found.has(o.x+','+o.z)),...(playing?[{type:'player',...player}]:[])],angle);
+ const grid=el('div');grid.style.cssText='display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:1px;max-width:540px;touch-action:manipulation';
+ const cells=[];
+ for(let zz=-8;zz<=8;zz++)for(let xx=-8;xx<=8;xx++){const b=button('',()=>{x.value=xx;z.value=zz;if(!playing)edit(false);});b.style.cssText='padding:0;min-height:20px;aspect-ratio:1;border-radius:2px';b.setAttribute('aria-label','Cell '+xx+', '+zz);cells.push([b,xx,zz]);grid.append(b);}
+ // Cell objects are immutable. A single history entry can restore a moved spawn and its replaced tile.
+ const past=[],future=[],historyLimit=32;
+ const undo=button('Undo',()=>restoreTiles(past,future));
+ const redo=button('Redo',()=>restoreTiles(future,past));
+ undo.title='Undo tile edit (Ctrl/⌘ Z)';
+ redo.title='Redo tile edit (Ctrl/⌘ Shift Z)';
+ function refresh(){
+  const locked=playing||!!room;
+  undo.disabled=locked||!past.length;
+  redo.disabled=locked||!future.length;
+  const tiles=new Map(p.objects.map(o=>[o.x+','+o.z,o.type]));
+  for(const [b,xx,zz] of cells){
+   const type=tiles.get(xx+','+zz);
+   b.style.background=type?palette[type]:'#443629';
+   b.title=type||'Empty';
+   b.disabled=locked;
+  }
+  draw();
+ }
+ function restoreTiles(from,to){
+  if(playing||room||!from.length)return;
+  to.push(p.objects);
+  p.objects=from.pop();
+  refresh();
+ }
+ panel.addEventListener('keydown',e=>{
+  if(playing||room||!(e.ctrlKey||e.metaKey)||e.altKey||e.target.isContentEditable||
+     /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+  const key=e.key.toLowerCase();
+  const action=key==='z'?(e.shiftKey?redo:undo):key==='y'&&!e.shiftKey?redo:null;
+  if(!action)return;
+  e.preventDefault();
+  action.click();
+ });
+ function edit(remove){
+  if(playing||room)return;
+  const xx=Number(x.value),zz=Number(z.value);
+  if(!Number.isInteger(xx)||!Number.isInteger(zz)||Math.abs(xx)>8||Math.abs(zz)>8)
+   return msg('Coordinates must be between −8 and 8.');
+  const previous=p.objects.find(o=>o.x===xx&&o.z===zz);
+  if((remove&&!previous)||(!remove&&previous?.type===kind.value))return;
+  const moveSpawn=!remove&&kind.value==='spawn';
+  const next=p.objects.filter(o=>o!==previous&&!(moveSpawn&&o.type==='spawn'));
+  if(!remove){
+   if(next.length>=64)return msg('64 object limit.');
+   next.push({type:kind.value,x:xx,z:zz});
+  }
+  past.push(p.objects);
+  if(past.length>historyLimit)past.shift();
+  future.length=0;
+  p.objects=next;
+  refresh();
+ }
+ function sync(){p.name=name.value.trim();p.mode=mode.value;p.seconds=Number(seconds.value);p.rules={hazard:hazard.value,targetBonus:Number(bonus.value)};}
+ function stop(text){playing=false;clearInterval(timer);timer=null;refresh();if(text)msg(text);}
+ function start(){if(room)return msg('Leave the co-op room first.');sync();if(p.mode==='survive'&&p.rules.hazard==='penalty')return msg('Time penalty is not available in survival mode.');const s=p.objects.find(o=>o.type==='spawn');if(!s)return msg('Place a spawn first.');if(p.mode==='collect'&&!p.objects.some(o=>o.type==='target'))return msg('Place a target first.');if(!Number.isInteger(p.seconds)||p.seconds<15||p.seconds>300)return msg('Choose 15–300 seconds.');clearInterval(timer);player={x:s.x,z:s.z};found=new Set();playing=true;remaining=p.seconds;bonusUsed=0;msg('Playtest: '+remaining+' seconds.');refresh();timer=setInterval(()=>{remaining--;if(remaining<=0)stop(p.mode==='survive'?'Survived!':'Time expired.');else msg('Playtest: '+remaining+' seconds · '+found.size+' targets');},1000);}
+ function move(dx,dz){if(firstView&&playing&&!room){const a=Math.round(yaw/(Math.PI/2))*Math.PI/2;const nx=Math.round(dx*Math.cos(a)-dz*Math.sin(a)),nz=Math.round(dx*Math.sin(a)+dz*Math.cos(a));dx=nx;dz=nz;}if(room){roomCall('/move',{dx,dz});return;}if(!playing)return;const xx=player.x+dx,zz=player.z+dz;if(Math.abs(xx)>8||Math.abs(zz)>8)return;const o=p.objects.find(o=>o.x===xx&&o.z===zz);if(o&&['block','wall','tree'].includes(o.type))return;player={x:xx,z:zz};if(o?.type==='hazard'){if(['respawn','penalty'].includes(p.rules?.hazard)){const spawn=p.objects.find(o=>o.type==='spawn');player={x:spawn.x,z:spawn.z};if(p.rules.hazard==='penalty'){remaining=Math.max(0,remaining-5);if(!remaining)return stop('Time expired.');}}else return stop('Hazard hit — try again.');}if(o?.type==='target'&&!found.has(xx+','+zz)){found.add(xx+','+zz);const add=Math.min(120-bonusUsed,p.rules?.targetBonus||0);bonusUsed+=add;remaining+=add;}if(p.mode==='collect'&&found.size===p.objects.filter(o=>o.type==='target').length)return stop('All targets collected!');draw();}
+ const onkey=e=>{if(firstView&&playing&&!room&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)&&['q','e'].includes(e.key)){e.preventDefault();yaw+=(e.key==='q'?-1:1)*Math.PI/2;draw();return;}if((!playing&&!room)||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];if(d){e.preventDefault();move(...d);}};
+ document.addEventListener('keydown',onkey);signal?.addEventListener('abort',()=>{clearInterval(timer);document.removeEventListener('keydown',onkey);},{once:true});
+ const list=el('div'),discovery=el('div'),roomPanel=el('div');let room=null,poll=null,roomBusy=false,roomGeneration=0,roomFailures=0;
+ const [rl,roomCode]=field('Room code','text','');
+ function roomView(d){
+  if(signal?.aborted)return;
+  const entering=!room;
+  room=d;
+  roomCode.value=d.code;
+  roomPanel.replaceChildren(el('h3','Co-op room '+d.code),el('p',d.result||('Time left: '+Math.max(0,Math.ceil((d.ends-d.now)/1000))+'s · Targets: '+d.found.length)),el('p',d.players.map(p=>p.name+(p.alive?'':' (out)')).join(' · ')));
+  if(entering)refresh();else draw();
+  if(!poll)poll=setInterval(()=>roomCall('/room'),1500);
+ }
+ function clearRoomView(){
+  clearInterval(poll);poll=null;room=null;
+  roomPanel.replaceChildren();refresh();
+ }
+ async function roomCall(path,data){
+  if(roomBusy||signal?.aborted)return;
+  roomBusy=true;
+  const generation=roomGeneration;
+  try{
+   const d=await api(path,data);
+   if(generation!==roomGeneration)return;
+   roomFailures=0;roomView(d);
+  }catch(e){
+   if(generation!==roomGeneration)return;
+   if(path!=='/room'){msg(e.message);return;}
+   roomFailures++;
+   if([401,403,404].includes(e.status)||roomFailures>=5){
+    clearRoomView();msg('Room connection ended. Rejoin using the room code.');
+   }else msg('Connection interrupted; retrying room state ('+roomFailures+'/5).');
+  }finally{roomBusy=false;}
+ }
+ async function enter(path,data){
+  if(roomBusy)return msg('Wait for the current room request.');
+  roomGeneration++;roomFailures=0;stop();
+  await roomCall(path,data);
+ }
+ async function exitRoom(){
+  if(roomBusy)return msg('Wait for the current room request.');
+  roomGeneration++;roomBusy=true;
+  try{
+   await api('/leave',{});
+   if(!signal?.aborted){clearRoomView();msg('Left the co-op room.');}
+  }catch(e){if(!signal?.aborted)msg(e.message);}
+  finally{roomBusy=false;}
+ }
+ signal?.addEventListener('abort',()=>{roomGeneration++;clearInterval(poll);},{once:true});
+ async function hostFPS(q){if(room)throw Error('Leave the co-op room first.');const password=prompt('Private FPS room password (4–64 characters)');if(password===null)return;if(password.length<4||password.length>64)throw Error('Choose 4–64 characters.');const size=Number(prompt('Players per team: 1, 2, 3 or 5','1'));if(![1,2,3,5].includes(size))throw Error('Choose a valid team size.');const d=await api('/create-fps',{id:q.id,size,limit:15,password});msg('Private FPS lobby '+d.code+' created. Share the code and password separately. Return to Multiplayer to start.');}
+ async function discover(){const d=await api('/discover');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Community games · moderated'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Copy',()=>load(q,true)),button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q)))));if(!d.projects.length)discovery.append(el('p','No approved games yet.'));}
+ async function reviews(){const d=await api('/review');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Administrator review queue'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Inspect copy',()=>load(q,true)),button('Approve',()=>run(async()=>{if(!confirm('Approve this saved version for discovery?'))return;await api('/review',{id:q.id,updated:q.updated,state:'approved',reason:''});await reviews();})),button('Reject',()=>run(async()=>{const reason=prompt('Reason for rejection (max 160 characters)');if(reason===null)return;await api('/review',{id:q.id,updated:q.updated,state:'rejected',reason:reason.slice(0,160)});await reviews();}))));}
+const [cl,code]=field('Share code','text','');
+ async function run(fn){if(busy||signal?.aborted)return;busy=true;try{await fn();}catch(e){msg(e.message);}finally{busy=false;}}
+ function load(q,copy=false){if(room){msg('Leave co-op before editing a project.');return;}stop();past.length=0;future.length=0;p={...q,objects:q.objects.map(o=>({...o}))};if(copy){delete p.id;delete p.published;p.name=p.name.slice(0,43)+' copy';}name.value=p.name;mode.value=p.mode;seconds.value=p.seconds;hazard.value=p.rules?.hazard||'eliminate';bonus.value=String(p.rules?.targetBonus||0);refresh();}
+ async function saveDraft(){
+  if(room)throw Error('Leave co-op before saving.');
+  stop();
+  sync();
+  const draft=p;
+  const {project}=await api('/save',draft);
+  if(signal?.aborted)return;
+  // Keep edits and undo history made while the saved revision was in flight.
+  if(p===draft){
+   p.id=project.id;
+   p.updated=project.updated;
+   p.published=project.published;
+   p.review=project.review;
+  }
+  await projects();
+  msg('Saved privately.');
+ }
+ async function projects(resume=false){
+  const generation=roomGeneration;
+  const d=await api('/list');
+  if(signal?.aborted)return;
+  if(resume&&d.activeRoom&&generation===roomGeneration&&!room&&!playing){
+   roomView(d.activeRoom);msg('Resumed your co-op room.');
+  }
+  list.replaceChildren(el('h3','My projects'));for(const q of d.projects){list.append(row(el('span',q.name+(q.published?' · Shared: '+q.id:'')+' · '+(q.review?.state||'private')),button('Open',()=>load(q)),button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q))),button('Submit for discovery',()=>run(async()=>{await api('/submit',{id:q.id});await projects();msg('Submitted for administrator review.');})),button('Delete',()=>run(async()=>{if(!confirm('Delete this project?'))return;await api('/delete',{id:q.id});if(p.id===q.id)delete p.id;await projects();msg('Deleted.');}))));}}
+ panel.append(row(nl,tl,mode),el('h3','Event rules'),row(el('span','On hazard → (penalty: respawn −5s; collect/explore only)'),hazard,el('span','On first target pickup → add seconds'),bonus),canvas,row(button('Toggle first-person (solo)',()=>{if(room)return msg('First-person is currently solo only.');firstView=!firstView;draw();msg(firstView?'First-person during solo playtest. Q/E to turn.':'Isometric view.');}),button('Rotate left',()=>{if(firstView&&playing)yaw-=Math.PI/2;else angle-=.35;draw();}),button('Rotate right',()=>{if(firstView&&playing)yaw+=Math.PI/2;else angle+=.35;draw();})),row(kind,xl,zl,button('Place / replace',()=>edit(false)),button('Erase',()=>edit(true)),undo,redo),el('p','Tap a grid cell to place the selected object.'),grid,row(button('Playtest',start),button('Stop',()=>stop('Test ended.')),button('↑',()=>move(0,-1)),button('←',()=>move(-1,0)),button('↓',()=>move(0,1)),button('→',()=>move(1,0))),row(button('New project',()=>{load({name:'New arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:2,z:2}]});}),button('Save',()=>run(saveDraft)),button('Share saved version',()=>run(async()=>{if(!p.id)throw Error('Save first.');const d=await api('/share',{id:p.id,published:true});code.value=d.project.id;await projects();msg('Share code: '+d.project.id+' (saved version only).');})),button('Unshare',()=>run(async()=>{if(!p.id)throw Error('Save first.');await api('/share',{id:p.id,published:false});await projects();msg('Unshared.');}))),row(cl,button('Open shared copy',()=>run(async()=>{const d=await api('/shared?id='+encodeURIComponent(code.value.trim()));load(d.project,true);msg('Copied into editor. Save as your own project.');}))),row(rl,button('Join co-op',()=>enter('/join-room',{code:roomCode.value.trim()})),button('Leave co-op',exitRoom)),roomPanel,row(button('Browse community games',()=>run(discover)),button('Review queue (admins)',()=>run(reviews))),discovery,status,list);refresh();run(()=>projects(true));
+},preview(tier){const c=el('canvas');c.width=420;c.height=230;c.style.cssText='width:100%;height:auto;cursor:grab;touch-action:none';c.setAttribute('aria-label',tier+' Sandwyrm 3D concept model; drag to rotate');const colors={gold:'#d6ad42',silver:'#b6c9da',bronze:'#ad7546',blue:'#3e97dc'};let a=.42,start=null;c.tabIndex=0;const draw=()=>renderer(c,[{color:colors[tier]}],a,true);c.onpointerdown=e=>{start=e.clientX;c.setPointerCapture(e.pointerId);};c.onpointermove=e=>{if(start!==null){a+=(e.clientX-start)*.015;start=e.clientX;draw();}};c.onpointerup=c.onpointercancel=()=>start=null;c.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();a+=e.key==='ArrowLeft'?-.2:.2;draw();}};draw();return c;}};
+})();

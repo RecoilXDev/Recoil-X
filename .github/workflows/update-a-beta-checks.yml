@@ -1,0 +1,25 @@
+name: Update A Beta checks
+on:
+  push:
+    branches: [feature/update-a-beta]
+  pull_request:
+    branches: [feature/update-a-beta]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  beta-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install server dependencies
+        run: npm install --prefix server --no-audit --no-fund
+      - name: Parse server and browser modules
+        run: |
+          for file in server/*.mjs server/*.js; do node --check "$file"; done
+      - name: Run all automated tests
+        run: node --test tests/*.test.mjs tests/*.test.cjs

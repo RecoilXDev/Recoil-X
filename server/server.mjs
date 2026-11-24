@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
+import { backupBeforeMigration, migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 import { createAdminPatch } from './admin-patch.mjs';
@@ -16,6 +16,12 @@ import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 import { createZ5Operations } from './z5-operations.mjs';
 import { startZ5Backups } from './z5-backups.mjs';
 import { createZ5Expansion } from './z5-expansion.mjs';
+import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
+import {createServerShield} from './a-server-shield.mjs';
+import {createAProgression} from './a-progression.mjs';
+import {createCurator} from './a-curator.mjs';
+import {createCuratorRooms} from './a-curator-rooms.mjs';
+import {curatorField} from './a-curator-fps.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -85,6 +91,7 @@ function allowed(key, count, duration) {
   const now = sqlTime();
   let item = windowLimits.get(key);
   if (!item || item.until < now) {
+    if(!item&&windowLimits.size>=50000)return false;
     item = { count: 0, until: now + duration };
     windowLimits.set(key, item);
   }
@@ -103,6 +110,10 @@ export function createRecoilServer(options = {}) {
   const existing = filename !== ':memory:' && existsSync(filename);
   const db = openDb(filename);
   try {
+    const hasTable=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+    if(existing&&hasTable.get('rx5_clan_wars')&&!hasTable.get('rx_a_progress')){
+      backupBeforeMigration(db,filename,'update-a-b6');
+    }
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
     // Keep the legacy one-backup-per-startup migration invariant.
@@ -121,8 +132,18 @@ export function createRecoilServer(options = {}) {
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
   const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
+  const delivery=createDeliveryPolicy();
+  const shield=createServerShield(db,options.shield);
+  const beta=options.beta===true;
+  const progression=createAProgression(db);
+  const curator=createCurator(db,fail);
+  const curatorRooms=createCuratorRooms(fail);
+  progression.finalize();
+  const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
+    const active=clients.get(id);
+    if(active&&active.tokenHash!==keep)cutConnection(active,'Session revoked from account settings.');
+  }});
   let expansion;
-  let passwordJobs = 0;
   let lastExpiry = 0;
   const overdriveData = overdriveStore(db,fail);
   const missions = missionStore(db,fail);
@@ -133,13 +154,16 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    displayTitle:progression.displayTitle,
+    loadCuratorField:(user,id)=>curatorField(curator.list(user).projects.find(p=>p.id===id)||curator.shared(id).project),
+    canSendSnapshot:connection=>delivery.allowSnapshot(connection),
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
     onLiveInput:(...args)=>expansion?.onInput(...args),
     onLiveRejected:(...args)=>{try{expansion?.onRejectedInput(...args);}catch(error){console.error('Input evidence write failed',error.message);}},
     onLiveFrame:e=>expansion?.onFrame(e),
     onLiveEnd:(...args)=>expansion?.onEnd(...args),
-    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{z5.recordClanWar(result,now);}}}
+    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{try{z5.recordClanWar(result,now);}finally{progression.settle(result,now);}}}}
   });
 
   const operations = createZ5Operations(db,{online:()=>clients.size,roomStats:()=>overdrive.statistics()});
@@ -151,7 +175,7 @@ export function createRecoilServer(options = {}) {
   const session = st(`SELECT u.*,s.expires,s.token_hash FROM sessions s JOIN users u ON s.account=u.id
     WHERE s.token_hash=? AND s.expires>?`);
   expansion=createZ5Expansion({db,fail,allowed,clients,isFriend:(a,b)=>isFriend(a,b),contact,overdrive,byId,byName,
-    canonical,passwordHash,send,cutConnection});
+    canonical,passwordHash:(...args)=>shield.hashJob(()=>passwordHash(...args)),send,cutConnection});
   const roster = st(`SELECT u.id,u.name,u.joins,u.banned,f.accepted,f.requester
     FROM friends f JOIN users u ON u.id=CASE WHEN f.lo=? THEN f.hi ELSE f.lo END WHERE f.lo=? OR f.hi=? ORDER BY u.handle`);
 
@@ -199,9 +223,13 @@ export function createRecoilServer(options = {}) {
     const transport=client.transport;
     const replaceable=event.type==='z2:state'||(event.type==='relay'&&
       (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
-    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
+    if(transport.destroyed)return;
+    // Hard backlog guard must precede the replaceable-state early return.
     if(transport.writableLength>=400000){transport.destroy();return;}
-    client.socket.send(JSON.stringify(event));
+    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
+    const payload=JSON.stringify(event);
+    client.socket.send(payload);
+    if(event.type==='z2:state')delivery.sent(client,Buffer.byteLength(payload));
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
 
@@ -236,21 +264,17 @@ export function createRecoilServer(options = {}) {
 
   async function credentials(req, body, signup) {
     const ip = req.socket.remoteAddress || '';
-    if (!allowed('auth-ip:'+ip, 16, 60000)) throw fail(429, 'Wait a minute before trying again.');
+    if (!allowed('auth-ip:'+ip, 16, 60000)){shield.note('auth-ip-rate-limit');throw fail(429, 'Wait a minute before trying again.');}
     const name = typeof body.name === 'string' ? body.name.trim().normalize('NFKC') : '';
     const handle = canonical(name);
     const password = typeof body.password === 'string' ? body.password : '';
     if (!userPattern.test(name) || password.length > 128 || password.length < (signup ? 10 : 1))
       throw fail(400, signup ? 'Use 3–18 letters, numbers, hyphens or underscores and a password of at least 10 characters.' : 'Enter your account name and password.');
-    if (!allowed('auth-name:'+handle, 9, 60000)) throw fail(429, 'Wait a minute before trying again.');
-    if (passwordJobs >= 3) throw fail(429, 'The server is busy. Try again in a moment.');
+    if (!allowed('auth-name:'+handle, 9, 60000)){shield.note('auth-name-rate-limit');throw fail(429, 'Wait a minute before trying again.');}
     let account = byName.get(handle);
     if (signup && account) throw fail(409, 'That account name is already taken.');
     const salt = signup ? randomBytes(16).toString('hex') : account?.salt || dummySalt;
-    let secret;
-    passwordJobs++;
-    try { secret = await passwordHash(password, salt); }
-    finally { passwordJobs--; }
+    const secret=await shield.hashJob(()=>passwordHash(password,salt));
     if (signup) {
       try { st('INSERT INTO users(name,handle,salt,secret) VALUES(?,?,?,?)').run(name,handle,salt,secret); }
       catch (error) {
@@ -261,7 +285,10 @@ export function createRecoilServer(options = {}) {
     } else if (!account || !timingSafeEqual(Buffer.from(secret,'hex'),Buffer.from(account.secret,'hex'))) {
       throw fail(401, 'Account name or password is incorrect.');
     }
-    verifyBan(account);
+    // Password changes and bans may have occurred during asynchronous hashing.
+    const latest=byId.get(account.id);
+    if(!latest||latest.salt!==account.salt||latest.secret!==account.secret)throw fail(401,'Account name or password is incorrect.');
+    account=latest;verifyBan(account);
     const token = randomBytes(32).toString('hex');
     st('INSERT INTO sessions(token_hash,account,expires) VALUES (?,?,?)').run(hashToken(token),account.id,sqlTime()+sessionAge);
     return { token, user:profile(account) };
@@ -318,12 +345,29 @@ export function createRecoilServer(options = {}) {
   function moderate(user, body) {
     const now=sqlTime();
     const result=overdriveData.moderation(user,body,now);
+    if (['tempban','ban'].includes(result.action)){st('DELETE FROM sessions WHERE account=?').run(result.id);shield.leaveQueue({id:result.id});curatorRooms.leave({id:result.id});}
     if (['kick','tempban','ban'].includes(result.action)) {
       const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
       overdrive.drop(result.id,now,message);
       cutConnection(clients.get(result.id),message);
     }
     return result;
+  }
+
+  function shieldBatch(user,body){
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    if(!Array.isArray(body.names)||body.names.length<1||body.names.length>10||!['ban','unban'].includes(body.action))throw fail(400,'Choose 1–10 accounts and ban or unban.');
+    if(body.names.some(n=>typeof n!=='string'||!userPattern.test(n)))throw fail(400,'Invalid account name.');
+    const handles=[...new Set(body.names.map(canonical))];
+    const targets=handles.map(h=>byName.get(h));
+    if(targets.some(t=>!t||t.admin||t.id===user.id))throw fail(400,'Every target must exist and be a non-admin account.');
+    const names=targets.map(t=>t.name),confirmation=body.action.toUpperCase()+' '+names.length+' ACCOUNTS';
+    if(body.preview===true)return {names,confirmation};
+    if(body.confirmation!==confirmation||typeof body.reason!=='string'||body.reason.trim().length<5||body.reason.length>160)throw fail(400,'Confirm the exact action and provide a reason.');
+    const results=[];
+    for(const name of names){try{moderate(user,{name,action:body.action,reason:body.reason.trim()});results.push({name,ok:true});}
+      catch(e){results.push({name,ok:false,error:e.status?e.message:'Moderation failed.'});}}
+    shield.note('batch-'+body.action,user.id);return {results};
   }
 
   async function endpoint(req, path) {
@@ -334,7 +378,21 @@ export function createRecoilServer(options = {}) {
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
+    if(!allowed('a-http:'+user.id,240,60000))throw fail(429,'Too many requests. Retry shortly.');
     if (req.method === 'GET') {
+      if(path==='/a/shield/queue')return shield.queueStatus(user,clients.size);
+      if(path==='/a/curator/discover')return curator.discover();
+      if(path==='/a/curator/review')return curator.pending(user);
+      if(path==='/a/curator/room')return curatorRooms.state(user);
+      if(path==='/a/curator/list')return {...curator.list(user),activeRoom:curatorRooms.state(user,true)};
+      if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
+      if(path==='/a/season/pass')return progression.passView(user);
+      if(path==='/a/progression')return progression.view(user);
+      if(path==='/a/season/kills')return progression.killsBoard(user);
+      if(path==='/a/season/reward')return {reward:progression.reward(user)};
+      if(path==='/a/community')return progression.board();
+      if(path==='/a/shield')return shield.status(clients.size);
+      if(path==='/a/admin/shield')return shield.inspect(user,clients.size);
       if (['/z5/party','/z5/evolutions','/z5/spectate','/z5/spectate/frame','/z5/anti-cheat/review'].includes(path))
         return expansion.get(user,path,req);
       if (path === '/z5/rooms') {
@@ -356,6 +414,8 @@ export function createRecoilServer(options = {}) {
       if (path === '/z5/ping') return z5.ping();
       if (path === '/z5/admin/audit') return z5.adminAudit(user);
       if (path === '/missions') return missions.read(user.id);
+      if (path === '/a/sessions') return accountSessions.view(user);
+      if (path === '/a/connection') {const c=clients.get(user.id);return delivery.view(c?.tokenHash===user.token_hash?c:null);}
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
@@ -385,8 +445,50 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/admin/shield/batch'){if(!allowed('a-batch:'+user.id,6,60000))throw fail(429,'Retry shortly.');return shieldBatch(user,body);}
+      if(path==='/a/shield/queue'){if(!allowed('a-queue:'+user.id,20,60000))throw fail(429,'Retry shortly.');return body.leave===true?shield.leaveQueue(user):shield.queueStatus(user,clients.size,true);}
+      if(path.startsWith('/a/curator/')){
+        if(path==='/a/curator/move'){if(!allowed('a-curator-move:'+user.id,175,60000))throw fail(429,'Move more slowly.');return curatorRooms.move(user,body);}
+        if(path==='/a/curator/leave')return curatorRooms.leave(user);
+        if(!allowed('a-curator:'+user.id,20,60000))throw fail(429,'Too many Curator changes. Retry shortly.');
+        if(shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Curator writes paused during maintenance.');
+        if(path==='/a/curator/submit')return curator.submit(user,body);
+        if(path==='/a/curator/review')return curator.moderate(user,body);
+        if(path==='/a/curator/create-fps'){
+          if(shield.status(clients.size).busy)throw fail(503,'Server busy.');
+          const c=clients.get(user.id);if(!c||c.tokenHash!==user.token_hash)throw fail(409,'Connect through Multiplayer on this session first.');
+          if(typeof body.id!=='string')throw fail(400,'Select a saved map.');
+          overdrive.packet(c,user,{type:'z2:create',mode:'arena',size:body.size,limit:body.limit,password:body.password,curatorId:body.id});
+          const room=overdrive.roomInfo(user.id);return {code:room.code,size:room.size,mode:room.mode};
+        }
+        if(path==='/a/curator/create-room'){if(shield.status(clients.size).busy)throw fail(503,'Server busy.');const p=curator.list(user).projects.find(p=>p.id===body.id)||curator.shared(body.id).project;return curatorRooms.create(user,p);}
+        if(path==='/a/curator/join-room'){if(shield.status(clients.size).busy)throw fail(503,'Server busy.');return curatorRooms.join(user,body.code);}
+        if(path==='/a/curator/save')return curator.save(user,body);
+        if(path==='/a/curator/share')return curator.share(user,body);
+        if(path==='/a/curator/delete')return curator.remove(user,body);
+      }
+      if(path==='/a/season/pass'){if(!allowed('a-pass:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.claimPass(user,body.tier);}
+      if(path==='/a/season/pass/equip'){
+        if(!allowed('a-pass-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');
+        const pass=progression.equipPass(user,body.tier);
+        overdrive.refreshTitle(user.id);
+        return pass;
+      }
+      if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
+      if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
+      if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
+      if(path==='/a/sessions/revoke-others'){
+        if(!allowed('a-revoke:'+user.id,5,60000))throw fail(429,'Try again shortly.');
+        return accountSessions.revokeOthers(user);
+      }
+      if(path==='/a/connection'){
+        if(!allowed('a-profile:'+user.id,12,60000))throw fail(429,'Try again shortly.');
+        const c=clients.get(user.id);if(!c||c.tokenHash!==user.token_hash)throw fail(409,'Connect through Multiplayer on this session first.');
+        return delivery.setProfile(c,body.profile);
+      }
       if (path.startsWith('/z5/')) {
         if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
+        if(path==='/z5/party'&&shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Party changes are paused for maintenance.');
         if (['/z5/party','/z5/spectate','/z5/recovery/create'].includes(path))return expansion.post(user,path,body);
         if (path === '/z5/checkin') {const claim=z5.checkin(user);economy.onDailyCheckin(user,claim);challenges.onCheckin(user,claim);return claim;}
         if (path === '/z5/challenges/claim') return challenges.claimDaily(user,body);
@@ -476,6 +578,17 @@ export function createRecoilServer(options = {}) {
         res.end(req.method==='HEAD'?undefined:js);
       }catch{res.writeHead(404).end();}return;
     }
+    if(path==='/a-curator.js'){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./a-curator.js',import.meta.url));res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:js);}catch{res.writeHead(404).end();}return;
+    }
+    if(path==='/a-control-center.js'){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./a-control-center.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/z5-expansion.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./z5-expansion.js',import.meta.url));
@@ -514,7 +627,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script><script src="/a-curator.js" defer></script><script src="/a-control-center.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
@@ -527,22 +640,24 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:'priority-reliability-1'} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'update-a-b6',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
       res.statusCode = error.status || 500;
+      if([429,503].includes(res.statusCode))res.setHeader('Retry-After','15');
       res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
     }
   });
 
   function socketPacket(c, data) {
-    if (!allowed('wire:'+c.id,260,1000)) return;
+    // Wire admission is checked before decoding every message in the upgrade handler.
     const current = session.get(c.tokenHash,sqlTime());
     if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
       overdrive.drop(c.id,sqlTime(),'This session ended.');
       cutConnection(c,'Sign in again.');return;
     }
+    if(['z2:create','z2:join','z2:queue','host','join'].includes(data.type)&&shield.status(clients.size).maintenance&&!current.admin)throw fail(503,'New matches are paused for maintenance.');
     if(data.type==='z5:quality-ping'){
       if(!Number.isSafeInteger(data.seq)||data.seq<0)throw fail(400,'Invalid ping sequence.');
       send(c,{type:'z5:quality-pong',seq:data.seq,serverAt:sqlTime()});return;
@@ -603,11 +718,20 @@ export function createRecoilServer(options = {}) {
   server.on('upgrade',(req,socket,head)=>{
     if (req.url!=='/rx-live' || !originOk(req) || !WebSocket.isWebSocket(req) ||
       !allowed('upgrade:'+req.socket.remoteAddress,70,60000)) {socket.destroy();return;}
-    const ws = new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});
-    let connected = null;
-    const timeout = setTimeout(()=>{if (!connected) ws.close(1000,'Sign in first');},6000);
+    let releasePending;
+    try{releasePending=shield.reserveUpgrade();}catch{socket.end('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 15\r\nConnection: close\r\n\r\n');return;}
+    let ws;
+    try{ws=new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});}catch{releasePending();socket.destroy();return;}
+    socket.once('close',releasePending);
+    let connected = null,preAuthMessages=0;
+    const timeout = setTimeout(()=>{if (!connected) {ws.close(1000,'Sign in first');socket.destroy();}},6000);
     timeout.unref();
     ws.on('message',event=>{
+      if(!connected&&++preAuthMessages>8){ws.close(1008,'Authentication required');return;}
+      if(connected){
+        if(clients.get(connected.id)!==connected)return;
+        if(!shield.packet(connected)){if(connected.aShieldWindow.count>520){shield.note('wire-flood-disconnect',connected.id);cutConnection(connected,'Connection exceeded the message rate limit.');}return;}
+      }
       if (typeof event.data!=='string' || event.data.length>65536) return;
       let overdriveRequest=false;
       try {
@@ -617,6 +741,8 @@ export function createRecoilServer(options = {}) {
         if (!connected) {
           if (data.type!=='auth') throw fail(401,'Sign in first.');
           const user=authenticate(data.token);
+          shield.admission(clients.size,clients.has(user.id),!!user.admin,user.id);
+          releasePending();
           cutConnection(clients.get(user.id),'Signed in on another device.');
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
             compactState:data.compactState===1};
@@ -634,7 +760,7 @@ export function createRecoilServer(options = {}) {
       }
     });
     ws.on('close',()=>{
-      clearTimeout(timeout);
+      releasePending();clearTimeout(timeout);
       if (connected&&clients.get(connected.id)===connected) {
         leave(connected,'Your friend disconnected.');clients.delete(connected.id);
         overdrive.disconnect(connected);
@@ -642,9 +768,13 @@ export function createRecoilServer(options = {}) {
     });
   });
 
+  server.requestTimeout=20000;server.headersTimeout=10000;
   const cleanup=setInterval(()=>{
     const now=sqlTime();
+    curatorRooms.sweep();
+    try{progression.finalize(now);}catch(error){console.error('Season reward finalization failed',error.message);}
     for (const [k,value] of windowLimits) if (value.until<now) windowLimits.delete(k);
+    for(const c of clients.values())if(!session.get(c.tokenHash,now))cutConnection(c,'Session expired. Sign in again.');
     if (now-lastExpiry>3600000) {st('DELETE FROM sessions WHERE expires<?').run(now);lastExpiry=now;}
   },60000);
   cleanup.unref();
@@ -657,7 +787,9 @@ export function createRecoilServer(options = {}) {
 }
 
 if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const database=process.env.RX_DB || 'recoil-x.sqlite';
+  const beta=process.env.RX_CHANNEL==='beta';
+  const database=process.env.RX_DB || (beta?'recoil-x-beta.sqlite':'recoil-x.sqlite');
+  if(beta&&/^(recoil-x|recoil-x-production)\.sqlite$/i.test(database.split(/[\\/]/).pop()))throw Error('Beta must use a separate database.');
   if (process.argv[2]==='admin') {
     const db=openDb(database);
     const result=db.prepare('UPDATE users SET admin=1 WHERE handle=? AND banned=0').run(canonical(process.argv[3]));
@@ -667,7 +799,9 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
   } else {
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
-    const server=createRecoilServer({database,origins});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
+    const integer=(name,fallback)=>{const raw=process.env[name];if(raw===undefined)return fallback;const v=Number(raw);if(!Number.isSafeInteger(v)||v<1)throw Error('Invalid '+name);return v;};
+    const shield={maxPlayers:integer('RX_MAX_PLAYERS',40),maxPending:integer('RX_MAX_PENDING',12),maxRss:integer('RX_MAX_RSS_MIB',512)*1048576,maxAuthJobs:integer('RX_MAX_AUTH_JOBS',2),maxQueue:integer('RX_MAX_QUEUE',100)};
+    const server=createRecoilServer({database,origins,beta,shield});
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X '+(beta?'Update A Beta candidate':'server')+' listening on port '+port));
   }
 }

@@ -24,7 +24,7 @@ export const EVOLUTION_BONUSES=Object.freeze([
   Object.freeze({reloadMultiplier:.90,spreadMultiplier:.93,fireIntervalMultiplier:.98,damageMultiplier:1}),
   Object.freeze({reloadMultiplier:.88,spreadMultiplier:.90,fireIntervalMultiplier:.97,damageMultiplier:1.03})
 ]);
-const UNMODIFIED_MODES=new Set(['clanwar','chess','gungame','onechamber','budget','roulette']);
+const UNMODIFIED_MODES=new Set(['clanwar','chess','gungame','onechamber','budget','roulette','pawblast']);
 export function evolutionBonuses(level){
   const index=Number.isInteger(level)?Math.max(0,Math.min(level-1,EVOLUTION_BONUSES.length-1)):0;
   return EVOLUTION_BONUSES[index];
