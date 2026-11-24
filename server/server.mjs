@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
+import { backupBeforeMigration, migrateOverdrive, overdriveStore } from './overdrive-store.mjs';
 import { migrateMissions, missionStore } from './mission-store.mjs';
 import { createOverdrive } from './overdrive.mjs';
 import { createAdminPatch } from './admin-patch.mjs';
@@ -110,6 +110,10 @@ export function createRecoilServer(options = {}) {
   const existing = filename !== ':memory:' && existsSync(filename);
   const db = openDb(filename);
   try {
+    const hasTable=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+    if(existing&&hasTable.get('rx5_clan_wars')&&!hasTable.get('rx_a_progress')){
+      backupBeforeMigration(db,filename,'update-a-b6');
+    }
     const upgraded=migrateOverdrive(db,filename,existing);
     // One consistent backup covers every migration in this startup.
     // Keep the legacy one-backup-per-startup migration invariant.
@@ -636,7 +640,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'priority-reliability-1',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'update-a-b6',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
