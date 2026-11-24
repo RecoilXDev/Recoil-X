@@ -6,6 +6,7 @@ import {underwaterField,destructibleField,coverShot,oxygenStep} from './z5-envir
 import {WAVE2_MODES,wave2State,wave2Movement,wave2FireCooldown,wave2Objective,wave2Advance,wave2Melee,wave2Ricochet} from './z5-wave2.mjs';
 import {CUSTOM_PRESETS} from './z5-lobby-custom.mjs';
 import {matchEvolutionBonuses} from './z5-weapon-evolution.mjs';
+import {newCombatStats,combatReport} from './a-foundation.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
 export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES,...WAVE2_MODES];
@@ -67,7 +68,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
     const mastery=Array.from({length:weapons.length},(_,i)=>
       Number.isInteger(saved?.[i])&&saved[i]>=1&&saved[i]<=5?saved[i]:1);
     const p={...record,rx5WeaponLevels:mastery,slot:placed[record.team]++,kills:0,deaths:0,damage:0,revives:0,forfeited:false,budget:mode==='budget',matchMode:mode,
-      inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0,rx5Rules:CUSTOM_PRESETS[preset]||CUSTOM_PRESETS.classic};
+      inputs:0,seq:-1,offlineAt:0,abilityAt:0,pingAt:0,aCombat:newCombatStats(),rx5Rules:CUSTOM_PRESETS[preset]||CUSTOM_PRESETS.classic};
     p.spawnX=(p.slot-(players.filter(other=>other.team===p.team).length-1)/2)*3.65;
     spawn(p,now);
     members.set(p.id,p);
@@ -212,8 +213,8 @@ function finish(m,winner,reason,now) {
   if(m.result)return;
   recordLead(m,now);
   markEvent(m,now,'end',reason==='remake'?'Match voided after an early disconnect':'Match ended');
-  const players=[...m.players.values()].map(({id,name,team,kills,deaths,damage,revives,inputs,forfeited})=>
-    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited}));
+  const players=[...m.players.values()].map(({id,name,team,kills,deaths,damage,revives,inputs,forfeited,aCombat})=>
+    ({id,name,team,kills,deaths,damage,revives,inputs,forfeited,combat:combatReport(aCombat)}));
   const candidates=players.filter(p=>!p.forfeited).sort((a,b)=>
     (b.kills*120+b.damage+b.revives*80)-(a.kills*120+a.damage+a.revives*80)||a.deaths-b.deaths||a.id-b.id);
   m.result={id:m.id,mode:m.mode,season:m.season,winner,reason,score:m.score.slice(),
@@ -243,11 +244,12 @@ function eliminate(m,victim,killer,now) {
   else if(m.mode==='chess')m.roundAt=now+2200;
 }
 
-function hit(m,shooter,victim,damage,now) {
+function hit(m,shooter,victim,damage,now,projectileStats=null) {
   if(victim.shieldUntil>now||victim.hp<=0)return;
   if(m.mode==='parry'&&(victim.parryUntil||0)>now)return;
   const amount=Math.min(victim.hp,damage);
   victim.hp-=amount;shooter.damage+=amount;
+  if(projectileStats){projectileStats.hits++;projectileStats.damage+=amount;}
   if(victim.id<0)return;
   if(victim.hp>0)return;
   if(m.mode==='rescue'){
@@ -260,6 +262,7 @@ function fire(m,p,now) {
   const w=weapons[p.weapon],bonus=matchEvolutionBonuses(m,p,p.weapon);
   const scaledDamage=amount=>Math.round(amount*bonus.damageMultiplier*10)/10;
   const dual=m.mode==='dualwield',projectiles=dual?Math.min(2,p.ammo[p.weapon]):w.pellets;
+  const metrics=p.aCombat[p.weapon];metrics.triggers++;
   p.ammo[p.weapon]-=dual?projectiles:1;
   p.readyShot=now+Math.ceil(w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1)*bonus.fireIntervalMultiplier);
   if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
@@ -270,6 +273,7 @@ function fire(m,p,now) {
   const opponents=[...m.players.values()].filter(other=>other.team!==p.team&&other.hp>0&&!other.forfeited);
   if(RAID_MODES.includes(m.mode)&&m.rule.boss.hp>0)opponents.push(m.rule.boss);
   for(let pellet=0;pellet<projectiles&&!m.result;pellet++){
+    metrics.projectiles++;
     const yaw=p.yaw+(m.rng()-.5)*w.spray*bonus.spreadMultiplier+(dual?(pellet===0?-.03:.03):0),pitch=p.pitch+(m.rng()-.5)*w.spray*bonus.spreadMultiplier;
     const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
     let reach=obstruction(m.field,eye,dir,w.range),target=null;
@@ -282,7 +286,7 @@ function fire(m,p,now) {
       if(first<reach){reach=first;target=other;}
     }
     if(!end)end=eye.map((v,i)=>round(v+dir[i]*reach,100));
-    if(target)hit(m,p,target,scaledDamage(dual?11:w.damage),now);
+    if(target)hit(m,p,target,scaledDamage(dual?11:w.damage),now,metrics);
     else if(m.mode==='ricochet'){
       const bounced=wave2Ricochet(m.field,eye,dir,w.range);
       if(bounced&&Math.abs(bounced.distance-reach)<.08){
@@ -293,7 +297,7 @@ function fire(m,p,now) {
             [other.x+.45,other.jump+1.96,other.z+.45],secondReach);
           if(first<secondReach){secondReach=first;victim=other;}
         }
-        if(victim)hit(m,p,victim,scaledDamage(w.damage*.55),now);
+        if(victim)hit(m,p,victim,scaledDamage(w.damage*.55),now,metrics);
         m.events.push({type:'z2:shot',origin:p.id,team:p.team,
           a:bounced.at.map(v=>round(v,100)),b:begin.map((v,i)=>round(v+bounced.dir[i]*secondReach,100))});
       }
