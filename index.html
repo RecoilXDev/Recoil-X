@@ -944,7 +944,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
-<div id="crosshair"></div><button id="rxTvAimBtn" type="button" class="hide" aria-pressed="false">🖱 TV AIM</button><button id="rxShiftLockBtn" class="hide" type="button" aria-pressed="false">🔒 SHIFT LOCK</button><button id="v8ViewBtn" class="hide" type="button">👁 V · FPS</button><div id="chestHint" class="chest-hint" aria-live="polite"></div><div id="petHud" class="pet-hud" aria-live="polite"></div><div id="tokenBurst" class="token-burst hide" aria-live="assertive">🏅 <b data-t="desertToken">DESERT TOKEN</b><small data-t="tokenJackpot">1,000,000 COINS + ALL SHOP ITEMS!</small></div>
+<div id="crosshair"><span id="rxAHitConfirm" hidden style="position:absolute;top:34px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 12px system-ui;color:#fff2cf;background:#22170de6;border:1px solid #b49a6c;border-radius:5px;padding:4px 7px;pointer-events:none"></span></div><button id="rxTvAimBtn" type="button" class="hide" aria-pressed="false">🖱 TV AIM</button><button id="rxShiftLockBtn" class="hide" type="button" aria-pressed="false">🔒 SHIFT LOCK</button><button id="v8ViewBtn" class="hide" type="button">👁 V · FPS</button><div id="chestHint" class="chest-hint" aria-live="polite"></div><div id="petHud" class="pet-hud" aria-live="polite"></div><div id="tokenBurst" class="token-burst hide" aria-live="assertive">🏅 <b data-t="desertToken">DESERT TOKEN</b><small data-t="tokenJackpot">1,000,000 COINS + ALL SHOP ITEMS!</small></div>
 <svg id="weaponArt" viewBox="0 0 580 350" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gunG" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#516e7f"/><stop offset=".5" stop-color="#1d3244"/><stop offset="1" stop-color="#07121c"/></linearGradient><linearGradient id="handG"><stop stop-color="#9d6e5a"/><stop offset="1" stop-color="#634d46"/></linearGradient></defs><path d="M230 310 L450 125 L478 148 L340 350 L175 350Z" fill="#294455"/><path d="M80 157 L225 138 L250 155 L415 139 L434 172 L303 205 L275 260 L210 254 L194 215 L78 204Z" fill="url(#gunG)" stroke="#7491a1" stroke-width="5"/><path d="M24 158 L113 147 L115 178 L28 188Z" fill="#132532" stroke="#8093a0" stroke-width="4"/><path d="M25 149 L80 144 L80 158 L25 167Z" fill="#213849"/><path d="M418 143 L519 131 L531 152 L435 181Z" fill="#11222e" stroke="#648799" stroke-width="4"/><path d="M217 207 L296 206 L316 283 L255 296Z" fill="#0c1725" stroke="#506575" stroke-width="4"/><path d="M183 148 L238 146 L238 121 L184 121Z" fill="#152837" stroke="#5c7d91" stroke-width="4"/><path d="M191 122 L204 94 L223 93 L231 122" fill="none" stroke="#7f9aab" stroke-width="8"/><path d="M109 173 L355 159" stroke="#86a3af" stroke-width="4" opacity=".7"/><path d="M347 177 L410 171" stroke="#44ffe0" stroke-width="5"/><path d="M350 220 C388 219 402 244 408 263 L397 350 L286 350 L303 279Z" fill="url(#handG)" stroke="#382e34" stroke-width="7"/><path d="M310 245 L343 207 L379 211 L377 245 L352 266Z" fill="#a7806a" stroke="#543f3c" stroke-width="6"/></svg>
 <div id="muzzle"></div>
 <div id="rx2Hud" class="rx2-hud hide" aria-live="polite"><span id="rx2HudStatus">X.4 READY</span><span id="rx2Objective"></span></div>
@@ -9107,7 +9107,7 @@ document.head.append(rx5WaterStyle);
 const Z2_TEAM=[[.19,.80,.93],[.95,.37,.24]];
 const Z2_PINGS=['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
 const z2Live={room:null,match:null,snapshot:null,queue:false,sequence:0,lastInput:null,stateAt:0,vetoEnds:0,
-  renderAt:null,jitter:0,fireUntil:0,echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
+  renderAt:null,jitter:0,snapshotCadence:100,hitConfirmUntil:0,fireUntil:0,echoAt:0,rtt:null,reload:false,use:false,ability:false,ping:null,chat:[],result:null};
 const z2IsMatch=()=>mode==='crown-overdrive'&&!!z2Live.match;
 const z2Online=()=>z1SocketReady&&z1Socket?.readyState===1;
 function z2Say(message,error=false){
@@ -9268,7 +9268,7 @@ function z2Leave(){
 }
 function z2EndView(){
   const inMatch=z2IsMatch();
-  z2Live.match=null;z2Live.snapshot=null;z2Live.ping=null;
+  z2Live.match=null;z2Live.snapshot=null;z2Live.ping=null;z2Live.hitConfirmUntil=0;$('rxAHitConfirm').hidden=true;
   $('rxStage').classList.remove('z2-playing','z2-watching','z2-rescue','z2-relic','z2-chess','z2-raid','z3-driving','z3-disguised');
   for(const id of ['z2MatchHud','z2MatchBoard','z2LiveChat','z2Killcam'])$(id)?.classList.add('hide');
   z2MatchActions();
@@ -9305,7 +9305,8 @@ function z2AimActor(row,actor={},time){
 function z2DrawRemoteMotion(dt,elapsed){
   const snapshot=z2Live.snapshot;
   if(!snapshot)return;
-  const desired=Math.min(snapshot.t,snapshot.t-100-Math.min(70,z2Live.jitter*1.5)+elapsed);
+  const delay=clamp(z2Live.snapshotCadence||100,100,220);
+  const desired=Math.min(snapshot.t,snapshot.t-delay-Math.min(70,z2Live.jitter*1.5)+elapsed);
   z2Live.renderAt+=clamp(desired-z2Live.renderAt,0,dt*1000*1.25);
   for(const actor of remotePlayers.values()){
     const poses=actor.poses;
@@ -9340,7 +9341,7 @@ function z2Begin(event){
     $('nameplates').classList.add('crown-hide-names');
   }
   z2Live.match=match;z2Live.lastInput=null;z2Live.fireUntil=0;z2Live.snapshot=null;
-  z2Live.renderAt=null;z2Live.jitter=0;z2Live.echoAt=0;remotePlayers.clear();
+  z2Live.renderAt=null;z2Live.jitter=0;z2Live.snapshotCadence=100;z2Live.hitConfirmUntil=0;$('rxAHitConfirm').hidden=true;z2Live.echoAt=0;remotePlayers.clear();
   $('rxStage').classList.add('z2-playing');
   $('rxStage').classList.toggle('z5-underwater-active',event.mode==='underwater');
   $('rxStage').classList.toggle('z2-watching',event.team==null);
@@ -9362,8 +9363,10 @@ function z2ApplyState(event){
   const previous=z2Live.snapshot,arrival=performance.now();
   if(previous&&event.t<previous.t)return;
   if(!previous||event.t-previous.t>450||arrival-z2Live.stateAt>450){
-    z2Live.renderAt=event.t-100;z2Live.jitter=0;remotePlayers.clear();
+    z2Live.renderAt=event.t-100;z2Live.jitter=0;z2Live.snapshotCadence=100;remotePlayers.clear();
   }else if(event.t>previous.t){
+    const cadence=clamp(event.t-previous.t,50,220);
+    z2Live.snapshotCadence+=(cadence-z2Live.snapshotCadence)*.25;
     const variation=Math.abs((arrival-z2Live.stateAt)-(event.t-previous.t));
     z2Live.jitter+=(Math.min(150,variation)-z2Live.jitter)*.2;
   }
@@ -9487,6 +9490,7 @@ function z2Simulate(dt,now){
     }
     pl.walk+=Math.hypot(dx,dz)*8;
   }
+  if($('rxAHitConfirm')&&!$('rxAHitConfirm').hidden&&(paused||!pl.alive||performance.now()>z2Live.hitConfirmUntil))$('rxAHitConfirm').hidden=true;
   z2DrawRemoteMotion(dt,elapsed);
   for(let i=tracers.length-1;i>=0;i--){
     tracers[i].t-=dt;if(tracers[i].t<=0)tracers.splice(i,1);
@@ -9532,7 +9536,14 @@ function z2Packet(event){
     case 'z2:state':rx5ApplyRemoteHeat(event);z2ApplyState(z2UnpackState(event));break;
     case 'z2:echo':z2Live.rtt=Math.max(0,Math.round(performance.now()-event.value));break;
     case 'z2:kill':addFeed(event.killer+' eliminated '+event.victim);break;
-    case 'z2:shot':z2Shot(event);break;
+    case 'z2:hit-confirm':{
+    if(!z2IsMatch()||event.id!==z2Live.match.id||!pl.alive||paused||!Number.isFinite(event.damage)||event.damage<=0)break;
+    const badge=$('rxAHitConfirm');
+    badge.textContent=(language==='ar'?'إصابة':language==='es'?'IMPACTO':language==='fr'?'TOUCHÉ':language==='tr'?'İSABET':'HIT')+' · '+Math.round(event.damage*10)/10;
+    badge.hidden=false;z2Live.hitConfirmUntil=performance.now()+550;
+    break;
+  }
+  case 'z2:shot':z2Shot(event);break;
     case 'z2:notice':z2Say(event.message);break;
     case 'z2:ping':
       z2Live.ping={...event,message:event.name+' · '+event.message,until:performance.now()+6000};
