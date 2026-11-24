@@ -36,6 +36,6 @@ test('verified match progression is additive, replay-safe, seasonal and opt-in',
  p.setPublic(a,false);assert.equal(p.board().players.length,0);
  p.settle({...match,id:'m3',reason:'forfeit'});assert.equal(p.view(a).xp,460);
  now=SEASON_END;p.settle({...match,id:'m4'});assert.equal(p.view(a).season.xp,230);assert.equal(p.view(a).xp,690);
- assert.equal(SEASON_START,Date.parse('2026-11-30T00:00:00+04:00'));
+ assert.equal(SEASON_START,Date.parse('2026-11-25T00:00:00+04:00'));
  assert.equal(seasonState(SEASON_START-1),'upcoming');assert.equal(seasonState(SEASON_START),'active');assert.equal(seasonState(SEASON_END),'ended');db.close();
 });

@@ -1,5 +1,5 @@
 // Progression 2.0 and Season 1: additive, server-awarded, idempotent match XP.
-export const SEASON_START=Date.parse('2026-11-30T00:00:00+04:00');
+export const SEASON_START=Date.parse('2026-11-25T00:00:00+04:00');
 export const SEASON_END=Date.parse('2027-04-01T00:00:00+04:00');
 export function seasonState(now){return now<SEASON_START?'upcoming':now<SEASON_END?'active':'ended';}
 export const SEASON_GODLY='Sandwyrm';

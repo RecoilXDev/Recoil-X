@@ -28,7 +28,7 @@ Original casual knockback mode on Skydeck. Player-facing name: **Physics Breaker
 | Bot Intelligence 3.0 | Bounded cached obstacle detours, expiry of seen/heard/shared intel, patrol no longer based on unseen target position | Navigation-mesh coverage and coordination stress tests on complex maps; full AI redesign not done |
 | Progression 2.0 | Persistent additive match XP and levels, idempotent awards, no changes to existing inventory | Abuse/load review and broader modes/reward integration |
 | Community Expansion | Private-by-default opt-in seasonal leaderboard, reversible visibility | Tournaments, community event moderation, richer social systems |
-| Season 1 — New Dawn | Server-clock gate Nov 30, 2026 to Mar 31, 2027 Oman time; XP and four profile milestones | Full themed reward inventory, battle pass, boxes, event assets and date-boundary device tests |
+| Season 1 — New Dawn | Server-clock gate Nov 25, 2026 to Mar 31, 2027 Oman time; XP and four profile milestones | Full themed reward inventory, battle pass, boxes, event assets and date-boundary device tests |
 
 ## Operation Server Shield (integrated alpha)
 - Defaults: 40 authenticated online players, 12 pending upgrades, 2 concurrent password hash operations, 512 MiB RSS admission threshold. Configurable by server options; numbers are not verified hosting capacity.
