@@ -2082,6 +2082,8 @@ function v91BindGeometry(b){
 }
 function v91RebuildStaticGPU(){
  if(!gl||!program)return;
+ // Release old transient geometry on map transition, not mid-match.
+ if(v91DynamicArray.length>262144){v91DynamicArray=new Float32Array(0);v91DynamicCapacity=0;if(buffer){gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,0,gl.DYNAMIC_DRAW);}}
  for(const ch of v91StaticChunks)gl.deleteBuffer(ch.buffer);
  v91StaticChunks=[];
  const groups=new Map(),size=32;
@@ -2142,10 +2144,10 @@ void main(){
  float hemisphere=mix(.22,.66,clamp(n.y*.5+.5,0.0,1.0));
  vec3 base=vColor;
  float ground=step(.91,n.y)*(1.0-step(.35,vWorld.y));
- float fleck=v9hash(floor(vWorld.xz*1.85));
- if(uMode>.5){base*=1.0+ground*(fleck-.5)*.13;}
+ if(uMode>.5){float fleck=v9hash(floor(vWorld.xz*1.85));base*=1.0+ground*(fleck-.5)*.13;}
  float diff=uMode<.5?(0.60+0.39*ndl):(hemisphere+ndl*.62);
  vec3 col=base*diff;
+ if(uMode<.5&&uRx2Intensity<=.1&&uCrownUltra<.5){float fog=clamp((vDist-88.0)/135.0,0.0,.42);gl_FragColor=vec4(clamp(mix(col,uFogColor,fog),0.0,1.0),1.0);return;}
  if(uRx2Intensity>.1){
   float edge=pow(1.0-max(dot(n,eye),0.0),3.0);
   float noise=v9hash(floor(vWorld.xz*2.0));
@@ -2243,7 +2245,7 @@ void main(){
  col=mix(col,uFogColor,fog);
  gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);
 }`;
-let v=createShader(gl.VERTEX_SHADER,vert),f=createShader(gl.FRAGMENT_SHADER,frag);program=gl.createProgram();gl.attachShader(program,v);gl.attachShader(program,f);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);buffer=gl.createBuffer();attrib={p:gl.getAttribLocation(program,'aPosition'),c:gl.getAttribLocation(program,'aColor'),n:gl.getAttribLocation(program,'aNormal')};uniform={proj:gl.getUniformLocation(program,'uProj'),view:gl.getUniformLocation(program,'uView'),time:gl.getUniformLocation(program,'uTime'),fog:gl.getUniformLocation(program,'uFogColor'),camera:gl.getUniformLocation(program,'uCamera'),quality:gl.getUniformLocation(program,'uMode'),rx2int:gl.getUniformLocation(program,'uRx2Intensity'),rx2wet:gl.getUniformLocation(program,'uRx2Wet'),rx2night:gl.getUniformLocation(program,'uRx2Night'),rx2shade:gl.getUniformLocation(program,'uRx2Shadow'),rx2godly:gl.getUniformLocation(program,'uRx2Godly'),rx2light:gl.getUniformLocation(program,'uRx2Lighting'),crownUltra:gl.getUniformLocation(program,'uCrownUltra')};gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(...activeMap().sky,1);gl.disable(gl.CULL_FACE);buildMap();staticCount=staticVerts.length/9;}
+let v=createShader(gl.VERTEX_SHADER,vert),f=createShader(gl.FRAGMENT_SHADER,frag);program=gl.createProgram();gl.attachShader(program,v);gl.attachShader(program,f);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);gl.deleteShader(v);gl.deleteShader(f);buffer=gl.createBuffer();attrib={p:gl.getAttribLocation(program,'aPosition'),c:gl.getAttribLocation(program,'aColor'),n:gl.getAttribLocation(program,'aNormal')};uniform={proj:gl.getUniformLocation(program,'uProj'),view:gl.getUniformLocation(program,'uView'),time:gl.getUniformLocation(program,'uTime'),fog:gl.getUniformLocation(program,'uFogColor'),camera:gl.getUniformLocation(program,'uCamera'),quality:gl.getUniformLocation(program,'uMode'),rx2int:gl.getUniformLocation(program,'uRx2Intensity'),rx2wet:gl.getUniformLocation(program,'uRx2Wet'),rx2night:gl.getUniformLocation(program,'uRx2Night'),rx2shade:gl.getUniformLocation(program,'uRx2Shadow'),rx2godly:gl.getUniformLocation(program,'uRx2Godly'),rx2light:gl.getUniformLocation(program,'uRx2Lighting'),crownUltra:gl.getUniformLocation(program,'uCrownUltra')};gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(...activeMap().sky,1);gl.disable(gl.CULL_FACE);buildMap();staticCount=staticVerts.length/9;}
 function norm(v){let l=Math.hypot(...v)||1;return v.map(a=>a/l)}function cross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]}
 function perspective(fov,aspect,near,far){let f=1/Math.tan(fov/2),n=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*n,-1,0,0,2*far*near*n,0])}
 function lookAt(eye,center){let z=norm(eye.map((v,i)=>v-center[i])),x=norm(cross([0,1,0],z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1]);}
@@ -2331,11 +2333,13 @@ let perfChoice=getStore('recoilPerfMode','auto');if(!['auto','pi','school','bala
 let fpsChoice=getStore('recoilFpsCap','auto');if(!['auto','20','24','30','45','60'].includes(String(fpsChoice)))fpsChoice='auto';
 let aiAccumulator=0,lastPresented=0,lastHudUpdate=0,lastMiniUpdate=0,lastViewUI=0;
 let perfResolutionScale=1,perfFramesSlow=0,perfFramesFast=0;
+// B5: conservative automatic profiles for TVs and unknown desktop hardware.
 function v91AutoMode(){
  const ram=Number(navigator.deviceMemory)||0,cores=Number(navigator.hardwareConcurrency)||0;
  const ua=navigator.userAgent||'';
  if(/Raspberry Pi|Raspbian|armv7l|aarch64/i.test(ua)||(ram>0&&ram<=2)||(cores>0&&cores<=2))return 'pi';
- if((ram>0&&ram<=4)||(cores>0&&cores<=4)||mobile)return 'school';
+ if(/SMART-TV|SmartTV|Tizen|Web0S|WebOS|HbbTV|NetCast/i.test(ua))return 'school';
+ if((ram>0&&ram<=4)||(cores>0&&cores<=4)||mobile||(!ram&&!cores))return 'school';
  return 'balanced';
 }
 function v91Resolved(){return perfChoice==='auto'?v91AutoMode():perfChoice;}
@@ -2391,15 +2395,15 @@ function applyGraphics(){document.body.classList.remove('graphics-low','graphics
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
 function updateFPS(ts){fpsFrames++;if(ts-fpsStart>=500){fpsValue=Math.round(fpsFrames*1000/Math.max(1,ts-fpsStart));fpsFrames=0;fpsStart=ts;$('fpsCounter').textContent=fpsValue+' FPS';}}
 
+// Hard framebuffer pixel budgets, independent of device pixel ratio or screen resolution.
+function aFramePixelBudget(profile,mobileBudget=Infinity){return Math.min(mobileBudget,({pi:320000,school:650000,balanced:1600000,max:3600000})[profile]||650000);}
+function aFrameDimensions(width,height,scale,budget){const area=Math.max(1,width*height),dpr=Math.min(scale,Math.sqrt(budget/area));return [Math.max(1,Math.floor(width*dpr)),Math.max(1,Math.floor(height*dpr))];}
 function resize(){
  const preferred=({low:.75,medium:1,high:1.18,ultra:1.35})[graphicsQuality]||1;
  const scale=Math.min(devicePixelRatio||1,1.5)*v91Config().scale*preferred*perfResolutionScale;
  let dpr=Math.max(.28,Math.min(1.5,scale));
- if(v92Active()){
-  const area=Math.max(1,rxVW()*rxVH());
-  dpr=Math.max(.30,Math.min(dpr,Math.sqrt(v92MaxPixelCount()/area)));
- }
- const w=Math.max(1,Math.floor(rxVW()*dpr)),h=Math.max(1,Math.floor(rxVH()*dpr));
+ const budget=aFramePixelBudget(v92Active()?(v92MobileResolved()==='eco'?'pi':v92MobileResolved()==='balanced'?'school':'balanced'):v91Resolved(),v92Active()?v92MaxPixelCount():Infinity);
+ const [w,h]=aFrameDimensions(rxVW(),rxVH(),dpr,budget);
  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;if(gl)gl.viewport(0,0,w,h);}
 }
 function draw(now){$('weaponArt').style.visibility=(spectating||z1Vehicle||v8ThirdPerson||(mode==='mystery'&&vxRole!=='sheriff'))?'hidden':'';if(!gl){drawFallback(now);return;}if(!program||gl.isContextLost())return;resize();const ultra=crownBeginUltra();gl.clearColor(...activeMap().sky,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(program);
@@ -2455,10 +2459,15 @@ const players=[...bots.filter(b=>b.alive).map(b=>({...b,human:false})),...Array.
 for(const p of players){let d=Math.hypot(p.x-eye[0],p.z-eye[2]);if(d>31)continue;let v=[p.x-eye[0],(p.human?2.8:2.6)-eye[1],p.z-eye[2]],z=dot(v,forward);if(z<=.2)continue;let xx=rxVW()/2+dot(v,right)*focal/z,yy=rxVH()/2-dot(v,up)*focal/z;if(xx<-40||xx>rxVW()+40||yy<-20||yy>rxVH()+20)continue;let tag=document.createElement('div');tag.className='nameplate'+(p.human?' human':'');tag.textContent=(p.human?'👤 ':'🤖 ')+String(p.name||tr('player')).slice(0,18);tag.style.left=xx+'px';tag.style.top=yy+'px';parent.append(tag);}
 }
 
+let aNextPresent=0,aLastCap=0,aLastScene=0;
 function loop(ts){
  requestAnimationFrame(loop);
- if(document.hidden){lastFrame=ts;lastPresented=ts;return;}
- if(lastPresented&&ts-lastPresented<1000/v91FpsTarget()-1)return;
+ if(document.hidden){lastFrame=ts;lastPresented=ts;aNextPresent=0;return;}
+ const cap=v91FpsTarget(),interval=1000/cap;
+ if(cap!==aLastCap){aLastCap=cap;aNextPresent=0;}
+ if(aNextPresent&&ts<aNextPresent-1)return;
+ // Keep fractional refresh timing; do not accumulate missed frames after a stall.
+ aNextPresent=aNextPresent?Math.max(ts-interval,aNextPresent)+interval:ts+interval;
  const actualFrame=lastPresented?ts-lastPresented:16.7;
  lastPresented=ts;rxMemoryTick(actualFrame,ts);
  v92TickBudget(actualFrame,1000/v91FpsTarget(),ts);v92Badge(ts);rx2HardwareTick(actualFrame,ts);if(x4Benchmark)x4BenchmarkSample(ts);
@@ -2472,7 +2481,9 @@ function loop(ts){
  if(now-lastViewUI>1/v91Config().nameplates){lastViewUI=now;if(!v92Active()||phase==='playing')updateNameplates(ts);}
  if(phase==='playing'&&!paused){rxTvKeyboardAim(dt);rxTvUpdate(dt);simulate(dt,now);}
  z1PartyService(now);z1InterpolateParty(dt);z1UpdateJeepHUD();
- draw(now);drawParticles(dt);crownPaintPreviews(now);crownSampleUltra(actualFrame);
+ // Menus do not require full-rate 3D scenes; keep game simulation and network service independent.
+ const sceneInterval=phase==='playing'&&!paused?0:(v91EffectiveGraphics()===0?125:83);
+ if(!sceneInterval||ts-aLastScene>=sceneInterval){aLastScene=ts;draw(now);drawParticles(dt);crownPaintPreviews(now);crownSampleUltra(actualFrame);}
  if(phase==='playing'){
   if(now-lastMiniUpdate>1/v91Config().minimap){lastMiniUpdate=now;minimap();v8SyncViewUI();}
   if(mode==='host'&&now-netTimer>.12){netTimer=now;broadcastSnapshot();}
