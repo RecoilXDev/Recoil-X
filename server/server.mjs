@@ -37,6 +37,13 @@ const offlineAssets = new Map([
   ['/recoil-icon-192.png','image/png'], ['/recoil-icon-512.png','image/png']
 ]);
 
+const cityAssets = new Map([
+  ['/server/recoil-city-world.js', 'text/javascript; charset=utf-8'],
+  ['/server/recoil-city-view.js', 'text/javascript; charset=utf-8'],
+  ['/server/recoil-city.js', 'text/javascript; charset=utf-8'],
+  ['/server/recoil-city-cover.webp', 'image/webp']
+]);
+
 function roomPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
@@ -555,11 +562,12 @@ export function createRecoilServer(options = {}) {
   const server = createServer(async (req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     const path = new URL(req.url,'http://localhost').pathname;
-    if(offlineAssets.has(path)){
+    if(offlineAssets.has(path)||cityAssets.has(path)){
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{
-        const data=readFileSync(resolve(assetDirectory,path.slice(1)));
-        res.writeHead(200,{'Content-Type':offlineAssets.get(path),'Cache-Control':'no-cache'});
+        const source=cityAssets.has(path)?new URL(path.slice('/server/'.length),import.meta.url):resolve(assetDirectory,path.slice(1));
+        const data=readFileSync(source);
+        res.writeHead(200,{'Content-Type':offlineAssets.get(path)??cityAssets.get(path),'Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:data);
       }catch{res.writeHead(404).end();}
       return;
@@ -640,7 +648,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'update-a-b6',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-1',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);

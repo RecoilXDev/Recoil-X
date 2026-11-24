@@ -268,6 +268,14 @@ test('offline files are served and the worker caches only its scoped game shell'
     assert.equal(manifest.headers.get('content-type'),'application/manifest+json');
     assert.equal((await manifest.json()).start_url,'./');
     assert.equal((await fetch(url+'/sw.js')).headers.get('content-type'),'text/javascript; charset=utf-8');
+    const home=await (await fetch(url+'/')).text();
+    for(const file of ['recoil-city-world.js','recoil-city-view.js','recoil-city.js']){
+      assert.ok(home.includes('src="server/'+file+'"'));
+      const asset=await fetch(url+'/server/'+file);
+      assert.equal(asset.status,200);
+      assert.match(asset.headers.get('content-type'),/javascript/);
+    }
+    assert.equal((await fetch(url+'/server/recoil-city-cover.webp')).headers.get('content-type'),'image/webp');
     const icon=await fetch(url+'/recoil-icon-192.png');
     assert.equal(icon.headers.get('content-type'),'image/png');
     assert.equal(new DataView(await icon.arrayBuffer()).getUint32(16),192);
@@ -287,7 +295,10 @@ test('offline files are served and the worker caches only its scoped game shell'
   let job;
   listeners.get('install')({waitUntil:value=>job=value});
   await job;
-  assert.equal(cached.size,4);
+  assert.equal(cached.size,8);
+  for(const file of ['recoil-city-world.js','recoil-city-view.js','recoil-city.js','recoil-city-cover.webp']){
+    assert.ok(cached.has('https://example.test/Recoil-X/server/'+file));
+  }
   listeners.get('activate')({waitUntil:value=>job=value});
   await job;
   assert.deepEqual(deleted,['recoil-x-shell:/Recoil-X/:old']);

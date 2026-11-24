@@ -1,17 +1,18 @@
-// Update A alpha control center. No separate WebSocket, account or currency.
+// Account-backed features mounted in the native Play, Collection, Friends and Settings screens.
 (()=>{'use strict';
-if(window.RXUpdateA)return;
+if(document.getElementById('rx-feature-styles'))return;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const style=document.createElement('style');style.textContent=`
-#rx-a{position:fixed;inset:0;z-index:2147483200;background:#100c08e8;overflow:auto;color:#f5e4ce;font:14px/1.5 system-ui;padding:16px}
+const style=document.createElement('style');style.id='rx-feature-styles';style.textContent=`
+#rx-a{width:100%;min-width:0;grid-column:1/-1;text-align:left;color:#f5e4ce;font:14px/1.5 system-ui}
 #rx-a[hidden]{display:none!important}#rx-a *{box-sizing:border-box}
-#rx-a-panel{max-width:900px;margin:3vh auto;background:#241b14;border:1px solid #8e6c46;border-radius:18px;padding:22px;box-shadow:0 20px 70px #0008}
+#z1SettingsMenu #rx5Options [data-game-feature="network"]{display:none}
+#rx-a-panel{padding:12px 0}
 #rx-a h2{font-size:26px;line-height:1.1;margin:5px 0;color:#ffe0a8;letter-spacing:.04em}#rx-a h3{font-size:16px;margin:0 0 8px}
 #rx-a p{margin:7px 0}#rx-a .muted{color:#c9b59e;font-size:12px}
 #rx-a .head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-#rx-a .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #795d3f;padding:14px 0}
+
 #rx-a button,#rx-a select{font:600 13px system-ui;border:1px solid #9b7b53;background:#3f2c1d;color:#ffe8c5;border-radius:9px;padding:11px;min-height:44px;cursor:pointer}
-#rx-a button[aria-current=true]{background:#d7ae71;color:#25170c;border-color:#f4d19e}#rx-a button:focus-visible,#rx-a select:focus-visible{outline:3px solid #f4c46e;outline-offset:3px}
+#rx-a button:focus-visible,#rx-a select:focus-visible{outline:3px solid #f4c46e;outline-offset:3px}
 #rx-a button:disabled{opacity:.5;cursor:default}
 #rx-a .card{border:1px solid #6b5339;background:#302319;padding:16px;border-radius:12px;margin-top:12px}
 #rx-a .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}
@@ -23,31 +24,47 @@ const style=document.createElement('style');style.textContent=`
 @media(max-width:550px){#rx-a{padding:8px}#rx-a-panel{padding:14px;margin:0 auto}#rx-a h2{font-size:21px}#rx-a .card{padding:12px}}
 @media(prefers-reduced-motion:reduce){#rx-a *{scroll-behavior:auto!important;transition:none!important}}
 `;document.head.append(style);
-const root=document.createElement('div');root.id='rx-a';root.hidden=true;
-root.innerHTML='<section id="rx-a-panel" role="dialog" aria-modal="true" aria-labelledby="rx-a-title" tabindex="-1"><div class="head"><div><p class="muted">RECOIL X · BETA CANDIDATE</p><h2 id="rx-a-title">UPDATE A / BETA B6 CONTROL CENTER</h2><p class="muted">Connected systems · existing accounts and game modes preserved</p></div><button id="rx-a-close" aria-label="Close control center">Close ✕</button></div><nav class="tabs" aria-label="Control center sections"><button data-a-tab="overview">Overview</button><button data-a-tab="network">Connection</button><button data-a-tab="combat">Combat</button><button data-a-tab="security">Account</button><button data-a-tab="progression">Progression & Season</button><button data-a-tab="community">Community</button><button data-a-tab="seasonkills">Season Kills</button><button data-a-tab="pass">Season Pass</button><button data-a-tab="curator">Curator Mode</button><button data-a-tab="shield">Server Shield</button></nav><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></section>';
-document.body.append(root);
-let current='overview',generation=0,lastFocus=null,controller=null;
+const root=document.createElement('section');root.id='rx-a';root.hidden=true;
+root.setAttribute('aria-labelledby','rx-a-title');
+root.innerHTML='<div id="rx-a-panel"><div class="head"><h2 id="rx-a-title" tabindex="-1"></h2><button type="button" id="rx-a-close">Close</button></div><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></div>';
+let generation=0,launcher=null,controller=null;
 const token=()=>sessionStorage.getItem('rx5-token');
-const body=()=>$('rx-a-body'),status=(t,bad=false)=>{const n=$('rx-a-status');n.textContent=t;n.style.color=bad?'#ffada3':'#ffd18b';};
+const body=()=>root.querySelector('#rx-a-body'),status=(t,bad=false)=>{const n=root.querySelector('#rx-a-status');n.textContent=t;n.style.color=bad?'#ffada3':'#ffd18b';};
+const visibility=typeof MutationObserver==='function'?new MutationObserver(()=>{
+ const hidden=launcher?.closest('.hide,.hidden,[hidden],details:not([open])');
+ const career=launcher?.closest('#rx5-backdrop');
+ if(hidden||(career&&!career.classList.contains('open')))close(false);
+}):null;
 function invalidate(){generation++;controller?.abort();controller=null;return generation;}
 async function api(path,payload,signal){
- const t=token();if(!t)throw Error('Sign in through Career & Clans first.');
+ const t=token();if(!t)throw Error('Sign in through Friends or Career & Clans to use this feature.');
  const res=await fetch('/rx-api/'+path,{method:payload===undefined?'GET':'POST',headers:{Authorization:'Bearer '+t,...(payload===undefined?{}:{'Content-Type':'application/json'})},body:payload===undefined?undefined:JSON.stringify(payload),cache:'no-store',signal});
  const data=await res.json();if(!res.ok)throw Error(data.error||'Request failed.');return data;
 }
 const metric=(name,value)=>'<div class="metric"><span class="muted">'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>';
-function close(){invalidate();root.hidden=true;body().replaceChildren();status('');lastFocus?.focus?.();lastFocus=null;}
+function close(restoreFocus=true){
+ invalidate();visibility?.disconnect();root.hidden=true;body().replaceChildren();status('');
+ launcher?.setAttribute('aria-expanded','false');
+ if(restoreFocus)launcher?.focus();
+ launcher=null;
+}
 function alive(id){return id===generation&&!root.hidden;}
-async function open(tab='overview'){if(root.hidden)lastFocus=document.activeElement;root.hidden=false;document.exitPointerLock?.();$('rx-a-panel').focus();await show(tab);}
+async function open(tab,button){
+ if(launcher===button&&!root.hidden){close();return;}
+ close(false);launcher=button;button.after(root);root.hidden=false;
+ button.setAttribute('aria-expanded','true');
+ const heading=root.querySelector('#rx-a-title');heading.textContent=button.textContent;heading.focus();
+ for(let node=button.parentElement;visibility&&node;node=node.parentElement){
+  visibility.observe(node,{attributes:true,attributeFilter:['class','hidden','open']});
+ }
+ await show(tab);
+}
 async function show(tab){
- const id=invalidate();current=tab;status('');controller=new AbortController();
+ const id=invalidate();status('');controller=new AbortController();
  const signal=controller.signal;
- for(const b of root.querySelectorAll('[data-a-tab]'))b.setAttribute('aria-current',String(b.dataset.aTab===tab));
  body().textContent='Loading…';
  try{
- if(tab==='overview'){
-  body().innerHTML='<div class="card"><h3>Make every match count.</h3><p>Choose your connection profile, review weapon performance from finished multiplayer matches, and manage your active login sessions. These are the first integrated Update A systems, not a complete overhaul.</p><div class="row"><button data-a-tab="network">Connection settings</button><button data-a-tab="combat">Match analysis</button><button data-a-tab="security">Account security</button></div></div><div class="card"><h3>Keep playing</h3><p class="muted">Your Quick Play, modes, collection, career and original Sand Edition interface stay unchanged. Open the existing Multiplayer lobby to join matches.</p><button data-a-action="close">Return to game</button></div>';
- }else if(tab==='curator'){
+ if(tab==='curator'){
   if(!window.RXCurator)throw Error('Curator editor unavailable.');window.RXCurator.mount(body(),signal);
  }else if(tab==='network'){
   const d=await api('a/connection',undefined,signal);if(!alive(id))return;
@@ -96,12 +113,12 @@ async function matchReport(matchId){
  }catch(e){if(alive(id)&&e.name!=='AbortError')status(e.message,true);}
 }
 root.addEventListener('click',async e=>{
- if(e.target===root||e.target.id==='rx-a-close'){close();return;}
+ if(e.target.id==='rx-a-close'){close();return;}
  const b=e.target.closest('button');if(!b)return;
  if(b.dataset.aTab){await show(b.dataset.aTab);return;}
  const action=b.dataset.aAction;if(action==='close'){close();return;}
  if(action==='match'){await matchReport(b.dataset.id);return;}
- if(b.disabled)return;
+ if(!action||b.disabled)return;
  const id=generation;b.disabled=true;
  try{
   if(action==='pass-claim'){await api('a/season/pass',{tier:Number(b.dataset.tier)});if(alive(id))await show('pass');}
@@ -132,16 +149,29 @@ root.addEventListener('click',async e=>{
  }catch(e){if(alive(id))status(e.message,true);}finally{b.disabled=false;}
 });
 document.addEventListener('keydown',e=>{
- if(root.hidden)return;
- if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();return;}
- if(e.key!=='Tab')return;
- const items=[...root.querySelectorAll('button:not([disabled]),select:not([disabled]),input:not([disabled]),[tabindex="0"]')];
- if(!items.length)return;
- const first=items[0],last=items[items.length-1];
- if(e.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))){e.preventDefault();last.focus();}
- else if(!e.shiftKey&&(document.activeElement===last||!root.contains(document.activeElement))){e.preventDefault();first.focus();}
+ if(!root.hidden&&e.key==='Escape'&&root.contains(document.activeElement)){
+  e.preventDefault();e.stopImmediatePropagation();close();
+ }
 },true);
-const host=$('rx5-native-main')||$('rx5More');
-if(host&&!$('rx-a-entry')){const entry=document.createElement('button');entry.id='rx-a-entry';entry.type='button';entry.textContent='Update A · Control Center';entry.onclick=()=>open();host.append(entry);}
-window.RXUpdateA={open,close};
+window.addEventListener('rx5-auth-changed',()=>{if(!root.hidden)close(false);});
+const routes=[
+ ['curator','Curator Studio',['#z1TrainingTabPanel .z1-menu-grid','#rx2HubMenu']],
+ ['pass','Season pass titles',['#z1Locker','#rx5CollectionHub .rx5-collection-items','#passMenu']],
+ ['seasonkills','Season championship rewards',['#z1Locker','#rx5CollectionHub .rx5-collection-items']],
+ ['network','Connection settings',['#z1SettingsMenu .z1-screen-body','#rx5Options']],
+ ['security','Account sessions',['#z1SocialControls']],
+ ['combat','Match reports',['#z2Menu .z1-screen-body']],
+ ['community','Season leaderboard',['#z1FriendsMenu .z1-screen-body']],
+ ['progression','Season progress',['#rx5-shell','#z1CollectionMenu .z1-screen-body']],
+ ['shield','Server status and waiting queue',['#z2Menu .z1-screen-body']]
+];
+for(const [key,label,selectors] of routes){
+ for(const selector of selectors){
+  const host=document.querySelector(selector);if(!host)continue;
+  const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;
+  button.dataset.gameFeature=key;button.setAttribute('aria-expanded','false');
+  button.onclick=()=>open(key,button);
+  host.append(button);
+ }
+}
 })();

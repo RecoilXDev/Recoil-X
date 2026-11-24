@@ -12,7 +12,7 @@ test('clean UI source has valid syntax and explicit current release identity',()
  assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-8"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/z5-sand-8/);
+ assert.match(sw,/recoil-city-1/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{
@@ -29,11 +29,11 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.ok(ui.querySelector('#rx5-native-advanced'));
  assert.ok(ui.querySelector('#rx5-native-pause'));
  const extras=ui.querySelectorAll('[data-rx5-open]');
- assert.equal(extras.length,16);
+ assert.equal(extras.length,10);
  for(const item of ['rxSimpleQuick','rxSimpleModes','rxSimpleLocker','rxSimpleFriends','rxSimpleSettings','rxSimpleCollection','rxSimpleBotLevel'])
    assert.ok(ui.querySelector('#'+item),item+' must be retained');
  const admin=ui.querySelectorAll('[data-rx-admin-only]');
- assert.equal(admin.length,3);
+ assert.equal(admin.length,2);
  assert.ok(admin.every(x=>x.hidden),'Admin controls must be hidden for non-admin users');
  assert.equal(ui.querySelector('#rx5LocalHeatSetting').checked,true);
  assert.ok(ui.querySelector('#rx5CombatSettings').closest('#rx5Options'));
@@ -46,8 +46,10 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  assert.equal(ui.querySelector('#rxSimpleQuick').disabled,false);
 });
 
-test('Quick Play stays primary, Settings open in place and pause controls collapse safely',()=>{
+test('classic and compact homes share working tools, release notes and reversible settings',()=>{
  const h=makeHarness();
+ const layout=read('index.html').match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/)[1];
+ new vm.Script(layout).runInContext(h.ctx);
  const js=read('server/z5-ingame.js');
  new vm.Script(js,{filename:'z5-ingame.js'}).runInContext(h.ctx);
  const {ui}=h;
@@ -64,9 +66,13 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
  assert.equal(strip.parentElement,more,'release notes must stay inside the closed More drawer');
  assert.ok(heading,'brand heading stays simple');
  assert.ok(simple.querySelector('#rxSimpleActions .rx-simple-grid'));
- assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
+ assert.ok(settings.closest('#z1SettingsMenu'));
+ assert.ok(ui.querySelector('#z1Home').querySelector('#rx5More'));
+ assert.ok(!settings.hidden && !settings.open && !more.open);
+ ui.querySelector('#rxSimpleToggle').click();
  assert.ok(simple.querySelector('#rx5More'));
- assert.ok(settings.hidden && !settings.open && !more.open,'Settings stays invisible and More starts closed');
+ assert.equal(settings.parentElement,simple.querySelector('#rxSimpleActions'));
+ assert.ok(settings.hidden && !settings.open);
  assert.equal(simple.querySelector('.rx-simple-grid').children.length,5,'four existing shortcuts plus Collection');
  assert.ok(ui.querySelector('#rxSimpleCollection'),'Collection shortcut is displayed');
  assert.ok(ui.querySelector('#rx5LegacyMenuLink'),'full classic menu remains accessible inside More');
@@ -95,24 +101,43 @@ test('Quick Play stays primary, Settings open in place and pause controls collap
 
 });
 
-test('Sand-6.1 executes real legacy simple-menu script after main closure and rescues Advanced state',()=>{
- const h=makeHarness({'zone90v2_rx5-simple-menu':'false'});
+test('classic home restores old profiles and honors later explicit layout choices',()=>{
  const html=read('index.html');
- const legacy=html.match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/);
- assert.ok(legacy,'actual separate simple menu script exists');
- assert.equal(typeof h.ctx.RXZ5ClassicMenu.playQuick,'function');
- assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/,'Quick Play must use eligible random maps');
- assert.match(html,/Classic · Random map · 5-minute battle/);
- assert.doesNotThrow(()=>new vm.Script(legacy[1]).runInContext(h.ctx));
- const root=h.ui.querySelector('#mainMenu'),toggle=h.ui.querySelector('#rxSimpleToggle'),quick=h.ui.querySelector('#rxSimpleQuick');
- assert.equal(root.classList.contains('rx-simple-active'),true,'patch defaults to the clean four-button home');
- assert.equal(h.local.getItem('zone90v2_rx5-sand-6-1-first-menu'),'true');
- assert.equal(h.local.getItem('zone90v2_rx5-simple-menu'),'true');
- assert.equal(typeof quick.onclick,'function','Quick Play must have a working game callback');
- toggle.click();assert.equal(root.classList.contains('rx-simple-active'),false,'classic view can still be selected');
- toggle.click();assert.equal(root.classList.contains('rx-simple-active'),true,'clean home can be restored');
+ const layout=html.match(/<script id="rx5-operation-simplicity">([\s\S]*?)<\/script>/)[1];
+ for(const old of [null,true,false]){
+   const h=makeHarness(old===null?{}:{'zone90v2_rx5-simple-menu':JSON.stringify(old),'zone90v2_rx5-sand-6-1-first-menu':'true'});
+   const run=()=>new vm.Script(layout).runInContext(h.ctx);
+   run();
+   const root=h.ui.querySelector('#mainMenu'),toggle=h.ui.querySelector('#rxSimpleToggle'),city=h.ui.querySelector('#z1CityEntry');
+   assert.equal(root.classList.contains('rx-simple-active'),false);
+   assert.ok(city.closest('#z1Home'));
+   city.click();assert.match(city.textContent,/reload|تحميل/i);
+   let opened=0;h.ctx.RecoilCity={open(){opened++;return true;}};
+   city.click();assert.equal(opened,1);
+   toggle.click();
+   assert.ok(root.classList.contains('rx-simple-active'));
+   assert.ok(city.closest('#rxSimpleActions'));
+   assert.equal(h.local.getItem('zone90v2_rx-home-layout-v2'),'"compact"');
+   run();
+   assert.ok(root.classList.contains('rx-simple-active'),'explicit compact preference survives reload');
+   toggle.click();
+   assert.ok(city.closest('#z1Home'));
+   assert.equal(h.local.getItem('zone90v2_rx-home-layout-v2'),'"classic"');
+ }
 });
 
+test('portrait touch menus stay upright and local matches use the landscape stage',()=>{
+ const h=makeHarness();
+ h.ctx.innerWidth=390;h.ctx.innerHeight=844;
+ h.ui.querySelector('#chooseMobile').click();
+ assert.ok(!h.ui.body.classList.contains('rx-soft-landscape'));
+ h.ui.querySelector('#z1PlayBtn').click();
+ assert.ok(!h.ui.body.classList.contains('rx-soft-landscape'));
+ h.ui.querySelector('#z1InstantPlay').click();
+ assert.ok(h.ui.body.classList.contains('rx-soft-landscape'));
+ h.ui.querySelector('#quitBtn').click();
+ assert.ok(!h.ui.body.classList.contains('rx-soft-landscape'));
+});
 
 test('Collection opens existing gun/knife/loot screens without changing inventory',()=>{
  const h=makeHarness();
