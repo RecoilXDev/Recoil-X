@@ -64,3 +64,17 @@ test('World Boss lobbies are allowed Friday/Saturday Oman time but denied on Sun
   assert.throws(()=>svc.packet(conn,user,{type:'z2:create',mode:'worldboss',size:2,limit:15}),{status:403});
  }finally{svc.close();}
 });
+
+
+test('five weekend boss profiles rotate through the existing authoritative raid engine',()=>{
+ const start=Date.UTC(2026,10,20,12),names=new Set();
+ for(let i=0;i<5;i++){
+  const m=make('worldboss',start+i*7*86400000);
+  names.add(m.rule.boss.name);
+  assert.ok(m.rule.boss.maxHp>=2600);
+  assert.ok(m.rule.boss.radius>4);
+ }
+ assert.equal(names.size,5);
+ assert.ok(names.has('Wadi Stormkeeper'));
+ assert.ok(names.has('Obsidian Sentinel'));
+});
