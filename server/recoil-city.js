@@ -90,12 +90,12 @@
           <div class="rc-panel rc-job"><div class="rc-jobhead"><span class="rc-jobtitle"></span><span class="rc-heat"></span></div>
           <p class="rc-objective"></p><div class="rc-actions"><button type="button" data-click="job" data-primary><span></span><kbd>J</kbd></button>
           <button type="button" data-click="vehicle"><span></span><kbd>E</kbd></button><button type="button" data-hold="brake" hidden>Brake</button>
-          <button type="button" data-click="shop" hidden><span></span><kbd>B</kbd></button><button type="button" data-click="paint" hidden><span></span><kbd>G</kbd></button></div></div></div>
+          <button type="button" data-click="shop" hidden><span></span><kbd>B</kbd></button><button type="button" data-click="interior" hidden><span>Enter shop</span><kbd>T</kbd></button><button type="button" data-click="rob" hidden>Rob shop <kbd>H</kbd></button><button type="button" data-click="paint" hidden><span></span><kbd>G</kbd></button></div></div></div>
         <div class="rc-skills" aria-label="On-foot controls"><button data-click="jump">Jump</button><button data-hold="sprint">Sprint</button><button data-hold="fire">Fire</button><button data-click="weapon">Weapon</button></div>
         <div class="rc-pad" aria-label="Movement controls"><button type="button" class="rc-up" data-hold="up" aria-label="Up or accelerate"></button>
           <button type="button" class="rc-left" data-hold="left" aria-label="Left"></button><button type="button" class="rc-down" data-hold="down" aria-label="Down or reverse"></button>
           <button type="button" class="rc-right" data-hold="right" aria-label="Right"></button></div>
-        <p class="rc-notice" role="status" aria-live="polite"></p>
+        <p class="rc-notice" role="status" aria-live="polite"></p><div class="rc-death" hidden style="position:absolute;inset:0;z-index:50;pointer-events:none;background:#100000aa;text-align:center;align-content:center;color:#ed3030;font:900 clamp(48px,15vw,140px) system-ui;letter-spacing:.08em;text-shadow:0 4px 12px #000" role="alert">DEAD</div>
       </div><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
         <label class="rc-settings-row">Camera<select data-option="mode"><option value="third">Third person</option><option value="first">First person</option></select></label>
         <label class="rc-settings-row">Graphics<select data-option="quality"><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label>
@@ -104,14 +104,14 @@
         <dt>Look</dt><dd>Drag with the right mouse button or swipe the street. Z/X to turn, Page Up/Down to look vertically. C centers the camera. V switches view.</dd>
         <dt>Combat</dt><dd>Click or hold F to fire. Q or 1–4 to change weapon. R reloads. On touch, use Fire and Weapon. An empty magazine reloads automatically.</dd>
         <dt>E</dt><dd>Enter or take a nearby vehicle. Slow down to exit.</dd><dt>J</dt><dd>Accept, collect, or deliver the current city job.</dd>
-        <dt>Shops</dt><dd>G repaints your Vista at Sandline Customs. B buys a meal at Copper Café or repairs a car at Pier Nine Motors.</dd>
+        <dt>Shops</dt><dd>G repaints your Vista at Sandline Customs. B buys a meal or repairs a car. T enters/exits a shop on foot; H triggers a fictional robbery inside.</dd>
         <dt>Esc</dt><dd>Close settings or leave the city.</dd></dl></details><p class="rc-career"></p><button type="button" data-click="resume" data-primary>Resume</button></section></div>`;
     document.body.append(dialog);
     const find = selector => dialog.querySelector(selector);
     controls = {streets:find('.rc-streets'),map:find('.rc-map'),area:find('.rc-area'),speed:find('.rc-speed'),cash:find('.rc-cash'),jobTitle:find('.rc-jobtitle'),
       heat:find('.rc-heat'),objective:find('.rc-objective'),notice:find('.rc-notice'),job:find('[data-click="job"]'),vehicle:find('[data-click="vehicle"]'),
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
-    controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');
+    controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
     window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
     dialog.addEventListener('change',e=>{const name=e.target.dataset.option;if(name){options[name]=e.target.value;applyOptions();}});
     controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
@@ -132,7 +132,7 @@
       const action = event.target.closest('button')?.dataset.click;
       if (action === 'exit') close();
       if (action === 'help' || action === 'resume') setHelp(action === 'help');
-      if (['vehicle','job','paint','weapon','shop','jump'].includes(action)) act(action);
+      if (['vehicle','job','paint','weapon','shop','jump','interior','rob'].includes(action)) act(action);
     });
     dialog.addEventListener('pointerdown', event => {
       const button = event.target.closest('[data-hold]');
@@ -219,7 +219,7 @@
     setText(controls.loadout,car?'Condition '+Math.ceil(car.hp)+'%':'HP '+Math.ceil(p.hp)+(gear?' · '+gear.name+' · '+(world.reloadAt?'Reloading':ammo.mag+'/'+ammo.stock):''));
     controls.skills.hidden=!!car;controls.reticle.hidden=!!car;
     controls.reticle.classList.toggle('hit',world.hitAt!=null&&world.elapsed-world.hitAt<.22);
-    const shop=window.RecoilCityWorld.nearbyShop(world);controls.shop.hidden=!shop;
+    const shop=window.RecoilCityWorld.nearbyShop(world);controls.shop.hidden=!shop;controls.death.hidden=!world.deathUntil;controls.interior.hidden=!!car||!shop||shop.id==='repair';setText(controls.interior.firstElementChild,world.interior?'Exit shop':'Enter shop');controls.rob.hidden=!world.interior;controls.rob.disabled=!!world.interior&&world.interior.cooldown>world.elapsed;
     if(shop)setText(controls.shop.firstElementChild,shop.name+' · $'+shop.price);
     controls.heat.toggleAttribute('data-hot',world.heat>0);
     const job=world.job || world.offer;
@@ -257,10 +257,12 @@
   }
   function clearHeld(){held.clear();pointers.clear();lookPointer=null;firing=false;queuedShot=false;dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
   function act(action){
-    if(!world || paused)return;
+    if(!world || paused||world.deathUntil)return;
     if(action==='vehicle'){if(window.RecoilCityWorld.interact(world)){yaw=world.player.angle;tilt=0;manualUntil=0;}}
     else if(action==='jump')window.RecoilCityWorld.jump(world);
     else if(action==='shop')window.RecoilCityWorld.shop(world);
+    else if(action==='interior'){if(window.RecoilCityWorld.enterShop(world)){yaw=world.player.angle;tilt=0;}}
+    else if(action==='rob')window.RecoilCityWorld.robShop(world);
     else if(action==='reload')window.RecoilCityWorld.reload(world);
     else if(action==='weapon')window.RecoilCityWorld.selectWeapon(world,world.weapon+1);
     else if(action==='camera'){options.mode=options.mode==='first'?'third':'first';applyOptions();}
@@ -298,7 +300,7 @@
       if(event.type==='keydown'){held.add(event.code);if(key==='fire'&&!event.repeat)queuedShot=true;}else held.delete(event.code);
       return;
     }
-    const action={KeyJ:'job',KeyE:'vehicle',KeyG:'paint',KeyQ:'weapon',KeyR:'reload',KeyV:'camera',KeyC:'center',KeyB:'shop'}[event.code];
+    const action={KeyJ:'job',KeyE:'vehicle',KeyG:'paint',KeyQ:'weapon',KeyR:'reload',KeyV:'camera',KeyC:'center',KeyB:'shop',KeyT:'interior',KeyH:'rob'}[event.code];
     if(event.type==='keydown'&&!event.repeat && action){
       event.preventDefault();act(action);
     }
