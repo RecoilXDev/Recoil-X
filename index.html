@@ -1860,6 +1860,24 @@ function rx5BotFindCover(b,target,now){
   }
   return best;
 }
+// Update A: bounded route probes, cached per bot. No navigation search on every frame.
+function aBotSegmentClear(ax,az,bx,bz){
+ const length=Math.hypot(bx-ax,bz-az),steps=Math.min(24,Math.max(1,Math.ceil(length/.8)));
+ for(let i=1;i<=steps;i++)if(blocked(ax+(bx-ax)*i/steps,az+(bz-az)*i/steps,.57))return false;
+ return true;
+}
+function aBotWaypoint(b,goal,side){
+ const limit=rx5TacticalLimit(),dx=goal.x-b.x,dz=goal.z-b.z,dist=Math.hypot(dx,dz)||1;
+ if(aBotSegmentClear(b.x,b.z,goal.x,goal.z))return null;
+ let best=null,score=Infinity;
+ for(const sign of [side||1,-(side||1)])for(const width of [3,6,10]){
+  const x=clamp(b.x+dx/dist*2-dz/dist*width*sign,-limit,limit),z=clamp(b.z+dz/dist*2+dx/dist*width*sign,-limit,limit);
+  if(blocked(x,z,.57)||!aBotSegmentClear(b.x,b.z,x,z))continue;
+  const cost=Math.hypot(x-goal.x,z-goal.z)+width*.35+(aBotSegmentClear(x,z,goal.x,goal.z)?0:12);
+  if(cost<score){score=cost;best={x,z};}
+ }
+ return best;
+}
 function rx5BotTacticalStep(b,target,dt,now,canSee){
   const elite=rx5TacticalMode==='nightmare';
   const distance=Math.hypot(target.x-b.x,target.z-b.z);
@@ -1869,18 +1887,18 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   if(canSee){
     if(now-m.lastSeen>1.5)m.reactionUntil=now+(elite?.48:.72);
     m.lastSeen=now;
-    m.lastKnown={x:target.x,z:target.z};
+    m.lastKnown={x:target.x,z:target.z};m.memoryAt=now;
     if(target===pl)rx5SquadIntel={x:target.x,z:target.z,at:now,source:b.id};
   }else if(rx5LastPlayerShot&&target===pl&&now-rx5LastPlayerShot.at<2.5&&
      Math.hypot(b.x-rx5LastPlayerShot.x,b.z-rx5LastPlayerShot.z)<36){
-    m.lastKnown={x:rx5LastPlayerShot.x,z:rx5LastPlayerShot.z};
+    m.lastKnown={x:rx5LastPlayerShot.x,z:rx5LastPlayerShot.z};m.memoryAt=rx5LastPlayerShot.at;
   }else if(target===pl&&rx5SquadIntel&&rx5SquadIntel.source!==b.id&&
      now-rx5SquadIntel.at<(elite?4:2.2)&&
      Math.hypot(b.x-rx5SquadIntel.x,b.z-rx5SquadIntel.z)<32){
-    m.lastKnown={x:rx5SquadIntel.x,z:rx5SquadIntel.z};
+    m.lastKnown={x:rx5SquadIntel.x,z:rx5SquadIntel.z};m.memoryAt=rx5SquadIntel.at;
   }
-  const remembered=m.lastKnown&&now-m.lastSeen<7?m.lastKnown:null;
-  if(!canSee&&now-m.lastSeen>7&&!rx5LastPlayerShot)m.lastKnown=null;
+  const remembered=m.lastKnown&&now-(m.memoryAt??m.lastSeen)<7?m.lastKnown:null;
+  if(!canSee&&!remembered)m.lastKnown=null;
   // Do not keep restarting the hide timer; that would trap a wounded bot forever.
   if(m.mode==='hide'&&now>=m.hideUntil){
     m.mode='peek';
@@ -1892,7 +1910,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
      (lowHp&&!['cover','hide','peek'].includes(m.mode))){
     m.nextPlan=now+(elite?.55:.95)+Math.random()*.45;
     const hideThis=lowHp||(canSee&&distance<29&&Math.random()<(elite?.56:.37));
-    const cover=hideThis?rx5BotFindCover(b,target,now):null;
+    const cover=hideThis&&(canSee||remembered)?rx5BotFindCover(b,canSee?target:remembered,now):null;
     if(cover){
       m.goal={x:cover.x,z:cover.z};
       m.mode='cover';m.hideUntil=now+(elite?1.3:1.8)+Math.random()*1.0;
@@ -1913,7 +1931,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
       m.goal={...remembered};m.mode='investigate';
     }else {
       // Guard corners and patrol, rather than magically locating a hidden player.
-      const anchor=rx5BotFindCover(b,target,now);
+      const anchor=null; // No cover selection based on an unseen player's actual position.
       const drift=activeMap()?.ogClassic?26:50;
       m.goal=anchor?{x:anchor.x,z:anchor.z}:{x:clamp(b.x+rand(-11,11),-drift,drift),
         z:clamp(b.z+rand(-11,11),-drift,drift)};
@@ -1921,13 +1939,19 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
     }
   }
   if(m.goal){
-    let dx=m.goal.x-b.x,dz=m.goal.z-b.z,remain=Math.hypot(dx,dz);
-    if(remain<1.6&&m.mode==='cover')m.mode='hide';
+    if(m.routeGoal!==m.goal||now>=(m.routeNext||0)){
+      m.routeGoal=m.goal;m.routeNext=now+1.5+(Math.abs(Number(b.id)||0)%7)*.1;
+      m.waypoint=m.mode==='hide'?null:aBotWaypoint(b,m.goal,m.peekSide);
+    }
+    if(m.waypoint&&Math.hypot(b.x-m.waypoint.x,b.z-m.waypoint.z)<.8){m.waypoint=null;m.routeNext=0;}
+    let dx=(m.waypoint||m.goal).x-b.x,dz=(m.waypoint||m.goal).z-b.z,remain=Math.hypot(dx,dz);
+    const goalDistance=Math.hypot(m.goal.x-b.x,m.goal.z-b.z);
+    if(goalDistance<1.6&&m.mode==='cover')m.mode='hide';
     if(m.mode==='hide'&&now>=m.hideUntil){
       m.mode='peek';
       m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:b.z+3.5*(b.z>target.z?1:-1)};
     }
-    if(remain<1.7&&(m.mode==='investigate'||m.mode==='patrol'||m.mode==='peek')){
+    if(goalDistance<1.7&&(m.mode==='investigate'||m.mode==='patrol'||m.mode==='peek')){
       m.nextPlan=0;m.goal=null;
     }
     if(m.mode==='hide'){dx=0;dz=0;remain=0;}
@@ -2152,6 +2176,15 @@ void main(){
    col=mix(col,env*(.72+.28*sky),clamp(amount*(.38+fres*.9),0.,.65));
    col+=vec3(1.0,.87,.70)*sheen*(.18+glass*.55+metal*.33);
    if(glass>.5){float glint=pow(max(dot(n,normalize(sun+eye)),0.0),128.0);col+=vec3(.25,.38,.53)*glint*.72;}
+ }
+ if(uMode>2.5){
+   // Update A material/lighting pass; high-end presets only, analytical WebGL.
+   float rim=pow(1.0-max(dot(n,eye),0.0),3.0);
+   float horizon=clamp(n.y*.5+.5,0.0,1.0);
+   vec3 bounce=mix(vec3(.050,.029,.015),uFogColor*.115,horizon);
+   col+=base*bounce*(.60+metal*.35);
+   col+=uFogColor*rim*(.035+metal*.085);
+   col=mix(col,col/(1.0+col*.16)*1.10,.35);
  }
  if(uMode>3.5){
    // VERSION X CINEMATIC: warm/cool bounce, subtle rim highlights, and filmic roll-off.
