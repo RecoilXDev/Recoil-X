@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, createReadStream, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
@@ -40,10 +40,36 @@ const offlineAssets = new Map([
 const cityAssets = new Map([
   ['/server/recoil-city-world.js', 'text/javascript; charset=utf-8'],
   ['/server/recoil-city-view.js', 'text/javascript; charset=utf-8'],
+  ['/server/recoil-city-radio.js', 'text/javascript; charset=utf-8'],
+  ['/server/city-radio/tracks.json', 'application/json; charset=utf-8'],
   ['/server/recoil-city.js', 'text/javascript; charset=utf-8'],
   ['/server/recoil-city-cover.webp', 'image/webp']
 ]);
 
+const radioRoot = '/server/city-radio/';
+const radioFiles = new Set(JSON.parse(readFileSync(new URL('./city-radio/tracks.json', import.meta.url), 'utf8')).map(track => radioRoot + track.file));
+function serveRecording(req, res, path) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
+  const source = new URL(path.slice('/server/'.length), import.meta.url);
+  const size = statSync(source).size;
+  const headers = {'Content-Type':'audio/mpeg','Accept-Ranges':'bytes','Cache-Control':'public, max-age=86400'};
+  let start = 0, end = size - 1, code = 200;
+  if (req.headers.range) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+    if (match && (match[1] || match[2])) {
+      start = match[1] ? Number(match[1]) : Math.max(0,size-Number(match[2]));
+      end = match[1] && match[2] ? Math.min(size-1, Number(match[2])) : size-1;
+    } else start = size;
+    if (!Number.isSafeInteger(start) || start >= size || end < start) {
+      res.writeHead(416,{...headers,'Content-Range':'bytes */'+size}).end(); return;
+    }
+    code = 206; headers['Content-Range'] = 'bytes '+start+'-'+end+'/'+size;
+  }
+  res.writeHead(code,{...headers,'Content-Length':end-start+1});
+  if (req.method === 'HEAD') { res.end(); return; }
+  const stream = createReadStream(source,{start,end});
+  res.on('close',()=>stream.destroy());stream.on('error',()=>res.destroy());stream.pipe(res);
+}
 function roomPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
@@ -562,6 +588,9 @@ export function createRecoilServer(options = {}) {
   const server = createServer(async (req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     const path = new URL(req.url,'http://localhost').pathname;
+    if(radioFiles.has(path)){
+      try{serveRecording(req,res,path);}catch{res.writeHead(404).end();}return;
+    }
     if(offlineAssets.has(path)||cityAssets.has(path)){
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{
@@ -648,7 +677,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-1',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-3d-radio',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
