@@ -10,7 +10,8 @@ export function createAProgression(db,{clock=Date.now}={}){
  CREATE TABLE IF NOT EXISTS rx_a_season_kills(player INTEGER PRIMARY KEY REFERENCES users(id),kills INTEGER NOT NULL DEFAULT 0,wins INTEGER NOT NULL DEFAULT 0,deaths INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS rx_a_season_prizes(player INTEGER PRIMARY KEY REFERENCES users(id),rank INTEGER NOT NULL UNIQUE,kills INTEGER NOT NULL,tier TEXT NOT NULL,equipped INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS rx_a_season_closed(id INTEGER PRIMARY KEY CHECK(id=1),closed INTEGER NOT NULL);
- CREATE TABLE IF NOT EXISTS rx_a_pass_claim(player INTEGER NOT NULL REFERENCES users(id),tier INTEGER NOT NULL,claimed INTEGER NOT NULL,PRIMARY KEY(player,tier));`);
+ CREATE TABLE IF NOT EXISTS rx_a_pass_claim(player INTEGER NOT NULL REFERENCES users(id),tier INTEGER NOT NULL,claimed INTEGER NOT NULL,PRIMARY KEY(player,tier));
+ CREATE TABLE IF NOT EXISTS rx_a_pass_equipped(player INTEGER PRIMARY KEY REFERENCES users(id),tier INTEGER NOT NULL);`);
  const get=db.prepare('SELECT * FROM rx_a_progress WHERE player=?'),ensure=db.prepare('INSERT OR IGNORE INTO rx_a_progress(player) VALUES(?)');
  const award=db.prepare('INSERT OR IGNORE INTO rx_a_award VALUES(?,?)'),inc=db.prepare('UPDATE rx_a_progress SET xp=xp+?,season_xp=season_xp+?,matches=matches+1,wins=wins+? WHERE player=?');
  const leaderboard=db.prepare('SELECT u.name,p.season_xp,p.wins FROM rx_a_progress p JOIN users u ON u.id=p.player WHERE p.public=1 AND u.banned=0 AND p.season_xp>0 ORDER BY p.season_xp DESC,u.id LIMIT 50');
@@ -42,7 +43,9 @@ export function createAProgression(db,{clock=Date.now}={}){
  }
  const milestones=[{level:1,xp:0,title:'New Dawn'},{level:5,xp:2000,title:'Sky Vanguard'},{level:10,xp:4500,title:'Sand Legend'},{level:20,xp:9500,title:'First Era'}];
  const pass=[{tier:1,xp:100,title:'Dawn Recruit'},{tier:2,xp:1000,title:'Desert Runner'},{tier:3,xp:2500,title:'Sky Sentinel'},{tier:4,xp:5000,title:'Sand Commander'},{tier:5,xp:10000,title:'New Dawn Champion'}];
- function passView(user){const state=seasonState(clock()),xp=get.get(user.id)?.season_xp||0,claims=new Set(db.prepare('SELECT tier FROM rx_a_pass_claim WHERE player=?').all(user.id).map(r=>r.tier));return {state,xp,rewards:pass.map(t=>({...t,claimed:claims.has(t.tier),eligible:state==='active'&&xp>=t.xp}))};}
+ const readEquipped=db.prepare('SELECT tier FROM rx_a_pass_equipped WHERE player=?'),setEquipped=db.prepare('INSERT INTO rx_a_pass_equipped VALUES(?,?) ON CONFLICT(player) DO UPDATE SET tier=excluded.tier');
+ function passView(user){const state=seasonState(clock()),xp=get.get(user.id)?.season_xp||0,claims=new Set(db.prepare('SELECT tier FROM rx_a_pass_claim WHERE player=?').all(user.id).map(r=>r.tier)),equipped=readEquipped.get(user.id)?.tier??null;return {state,xp,equipped,rewards:pass.map(t=>({...t,claimed:claims.has(t.tier),eligible:state==='active'&&xp>=t.xp}))};}
+ function equipPass(user,tier){if(tier===null){db.prepare('DELETE FROM rx_a_pass_equipped WHERE player=?').run(user.id);return passView(user);}if(!pass.some(p=>p.tier===tier))throw Object.assign(Error('Invalid title tier.'),{status:400});if(!db.prepare('SELECT 1 FROM rx_a_pass_claim WHERE player=? AND tier=?').get(user.id,tier))throw Object.assign(Error('Claim this title first.'),{status:403});setEquipped.run(user.id,tier);return passView(user);}
  function claimPass(user,tier){const t=pass.find(x=>x.tier===tier);if(!t)throw Object.assign(Error('Invalid pass tier.'),{status:400});
  const now=clock();if(seasonState(now)!=='active'||(get.get(user.id)?.season_xp||0)<t.xp)throw Object.assign(Error('Tier is not available.'),{status:403});
  db.prepare('INSERT OR IGNORE INTO rx_a_pass_claim VALUES(?,?,?)').run(user.id,tier,now);return passView(user);}
@@ -70,5 +73,5 @@ export function createAProgression(db,{clock=Date.now}={}){
  }
  function setPublic(user,value){if(typeof value!=='boolean')throw Object.assign(Error('Choose a visibility setting.'),{status:400});ensure.run(user.id);db.prepare('UPDATE rx_a_progress SET public=? WHERE player=?').run(+value,user.id);return view(user);}
  function board(){return {state:seasonState(clock()),players:seasonState(clock())==='upcoming'?[]:leaderboard.all(),notice:'Opt-in seasonal leaderboard. Only public game names and earned season XP are listed.'};}
- return {view,settle,setPublic,board,killsBoard,reward,equipReward,finalize,passView,claimPass};
+ return {view,settle,setPublic,board,killsBoard,reward,equipReward,finalize,passView,claimPass,equipPass};
 }
