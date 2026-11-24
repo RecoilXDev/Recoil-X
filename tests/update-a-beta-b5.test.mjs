@@ -11,6 +11,7 @@ test('framebuffer pixel caps apply to HD and 4K televisions',()=>{
  const {aFramePixelBudget:budget,aFrameDimensions:dimensions}=new Function(src+'\nreturn {aFramePixelBudget,aFrameDimensions};')();
  for(const mode of ['pi','school','balanced','max'])for(const [w,h] of [[1920,1080],[3840,2160],[720,1280]]){const [x,y]=dimensions(w,h,1.5,budget(mode));assert(x*y<=budget(mode));assert(Math.abs(x/y-w/h)<.01);}
  assert.equal(budget('pi',200000),200000);
+ for(const mode of ['pi','school','balanced','max'])for(const [w,h] of [[1000000,1],[1,1000000]]){const [x,y]=dimensions(w,h,1.5,budget(mode));assert(x>=1&&y>=1&&x*y<=budget(mode));}
 });
 test('only claimed seasonal titles can be equipped and remain available after season',()=>{
  const db=new DatabaseSync(':memory:');let now=SEASON_START;

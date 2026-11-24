@@ -2123,7 +2123,7 @@ window.RecoilCityGame = Object.freeze({
 function tone(ac,midi,when,duration,type='triangle',vol=.017,output=ac.destination){if(midi<0)return;const osc=ac.createOscillator(),env=ac.createGain(),freq=440*Math.pow(2,(midi-69)/12);osc.type=type;osc.frequency.setValueAtTime(freq,when);env.gain.setValueAtTime(.00001,when);env.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),when+.022);env.gain.exponentialRampToValueAtTime(.00001,when+duration);osc.connect(env).connect(output);osc.start(when);osc.stop(when+duration+.03)}
 function setMusic(track){musicMode=track==='match'?rxAMatchMusic():SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}}
 function scoreBeat(ac,track,beat,when,step,output=ac.destination){const song=SOUNDTRACK[track],i=beat%16;let bass=song.bass[i],lead=song.lead[i];if(bass>=0)tone(ac,bass,when,step*.85,'sine',track==='lobby'?.014:.026,output);if(lead>=0)tone(ac,lead,when,step*.63,song.wave||(track==='victory'?'sine':'triangle'),track.startsWith('mode:')?.012:track==='match'?.016:.022,output);if((song.drums&&i%song.drums===0)||(track==='match'&&i%4===0))tone(ac,28,when,step*.18,'sine',.015,output);}
-function tickMusic(){if(!sound||!allAudioStarted||window.RecoilCity?.active||window.RecoilCityRadio?.playing)return;if(phase==='playing'&&musicMode.startsWith('mode:')){const desired=rxAMatchMusic();if(desired!==musicMode)setMusic(desired);}let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
+function tickMusic(){if(!sound||!allAudioStarted||window.RecoilCity?.active||window.RecoilCityRadio?.playing){nextMusicBeat=0;return;}if(phase==='playing'&&musicMode.startsWith('mode:')){const desired=rxAMatchMusic();if(desired!==musicMode)setMusic(desired);}let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
 // WebGL renderer: all geometry and shaders are embedded in this HTML file.
 let program=null,buffer=null,attrib={},uniform={},staticCount=0;
 let v91StaticChunks=[],v91DynamicCapacity=0,v91DynamicArray=new Float32Array(0);
@@ -2450,7 +2450,7 @@ function updateFPS(ts){fpsFrames++;if(ts-fpsStart>=500){fpsValue=Math.round(fpsF
 
 // Hard framebuffer pixel budgets, independent of device pixel ratio or screen resolution.
 function aFramePixelBudget(profile,mobileBudget=Infinity){return Math.min(mobileBudget,({pi:320000,school:650000,balanced:1600000,max:3600000})[profile]||650000);}
-function aFrameDimensions(width,height,scale,budget){const area=Math.max(1,width*height),dpr=Math.min(scale,Math.sqrt(budget/area));return [Math.max(1,Math.floor(width*dpr)),Math.max(1,Math.floor(height*dpr))];}
+function aFrameDimensions(width,height,scale,budget){const limit=Math.max(1,Math.floor(budget)),area=Math.max(1,width*height),dpr=Math.min(scale,Math.sqrt(limit/area));let w=Math.max(1,Math.floor(width*dpr)),h=Math.max(1,Math.floor(height*dpr));if(w*h>limit){if(w>=h)w=Math.max(1,Math.floor(limit/h));else h=Math.max(1,Math.floor(limit/w));}return [w,h];}
 function resize(){
  const preferred=({low:.75,medium:1,high:1.18,ultra:1.35})[graphicsQuality]||1;
  const scale=Math.min(devicePixelRatio||1,1.5)*v91Config().scale*preferred*perfResolutionScale;
@@ -2520,7 +2520,7 @@ function loop(ts){
  if(cap!==aLastCap){aLastCap=cap;aNextPresent=0;}
  if(aNextPresent&&ts<aNextPresent-1)return;
  // Keep fractional refresh timing; do not accumulate missed frames after a stall.
- aNextPresent=aNextPresent?Math.max(ts-interval,aNextPresent)+interval:ts+interval;
+ aNextPresent=aNextPresent&&ts-aNextPresent<interval?aNextPresent+interval:ts+interval;
  const actualFrame=lastPresented?ts-lastPresented:16.7;
  lastPresented=ts;rxMemoryTick(actualFrame,ts);
  v92TickBudget(actualFrame,1000/v91FpsTarget(),ts);v92Badge(ts);rx2HardwareTick(actualFrame,ts);if(x4Benchmark)x4BenchmarkSample(ts);
@@ -7546,7 +7546,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='UPDATE A · NEW DAWN PREVIEW';
+  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='VERSION Z.5 · UPDATE A NEW DAWN PREVIEW';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
