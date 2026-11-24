@@ -19,6 +19,7 @@ import { createZ5Expansion } from './z5-expansion.mjs';
 import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
 import {createServerShield} from './a-server-shield.mjs';
 import {createAProgression} from './a-progression.mjs';
+import {createCurator} from './a-curator.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -128,6 +129,7 @@ export function createRecoilServer(options = {}) {
   const delivery=createDeliveryPolicy();
   const shield=createServerShield(db,options.shield);
   const progression=createAProgression(db);
+  const curator=createCurator(db,fail);
   progression.finalize();
   const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
     const active=clients.get(id);
@@ -350,6 +352,8 @@ export function createRecoilServer(options = {}) {
     const user = authenticate(token);
     if(!allowed('a-http:'+user.id,240,60000))throw fail(429,'Too many requests. Retry shortly.');
     if (req.method === 'GET') {
+      if(path==='/a/curator/list')return curator.list(user);
+      if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
       if(path==='/a/progression')return progression.view(user);
       if(path==='/a/season/kills')return progression.killsBoard(user);
       if(path==='/a/season/reward')return {reward:progression.reward(user)};
@@ -408,6 +412,13 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path.startsWith('/a/curator/')){
+        if(!allowed('a-curator:'+user.id,20,60000))throw fail(429,'Too many Curator changes. Retry shortly.');
+        if(shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Curator writes paused during maintenance.');
+        if(path==='/a/curator/save')return curator.save(user,body);
+        if(path==='/a/curator/share')return curator.share(user,body);
+        if(path==='/a/curator/delete')return curator.remove(user,body);
+      }
       if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
       if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
       if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
@@ -512,6 +523,10 @@ export function createRecoilServer(options = {}) {
         res.end(req.method==='HEAD'?undefined:js);
       }catch{res.writeHead(404).end();}return;
     }
+    if(path==='/a-curator.js'){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./a-curator.js',import.meta.url));res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:js);}catch{res.writeHead(404).end();}return;
+    }
     if(path==='/a-control-center.js'){
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./a-control-center.js',import.meta.url));
@@ -557,7 +572,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script><script src="/a-control-center.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script><script src="/a-curator.js" defer></script><script src="/a-control-center.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
