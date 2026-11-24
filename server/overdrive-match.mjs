@@ -87,7 +87,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(mode==='volcano')field={...field,id:'z5-volcano',name:'Z.5 Volcano Outpost'};
   if(mode==='timefracture')field={...field,id:'z5-timefracture',name:'Z.5 Time Fracture'};
   if(mode==='underwater')field=underwaterField(field);
-  if(mode==='pawblast')field={id:'pawblast-skydeck',name:'Pawblast Skydeck',half:PAWBLAST_HALF,cover:[],pawblast:true};
+  if(mode==='pawblast')field={id:'pawblast-skydeck',name:'Physics Breaker · Skydeck',half:PAWBLAST_HALF,cover:[],pawblast:true};
   // Clone per-room cover; never mutate shared or ranked arena geometry.
   if(!season&&!tournament&&['demolition','clanwar','underwater'].includes(mode))field=destructibleField(field);
   else field={...field,cover:field.cover.map(c=>({...c}))};
@@ -321,7 +321,7 @@ function fire(m,p,now) {
     }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
-  if(metrics.hits>hitsBefore&&m.mode==='pawblast')m.events.push({type:'z2:notice',only:p.id,message:'PAWBLAST · Knockback landed!'});
+  if(metrics.hits>hitsBefore&&m.mode==='pawblast')m.events.push({type:'z2:notice',only:p.id,message:'PHYSICS BREAKER · Knockback landed!'});
   if(metrics.hits>hitsBefore&&m.mode!=='pawblast')m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
 }
 
