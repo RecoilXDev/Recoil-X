@@ -376,6 +376,7 @@ export function createRecoilServer(options = {}) {
       if(path==='/a/curator/room')return curatorRooms.state(user);
       if(path==='/a/curator/list')return curator.list(user);
       if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
+      if(path==='/a/season/pass')return progression.passView(user);
       if(path==='/a/progression')return progression.view(user);
       if(path==='/a/season/kills')return progression.killsBoard(user);
       if(path==='/a/season/reward')return {reward:progression.reward(user)};
@@ -449,6 +450,7 @@ export function createRecoilServer(options = {}) {
         if(path==='/a/curator/share')return curator.share(user,body);
         if(path==='/a/curator/delete')return curator.remove(user,body);
       }
+      if(path==='/a/season/pass'){if(!allowed('a-pass:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.claimPass(user,body.tier);}
       if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
       if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
       if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
