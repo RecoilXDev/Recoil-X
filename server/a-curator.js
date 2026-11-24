@@ -1,0 +1,65 @@
+(()=>{'use strict';
+const types=['block','wall','ramp','spawn','target','hazard','tree'];
+const palette={block:'#aa8060',wall:'#dcc5a0',ramp:'#9e8d7b',spawn:'#53c99b',target:'#ffd15d',hazard:'#e86452',tree:'#528b65'};
+const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n};
+const button=(label,fn)=>{const b=el('button',label);b.type='button';b.onclick=fn;return b};
+function renderer(canvas,objects,angle,weapon=false){
+ const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+ if(!c)return; c.clearRect(0,0,w,h);c.fillStyle='#191510';c.fillRect(0,0,w,h);
+ const scale=weapon?Math.min(w/12,h/6):Math.min(w/27,h/18),sin=Math.sin(angle),cos=Math.cos(angle);
+ const project=([x,y,z])=>{const a=x*cos-z*sin,b=x*sin+z*cos;return [w/2+a*scale,h*(weapon?.53:.46)+(b*.48-y)*scale,b+y*.15]};
+ const faces=[];
+ function mesh(v,fs,color){for(const [i,f] of fs.entries()){const p=f.map(j=>project(v[j]));faces.push({p,d:p.reduce((a,b)=>a+b[2],0)/p.length,color,shade:[.68,.85,1,.78,.91,.58][i%6]});}}
+ function box(x,y,z,a,b,d,color){const v=[[x-a/2,y,z-d/2],[x+a/2,y,z-d/2],[x+a/2,y,z+d/2],[x-a/2,y,z+d/2],[x-a/2,y+b,z-d/2],[x+a/2,y+b,z-d/2],[x+a/2,y+b,z+d/2],[x-a/2,y+b,z+d/2]];mesh(v,[[0,1,2,3],[0,4,5,1],[4,5,6,7],[1,5,6,2],[2,6,7,3],[3,7,4,0]],color);}
+ function wedge(x,z,color){mesh([[x-.45,0,z-.45],[x+.45,0,z-.45],[x+.45,0,z+.45],[x-.45,0,z+.45],[x-.45,.8,z+.45],[x+.45,.8,z+.45]],[[0,1,2,3],[0,1,5,4],[1,2,5],[2,3,4,5],[3,0,4]],color);}
+ if(weapon){
+  const color=objects[0].color;box(-.5,0,0,3.2,.72,.72,color);box(1.3,.08,0,1.4,.55,.57,color);box(2.8,.23,0,1.8,.19,.24,'#4b4845');box(3.8,.17,0,.48,.31,.33,color);
+  box(-2.6,.1,0,1.1,.58,.48,color);box(-2.95,-.19,0,.33,.95,.56,'#383434');box(-.7,-.78,0,.53,.78,.47,'#50453e');box(.45,-.76,0,.63,.84,.52,color);box(-.3,.74,0,.5,.14,.35,'#171717');box(.5,.74,0,.55,.25,.45,color);
+  for(let i=0;i<6;i++){box(-1.4+i*.52,.24,.4,.33,.17,.08,'#f0dbc0');box(-1.4+i*.52,.24,-.4,.33,.17,.08,'#f0dbc0');}
+ }else{
+  c.strokeStyle='#514334';c.lineWidth=1;
+  for(let k=-8.5;k<=8.5;k++){for(const a of [[[k,0,-8.5],[k,0,8.5]],[[-8.5,0,k],[8.5,0,k]]]){const p=project(a[0]),q=project(a[1]);c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1]);c.stroke();}}
+  for(const o of objects){const {x,z,type}=o,color=palette[type]||'#80caff';
+   if(type==='ramp')wedge(x,z,color);
+   else if(type==='tree'){box(x,0,z,.16,.8,.16,'#8a6545');box(x,.65,z,.7,.7,.7,color);}
+   else if(type==='player'){box(x,0,z,.55,.8,.55,'#80caff');box(x,.8,z,.38,.35,.38,'#d6efff');}
+   else box(x,0,z,type==='wall'?.23:.88,({block:1,wall:1.6,spawn:.12,target:.55,hazard:.12})[type]||.3,.88,color);
+  }
+ }
+ faces.sort((a,b)=>a.d-b.d);
+ for(const f of faces){c.beginPath();f.p.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fillStyle=f.color;c.fill();c.fillStyle='rgba(0,0,0,'+(1-f.shade)+')';c.fill();c.strokeStyle='#100c0866';c.stroke();}
+}
+async function api(path,data){const t=sessionStorage.getItem('rx5-token');if(!t)throw Error('Sign in through Career & Clans to save or share.');const r=await fetch('/rx-api/a/curator'+path,{method:data===undefined?'GET':'POST',headers:{Authorization:'Bearer '+t,...(data===undefined?{}:{'Content-Type':'application/json'})},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d;}
+window.RXCurator={mount(host,signal){
+ let p={name:'My Arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:3,z:2}]},angle=.65,playing=false,player=null,timer=null,remaining=0,found=new Set(),busy=false;
+ const panel=el('section');panel.className='card';host.replaceChildren(panel);
+ panel.append(el('h3','Curator Studio · 3D map & mini-game builder'),el('p','Build, test and save account-owned projects. Share an unlisted code with friends. No ranked XP or currency.'));
+ const status=el('p');status.setAttribute('role','status');const msg=t=>status.textContent=t;
+ const canvas=el('canvas');canvas.width=760;canvas.height=440;canvas.style.cssText='width:100%;height:auto;border:1px solid #806549;border-radius:10px';canvas.setAttribute('aria-label','3D preview of your arena');
+ const field=(label,type,value)=>{const wrap=el('label',label+' '),n=el('input');n.type=type;n.value=value;n.style.cssText='max-width:100%;padding:8px;background:#191510;color:white;border:1px solid #806549';wrap.append(n);return [wrap,n]};
+ const [nl,name]=field('Name','text',p.name);name.maxLength=48;
+ const [tl,seconds]=field('Seconds','number',p.seconds);seconds.min=15;seconds.max=300;
+ const select=(vals)=>{const n=el('select');for(const v of vals){const o=el('option',v);o.value=v;n.append(o);}return n};
+ const mode=select(['collect','survive','explore']),kind=select(types);
+ const [xl,x]=field('X','number',0),[zl,z]=field('Z','number',0);for(const n of [x,z]){n.min=-8;n.max=8;n.step=1;}
+ const row=(...nodes)=>{const n=el('div');n.className='row';n.append(...nodes);return n};
+ const draw=()=>renderer(canvas,[...p.objects.filter(o=>!playing||!found.has(o.x+','+o.z)),...(playing?[{type:'player',...player}]:[])],angle);
+ const grid=el('div');grid.style.cssText='display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:1px;max-width:540px;touch-action:manipulation';
+ const cells=[];
+ for(let zz=-8;zz<=8;zz++)for(let xx=-8;xx<=8;xx++){const b=button('',()=>{x.value=xx;z.value=zz;if(!playing)edit(false);});b.style.cssText='padding:0;min-height:20px;aspect-ratio:1;border-radius:2px';b.setAttribute('aria-label','Cell '+xx+', '+zz);cells.push([b,xx,zz]);grid.append(b);}
+ function refresh(){for(const [b,xx,zz] of cells){const o=p.objects.find(o=>o.x===xx&&o.z===zz);b.style.background=o?palette[o.type]:'#443629';b.title=o?.type||'Empty';b.disabled=playing;}draw();}
+ function edit(remove){if(playing)return;const xx=Number(x.value),zz=Number(z.value);if(!Number.isInteger(xx)||!Number.isInteger(zz)||Math.abs(xx)>8||Math.abs(zz)>8)return msg('Coordinates must be between −8 and 8.');
+ const next=p.objects.filter(o=>!(o.x===xx&&o.z===zz)&&!( !remove&&kind.value==='spawn'&&o.type==='spawn'));if(!remove){if(next.length>=64)return msg('64 object limit.');next.push({type:kind.value,x:xx,z:zz});}p.objects=next;refresh();}
+ function sync(){p.name=name.value.trim();p.mode=mode.value;p.seconds=Number(seconds.value);}
+ function stop(text){playing=false;clearInterval(timer);timer=null;refresh();if(text)msg(text);}
+ function start(){sync();const s=p.objects.find(o=>o.type==='spawn');if(!s)return msg('Place a spawn first.');if(p.mode==='collect'&&!p.objects.some(o=>o.type==='target'))return msg('Place a target first.');if(!Number.isInteger(p.seconds)||p.seconds<15||p.seconds>300)return msg('Choose 15–300 seconds.');clearInterval(timer);player={x:s.x,z:s.z};found=new Set();playing=true;remaining=p.seconds;msg('Playtest: '+remaining+' seconds.');refresh();timer=setInterval(()=>{remaining--;if(remaining<=0)stop(p.mode==='survive'?'Survived!':'Time expired.');else msg('Playtest: '+remaining+' seconds · '+found.size+' targets');},1000);}
+ function move(dx,dz){if(!playing)return;const xx=player.x+dx,zz=player.z+dz;if(Math.abs(xx)>8||Math.abs(zz)>8)return;const o=p.objects.find(o=>o.x===xx&&o.z===zz);if(o&&['block','wall','tree'].includes(o.type))return;player={x:xx,z:zz};if(o?.type==='hazard')return stop('Hazard hit — try again.');if(o?.type==='target')found.add(xx+','+zz);if(p.mode==='collect'&&found.size===p.objects.filter(o=>o.type==='target').length)return stop('All targets collected!');draw();}
+ const onkey=e=>{if(!playing||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];if(d){e.preventDefault();move(...d);}};
+ document.addEventListener('keydown',onkey);signal?.addEventListener('abort',()=>{clearInterval(timer);document.removeEventListener('keydown',onkey);},{once:true});
+ const list=el('div');const [cl,code]=field('Share code','text','');
+ async function run(fn){if(busy||signal?.aborted)return;busy=true;try{await fn();}catch(e){msg(e.message);}finally{busy=false;}}
+ function load(q,copy=false){stop();p={...q,objects:q.objects.map(o=>({...o}))};if(copy){delete p.id;delete p.published;p.name=p.name.slice(0,43)+' copy';}name.value=p.name;mode.value=p.mode;seconds.value=p.seconds;refresh();}
+ async function projects(){const d=await api('/list');if(signal?.aborted)return;list.replaceChildren(el('h3','My projects'));for(const q of d.projects){list.append(row(el('span',q.name+(q.published?' · Shared: '+q.id:'')),button('Open',()=>load(q)),button('Delete',()=>run(async()=>{if(!confirm('Delete this project?'))return;await api('/delete',{id:q.id});if(p.id===q.id)delete p.id;await projects();msg('Deleted.');}))));}}
+ panel.append(row(nl,tl,mode),canvas,row(button('Rotate left',()=>{angle-=.35;draw();}),button('Rotate right',()=>{angle+=.35;draw();})),row(kind,xl,zl,button('Place / replace',()=>edit(false)),button('Erase',()=>edit(true))),el('p','Tap a grid cell to place the selected object.'),grid,row(button('Playtest',start),button('Stop',()=>stop('Test ended.')),button('↑',()=>move(0,-1)),button('←',()=>move(-1,0)),button('↓',()=>move(0,1)),button('→',()=>move(1,0))),row(button('New project',()=>{load({name:'New arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:2,z:2}]});}),button('Save',()=>run(async()=>{stop();sync();const d=await api('/save',p);load(d.project);await projects();msg('Saved privately.');})),button('Share saved version',()=>run(async()=>{if(!p.id)throw Error('Save first.');const d=await api('/share',{id:p.id,published:true});code.value=d.project.id;await projects();msg('Share code: '+d.project.id+' (saved version only).');})),button('Unshare',()=>run(async()=>{if(!p.id)throw Error('Save first.');await api('/share',{id:p.id,published:false});await projects();msg('Unshared.');}))),row(cl,button('Open shared copy',()=>run(async()=>{const d=await api('/shared',{id:code.value.trim()});load(d.project,true);msg('Copied into editor. Save as your own project.');}))),status,list);refresh();run(projects);
+},preview(tier){const c=el('canvas');c.width=420;c.height=230;c.style.cssText='width:100%;height:auto;cursor:grab';c.setAttribute('aria-label',tier+' Sandwyrm 3D concept model; drag to rotate');const colors={gold:'#d6ad42',silver:'#b6c9da',bronze:'#ad7546',blue:'#3e97dc'};let a=.42,start=null;c.tabIndex=0;const draw=()=>renderer(c,[{color:colors[tier]}],a,true);c.onpointerdown=e=>{start=e.clientX;c.setPointerCapture(e.pointerId);};c.onpointermove=e=>{if(start!==null){a+=(e.clientX-start)*.015;start=e.clientX;draw();}};c.onpointerup=c.onpointercancel=()=>start=null;c.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();a+=e.key==='ArrowLeft'?-.2:.2;draw();}};draw();return c;}};
+})();
