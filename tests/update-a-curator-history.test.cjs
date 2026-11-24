@@ -46,6 +46,7 @@ test('Curator undo restores both tiles after moving a spawn and leaves text-fiel
   assert.equal(key(target, 'Z', { ctrlKey: true, shiftKey: true }), true);
   assert.equal(origin.title, 'Empty');
   assert.equal(target.title, 'spawn');
+  target.click(); // Select the existing spawn's coordinates for Erase.
   button('Erase').click();
   assert.equal(target.title, 'Empty');
   undo.click();
