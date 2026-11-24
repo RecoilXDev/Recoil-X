@@ -133,6 +133,7 @@ export function restorePlayer(m,id) {
   const p=m?.players.get(id);
   if(!p||p.forfeited) return false;
   p.offlineAt=0;p.remakeEligible=false;p.seq=-1;p.input=neutral();p.taps=null;
+  p.rx5InputWindow=0;p.rx5InputCount=0;
   return true;
 }
 
@@ -288,6 +289,7 @@ function fire(m,p,now) {
     const dir=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
     let reach=obstruction(m.field,eye,dir,w.range),target=null;
     for(const other of opponents) {
+      if(other.hp<=0||other.forfeited)continue; // A pellet cannot be blocked by a target eliminated earlier in the same trigger.
       const disguise=m.mode==='props'&&other.team===m.rule.half;
       const width=other.id<0?1.35:disguise?[.55,.4,.32][other.prop]:.45;
       const height=other.id<0?3.5:disguise?[1.05,1.23,1.4][other.prop]:1.96;
@@ -303,6 +305,7 @@ function fire(m,p,now) {
         const begin=bounced.at.map((v,i)=>v+bounced.dir[i]*.04);
         let secondReach=obstruction(m.field,begin,bounced.dir,bounced.remaining),victim=null;
         for(const other of opponents){
+          if(other.hp<=0||other.forfeited)continue;
           const first=intersect(begin,bounced.dir,[other.x-.45,other.jump,other.z-.45],
             [other.x+.45,other.jump+1.96,other.z+.45],secondReach);
           if(first<secondReach){secondReach=first;victim=other;}
@@ -320,7 +323,7 @@ function fire(m,p,now) {
       }
     }
   }
-  m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
+  if(end)m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
   if(metrics.hits>hitsBefore&&m.mode==='pawblast')m.events.push({type:'z2:notice',only:p.id,message:'PHYSICS BREAKER · Knockback landed!'});
   if(metrics.hits>hitsBefore&&m.mode!=='pawblast')m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
 }
@@ -454,7 +457,11 @@ export function updateMatch(m,now) {
     if(m.mode==='parry'&&(input.ability||taps?.ability))wave2Melee(m,p,now,hit);
     powerOrRelic(m,p,now);
     const weapon=m.mode==='budget'?p.loadout:z5Weapon(m,p,input.weapon);
-    if(p.weapon!==weapon){p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);}
+    if(p.weapon!==weapon){
+      // Cancel the unfinished reload when switching, rather than leaving the new weapon locked by the old one.
+      if(p.reloadAt&&p.reloadAt>now)p.reloadAt=0;
+      p.weapon=weapon;p.readyShot=Math.max(p.readyShot,now+170);
+    }
     if(p.reloadAt&&p.reloadAt<=now){p.ammo[p.reloadGun]=weapons[p.reloadGun].ammo;p.reloadAt=0;}
     const firing=input.fire||taps?.fire;
     if(m.mode!=='onechamber'&&(input.reload||taps?.reload||(firing&&p.ammo[p.weapon]===0)))reload(m,p,now);
