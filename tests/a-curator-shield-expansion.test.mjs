@@ -34,3 +34,11 @@ test('co-op movement, shared objectives and room privacy',()=>{
  assert.equal(r.move(a,{dx:1,dz:0}).result,'All targets collected');assert.equal(r.state(b).found.length,1);
  r.leave(a);r.leave(b);assert.throws(()=>r.state(b),e=>e.status===404);
 });
+
+test('validated target bonus and hazard respawn are applied once',()=>{
+ let now=0;const r=createCuratorRooms(fail,{clock:()=>now}),u={id:1,name:'A'};
+ const p={...project,mode:'explore',rules:{hazard:'respawn',targetBonus:10},objects:[...project.objects,{type:'hazard',x:2,z:0}]};
+ const d=r.create(u,p);assert.equal(r.move(u,{dx:1,dz:0}).ends,d.ends+10000);
+ now=400;assert.equal(r.move(u,{dx:1,dz:0}).players[0].x,0);
+ now=800;assert.equal(r.move(u,{dx:1,dz:0}).ends,d.ends+10000);
+});
