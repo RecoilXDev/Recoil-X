@@ -7,9 +7,10 @@ import {WAVE2_MODES,wave2State,wave2Movement,wave2FireCooldown,wave2Objective,wa
 import {CUSTOM_PRESETS} from './z5-lobby-custom.mjs';
 import {matchEvolutionBonuses} from './z5-weapon-evolution.mjs';
 import {newCombatStats,combatReport} from './a-foundation.mjs';
+import {PAWBLAST_HALF,resetPawblast,pawblastImpact,pawblastStep} from './a-pawblast.mjs';
 
 export const TEAM_SIZES = [1,2,3,5];
-export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES,...WAVE2_MODES];
+export const MODES = ['arena','overcharge','relic','chess','rescue',...EXPANSION_MODES,...Z5_MODES,...WAVE2_MODES,'pawblast'];
 export const DRAFTS = ['knight','rook','bishop'];
 export const PINGS = ['Enemy spotted!','Need backup!','Defend here!','Attack now!'];
 export const ROOM_GRACE = 20000;
@@ -56,6 +57,7 @@ function spawn(p, now) {
   z5Spawn(p,now);
   p.hp=Math.min(p.hp,p.rx5Rules?.hp??100);
   initCombatQuality(p);
+  if(p.matchMode==='pawblast')resetPawblast(p);
 }
 
 export function makeMatch({id,mode,season=null,limit,players,now,tournament=false,field=FIELD,remake=false,rng=Math.random,preset='classic',weaponLevels=null}) {
@@ -85,6 +87,7 @@ export function makeMatch({id,mode,season=null,limit,players,now,tournament=fals
   if(mode==='volcano')field={...field,id:'z5-volcano',name:'Z.5 Volcano Outpost'};
   if(mode==='timefracture')field={...field,id:'z5-timefracture',name:'Z.5 Time Fracture'};
   if(mode==='underwater')field=underwaterField(field);
+  if(mode==='pawblast')field={id:'pawblast-skydeck',name:'Pawblast Skydeck',half:PAWBLAST_HALF,cover:[],pawblast:true};
   // Clone per-room cover; never mutate shared or ranked arena geometry.
   if(!season&&!tournament&&['demolition','clanwar','underwater'].includes(mode))field=destructibleField(field);
   else field={...field,cover:field.cover.map(c=>({...c}))};
@@ -247,6 +250,12 @@ function eliminate(m,victim,killer,now) {
 function hit(m,shooter,victim,damage,now,projectileStats=null) {
   if(victim.shieldUntil>now||victim.hp<=0)return;
   if(m.mode==='parry'&&(victim.parryUntil||0)>now)return;
+  if(m.mode==='pawblast'){
+    const impulse=pawblastImpact(shooter,victim,damage,now);
+    if(projectileStats)projectileStats.hits++;
+    if(impulse>0)m.events.push({type:'z2:notice',only:shooter.id,message:'PAWBLAST · Knockback landed!'});
+    return;
+  }
   const amount=Math.min(victim.hp,damage);
   victim.hp-=amount;shooter.damage+=amount;
   if(projectileStats){projectileStats.hits++;projectileStats.damage+=amount;}
@@ -265,7 +274,7 @@ function fire(m,p,now) {
   const metrics=p.aCombat[p.weapon],damageBefore=metrics.damage,hitsBefore=metrics.hits;metrics.triggers++;
   p.ammo[p.weapon]-=dual?projectiles:1;
   p.readyShot=now+Math.ceil(w.interval*(dual?1.36:1)*wave2FireCooldown(m)*(p.rx5Rules?.fire??1)*(p.boost>now ? .74 : 1)*bonus.fireIntervalMultiplier);
-  if(!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
+  if(m.mode!=='pawblast'&&!m.season&&!m.tournament&&recordCombatShot(p,p.weapon)){
     m.events.push({type:'z2:notice',only:p.id,message:'Weapon overheated · release fire to cool down.'});
   }
   const eye=[p.x,1.62+p.jump,p.z];
@@ -311,7 +320,7 @@ function fire(m,p,now) {
     }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
-  if(metrics.hits>hitsBefore)m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
+  if(metrics.hits>hitsBefore&&m.mode!=='pawblast')m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
 }
 
 function reload(m,p,now) {
@@ -431,6 +440,12 @@ export function updateMatch(m,now) {
       (m.mode==='underwater'?.72:1);
     move(m.field,p,(Math.sin(p.yaw)*input.f+Math.cos(p.yaw)*input.s)*speed*delta,
       (-Math.cos(p.yaw)*input.f+Math.sin(p.yaw)*input.s)*speed*delta);
+    if(m.mode==='pawblast'&&pawblastStep(p,delta)){
+      const attacker=p.paw.until>=now?m.players.get(p.paw.by):null;
+      eliminate(m,p,attacker,now);
+      m.events.push({type:'z2:notice',message:p.name+' was blasted off the skydeck!'});
+      continue;
+    }
     if((input.jump||taps?.jump)&&(!p.jumpAt||now-p.jumpAt>=790)&&!carrying&&!dragging)p.jumpAt=now;
     p.jump=p.jumpAt?Math.max(0,Math.sin(Math.min(1,(now-p.jumpAt)/(m.mode==='underwater'?1150:680))*Math.PI)*(m.mode==='underwater'?1.65:.97)):0;
     if(m.mode==='chess'&&(input.ability||taps?.ability))draftMove(m,p,now);
@@ -483,7 +498,7 @@ export function snapshot(m,id,now,packed=false,frame=prepareSnapshot(m)) {
   return {type:'z2:state',id:m.id,t:now,score:m.score,remaining:Math.max(0,m.end-now),
     heat:viewer?.rx5Heat?.[viewer.weapon]??0,overheated:!!viewer?.rx5Overheated?.[viewer.weapon],
     packed:packed?1:undefined,rows,roster:packed&&rows.length===frame.roster.length?undefined:frame.roster,
-    objective:ruleView(m,viewer,now)??z5Objective(m,viewer,now)??wave2Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
+    objective:m.mode==='pawblast'?{type:'pawblast',charge:Math.round(viewer?.paw?.charge||0),rule:'Blast opponents off the platform'}:ruleView(m,viewer,now)??z5Objective(m,viewer,now)??wave2Objective(m,viewer,now),waitingEarly:frame.waitingEarly,
     cover:m.field.destructible?m.field.cover.map(c=>[c.id,c.hp]):undefined,
     camera:!viewer&&m.tournament?m.focus?.until>now?m.focus.id:
       [...m.players.values()].filter(a=>a.hp>0&&!a.offlineAt).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]?.id:undefined,
