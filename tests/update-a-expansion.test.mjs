@@ -1,0 +1,40 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {createServerShield} from '../server/a-server-shield.mjs';
+import {createAProgression,seasonState,SEASON_START,SEASON_END} from '../server/a-progression.mjs';
+test('Shield enforces pending admission, capacity, memory pressure and admin-only maintenance',()=>{
+ const db=new DatabaseSync(':memory:');let rss=20,now=1000;
+ const s=createServerShield(db,{clock:()=>now,memory:()=>rss,maxPlayers:2,maxPending:1,maxRss:100});
+ const release=s.reserveUpgrade();assert.throws(()=>s.reserveUpgrade(),{status:503});release();release();
+ assert.equal(s.status(0).pending,0);
+ assert.throws(()=>s.admission(2),{status:503});s.admission(2,true);
+ rss=100;assert.throws(()=>s.admission(0),{status:503});rss=20;
+ assert.throws(()=>s.setMaintenance({id:2},true),{status:403});
+ assert.throws(()=>s.inspect({id:2},0),{status:403});
+ s.setMaintenance({id:1,admin:true},true);
+ assert.throws(()=>s.admission(0),{status:503});s.admission(0,false,true);
+ assert.equal(createServerShield(db).status(0).maintenance,true);
+ const c={id:2};for(let i=0;i<260;i++)assert.equal(s.packet(c),true);
+ assert.equal(s.packet(c),false);now+=1000;assert.equal(s.packet(c),true);
+ assert(s.inspect({id:1,admin:true},0).events.some(e=>e.kind==='wire-rate-limit'));db.close();
+});
+test('Shield shares and releases hash job capacity even after errors',async()=>{
+ const db=new DatabaseSync(':memory:'),s=createServerShield(db,{maxAuthJobs:1,memory:()=>0});
+ let done;const job=s.hashJob(()=>new Promise(r=>done=r));
+ await assert.rejects(s.hashJob(async()=>1),{status:429});done(42);assert.equal(await job,42);
+ await assert.rejects(s.hashJob(async()=>{throw Error('test');}));
+ assert.equal(await s.hashJob(async()=>3),3);db.close();
+});
+test('verified match progression is additive, replay-safe, seasonal and opt-in',()=>{
+ const db=new DatabaseSync(':memory:');db.exec("CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT,banned INTEGER);INSERT INTO users VALUES(1,'Alpha',0),(2,'Beta',0)");
+ let now=SEASON_START-1;const p=createAProgression(db,{clock:()=>now}),a={id:1},b={id:2};
+ const match={id:'m1',reason:'score',duration:31000,winner:0,players:[{id:1,team:0,inputs:22,kills:3},{id:2,team:1,inputs:5,kills:0}]};
+ p.settle(match);p.settle(match);assert.equal(p.view(a).xp,230);assert.equal(p.view(a).season.xp,0);assert.equal(p.view(b).xp,0);
+ now=SEASON_START;p.settle({...match,id:'m2'});assert.equal(p.view(a).season.xp,230);assert.equal(p.view(a).xp,460);
+ assert.equal(p.board().players.length,0);p.setPublic(a,true);assert.equal(p.board().players[0].name,'Alpha');
+ p.setPublic(a,false);assert.equal(p.board().players.length,0);
+ p.settle({...match,id:'m3',reason:'forfeit'});assert.equal(p.view(a).xp,460);
+ now=SEASON_END;p.settle({...match,id:'m4'});assert.equal(p.view(a).season.xp,230);assert.equal(p.view(a).xp,690);
+ assert.equal(seasonState(SEASON_START-1),'upcoming');assert.equal(seasonState(SEASON_START),'active');assert.equal(seasonState(SEASON_END),'ended');db.close();
+});
