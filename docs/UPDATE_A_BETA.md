@@ -79,3 +79,6 @@ Season opens November 25, 2026 at midnight Oman time. Forge & Market includes th
 
 ### RC3 — community weekly cup
 Friends > Season leaderboard shows an automatically rotating seven-day ranked points cup starting November 25 at midnight Oman time. Ranked arena score/time results award three points for a win and one for a loss, using existing idempotent match settlement. Public display uses the existing reversible opt-in, excludes banned users, and shows the previous week's standings; no currency or inventory prizes. This complements existing private bracket tournaments, not a replacement for public scheduled brackets. Full deployment validation is required.
+
+### RC4 — seasonal cosmetic rendering
+New Dawn rifle finish, Mystery-mode knife and local third-person helmet use the existing 3D mesh paths with server-owned equipment checks, account-change invalidation and explicit unequip. The championship rifle takes precedence if equipped. Other players do not inherit the local user's finishes. Remote cosmetic replication, GPU/device verification and hosting-edge defenses remain unverified or unfinished. Existing inventory and combat statistics remain unchanged.

@@ -101,6 +101,11 @@ test('New Dawn crates require seasonal XP and active dates, are idempotent and a
  assert.equal(f.eco.claimSeasonCrate(a,{item:'dawn_rifle'}).alreadyClaimed,true);
  assert.equal(f.eco.view(a).inventory.find(x=>x.item==='dawn_rifle').quantity,1);
  assert.equal(f.eco.equip(a,{item:'dawn_rifle'}).ok,true);
+ assert.deepEqual(f.eco.dawnEquipment(a).map(x=>({...x})),[{slot:'weapon',item:'dawn_rifle'}]);
+ assert.equal(f.eco.dawnEquipment(b).length,0);
+ assert.throws(()=>f.eco.equip(a,{item:null,slot:'invalid'}),{status:400});
+ assert.equal(f.eco.equip(a,{item:null,slot:'weapon'}).ok,true);
+ assert.equal(f.eco.dawnEquipment(a).length,0);
  assert.throws(()=>f.eco.list(a,{item:'dawn_rifle',quantity:1,price:1}),{status:400});
  assert.throws(()=>f.eco.offer(a,{name:'Beta',give:'dawn_rifle',giveQty:1,want:'scrap',wantQty:1}),{status:400});
  assert.throws(()=>f.eco.offer(b,{name:'Alpha',give:'scrap',giveQty:1,want:'dawn_rifle',wantQty:1}),{status:400});

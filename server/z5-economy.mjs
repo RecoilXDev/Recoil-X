@@ -135,7 +135,9 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
       return {ok:true,item,points:balance(user.id),inventory:inventory.all(user.id)};
     });
   }
+  function dawnEquipment(user){return q("SELECT e.slot,e.item FROM rx5_equipment e JOIN rx5_inventory i ON i.account=e.account AND i.item=e.item WHERE e.account=? AND i.quantity>0 AND e.item IN ('dawn_rifle','dawn_knife','dawn_helmet')").all(user.id);}
   function equip(user,body){
+    if(body?.item===null){const slot=body.slot;if(!['weapon','knife','outfit','badge'].includes(slot))throw error(400,'Invalid cosmetic slot.');return transaction(()=>{q('DELETE FROM rx5_equipment WHERE account=? AND slot=?').run(user.id,slot);log(user.id,'unequip-cosmetic',slot);return {ok:true,equipment:q('SELECT slot,item FROM rx5_equipment WHERE account=?').all(user.id)};});}
     const item=safeItem(body?.item),slot=catalog[item]?.kind;
     if(!slot||slot==='material')throw error(400,'Select an equipable cosmetic.');
     return transaction(()=>{
@@ -241,5 +243,5 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
       return {awarded};
     });
   }
-  return {view,claimSeasonCrate,onDailyCheckin,craft,equip,list,buy,cancelListing,offer,accept,decline,onMatchSettled};
+  return {view,dawnEquipment,claimSeasonCrate,onDailyCheckin,craft,equip,list,buy,cancelListing,offer,accept,decline,onMatchSettled};
 }

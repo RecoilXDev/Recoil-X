@@ -420,6 +420,7 @@ export function createRecoilServer(options = {}) {
       if(path==='/a/curator/list')return {...curator.list(user),activeRoom:curatorRooms.state(user,true)};
       if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
       if(path==='/a/season/pass')return progression.passView(user);
+      if(path==='/a/season/cosmetics')return {equipment:economy.dawnEquipment(user)};
       if(path==='/a/progression')return progression.view(user);
       if(path==='/a/season/kills')return progression.killsBoard(user);
       if(path==='/a/season/reward')return {reward:progression.reward(user)};

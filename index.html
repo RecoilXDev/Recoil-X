@@ -2931,7 +2931,7 @@ if(gl)document.body.classList.add('v8-webgl');
 // An earned Desert Token unlocks all newly-added shop cosmetics as well.
 function v8GrantArmoryWithToken(){if(desertTokens>0){v8Owned=V8_GUN_FINISHES.map(f=>f.id);setStore('v8GunOwned',v8Owned);}}
 // Account-only season cosmetics: never enter browser-owned inventory, loot tables or trade pools.
-let aSeasonReward=null;
+let aSeasonReward=null,aDawnEquipped={},aDawnRefreshVersion=0;
 const A_SEASON_COLORS=Object.freeze({
  gold:['#b88623','#fff0a2','#634013'],
  silver:['#a4b5ca','#f1fcff','#39475a'],
@@ -2944,6 +2944,31 @@ function aSeasonFinish(tier){
  if(!colors||!original)return null;
  return {...original,id:'a_s1_sandwyrm_'+tier,name:'New Dawn Sandwyrm · '+tier.toUpperCase(),base:colors[0],glow:colors[1],shadow:colors[2],seasonOnly:true};
 }
+function aDawnSlots(rows){
+ const slots={weapon:'dawn_rifle',knife:'dawn_knife',outfit:'dawn_helmet'},selected={};
+ if(Array.isArray(rows))for(const row of rows)if(row&&Object.hasOwn(slots,row.slot)&&slots[row.slot]===row.item)selected[row.slot]=row.item;
+ return selected;
+}
+function aDawnRifleFinish(original){
+ return original&&{...original,id:'a_dawn_rifle',name:'New Dawn — Sunrise Rifle Finish',ar:'بندقية الفجر',base:'#b97038',glow:'#ffe0a0',shadow:'#56351f',seasonOnly:true};
+}
+function aDawnKnifeFinish(original){
+ return original&&{...original,id:'a_dawn_knife',name:'New Dawn — Dune Knife Finish',light:'#e9b96b',dark:'#795034',rarity:'godly',rarityIndex:4};
+}
+function aPlayerKnife(){
+ const original=VX_KNIVES.find(k=>k.id===vxEquippedKnife)||VX_KNIVES[0];
+ return aDawnEquipped.knife==='dawn_knife'?aDawnKnifeFinish(VX_KNIVES[0]):original;
+}
+async function aRefreshDawn(){
+ const token=z1Token,account=z1Account?.id,version=++aDawnRefreshVersion;
+ if(!token||!account){aDawnEquipped={};return;}
+ try{
+  const data=await z1Fetch('/a/season/cosmetics');
+  if(version!==aDawnRefreshVersion||token!==z1Token||account!==z1Account?.id)return;
+  aDawnEquipped=aDawnSlots(data?.equipment);setWeaponSkin();
+ }catch{if(version===aDawnRefreshVersion&&token===z1Token&&account===z1Account?.id)aDawnEquipped={};}
+}
+window.RXDawnCosmetics={refresh:aRefreshDawn};
 async function aRefreshSeasonReward(){
  const token=z1Token,account=z1Account?.id;
  if(!token||!account){aSeasonReward=null;return;}
@@ -2956,7 +2981,7 @@ async function aRefreshSeasonReward(){
  }catch{if(token===z1Token&&account===z1Account?.id)aSeasonReward=null;}
 }
 window.RXSeasonGodly={refresh:aRefreshSeasonReward,preview:tier=>{const f=aSeasonFinish(tier);return f?v8Svg(f):'';}};
-function gunFinishFor(n){const gun=V8_GUN_IDS[n]||'ar';if(gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}return V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun])||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
+function gunFinishFor(n,local=true){const gun=V8_GUN_IDS[n]||'ar';if(local&&gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}if(local&&gun==='ar'&&aDawnEquipped.weapon==='dawn_rifle'){const finish=aDawnRifleFinish(V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent'));if(finish)return finish;}return (local&&V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun]))||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
 function v8Localized(f){return language==='ar'?f.ar:f.name;}
 function v8RarityName(r){return tr(RARITIES.find(f=>f.id===r)?.key||'rarityCommon');}
 function v8CaseRoll(gun){const rarity=rxPityRoll('gun',rollRarity),pool=V8_GUN_FINISHES.filter(f=>f.gun===gun&&f.rarity===rarity&&!f.seasonOnly&&!['g8_sniper_omega','g8_sniper_oman_falcon'].includes(f.id));return pool[randomInt(pool.length)];}
@@ -3351,12 +3376,12 @@ function vxBossAI(b,dt,now){if(!b.alive)return;const d=dist(b,pl),dx=(pl.x-b.x)/
  if($('vxBossHp'))$('vxBossHp').style.width=(100*clamp(b.hp/b.maxHp,0,1))+'%';}
 function vxDrawHeldKnife(out,now){
  if(!pl.alive||vxRole!=='murderer')return;
- const k=VX_KNIVES.find(v=>v.id===vxEquippedKnife)||VX_KNIVES[0];
+ const k=aPlayerKnife();
  vxKnifeAtActor(out,pl,k,now,!v8ThirdPerson);if(rxMasteryLevel(rxMasteryXp())>=4){putBox(out,pl.x,1.05,pl.z,.075,.09,.075,[.35,.98,.72]);}
 }
 function vxDrawEffects(out,now){if(mode==='mystery'){
  const starter=VX_KNIVES[0];
- for(const p of vxProjectiles){const knife=p.owner===pl?(VX_KNIVES.find(k=>k.id===vxEquippedKnife)||starter):starter;
+ for(const p of vxProjectiles){const knife=p.owner===pl?aPlayerKnife():starter;
   vxDrawKnifeModel(out,knife,p.x,p.y,p.z,Math.atan2(p.dx,-p.dz)+Math.sin(now*24)*.14,.55);
  }
 }
@@ -5946,14 +5971,14 @@ function crownDrawActor(out,b,distance,now,kind='bot') {
   if(kind==='player')crownDress(out,matrices,mesh,sourcePalette,scale);
   if((kind==='player'&&mode==='mystery'&&vxRole==='murderer')||(mode==='mystery'&&b.role==='murderer')){
     if(lod===2)return;
-    const knife=kind==='player'?(VX_KNIVES.find(v=>v.id===vxEquippedKnife)||VX_KNIVES[0]):VX_KNIVES[0];
+    const knife=kind==='player'?aPlayerKnife():VX_KNIVES[0];
     vxDrawKnifeModel(out,knife,grip.x,grip.y-.12,grip.z,yaw+.45+(kind==='player'?rx3KnifePose(now):0),.67*scale);
     return;
   }
   if((kind==='player'&&mode==='mystery'&&vxRole!=='sheriff')||(mode==='mystery'&&b.role==='innocent'))return;
   if(kind==='player'||(kind==='remote'&&distance<18&&lod<2)){
     const weapon=b.weapon||0;
-    v8DrawWeapon(out,{...grip,rigGrip:true},weapon,gunFinishFor(weapon),false,now);
+    v8DrawWeapon(out,{...grip,rigGrip:true},weapon,gunFinishFor(weapon,kind==='player'),false,now);
   }else if(lod<2&&(model==='fighter'||model==='infected')){
     const ori={...grip,y:grip.y-.044};
     const steel=palette[2],trim=palette[1];
@@ -5966,12 +5991,12 @@ function crownDrawActor(out,b,distance,now,kind='bot') {
 
 let crownDressKey='',crownDressMesh=null;
 function crownDress(out,matrices,mesh,palette,scale) {
-  const kit=x4Data.character,key=kit.helmet+'/'+kit.pack;
-  const outfit=[X4_SUITS[kit.suit]||palette[0],palette[1],palette[2]];
+  const kit=x4Data.character,dawn=aDawnEquipped.outfit==='dawn_helmet',key=kit.helmet+'/'+kit.pack+'/'+dawn;
+  const outfit=[X4_SUITS[kit.suit]||palette[0],palette[1],palette[2],hexRgb('#e3a749'),hexRgb('#634023')];
   if(crownDressKey!==key){
     const m=crownPartBuilder(CROWN_BONES);
     m.gem('hips',0,0,-.027,.155,.237,.117,.095);
-    if(kit.helmet!=='none')m.ellipsoid('head',0,0,.203,.065,.219,.101,.153,6,.55);
+    if(dawn){m.ellipsoid('head',3,0,.203,.065,.225,.108,.16,6,.55);m.gem('head',4,0,.246,.174,.084,.064,.025);}else if(kit.helmet!=='none')m.ellipsoid('head',0,0,.203,.065,.219,.101,.153,6,.55);
     if(kit.pack!=='none'){
       m.ellipsoid('chest',2,0,-.04,.237,.218,.252,.134,6,.67);
       m.gem('chest',0,0,.011,.354,.148,.175,.052);
@@ -8383,9 +8408,9 @@ function z1RestoreSession(){
 }
 
 function z1UseAccount(profile){
-  aSeasonReward=null;
+  aSeasonReward=null;aDawnEquipped={};
   z1Account=profile;
-  void aRefreshSeasonReward();
+  void aRefreshSeasonReward();void aRefreshDawn();
   missionSetAccount();
   z1StoreSession();
   z1ConnectLive();
@@ -8435,7 +8460,7 @@ async function z1SignOut(){
 }
 
 function z1ClearAccount(){
-  aSeasonReward=null;
+  aSeasonReward=null;aDawnEquipped={};aDawnRefreshVersion++;
   z1Token='';z1Account=null;z1StoreSession();missionSetAccount();
   if(z1Socket){const socket=z1Socket;z1Socket=null;socket.close();}
   z1SocketReady=false;clearTimeout(z1SocketRetry);
@@ -8606,7 +8631,7 @@ function z1HostParty(){
 function z1LiveMessage(event){
   if(!event||typeof event!=='object')return;
   if(event.type==='ready'){
-    z1SocketReady=true;z1Account=event.user;void aRefreshSeasonReward();z1RenderFriends();z1RefreshFriends();return;
+    z1SocketReady=true;z1Account=event.user;void aRefreshSeasonReward();void aRefreshDawn();z1RenderFriends();z1RefreshFriends();return;
   }
   if(event.type==='error'){
     if(z1Room.role==='pending')z1Room.role='off';
