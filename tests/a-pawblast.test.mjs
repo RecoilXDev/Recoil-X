@@ -4,8 +4,8 @@ import {makeMatch,inputMatch,updateMatch,snapshot,MODES} from '../server/overdri
 import {resetPawblast,pawblastImpact,pawblastStep} from '../server/a-pawblast.mjs';
 const controls={f:0,s:0,yaw:Math.PI,pitch:0,weapon:0};
 function match(){return makeMatch({id:'pawblast',mode:'pawblast',limit:5,now:1000,rng:()=>.5,players:[{id:1,team:0,name:'Blue'},{id:2,team:1,name:'Gold'}]});}
-test('Pawblast is selectable, spawns on the platform and exposes personal charge',()=>{
- const m=match();assert(MODES.includes('pawblast'));assert.equal(m.field.half,20);assert.equal(m.field.pawblast,true);
+test('Physics Breaker is selectable, spawns on the platform and exposes personal charge',()=>{
+ const m=match();assert(MODES.includes('pawblast'));assert.equal(m.field.half,20);assert.equal(m.field.pawblast,true);assert.equal(m.field.name,'Physics Breaker · Skydeck');
  assert.equal(m.players.get(1).z,-12);assert.equal(m.players.get(2).z,12);
  assert.equal(snapshot(m,1,1000).objective.charge,0);
 });
