@@ -21,6 +21,7 @@ import {createServerShield} from './a-server-shield.mjs';
 import {createAProgression} from './a-progression.mjs';
 import {createCurator} from './a-curator.mjs';
 import {createCuratorRooms} from './a-curator-rooms.mjs';
+import {curatorField} from './a-curator-fps.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -149,6 +150,7 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    loadCuratorField:(user,id)=>curatorField(curator.list(user).projects.find(p=>p.id===id)||curator.shared(id).project),
     canSendSnapshot:connection=>delivery.allowSnapshot(connection),
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
@@ -445,8 +447,15 @@ export function createRecoilServer(options = {}) {
         if(shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Curator writes paused during maintenance.');
         if(path==='/a/curator/submit')return curator.submit(user,body);
         if(path==='/a/curator/review')return curator.moderate(user,body);
+        if(path==='/a/curator/create-fps'){
+          if(shield.status(clients.size).busy)throw fail(503,'Server busy.');
+          const c=clients.get(user.id);if(!c||c.tokenHash!==user.token_hash)throw fail(409,'Connect through Multiplayer on this session first.');
+          if(typeof body.id!=='string')throw fail(400,'Select a saved map.');
+          overdrive.packet(c,user,{type:'z2:create',mode:'arena',size:body.size,limit:body.limit,password:body.password,curatorId:body.id});
+          const room=overdrive.roomInfo(user.id);return {code:room.code,size:room.size,mode:room.mode};
+        }
         if(path==='/a/curator/create-room'){if(shield.status(clients.size).busy)throw fail(503,'Server busy.');const p=curator.list(user).projects.find(p=>p.id===body.id)||curator.shared(body.id).project;return curatorRooms.create(user,p);}
-        if(path==='/a/curator/join-room')return curatorRooms.join(user,body.code);
+        if(path==='/a/curator/join-room'){if(shield.status(clients.size).busy)throw fail(503,'Server busy.');return curatorRooms.join(user,body.code);}
         if(path==='/a/curator/save')return curator.save(user,body);
         if(path==='/a/curator/share')return curator.share(user,body);
         if(path==='/a/curator/delete')return curator.remove(user,body);
