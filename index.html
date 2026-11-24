@@ -1862,19 +1862,26 @@ function rx5BotFindCover(b,target,now){
 }
 // Update A: bounded route probes, cached per bot. No navigation search on every frame.
 function aBotSegmentClear(ax,az,bx,bz){
- const length=Math.hypot(bx-ax,bz-az),steps=Math.min(24,Math.max(1,Math.ceil(length/.8)));
+ const length=Math.hypot(bx-ax,bz-az),steps=Math.min(128,Math.max(1,Math.ceil(length/.65)));
  for(let i=1;i<=steps;i++)if(blocked(ax+(bx-ax)*i/steps,az+(bz-az)*i/steps,.57))return false;
  return true;
 }
 function aBotWaypoint(b,goal,side){
  const limit=rx5TacticalLimit(),dx=goal.x-b.x,dz=goal.z-b.z,dist=Math.hypot(dx,dz)||1;
  if(aBotSegmentClear(b.x,b.z,goal.x,goal.z))return null;
+ // Bounded two-hop visibility search, cached by the existing per-bot planner.
+ const candidates=[],seen=new Set();
+ function add(x,z){x=clamp(x,-limit,limit);z=clamp(z,-limit,limit);const k=Math.round(x*2)+','+Math.round(z*2);if(seen.has(k)||blocked(x,z,.62))return;seen.add(k);candidates.push({x,z});}
+ for(const sign of [side||1,-(side||1)])for(const width of [3,6,10])add(b.x+dx/dist*2-dz/dist*width*sign,b.z+dz/dist*2+dx/dist*width*sign);
+ const nearby=[...obstacles,...rx2Covers.filter(c=>c.hp>0)].filter(o=>Math.hypot(o.x-b.x,o.z-b.z)<36).sort((a,c)=>Math.hypot(a.x-b.x,a.z-b.z)-Math.hypot(c.x-b.x,c.z-b.z)).slice(0,5);
+ for(const o of nearby)for(const x of [-1,1])for(const z of [-1,1])add(o.x+x*(o.w/2+1),o.z+z*(o.d/2+1));
  let best=null,score=Infinity;
- for(const sign of [side||1,-(side||1)])for(const width of [3,6,10]){
-  const x=clamp(b.x+dx/dist*2-dz/dist*width*sign,-limit,limit),z=clamp(b.z+dz/dist*2+dx/dist*width*sign,-limit,limit);
-  if(blocked(x,z,.57)||!aBotSegmentClear(b.x,b.z,x,z))continue;
-  const cost=Math.hypot(x-goal.x,z-goal.z)+width*.35+(aBotSegmentClear(x,z,goal.x,goal.z)?0:12);
-  if(cost<score){score=cost;best={x,z};}
+ const reachable=candidates.filter(p=>aBotSegmentClear(b.x,b.z,p.x,p.z)).sort((a,c)=>Math.hypot(a.x-goal.x,a.z-goal.z)-Math.hypot(c.x-goal.x,c.z-goal.z)).slice(0,8);
+ for(const p of reachable){
+  const travel=Math.hypot(p.x-b.x,p.z-b.z),remain=Math.hypot(p.x-goal.x,p.z-goal.z);
+  let cost=travel+remain+(aBotSegmentClear(p.x,p.z,goal.x,goal.z)?0:24);
+  for(const q of candidates.slice(0,20)){if(q===p)continue;const d=Math.hypot(q.x-p.x,q.z-p.z),tail=Math.hypot(q.x-goal.x,q.z-goal.z);if(travel+d+tail>=cost)continue;if(aBotSegmentClear(p.x,p.z,q.x,q.z)&&aBotSegmentClear(q.x,q.z,goal.x,goal.z))cost=travel+d+tail;}
+  if(cost<score){score=cost;best=p;}
  }
  return best;
 }
@@ -1902,7 +1909,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   // Do not keep restarting the hide timer; that would trap a wounded bot forever.
   if(m.mode==='hide'&&now>=m.hideUntil){
     m.mode='peek';
-    m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:b.z+3.5*(b.z>target.z?1:-1)};
+    m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:clamp(b.z+3.5*(b.z>(canSee?target.z:(remembered?.z??b.z))?1:-1),-rx5TacticalLimit(),rx5TacticalLimit())};
     m.nextPlan=now+.85;
   }
   const prev=m.goal,lowHp=b.hp<(elite?52:43);
@@ -1949,7 +1956,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
     if(goalDistance<1.6&&m.mode==='cover')m.mode='hide';
     if(m.mode==='hide'&&now>=m.hideUntil){
       m.mode='peek';
-      m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:b.z+3.5*(b.z>target.z?1:-1)};
+      m.goal={x:clamp(b.x+m.peekSide*3.5,-rx5TacticalLimit(),rx5TacticalLimit()),z:clamp(b.z+3.5*(b.z>(canSee?target.z:(remembered?.z??b.z))?1:-1),-rx5TacticalLimit(),rx5TacticalLimit())};
     }
     if(goalDistance<1.7&&(m.mode==='investigate'||m.mode==='patrol'||m.mode==='peek')){
       m.nextPlan=0;m.goal=null;
@@ -1974,7 +1981,7 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   if(look)rx2Face(b,look,dt);
   b.nextShot=Math.max(-2,b.nextShot-dt);
   // Never fire through obstacles; suppress instant 180-degree snap shots.
-  if(canSee&&distance<(elite?37:32)&&rx2Facing(b,target,elite?.23:.18)&&
+  if(canSee&&los(b.x,b.z,target.x,target.z)&&!rx2SmokeBlocks(b,target)&&distance<(elite?37:32)&&rx2Facing(b,target,elite?.23:.18)&&
      now>=m.reactionUntil&&b.nextShot<=0&&m.mode!=='hide'){
     b.nextShot=(elite?rand(1.05,1.5):rand(1.45,2.0))*(difficulty===0?1.15:1);
     const chance=clamp((elite?.73:.60)-distance*(elite?.006:.008),.24,.72);
@@ -2185,6 +2192,11 @@ void main(){
    col+=base*bounce*(.60+metal*.35);
    col+=uFogColor*rim*(.035+metal*.085);
    col=mix(col,col/(1.0+col*.16)*1.10,.35);
+   // B3: grazing-angle material highlights, distance-faded terrain microdetail.
+   float nearDetail=1.0-smoothstep(12.0,48.0,vDist);
+   float grain=v9hash(floor(vWorld.xz*9.0));
+   col*=1.0+(grain-.5)*ground*nearDetail*.10;
+   col+=vec3(.09,.11,.14)*rim*metal*(.25+.75*ndl);
  }
  if(uMode>3.5){
    // VERSION X CINEMATIC: warm/cool bounce, subtle rim highlights, and filmic roll-off.
@@ -3442,7 +3454,11 @@ const muzzle=index===2?1.58:index===1?1.04:index===3?.79:1.2;
  if(first&&v91EffectiveGraphics()>=1||!first&&owner.rigGrip)z1WeaponTrim(index,part,line,base,light,dark,fire);
  // Separate three-dimensional designs for every named Godly silhouette.
  const st=finish.style;
- if(st==='serpent'){for(let j=0;j<6;j++){const z=.20+j*.17;part(Math.sin(j*1.2)*.17,.19+(j%2)*.1,z,.12,.13,.13,j%2?light:base);}line([-.26,.19,.21],[.26,.39,.94],.07,light);}
+ if(finish.seasonOnly&&index===0){
+  // New Dawn Sandwyrm: actual equipped mesh, shared geometry across all four tiers.
+  for(const sign of [-1,1]){line([sign*.11,.13,.24],[sign*.25,.27,.63],.075,base);line([sign*.25,.27,.63],[sign*.13,.20,1.02],.055,light);for(let j=0;j<(v91EffectiveGraphics()>=2?4:2);j++){const z=.28+j*.15;part(sign*.17,.12,z,.07,.09,.07,j%2?light:dark);}}
+  part(0,.32,.68,.14,.09,.16,light);part(0,.26,1.02,.12,.10,.18,base);
+ }else if(st==='serpent'){for(let j=0;j<6;j++){const z=.20+j*.17;part(Math.sin(j*1.2)*.17,.19+(j%2)*.1,z,.12,.13,.13,j%2?light:base);}line([-.26,.19,.21],[.26,.39,.94],.07,light);}
  else if(st==='horns'){for(const x of [-1,1]){line([x*.12,.18,.33],[x*.30,.52,.22],.095,light);line([x*.30,.52,.22],[x*.44,.61,.35],.07,base);}part(0,.35,.5,.27,.12,.23,light);}
  else if(st==='reaper'){line([-.19,.22,.30],[-.40,.57,.82],.09,light);line([-.40,.57,.82],[-.13,.51,1.02],.09,base);part(.18,.3,.18,.16,.31,.15,light);}
  else if(st==='maw'){for(let j=0;j<5;j++){let z=.42+j*.12;part(-.20,.18,z,.10,.14,.085,light);part(.20,.18,z,.10,.14,.085,light);part(-.20,-.19,z,.09,.11,.07,base);part(.20,-.19,z,.09,.11,.07,base);}}
