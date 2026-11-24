@@ -80,7 +80,7 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   function onEnd(matchId,result){
     streamMeta.delete(matchId);streams.close(matchId);cameras.clear(matchId);lastFrame.delete(matchId);
     const usage=usedWeapons.get(matchId);usedWeapons.delete(matchId);
-    if(result?.reason==='remake'||!usage||!result?.players?.length||![0,1].includes(result.winner))return;
+    if(result?.curator||result?.reason==='remake'||!usage||!result?.players?.length||![0,1].includes(result.winner))return;
     db.exec('BEGIN IMMEDIATE');
     try{
       if(rememberMatch.run(matchId).changes){
