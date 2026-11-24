@@ -34,7 +34,9 @@ const ALIEN_GUARDIANS=[
 const WEEKEND_GUARDIANS=[
  {name:'Dune Colossus',model:'earth',hp:2800,attack:'sand quake',radius:5.5,damage:48},
  {name:'Tempest Serpent',model:'water',hp:2700,attack:'storm surge',radius:5.1,damage:46},
- {name:'Infernal Behemoth',model:'lava',hp:3000,attack:'meteor crash',radius:6.0,damage:52}
+ {name:'Infernal Behemoth',model:'lava',hp:3000,attack:'meteor crash',radius:6.0,damage:52},
+ {name:'Wadi Stormkeeper',model:'water',hp:2900,attack:'flood pulse',radius:5.8,damage:49},
+ {name:'Obsidian Sentinel',model:'earth',hp:3150,attack:'rift fracture',radius:4.8,damage:58}
 ];
 function guardians(mode,now=0){
  if(mode==='titanraid')return TITAN_GUARDIANS;
