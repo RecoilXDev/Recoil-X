@@ -20,6 +20,7 @@ import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
 import {createServerShield} from './a-server-shield.mjs';
 import {createAProgression} from './a-progression.mjs';
 import {createCurator} from './a-curator.mjs';
+import {createCuratorRooms} from './a-curator-rooms.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -130,6 +131,7 @@ export function createRecoilServer(options = {}) {
   const shield=createServerShield(db,options.shield);
   const progression=createAProgression(db);
   const curator=createCurator(db,fail);
+  const curatorRooms=createCuratorRooms(fail);
   progression.finalize();
   const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
     const active=clients.get(id);
@@ -333,7 +335,7 @@ export function createRecoilServer(options = {}) {
   function moderate(user, body) {
     const now=sqlTime();
     const result=overdriveData.moderation(user,body,now);
-    if (['tempban','ban'].includes(result.action))st('DELETE FROM sessions WHERE account=?').run(result.id);
+    if (['tempban','ban'].includes(result.action)){st('DELETE FROM sessions WHERE account=?').run(result.id);shield.leaveQueue({id:result.id});curatorRooms.leave({id:result.id});}
     if (['kick','tempban','ban'].includes(result.action)) {
       const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
       overdrive.drop(result.id,now,message);
@@ -352,6 +354,10 @@ export function createRecoilServer(options = {}) {
     const user = authenticate(token);
     if(!allowed('a-http:'+user.id,240,60000))throw fail(429,'Too many requests. Retry shortly.');
     if (req.method === 'GET') {
+      if(path==='/a/shield/queue')return shield.queueStatus(user,clients.size);
+      if(path==='/a/curator/discover')return curator.discover();
+      if(path==='/a/curator/review')return curator.pending(user);
+      if(path==='/a/curator/room')return curatorRooms.state(user);
       if(path==='/a/curator/list')return curator.list(user);
       if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
       if(path==='/a/progression')return progression.view(user);
@@ -412,9 +418,16 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/shield/queue'){if(!allowed('a-queue:'+user.id,20,60000))throw fail(429,'Retry shortly.');return body.leave===true?shield.leaveQueue(user):shield.queueStatus(user,clients.size,true);}
       if(path.startsWith('/a/curator/')){
+        if(path==='/a/curator/move'){if(!allowed('a-curator-move:'+user.id,175,60000))throw fail(429,'Move more slowly.');return curatorRooms.move(user,body);}
+        if(path==='/a/curator/leave')return curatorRooms.leave(user);
         if(!allowed('a-curator:'+user.id,20,60000))throw fail(429,'Too many Curator changes. Retry shortly.');
         if(shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Curator writes paused during maintenance.');
+        if(path==='/a/curator/submit')return curator.submit(user,body);
+        if(path==='/a/curator/review')return curator.moderate(user,body);
+        if(path==='/a/curator/create-room'){if(shield.status(clients.size).busy)throw fail(503,'Server busy.');const p=curator.list(user).projects.find(p=>p.id===body.id)||curator.shared(body.id).project;return curatorRooms.create(user,p);}
+        if(path==='/a/curator/join-room')return curatorRooms.join(user,body.code);
         if(path==='/a/curator/save')return curator.save(user,body);
         if(path==='/a/curator/share')return curator.share(user,body);
         if(path==='/a/curator/delete')return curator.remove(user,body);
@@ -682,7 +695,7 @@ export function createRecoilServer(options = {}) {
         if (!connected) {
           if (data.type!=='auth') throw fail(401,'Sign in first.');
           const user=authenticate(data.token);
-          shield.admission(clients.size,clients.has(user.id),!!user.admin);
+          shield.admission(clients.size,clients.has(user.id),!!user.admin,user.id);
           releasePending();
           cutConnection(clients.get(user.id),'Signed in on another device.');
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
@@ -712,6 +725,7 @@ export function createRecoilServer(options = {}) {
   server.requestTimeout=20000;server.headersTimeout=10000;
   const cleanup=setInterval(()=>{
     const now=sqlTime();
+    curatorRooms.sweep();
     try{progression.finalize(now);}catch(error){console.error('Season reward finalization failed',error.message);}
     for (const [k,value] of windowLimits) if (value.until<now) windowLimits.delete(k);
     for(const c of clients.values())if(!session.get(c.tokenHash,now))cutConnection(c,'Session expired. Sign in again.');
