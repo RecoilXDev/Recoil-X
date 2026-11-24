@@ -24,7 +24,7 @@ const style=document.createElement('style');style.textContent=`
 @media(prefers-reduced-motion:reduce){#rx-a *{scroll-behavior:auto!important;transition:none!important}}
 `;document.head.append(style);
 const root=document.createElement('div');root.id='rx-a';root.hidden=true;
-root.innerHTML='<section id="rx-a-panel" role="dialog" aria-modal="true" aria-labelledby="rx-a-title" tabindex="-1"><div class="head"><div><p class="muted">RECOIL X · DEVELOPMENT PREVIEW</p><h2 id="rx-a-title">UPDATE A / CONTROL CENTER</h2><p class="muted">Connected systems · existing accounts and game modes preserved</p></div><button id="rx-a-close" aria-label="Close control center">Close ✕</button></div><nav class="tabs" aria-label="Control center sections"><button data-a-tab="overview">Overview</button><button data-a-tab="network">Connection</button><button data-a-tab="combat">Combat</button><button data-a-tab="security">Account</button></nav><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></section>';
+root.innerHTML='<section id="rx-a-panel" role="dialog" aria-modal="true" aria-labelledby="rx-a-title" tabindex="-1"><div class="head"><div><p class="muted">RECOIL X · DEVELOPMENT PREVIEW</p><h2 id="rx-a-title">UPDATE A / CONTROL CENTER</h2><p class="muted">Connected systems · existing accounts and game modes preserved</p></div><button id="rx-a-close" aria-label="Close control center">Close ✕</button></div><nav class="tabs" aria-label="Control center sections"><button data-a-tab="overview">Overview</button><button data-a-tab="network">Connection</button><button data-a-tab="combat">Combat</button><button data-a-tab="security">Account</button><button data-a-tab="progression">Progression & Season</button><button data-a-tab="community">Community</button><button data-a-tab="shield">Server Shield</button></nav><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></section>';
 document.body.append(root);
 let current='overview',generation=0,lastFocus=null,controller=null;
 const token=()=>sessionStorage.getItem('rx5-token');
@@ -53,6 +53,22 @@ async function show(tab){
  }else if(tab==='combat'){
   const d=await api('z5/matches',undefined,signal);if(!alive(id))return;
   body().innerHTML='<div class="card"><h3>Personal after-action reports</h3><p class="muted">Accuracy counts damaging projectiles, including shotgun pellets, not trigger pulls. Only newly completed matches in this build contain these statistics.</p>'+(d.matches.length?d.matches.map(m=>'<div class="card row"><div style="flex:1"><b>'+esc(m.mode)+'</b><p class="muted">'+esc(new Date(m.finished).toLocaleString())+' · '+esc(m.score.join(' – '))+'</p></div><button data-a-action="match" data-id="'+esc(m.id)+'">View report</button></div>').join(''):'<p>No completed multiplayer matches yet.</p>')+'</div>';
+ }else if(tab==='progression'){
+  const d=await api('a/progression',undefined,signal);if(!alive(id))return;
+  const season=d.season;
+  body().innerHTML='<div class="card"><h3>Progression 2.0</h3><div class="metrics">'+metric('Level',d.level)+metric('Lifetime XP',d.xp)+metric('Eligible matches',d.matches)+metric('Wins',d.wins)+'</div><p>Next level at '+esc(d.nextLevelXp)+' XP.</p><progress value="'+esc(d.xp%500)+'" max="500" aria-label="Progress to next level" style="width:100%"></progress><p class="muted">Earn server-verified XP from completed multiplayer matches lasting at least 30 seconds with sufficient input. Remakes, forfeits and abandoned matches do not count. Existing coins, items and weapon mastery are separate.</p></div><div class="card"><h3>'+esc(season.name)+'</h3><p>'+esc(season.state.toUpperCase())+' · January 1 – March 31, 2027 (Oman time)</p><div class="metrics">'+metric('Season XP',season.xp)+metric('Season level',season.level)+'</div>'+season.milestones.map(m=>'<p>'+esc(m.title)+' · Level '+esc(m.level)+' — '+(m.unlocked?'Unlocked':'Locked')+'</p>').join('')+'<p class="muted">Season milestones are profile achievements, not inventory items. Seasonal XP starts at the server-controlled opening date.</p></div>';
+ }else if(tab==='community'){
+  const [d,b]=await Promise.all([api('a/progression',undefined,signal),api('a/community',undefined,signal)]);if(!alive(id))return;
+  body().innerHTML='<div class="card"><h3>Season leaderboard</h3><p class="muted">'+esc(b.notice)+'</p><p>Your profile visibility: <b>'+(d.public?'Opted in':'Private')+'</b></p><button data-a-action="visibility" data-value="'+(!d.public)+'">'+(d.public?'Leave leaderboard':'Join leaderboard')+'</button><p class="muted">Participation is optional and can be reversed at any time.</p></div><div class="card">'+(b.players.length?'<div class="scroll"><table><thead><tr><th>Rank</th><th>Player</th><th>Season XP</th></tr></thead><tbody>'+b.players.map((p,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.season_xp)+'</td></tr>').join('')+'</tbody></table></div>':'<p>'+(b.state==='upcoming'?'Leaderboard opens with Season 1.':'No opted-in seasonal scores yet.')+'</p>')+'</div>';
+ }else if(tab==='shield'){
+  const d=await api('a/shield',undefined,signal);if(!alive(id))return;
+  const me=await api('me',undefined,signal);if(!alive(id))return;
+  let extra='';
+  if(me.user?.admin){
+   const a=await api('a/admin/shield',undefined,signal);if(!alive(id))return;
+   extra='<div class="card"><h3>Administrator controls</h3><div class="metrics">'+metric('RAM (MiB)',a.rssMB+' / '+a.rssLimitMB)+metric('Process CPU',a.cpuPercent+'%')+metric('Denied admissions',a.denied)+'</div><p class="muted">'+esc(a.notice)+'</p><button data-a-action="maintenance" data-value="'+(!a.maintenance)+'">'+(a.maintenance?'Resume admissions':'Pause new matches & admissions')+'</button><p class="muted">Existing matches may finish. Admin accounts retain maintenance access.</p><h3>Recent security events</h3>'+a.events.slice(0,20).map(e=>'<p>'+esc(new Date(e.at).toLocaleString())+' · '+esc(e.kind)+'</p>').join('')+'</div>';
+  }
+  body().innerHTML='<div class="card"><h3>Operation Server Shield</h3><div class="metrics">'+metric('Status',d.maintenance?'Maintenance':d.busy?'Busy':'Open')+metric('Online',d.online+' / '+d.capacity)+metric('Pending connections',d.pending)+metric('Authentication jobs',d.authJobs)+'</div><p>When capacity is reached, retry after '+esc(d.retryAfterSeconds)+' seconds. Existing matches are prioritized.</p><button data-a-tab="shield">Refresh status</button></div>'+extra;
  }else if(tab==='security'){
   const d=await api('a/sessions',undefined,signal);if(!alive(id))return;
   body().innerHTML='<div class="card"><h3>Active account sessions</h3><div class="metrics">'+metric('Valid sessions',d.active)+'</div><p class="muted">'+esc(d.note)+' No session tokens or device addresses are displayed.</p>'+d.sessions.map(s=>'<p>'+ (s.current?'<b>Current session</b>':'Other session')+' · expires '+esc(new Date(s.expires).toLocaleString())+'</p>').join('')+'<button data-a-action="revoke" '+(d.active<=1?'disabled':'')+'>Sign out other sessions</button></div><div class="card"><h3>Recovery</h3><p class="muted">Generate and store a one-time recovery code through the existing Parties & More → Recovery panel. Never share your code.</p></div>';
@@ -76,6 +92,8 @@ root.addEventListener('click',async e=>{
  if(b.disabled)return;
  const id=generation;b.disabled=true;
  try{
+  if(action==='visibility'){await api('a/community',{public:b.dataset.value==='true'});if(alive(id))await show('community');}
+  if(action==='maintenance'&&confirm('Change server maintenance status?')){await api('a/admin/shield',{maintenance:b.dataset.value==='true'});if(alive(id))await show('shield');}
   if(action==='profile'){await api('a/connection',{profile:b.dataset.profile});if(alive(id)){await show('network');status('Connection profile changed.');}}
   if(action==='revoke'&&confirm('Sign out every other account session? Your current session will remain signed in.')){
    const d=await api('a/sessions/revoke-others',{});if(alive(id)){await show('security');status(d.revoked+' other session(s) revoked.');}
