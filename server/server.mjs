@@ -150,6 +150,7 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    displayTitle:progression.displayTitle,
     loadCuratorField:(user,id)=>curatorField(curator.list(user).projects.find(p=>p.id===id)||curator.shared(id).project),
     canSendSnapshot:connection=>delivery.allowSnapshot(connection),
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
@@ -379,7 +380,7 @@ export function createRecoilServer(options = {}) {
       if(path==='/a/curator/discover')return curator.discover();
       if(path==='/a/curator/review')return curator.pending(user);
       if(path==='/a/curator/room')return curatorRooms.state(user);
-      if(path==='/a/curator/list')return curator.list(user);
+      if(path==='/a/curator/list')return {...curator.list(user),activeRoom:curatorRooms.state(user,true)};
       if(path==='/a/curator/shared')return curator.shared(new URL(req.url,'http://localhost').searchParams.get('id'));
       if(path==='/a/season/pass')return progression.passView(user);
       if(path==='/a/progression')return progression.view(user);
@@ -463,7 +464,12 @@ export function createRecoilServer(options = {}) {
         if(path==='/a/curator/delete')return curator.remove(user,body);
       }
       if(path==='/a/season/pass'){if(!allowed('a-pass:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.claimPass(user,body.tier);}
-      if(path==='/a/season/pass/equip'){if(!allowed('a-pass-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.equipPass(user,body.tier);}
+      if(path==='/a/season/pass/equip'){
+        if(!allowed('a-pass-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');
+        const pass=progression.equipPass(user,body.tier);
+        overdrive.refreshTitle(user.id);
+        return pass;
+      }
       if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
       if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
       if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
