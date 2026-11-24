@@ -24,7 +24,7 @@ const style=document.createElement('style');style.textContent=`
 @media(prefers-reduced-motion:reduce){#rx-a *{scroll-behavior:auto!important;transition:none!important}}
 `;document.head.append(style);
 const root=document.createElement('div');root.id='rx-a';root.hidden=true;
-root.innerHTML='<section id="rx-a-panel" role="dialog" aria-modal="true" aria-labelledby="rx-a-title" tabindex="-1"><div class="head"><div><p class="muted">RECOIL X · DEVELOPMENT PREVIEW</p><h2 id="rx-a-title">UPDATE A / CONTROL CENTER</h2><p class="muted">Connected systems · existing accounts and game modes preserved</p></div><button id="rx-a-close" aria-label="Close control center">Close ✕</button></div><nav class="tabs" aria-label="Control center sections"><button data-a-tab="overview">Overview</button><button data-a-tab="network">Connection</button><button data-a-tab="combat">Combat</button><button data-a-tab="security">Account</button><button data-a-tab="progression">Progression & Season</button><button data-a-tab="community">Community</button><button data-a-tab="seasonkills">Season Kills</button><button data-a-tab="curator">Curator Mode</button><button data-a-tab="shield">Server Shield</button></nav><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></section>';
+root.innerHTML='<section id="rx-a-panel" role="dialog" aria-modal="true" aria-labelledby="rx-a-title" tabindex="-1"><div class="head"><div><p class="muted">RECOIL X · DEVELOPMENT PREVIEW</p><h2 id="rx-a-title">UPDATE A / CONTROL CENTER</h2><p class="muted">Connected systems · existing accounts and game modes preserved</p></div><button id="rx-a-close" aria-label="Close control center">Close ✕</button></div><nav class="tabs" aria-label="Control center sections"><button data-a-tab="overview">Overview</button><button data-a-tab="network">Connection</button><button data-a-tab="combat">Combat</button><button data-a-tab="security">Account</button><button data-a-tab="progression">Progression & Season</button><button data-a-tab="community">Community</button><button data-a-tab="seasonkills">Season Kills</button><button data-a-tab="pass">Season Pass</button><button data-a-tab="curator">Curator Mode</button><button data-a-tab="shield">Server Shield</button></nav><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></section>';
 document.body.append(root);
 let current='overview',generation=0,lastFocus=null,controller=null;
 const token=()=>sessionStorage.getItem('rx5-token');
@@ -59,6 +59,9 @@ async function show(tab){
   const d=await api('a/progression',undefined,signal);if(!alive(id))return;
   const season=d.season;
   body().innerHTML='<div class="card"><h3>Progression 2.0</h3><div class="metrics">'+metric('Level',d.level)+metric('Lifetime XP',d.xp)+metric('Eligible matches',d.matches)+metric('Wins',d.wins)+'</div><p>Next level at '+esc(d.nextLevelXp)+' XP.</p><progress value="'+esc(d.xp%500)+'" max="500" aria-label="Progress to next level" style="width:100%"></progress><p class="muted">Earn server-verified XP from completed multiplayer matches lasting at least 30 seconds with sufficient input. Remakes, forfeits and abandoned matches do not count. Existing coins, items and weapon mastery are separate.</p></div><div class="card"><h3>'+esc(season.name)+'</h3><p>'+esc(season.state.toUpperCase())+' · November 30, 2026 – March 31, 2027 (Oman time)</p><div class="metrics">'+metric('Season XP',season.xp)+metric('Season level',season.level)+'</div>'+season.milestones.map(m=>'<p>'+esc(m.title)+' · Level '+esc(m.level)+' — '+(m.unlocked?'Unlocked':'Locked')+'</p>').join('')+'<p class="muted">Season milestones are profile achievements, not inventory items. Seasonal XP starts at the server-controlled opening date.</p></div>';
+ }else if(tab==='pass'){
+  const d=await api('a/season/pass',undefined,signal);if(!alive(id))return;
+  body().innerHTML='<div class="card"><h3>New Dawn · free reward track</h3><p>'+esc(d.state)+' · '+esc(d.xp)+' season XP</p><p class="muted">Earn permanent account profile badges through verified match XP. Claim before the season ends.</p>'+d.rewards.map(t=>'<div class="card row"><div style="flex:1"><b>'+esc(t.title)+'</b><p>'+esc(t.xp)+' XP · '+(t.claimed?'Owned':t.eligible?'Ready':'Locked')+'</p></div><button data-a-action="pass-claim" data-tier="'+esc(t.tier)+'" '+(!t.eligible||t.claimed?'disabled':'')+'>Claim</button></div>').join('')+'</div>';
  }else if(tab==='seasonkills'){
   const d=await api('a/season/kills',undefined,signal);if(!alive(id))return;
   const tiers=[['gold','1st · Gold','#e8c45a'],['silver','2nd · Silver','#d2deed'],['bronze','3rd · Bronze','#d39a68'],['blue','4th and below · Blue','#77bcff']];
@@ -75,7 +78,7 @@ async function show(tab){
   let extra='';
   if(me.user?.admin){
    const a=await api('a/admin/shield',undefined,signal);if(!alive(id))return;
-   extra='<div class="card"><h3>Administrator controls</h3><div class="metrics">'+metric('RAM (MiB)',a.rssMB+' / '+a.rssLimitMB)+metric('Process CPU',a.cpuPercent+'%')+metric('Denied admissions',a.denied)+'</div><p class="muted">'+esc(a.notice)+'</p><button data-a-action="maintenance" data-value="'+(!a.maintenance)+'">'+(a.maintenance?'Resume admissions':'Pause new matches & admissions')+'</button><p class="muted">Existing matches may finish. Admin accounts retain maintenance access.</p><h3>Recent security events</h3>'+a.events.slice(0,20).map(e=>'<p>'+esc(new Date(e.at).toLocaleString())+' · '+esc(e.kind)+'</p>').join('')+'</div>';
+   extra='<div class="card"><h3>Administrator controls</h3><div class="metrics">'+metric('RAM (MiB)',a.rssMB+' / '+a.rssLimitMB)+metric('Process CPU',a.cpuPercent+'%')+metric('Denied admissions',a.denied)+'</div><p class="muted">'+esc(a.notice)+'</p><button data-a-action="maintenance" data-value="'+(!a.maintenance)+'">'+(a.maintenance?'Resume admissions':'Pause new matches & admissions')+'</button><p class="muted">Existing matches may finish. Admin accounts retain maintenance access.</p><button data-a-action="batch-moderation">Review batch ban / unban</button><h3>Recent security events</h3>'+a.events.slice(0,20).map(e=>'<p>'+esc(new Date(e.at).toLocaleString())+' · '+esc(e.kind)+'</p>').join('')+'</div>';
   }
   body().innerHTML='<div class="card"><h3>Operation Server Shield</h3><div class="metrics">'+metric('Status',d.maintenance?'Maintenance':d.busy?'Busy':'Open')+metric('Online',d.online+' / '+d.capacity)+metric('Pending connections',d.pending)+metric('Authentication jobs',d.authJobs)+metric('Waiting',d.waiting)+'</div><p>When capacity is reached, retry after '+esc(d.retryAfterSeconds)+' seconds. Existing matches are prioritized.</p><button data-a-tab="shield">Refresh status</button><div class="card"><h3>Fair admission queue</h3><p>'+ (q.ready?'Your slot is ready. Return to Multiplayer and connect before the offer expires.':q.position?'Position '+esc(q.position)+' · refresh your place regularly.':'Join the queue if the server is full.')+'</p><button data-a-action="queue-join">'+(q.position?'Refresh my queue place':'Join waiting queue')+'</button> <button data-a-action="queue-leave">Leave queue</button><p class="muted">Queue places expire after inactivity; offers are held for a short time. Existing connections are not interrupted.</p></div></div>'+extra;
  }else if(tab==='security'){
@@ -101,6 +104,16 @@ root.addEventListener('click',async e=>{
  if(b.disabled)return;
  const id=generation;b.disabled=true;
  try{
+  if(action==='pass-claim'){await api('a/season/pass',{tier:Number(b.dataset.tier)});if(alive(id))await show('pass');}
+  if(action==='batch-moderation'){
+   const actionName=prompt('Enter ban or unban');if(!['ban','unban'].includes(actionName))return;
+   const names=prompt('Enter up to 10 account names, separated by commas');if(!names)return;
+   const request={action:actionName,names:names.split(',').map(n=>n.trim()).filter(Boolean)};
+   const preview=await api('a/admin/shield/batch',{...request,preview:true});if(!alive(id))return;
+   const reason=prompt('Reason for '+actionName+' on '+preview.names.join(', '));if(!reason)return;
+   const confirmation=prompt('Type exactly: '+preview.confirmation);if(confirmation!==preview.confirmation)return;
+   const result=await api('a/admin/shield/batch',{...request,reason,confirmation});if(alive(id)){await show('shield');status(result.results.map(r=>r.name+': '+(r.ok?'OK':r.error)).join(' · '));}
+  }
   if(action==='season-equip'){await api('a/season/reward',{equipped:b.dataset.value==='true'});await window.RXSeasonGodly?.refresh();if(alive(id))await show('seasonkills');}
   if(action==='visibility'){await api('a/community',{public:b.dataset.value==='true'});if(alive(id))await show('community');}
   if(action==='queue-join'||action==='queue-leave'){await api('a/shield/queue',{leave:action==='queue-leave'});if(alive(id))await show('shield');}
