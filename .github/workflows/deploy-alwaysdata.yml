@@ -129,6 +129,8 @@ jobs:
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
           grep -Fq 'const pool=MAPS.filter(m=>!m.mysteryOnly' /tmp/recoil-z5-live.html
           grep -Fq 'content="Z.5-SAND-8"' /tmp/recoil-z5-live.html
+          grep -Fq 'content="A-NEW-DAWN-PREVIEW-1"' /tmp/recoil-z5-live.html
+          grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
           grep -Fq '<title>RECOIL X Z.5 · Sand Edition</title>' /tmp/recoil-z5-live.html
           grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
