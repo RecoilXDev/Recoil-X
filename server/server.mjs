@@ -128,6 +128,7 @@ export function createRecoilServer(options = {}) {
   const delivery=createDeliveryPolicy();
   const shield=createServerShield(db,options.shield);
   const progression=createAProgression(db);
+  progression.finalize();
   const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
     const active=clients.get(id);
     if(active&&active.tokenHash!==keep)cutConnection(active,'Session revoked from account settings.');
@@ -350,6 +351,8 @@ export function createRecoilServer(options = {}) {
     if(!allowed('a-http:'+user.id,240,60000))throw fail(429,'Too many requests. Retry shortly.');
     if (req.method === 'GET') {
       if(path==='/a/progression')return progression.view(user);
+      if(path==='/a/season/kills')return progression.killsBoard(user);
+      if(path==='/a/season/reward')return {reward:progression.reward(user)};
       if(path==='/a/community')return progression.board();
       if(path==='/a/shield')return shield.status(clients.size);
       if(path==='/a/admin/shield')return shield.inspect(user,clients.size);
@@ -405,6 +408,7 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
       if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
       if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
       if(path==='/a/sessions/revoke-others'){
@@ -693,6 +697,7 @@ export function createRecoilServer(options = {}) {
   server.requestTimeout=20000;server.headersTimeout=10000;
   const cleanup=setInterval(()=>{
     const now=sqlTime();
+    try{progression.finalize(now);}catch(error){console.error('Season reward finalization failed',error.message);}
     for (const [k,value] of windowLimits) if (value.until<now) windowLimits.delete(k);
     for(const c of clients.values())if(!session.get(c.tokenHash,now))cutConnection(c,'Session expired. Sign in again.');
     if (now-lastExpiry>3600000) {st('DELETE FROM sessions WHERE expires<?').run(now);lastExpiry=now;}
