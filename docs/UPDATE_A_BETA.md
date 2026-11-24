@@ -88,3 +88,6 @@ Server Shield now limits concurrent non-health API calls with a default capacity
 
 ### RC6 — Season 1 home tab
 A dedicated New Dawn tab appears on the native main menu when the public server clock reports the season open (or ended for archive access). It refreshes every minute without requiring sign-in. Signed-in players can access XP, pass, championship, weekly ranked cup and free crate claims/equipment from one place. Existing entry points remain unchanged. No client clock unlock or new rewards are introduced.
+
+### RC7 — remote seasonal visuals and network regression
+Overdrive matches capture owned, equipped New Dawn cosmetics at match start from the server database and include only whitelisted identifiers in the begin roster. Remote rifle and helmet use existing WebGL mesh paths, at normal detail distance; no cosmetic fields are added to high-frequency state frames or accepted from client input. Reconnects receive the same captured roster. The existing 2/4/6/10-player integration test now checks ownership isolation across every client. Cosmetic changes are reflected on the next match; legacy peer-hosted Mystery knife synchronization and actual device/production load remain unverified.

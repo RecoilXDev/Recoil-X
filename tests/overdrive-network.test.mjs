@@ -74,6 +74,8 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
     assert.equal((await api('/z2/admin/action',{name:a.user.name,action:'ban',reason:'Test',admin:true},b.token)).status,403);
     const thirdParty=new DatabaseSync(database);
     thirdParty.prepare('UPDATE users SET admin=1 WHERE id=?').run(moderator.user.id);
+    thirdParty.prepare('INSERT INTO rx5_inventory(account,item,quantity) VALUES(?,?,1)').run(a.user.id,'dawn_rifle');
+    thirdParty.prepare('INSERT INTO rx5_equipment(account,slot,item) VALUES(?,?,?)').run(a.user.id,'weapon','dawn_rifle');
     thirdParty.close();
     assert.equal((await api('/me',undefined,moderator.token)).value.user.admin,true);
     const extraLogin=await api('/login',{name:a.user.name,password});
@@ -121,6 +123,7 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
       const begin=await until(()=>round.every(p=>last(p,'z2:begin')?.roster.length===count)&&last(host,'z2:begin'),
         'All clients receive the same start');
       assert(round.every(p=>last(p,'z2:begin').id===begin.id));
+      for(const p of round){const roster=last(p,'z2:begin').roster;assert.deepEqual(roster.find(r=>r.id===a.user.id).dawn,['dawn_rifle']);assert.deepEqual(roster.find(r=>r.id===b.user.id).dawn,[]);}
       const first=await until(()=>host.events.find(e=>e.type==='z2:state'&&e.id===begin.id),'First state arrives');
       assert.equal(first.rows.length,count);
       const hostsId=a.user.id;

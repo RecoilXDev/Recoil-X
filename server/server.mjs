@@ -188,6 +188,7 @@ export function createRecoilServer(options = {}) {
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
     displayTitle:progression.displayTitle,
+    loadDawnEquipment:id=>economy.dawnEquipment({id}),
     loadCuratorField:(user,id)=>curatorField(curator.list(user).projects.find(p=>p.id===id)||curator.shared(id).project),
     canSendSnapshot:connection=>delivery.allowSnapshot(connection),
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),

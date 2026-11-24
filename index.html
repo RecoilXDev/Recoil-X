@@ -2981,7 +2981,7 @@ async function aRefreshSeasonReward(){
  }catch{if(token===z1Token&&account===z1Account?.id)aSeasonReward=null;}
 }
 window.RXSeasonGodly={refresh:aRefreshSeasonReward,preview:tier=>{const f=aSeasonFinish(tier);return f?v8Svg(f):'';}};
-function gunFinishFor(n,local=true){const gun=V8_GUN_IDS[n]||'ar';if(local&&gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}if(local&&gun==='ar'&&aDawnEquipped.weapon==='dawn_rifle'){const finish=aDawnRifleFinish(V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent'));if(finish)return finish;}return (local&&V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun]))||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
+function gunFinishFor(n,local=true,remoteDawn=false){const gun=V8_GUN_IDS[n]||'ar';if(local&&gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}if(gun==='ar'&&(local?aDawnEquipped.weapon==='dawn_rifle':remoteDawn)){const finish=aDawnRifleFinish(V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent'));if(finish)return finish;}return (local&&V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun]))||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
 function v8Localized(f){return language==='ar'?f.ar:f.name;}
 function v8RarityName(r){return tr(RARITIES.find(f=>f.id===r)?.key||'rarityCommon');}
 function v8CaseRoll(gun){const rarity=rxPityRoll('gun',rollRarity),pool=V8_GUN_FINISHES.filter(f=>f.gun===gun&&f.rarity===rarity&&!f.seasonOnly&&!['g8_sniper_omega','g8_sniper_oman_falcon'].includes(f.id));return pool[randomInt(pool.length)];}
@@ -5969,16 +5969,17 @@ function crownDrawActor(out,b,distance,now,kind='bot') {
   const pitch=clamp(b.pitch||0,-1.25,1.25),yaw=b.yaw||0;
   const grip={x:hand[3],y:hand[7]+.115*scale,z:hand[11],yaw,pitch};
   if(kind==='player')crownDress(out,matrices,mesh,sourcePalette,scale);
+  else if(kind==='remote'&&lod<2&&b.dawn?.includes('dawn_helmet'))crownRemoteDawnHelmet(out,matrices,mesh,scale);
   if((kind==='player'&&mode==='mystery'&&vxRole==='murderer')||(mode==='mystery'&&b.role==='murderer')){
     if(lod===2)return;
-    const knife=kind==='player'?aPlayerKnife():VX_KNIVES[0];
+    const knife=kind==='player'?aPlayerKnife():kind==='remote'&&b.dawn?.includes('dawn_knife')?aDawnKnifeFinish(VX_KNIVES[0]):VX_KNIVES[0];
     vxDrawKnifeModel(out,knife,grip.x,grip.y-.12,grip.z,yaw+.45+(kind==='player'?rx3KnifePose(now):0),.67*scale);
     return;
   }
   if((kind==='player'&&mode==='mystery'&&vxRole!=='sheriff')||(mode==='mystery'&&b.role==='innocent'))return;
   if(kind==='player'||(kind==='remote'&&distance<18&&lod<2)){
     const weapon=b.weapon||0;
-    v8DrawWeapon(out,{...grip,rigGrip:true},weapon,gunFinishFor(weapon,kind==='player'),false,now);
+    v8DrawWeapon(out,{...grip,rigGrip:true},weapon,gunFinishFor(weapon,kind==='player',kind==='remote'&&b.dawn?.includes('dawn_rifle')),false,now);
   }else if(lod<2&&(model==='fighter'||model==='infected')){
     const ori={...grip,y:grip.y-.044};
     const steel=palette[2],trim=palette[1];
@@ -5989,6 +5990,13 @@ function crownDrawActor(out,b,distance,now,kind='bot') {
   }
 }
 
+let crownRemoteDawnParts=null;
+function crownRemoteDawnHelmet(out,matrices,mesh,scale){
+ if(!matrices[mesh.index.head])return;
+ if(!crownRemoteDawnParts){const m=crownPartBuilder(CROWN_BONES);m.ellipsoid('head',0,0,.203,.065,.225,.108,.16,6,.55);m.gem('head',1,0,.246,.174,.084,.064,.025);crownRemoteDawnParts=m.parts;}
+ const colors=[[.89,.65,.29],[.39,.25,.14]];
+ for(const p of crownRemoteDawnParts)if(matrices[p.joint])crownEmitPart(out,p.v,matrices[p.joint],colors[p.color],scale);
+}
 let crownDressKey='',crownDressMesh=null;
 function crownDress(out,matrices,mesh,palette,scale) {
   const kit=x4Data.character,dawn=aDawnEquipped.outfit==='dawn_helmet',key=kit.helmet+'/'+kit.pack+'/'+dawn;
@@ -9608,7 +9616,7 @@ function z2ApplyState(event){
     if(row[0]===id)continue;
     present.add(row[0]);
     const actor=z2AimActor(row,remotePlayers.get(row[0]),event.t);
-    actor.name=match.names.get(actor.id)?.name||'Player';
+    const info=match.names.get(actor.id);actor.name=info?.name||'Player';actor.dawn=Array.isArray(info?.dawn)?info.dawn.filter(x=>['dawn_rifle','dawn_knife','dawn_helmet'].includes(x)):[];
     remotePlayers.set(actor.id,actor);
   }
   for(const id of remotePlayers.keys())if(!present.has(id))remotePlayers.delete(id);

@@ -11,7 +11,8 @@ test('Dawn finishes whitelist server-backed slots and preserve original meshes',
  const orig={id:'original',shape:2,style:'serpent'};
  assert.equal(aDawnRifleFinish(orig).style,'serpent');assert.equal(aDawnKnifeFinish(orig).shape,2);assert.equal(orig.id,'original');
  assert.match(html,/vxKnifeAtActor\(out,pl,k,now,!v8ThirdPerson\)/);
- assert.match(html,/gunFinishFor\(weapon,kind==='player'\)/);
+ assert.match(html,/gunFinishFor\(weapon,kind==='player',kind==='remote'/);
+ assert.match(html,/crownRemoteDawnHelmet\(out,matrices,mesh,scale\)/);
  assert.match(html,/dawn=aDawnEquipped.outfit==='dawn_helmet'/);
  assert.match(html,/aDawnEquipped=\{\};aDawnRefreshVersion\+\+/);
 });
