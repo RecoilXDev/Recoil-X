@@ -9,7 +9,7 @@ on:
       - 'sw.js'
       - 'recoil-icon-*.png'
       - 'server/**'
-      - 'tests/z5-simplicity-bots.test.cjs'
+      - 'tests/**'
       - '.github/workflows/deploy-alwaysdata.yml'
   workflow_dispatch:
 
@@ -210,6 +210,8 @@ jobs:
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           node -e "if (require('/tmp/recoil-z5-health.json').release !== 'recoil-city-3d-radio') process.exit(1)"
+          curl --fail --silent --show-error --output /tmp/live-season-schedule.json https://recoil-x.alwaysdata.net/rx-api/a/season/schedule
+          node -e "const s=require('/tmp/live-season-schedule.json'); if(s.start!==Date.parse('2026-11-25T00:00:00+04:00') || !Number.isFinite(s.now) || !['upcoming','active','ended'].includes(s.state)) process.exit(1)"
           for asset in a-control-center.js a-curator.js; do
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
