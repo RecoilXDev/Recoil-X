@@ -141,8 +141,9 @@ function blocked(field,x,z) {
 }
 
 function move(field,p,dx,dz) {
-  const x=clamp(p.x+dx,-field.half+.55,field.half-.55);
-  const z=clamp(p.z+dz,-field.half+.55,field.half-.55);
+  const edge=field.half-(field.pawblast?0:.55);
+  const x=clamp(p.x+dx,-edge,edge);
+  const z=clamp(p.z+dz,-edge,edge);
   if(!blocked(field,x,p.z))p.x=x;
   if(!blocked(field,p.x,z))p.z=z;
 }
@@ -251,7 +252,7 @@ function hit(m,shooter,victim,damage,now,projectileStats=null) {
   if(victim.shieldUntil>now||victim.hp<=0)return;
   if(m.mode==='parry'&&(victim.parryUntil||0)>now)return;
   if(m.mode==='pawblast'){
-    const impulse=pawblastImpact(shooter,victim,damage,now);
+    pawblastImpact(shooter,victim,damage,now);
     if(projectileStats)projectileStats.hits++;
     // Confirmation is aggregated per trigger below, rather than once per pellet.
     return;
