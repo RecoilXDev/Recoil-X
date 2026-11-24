@@ -85,3 +85,6 @@ New Dawn rifle finish, Mystery-mode knife and local third-person helmet use the 
 
 ### RC5 — API pressure guard
 Server Shield now limits concurrent non-health API calls with a default capacity of 48, adjustable using RX_MAX_HTTP. Releases happen in finally, including rejected requests, and health checks remain available. Control Center reports current API activity. Host edge filtering and actual capacity measurement still require separate provider-side verification.
+
+### RC6 — Season 1 home tab
+A dedicated New Dawn tab appears on the native main menu when the public server clock reports the season open (or ended for archive access). It refreshes every minute without requiring sign-in. Signed-in players can access XP, pass, championship, weekly ranked cup and free crate claims/equipment from one place. Existing entry points remain unchanged. No client clock unlock or new rewards are introduced.

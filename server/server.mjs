@@ -18,7 +18,7 @@ import { startZ5Backups } from './z5-backups.mjs';
 import { createZ5Expansion } from './z5-expansion.mjs';
 import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
 import {createServerShield} from './a-server-shield.mjs';
-import {createAProgression} from './a-progression.mjs';
+import {createAProgression,SEASON_START,SEASON_END,seasonState} from './a-progression.mjs';
 import {createCurator} from './a-curator.mjs';
 import {createCuratorRooms} from './a-curator-rooms.mjs';
 import {curatorField} from './a-curator-fps.mjs';
@@ -682,7 +682,7 @@ export function createRecoilServer(options = {}) {
     let releaseHttp;
     try {
       if(path!=='/rx-api/health')releaseHttp=shield.reserveHttp();
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-3d-radio',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-3d-radio',...(beta?{channel:'beta',readyForProduction:false}:{})} : path==='/rx-api/a/season/schedule'&&req.method==='GET' ? {name:'Season 1 — New Dawn',start:SEASON_START,end:SEASON_END,now:sqlTime(),state:seasonState(sqlTime())} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);

@@ -4,7 +4,9 @@ if(document.getElementById('rx-feature-styles'))return;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const style=document.createElement('style');style.id='rx-feature-styles';style.textContent=`
 #rx-a{width:100%;min-width:0;grid-column:1/-1;text-align:left;color:#f5e4ce;font:14px/1.5 system-ui}
-#rx-a[hidden]{display:none!important}#rx-a *{box-sizing:border-box}
+#rx-a[hidden],#rx-a-season-tab[hidden]{display:none!important}
+#rx-a-season-tab{border:1px solid #e2b66b;background:linear-gradient(135deg,#563620,#8c5e32);color:#fff0ca;margin:8px 0;min-height:54px}
+#rx-a-season-tab[aria-expanded="true"]{outline:2px solid #ffd18b}#rx-a *{box-sizing:border-box}
 #z1SettingsMenu #rx5Options [data-game-feature="network"]{display:none}
 #rx-a-panel{padding:12px 0}
 #rx-a h2{font-size:26px;line-height:1.1;margin:5px 0;color:#ffe0a8;letter-spacing:.04em}#rx-a h3{font-size:16px;margin:0 0 8px}
@@ -27,7 +29,7 @@ const style=document.createElement('style');style.id='rx-feature-styles';style.t
 const root=document.createElement('section');root.id='rx-a';root.hidden=true;
 root.setAttribute('aria-labelledby','rx-a-title');
 root.innerHTML='<div id="rx-a-panel"><div class="head"><h2 id="rx-a-title" tabindex="-1"></h2><button type="button" id="rx-a-close">Close</button></div><p id="rx-a-status" role="status" aria-live="polite"></p><div id="rx-a-body"></div></div>';
-let generation=0,launcher=null,controller=null;
+let generation=0,launcher=null,controller=null,seasonSchedule=null;
 const token=()=>sessionStorage.getItem('rx5-token');
 const body=()=>root.querySelector('#rx-a-body'),status=(t,bad=false)=>{const n=root.querySelector('#rx-a-status');n.textContent=t;n.style.color=bad?'#ffada3':'#ffd18b';};
 const visibility=typeof MutationObserver==='function'?new MutationObserver(()=>{
@@ -64,7 +66,16 @@ async function show(tab){
  const signal=controller.signal;
  body().textContent='Loading…';
  try{
- if(tab==='curator'){
+ if(tab==='seasonhome'){
+  const season=seasonSchedule;
+  if(!season||season.state==='upcoming'){body().textContent='Season 1 has not opened yet.';return;}
+  const date=ms=>new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:'Asia/Muscat'}).format(new Date(ms));
+  body().innerHTML='<div class="card"><h3>SEASON 1 · NEW DAWN</h3><p>'+esc(season.state.toUpperCase())+' · '+esc(date(season.start))+' – '+esc(date(season.end-1))+' (Oman time)</p><p>Play verified multiplayer matches to earn seasonal XP, unlock free cosmetics and compete in the championship.</p></div>';
+  if(!token()){body().insertAdjacentHTML('beforeend','<div class="card"><p>Sign in through Friends or Career &amp; Clans to view your rewards and standings.</p></div>');return;}
+  const [p,e]=await Promise.all([api('a/progression',undefined,signal),api('z5/economy',undefined,signal)]);if(!alive(id))return;
+  const sc=e.seasonCrates,owned=new Map(e.equipment.map(x=>[x.slot,x.item]));
+  body().insertAdjacentHTML('beforeend','<div class="card"><h3>Your season progress</h3><div class="metrics">'+metric('Season XP',p.season.xp)+metric('Season level',p.season.level)+'</div><div class="row"><button data-a-tab="pass">Season Pass</button><button data-a-tab="seasonkills">Kill Championship</button><button data-a-tab="community">Weekly Ranked Cup</button><button data-a-tab="progression">Full progression</button></div></div><div class="card"><h3>Free seasonal crates</h3>'+sc.crates.map(c=>{const item=e.catalog[c.item],equipped=owned.get(item.kind)===c.item;return '<div class="card row"><div style="flex:1"><b>'+esc(item.name)+'</b><p>'+esc(c.xp)+' XP · '+(c.claimed?(equipped?'Equipped':'Owned'):c.eligible?'Ready':'Locked')+'</p></div>'+(c.claimed?'<button data-a-action="season-cosmetic" data-item="'+esc(c.item)+'" data-slot="'+esc(item.kind)+'" data-equipped="'+equipped+'">'+(equipped?'Unequip':'Equip')+'</button>':'<button data-a-action="season-crate" data-item="'+esc(c.item)+'" '+(!c.eligible?'disabled':'')+'>Claim free crate</button>')+'</div>';}).join('')+'</div>');
+ }else if(tab==='curator'){
   if(!window.RXCurator)throw Error('Curator editor unavailable.');window.RXCurator.mount(body(),signal);
  }else if(tab==='network'){
   const d=await api('a/connection',undefined,signal);if(!alive(id))return;
@@ -105,7 +116,7 @@ async function show(tab){
   const d=await api('a/sessions',undefined,signal);if(!alive(id))return;
   body().innerHTML='<div class="card"><h3>Active account sessions</h3><div class="metrics">'+metric('Valid sessions',d.active)+'</div><p class="muted">'+esc(d.note)+' No session tokens or device addresses are displayed.</p>'+d.sessions.map(s=>'<p>'+ (s.current?'<b>Current session</b>':'Other session')+' · expires '+esc(new Date(s.expires).toLocaleString())+'</p>').join('')+'<button data-a-action="revoke" '+(d.active<=1?'disabled':'')+'>Sign out other sessions</button></div><div class="card"><h3>Recovery</h3><p class="muted">Generate and store a one-time recovery code through the existing Parties & More → Recovery panel. Never share your code.</p></div>';
  }
- }catch(e){if(alive(id)&&e.name!=='AbortError'){body().textContent=e.message;status('Could not load this section.',true);}}
+ }catch(e){if(alive(id)&&e.name!=='AbortError'){body().textContent=e.message;status('Could not load this section.',true);}}finally{if(alive(id)&&launcher?.id==='rx-a-season-tab'&&tab!=='seasonhome')body().insertAdjacentHTML('afterbegin','<button data-a-tab="seasonhome">← Season 1 home</button>');}
 }
 async function matchReport(matchId){
  const id=invalidate();controller=new AbortController();body().textContent='Loading match report…';
@@ -124,6 +135,8 @@ root.addEventListener('click',async e=>{
  if(!action||b.disabled)return;
  const id=generation;b.disabled=true;
  try{
+  if(action==='season-crate'){await api('z5/season/crate',{item:b.dataset.item});if(alive(id))await show('seasonhome');}
+  if(action==='season-cosmetic'){await api('z5/equip',b.dataset.equipped==='true'?{item:null,slot:b.dataset.slot}:{item:b.dataset.item});void window.RXDawnCosmetics?.refresh();if(alive(id))await show('seasonhome');}
   if(action==='pass-claim'){await api('a/season/pass',{tier:Number(b.dataset.tier)});if(alive(id))await show('pass');}
   if(action==='pass-equip'){await api('a/season/pass/equip',{tier:b.dataset.tier==='none'?null:Number(b.dataset.tier)});if(alive(id))await show('pass');}
   if(action==='batch-moderation'){
@@ -157,6 +170,20 @@ document.addEventListener('keydown',e=>{
  }
 },true);
 window.addEventListener('rx5-auth-changed',()=>{if(!root.hidden)close(false);});
+// The dedicated home tab is revealed by the server clock, not the device clock.
+const seasonHost=document.querySelector('#z1Home .z1-home-shortcuts')||document.querySelector('#z1Home');
+if(seasonHost){
+ const button=document.createElement('button');button.type='button';button.id='rx-a-season-tab';button.className='secondary';button.hidden=true;button.textContent='Season 1 — New Dawn';button.setAttribute('aria-expanded','false');button.onclick=()=>open('seasonhome',button);seasonHost.append(button);
+ let pending=false;
+ async function refreshSeasonTab(){
+  if(pending)return;pending=true;
+  const c=new AbortController(),timeout=setTimeout(()=>c.abort(),8000);
+  try{const r=await fetch('/rx-api/a/season/schedule',{cache:'no-store',signal:c.signal});if(!r.ok)return;const d=await r.json();if(!Number.isFinite(d.start)||!Number.isFinite(d.end)||!Number.isFinite(d.now)||!['upcoming','active','ended'].includes(d.state))return;
+   seasonSchedule=d;button.hidden=d.state==='upcoming'||d.now<d.start;
+  }catch{}finally{clearTimeout(timeout);pending=false;}
+ }
+ void refreshSeasonTab();setInterval(refreshSeasonTab,60000);
+}
 const routes=[
  ['curator','Curator Studio',['#z1TrainingTabPanel .z1-menu-grid','#rx2HubMenu']],
  ['pass','Season pass titles',['#z1Locker','#rx5CollectionHub .rx5-collection-items','#passMenu']],

@@ -69,3 +69,20 @@ test('server-confirmed hit UI accepts only current match damage and does not fla
  probe.end();badge.hidden=true;
  probe.packet({type:'z2:hit-confirm',id:'current-match',damage:999});assert.equal(badge.hidden,true);
 });
+
+test('dedicated Season 1 home tab opens only after the server season gate',async()=>{
+ const h=makeHarness();
+ let state='upcoming',now=1795550399999;
+ const start=1795550400000,end=start+100000000;
+ h.ctx.fetch=async(path)=>({ok:true,json:async()=>path==='/rx-api/a/season/schedule'?{state,start,end,now}:{}});
+ new vm.Script(fs.readFileSync(__dirname+'/../server/a-control-center.js','utf8')).runInContext(h.ctx);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.ui.getElementById('rx-a-season-tab').hidden,true);
+ const active=makeHarness();
+ active.ctx.fetch=async(path)=>({ok:true,json:async()=>({state:'active',start,end,now:start})});
+ new vm.Script(fs.readFileSync(__dirname+'/../server/a-control-center.js','utf8')).runInContext(active.ctx);
+ await new Promise(resolve=>setImmediate(resolve));
+ const b=active.ui.getElementById('rx-a-season-tab');assert.equal(b.hidden,false);
+ await b.onclick();assert.match(active.ui.getElementById('rx-a').textContent,/NEW DAWN/i);
+ assert.match(active.ui.getElementById('rx-a').textContent,/Sign in through Friends/);
+});
