@@ -127,7 +127,14 @@
     if (p.speed < 0) p.angle += Math.PI;
     p.phase = Math.sin(p.distance * .25);
   }
-  function createPedestrians() {
+  // Stable for each NPC's lifetime; a new city session reshuffles outfits.
+  function dressCivilian(p,seed){
+    let n=(Math.imul((p.id||0)+1,0x9e3779b1)^seed)>>>0;
+    const pick=list=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return list[Math.floor(n/4294967296*list.length)];};
+    Object.assign(p,{color:pick(['#d75b54','#4777ab','#43936b','#e9b957','#e6e0cf','#674b91','#484c56','#c7789a','#218b93','#c87943']),pants:pick(['#354c73','#5d7fa2','#26374e','#85816e','#b7a282','#33343d']),shorts:pick([true,false,false]),skinTone:pick(['#e8ba93','#c4926d','#a66c49','#805035','#f1cdad','#684432']),hair:pick(['#342925','#221e1d','#69513e','#b49a68','#804b32'])});
+    return p;
+  }
+  function createPedestrians(seed) {
     const walkers = [];
     const inset = roadWidth / 2 + 7;
     for (let row = 0; row < roadsY.length - 1; row++) {
@@ -141,7 +148,7 @@
           const walker = {id, hp: 70, mood: 'calm', alarm: 0, downUntil: 0, active: false, left, right, top, bottom, length, color: coats[id % coats.length],
             distance: (id * 83 + i * 137 + 15) % length, speed: (12 + id % 6) * (id % 2 ? -1 : 1)};
           placeWalker(walker);
-          walkers.push(walker);
+          walkers.push(dressCivilian(walker,seed));
         }
       }
     }
@@ -207,7 +214,7 @@
       player: {x: 135, y: 169, z: 0, vz: 0, hp: 100, angle: 0, phase: 0, motion: 'idle', vehicleId: null},
       weapons, weapon: clamp(equipped | 0, 0, Math.max(0, weapons.length - 1)),
       ammo: weapons.map(w => ({mag: w.max, stock: w.reserve})), nextShot: 0, reloadAt: 0,
-      vehicles: fleet, pedestrians: createPedestrians(), officers: [], stores: shops.map((s,i)=>({...s,keeper:{id:10000+i,x:s.x+6,y:s.y,angle:Math.PI,color:'#af8050',hp:70,phase:0},cooldown:0})), interior:null, deathUntil:0, deathLabel:'', career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
+      vehicles: fleet, pedestrians: createPedestrians(Math.floor(random()*4294967296)), officers: [], stores: shops.map((s,i)=>({...s,keeper:{id:10000+i,x:s.x+6,y:s.y,angle:Math.PI,color:'#af8050',hp:70,phase:0},cooldown:0})), interior:null, deathUntil:0, deathLabel:'', career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
       district: '', patrolId: 0, heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0};
     populate(state);
     makeOffer(state);
@@ -269,7 +276,7 @@
       if (!driver && !patrolTaken && state.pedestrians.filter(p=>p.driver).length<12) {
         const route = state.pedestrians.reduce((best, p) => sidewalkGap(p, nearest) < sidewalkGap(best, nearest) ? p : best);
         const newcomer = {...route, id: state.pedestrians.length, driver: nearest.routeName, hp: 70, downUntil: 0, distance: sidewalkPoint(route, nearest), mood: 'flee', alarm: 6};
-        placeWalker(newcomer); state.pedestrians.push(newcomer); populate(state);
+        placeWalker(newcomer); state.pedestrians.push(dressCivilian(newcomer,Math.floor(state.random()*4294967296))); populate(state);
       }
     } else setNotice(state, 'You’re behind the wheel.');
     Object.assign(player, {x: nearest.x, y: nearest.y, z: 0, vz: 0, motion: 'driving', angle: nearest.angle, vehicleId: nearest.id});
