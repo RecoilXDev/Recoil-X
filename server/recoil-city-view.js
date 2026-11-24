@@ -400,7 +400,7 @@
     return m;
   }
   function camera(state,options) {
-    const p=state.player,car=!!p.vehicleId,first=options.mode==='first',yaw=options.yaw;
+    const p=state.player,car=!!p.vehicleId,first=!!state.interior||options.mode==='first',yaw=options.yaw;
     const pitch=clamp(options.tilt+(first?-.045:car?-.15:-.115),-.78,.62);
     const cx=Math.cos(yaw),sy=Math.sin(yaw), focus=p.z+(car?7.45:11.6);
     let x=p.x,y=p.y,z=focus;
@@ -414,7 +414,7 @@
       const scale=Math.max(0,wall-.35)/len;
       x+=dx*scale;y+=dy*scale;z+=dz*scale;
     }
-    return {x,y,z,yaw,pitch,cx,sy,cp:Math.cos(pitch),sp:Math.sin(pitch),far:tiers[state.quality].far,mode:options.mode};
+    return {x,y,z,yaw,pitch,cx,sy,cp:Math.cos(pitch),sp:Math.sin(pitch),far:state.interior?45:tiers[state.quality].far,mode:first?'first':options.mode};
   }
   function viewPoint(p,c) {
     const x=p[0]-c.x,y=p[1]-c.y,z=p[2]-c.z,front=x*c.cx+y*c.sy;
