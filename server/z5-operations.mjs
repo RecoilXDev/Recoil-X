@@ -44,7 +44,9 @@ export function createZ5Operations(db,{clock=Date.now,online=()=>0,roomStats=()=
       at:num(e.at,0,3600000),kind:String(e.kind||'event').slice(0,32),
       text:String(e.text||'Event').slice(0,160)
     })):[]; 
-    return {...summary,timeline,replayKind:'event-timeline',notice:'Event-only replay: the original match did not store a full 3D video.'};
+    const personal=match.players.find(p=>p.id===user.id);
+    const combat=Array.isArray(personal?.combat)?personal.combat.slice(0,4).map(w=>({weapon:num(w.weapon,0,3),triggers:num(w.triggers,0,100000),projectiles:num(w.projectiles,0,100000),hits:num(w.hits,0,100000),damage:num(w.damage,0,1000000),accuracy:w.accuracy==null?null:num(w.accuracy,0,100)})):null;
+    return {...summary,combat,timeline,replayKind:'event-timeline',notice:'Event-only replay: the original match did not store a full 3D video.'};
   }
   function health(user){
     if(!user.admin)throw failure(403,'Administrator access required.');
