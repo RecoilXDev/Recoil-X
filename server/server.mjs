@@ -463,6 +463,7 @@ export function createRecoilServer(options = {}) {
         if(path==='/a/curator/delete')return curator.remove(user,body);
       }
       if(path==='/a/season/pass'){if(!allowed('a-pass:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.claimPass(user,body.tier);}
+      if(path==='/a/season/pass/equip'){if(!allowed('a-pass-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return progression.equipPass(user,body.tier);}
       if(path==='/a/season/reward'){if(!allowed('a-season-equip:'+user.id,12,60000))throw fail(429,'Retry shortly.');return {reward:progression.equipReward(user,body.equipped)};}
       if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
       if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
