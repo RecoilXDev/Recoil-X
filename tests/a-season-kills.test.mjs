@@ -35,3 +35,21 @@ test('ties use wins, then fewer deaths, then stable account ID',()=>{
  {id:1,team:1,kills:10,deaths:0,inputs:50},{id:2,team:0,kills:10,deaths:3,inputs:50},{id:3,team:0,kills:10,deaths:1,inputs:50},{id:4,team:0,kills:10,deaths:1,inputs:50}]});
  assert.equal(p.killsBoard({id:3}).personal.rank,1);assert.equal(p.killsBoard({id:4}).personal.rank,2);assert.equal(p.killsBoard({id:2}).personal.rank,3);assert.equal(p.killsBoard({id:1}).personal.rank,4);db.close();
 });
+
+test('weekly ranked cup uses verified ranked results, respects privacy, dedupes and rolls over',()=>{
+ const db=new DatabaseSync(':memory:');db.exec("CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT,banned INTEGER);INSERT INTO users VALUES(1,'A',0),(2,'B',0)");
+ let now=SEASON_START-1;const p=createAProgression(db,{clock:()=>now});
+ const match={id:'before',mode:'arena',season:'ranked',winner:0,duration:60000,reason:'score',players:[{id:1,team:0,kills:5,deaths:1,inputs:40},{id:2,team:1,kills:1,deaths:5,inputs:40}]};
+ p.settle(match);assert.equal(p.weeklyCup({id:1}).current.personal,null);
+ now=SEASON_START;p.setPublic({id:1},true);
+ p.settle({...match,id:'valid'});p.settle({...match,id:'valid'});
+ p.settle({...match,id:'casual',season:null});p.settle({...match,id:'forfeit',reason:'forfeit'});
+ let c=p.weeklyCup({id:1});assert.equal(c.current.personal.points,3);assert.equal(c.current.players.length,1);
+ assert.equal(p.weeklyCup({id:2}).current.personal.points,1);
+ p.setPublic({id:2},true);assert.equal(p.weeklyCup({id:1}).current.players.length,2);
+ p.setPublic({id:1},false);assert.equal(p.weeklyCup({id:1}).current.players[0].name,'B');
+ db.prepare('UPDATE users SET banned=1 WHERE id=2').run();assert.equal(p.weeklyCup({id:1}).current.players.length,0);
+ now=SEASON_START+7*86400000;c=p.weeklyCup({id:1});assert.equal(c.current.index,1);assert.equal(c.current.personal,null);assert.equal(c.previous.personal.points,3);
+ p.settle({...match,id:'next-week'});assert.equal(p.weeklyCup({id:1}).current.personal.points,3);
+ now=SEASON_END;p.settle({...match,id:'late'});assert.equal(p.weeklyCup({id:1}).state,'ended');assert.equal(p.weeklyCup({id:1}).current.personal,null);db.close();
+});

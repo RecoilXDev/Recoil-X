@@ -76,3 +76,6 @@ User requested deployment after the city expansion and soundtrack changes. This 
 
 ## RC2 — New Dawn season launch preparation
 Season opens November 25, 2026 at midnight Oman time. Forge & Market includes three free, guaranteed, account-bound seasonal inventory crates at 500/1500/3000 verified season XP. They are not paid or random and cannot be traded or auctioned. Their cosmetics are inventory-only; 3D mesh application, tournament expansion, device QA and hosting edge protections remain unfinished. Full deployment validation is required.
+
+### RC3 — community weekly cup
+Friends > Season leaderboard shows an automatically rotating seven-day ranked points cup starting November 25 at midnight Oman time. Ranked arena score/time results award three points for a win and one for a loss, using existing idempotent match settlement. Public display uses the existing reversible opt-in, excludes banned users, and shows the previous week's standings; no currency or inventory prizes. This complements existing private bracket tournaments, not a replacement for public scheduled brackets. Full deployment validation is required.

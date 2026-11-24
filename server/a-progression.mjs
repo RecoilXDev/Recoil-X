@@ -2,6 +2,12 @@
 export const SEASON_START=Date.parse('2026-11-25T00:00:00+04:00');
 export const SEASON_END=Date.parse('2027-04-01T00:00:00+04:00');
 export function seasonState(now){return now<SEASON_START?'upcoming':now<SEASON_END?'active':'ended';}
+const CUP_WEEK=7*86400000;
+export function cupWindow(now){
+ const state=seasonState(now),index=Math.floor((Math.min(SEASON_END-1,Math.max(SEASON_START,now))-SEASON_START)/CUP_WEEK);
+ const start=SEASON_START+index*CUP_WEEK;
+ return {state,index,start,end:Math.min(start+CUP_WEEK,SEASON_END)};
+}
 export const SEASON_GODLY='Sandwyrm';
 const rewardFor=rank=>rank===1?'gold':rank===2?'silver':rank===3?'bronze':'blue';
 export function createAProgression(db,{clock=Date.now}={}){
@@ -11,10 +17,19 @@ export function createAProgression(db,{clock=Date.now}={}){
  CREATE TABLE IF NOT EXISTS rx_a_season_prizes(player INTEGER PRIMARY KEY REFERENCES users(id),rank INTEGER NOT NULL UNIQUE,kills INTEGER NOT NULL,tier TEXT NOT NULL,equipped INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS rx_a_season_closed(id INTEGER PRIMARY KEY CHECK(id=1),closed INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS rx_a_pass_claim(player INTEGER NOT NULL REFERENCES users(id),tier INTEGER NOT NULL,claimed INTEGER NOT NULL,PRIMARY KEY(player,tier));
- CREATE TABLE IF NOT EXISTS rx_a_pass_equipped(player INTEGER PRIMARY KEY REFERENCES users(id),tier INTEGER NOT NULL);`);
+ CREATE TABLE IF NOT EXISTS rx_a_pass_equipped(player INTEGER PRIMARY KEY REFERENCES users(id),tier INTEGER NOT NULL);
+ CREATE TABLE IF NOT EXISTS rx_a_weekly_cup(week INTEGER NOT NULL,player INTEGER NOT NULL REFERENCES users(id),wins INTEGER NOT NULL,matches INTEGER NOT NULL,kills INTEGER NOT NULL,PRIMARY KEY(week,player));`);
  const get=db.prepare('SELECT * FROM rx_a_progress WHERE player=?'),ensure=db.prepare('INSERT OR IGNORE INTO rx_a_progress(player) VALUES(?)');
  const award=db.prepare('INSERT OR IGNORE INTO rx_a_award VALUES(?,?)'),inc=db.prepare('UPDATE rx_a_progress SET xp=xp+?,season_xp=season_xp+?,matches=matches+1,wins=wins+? WHERE player=?');
  const leaderboard=db.prepare('SELECT u.name,p.season_xp,p.wins FROM rx_a_progress p JOIN users u ON u.id=p.player WHERE p.public=1 AND u.banned=0 AND p.season_xp>0 ORDER BY p.season_xp DESC,u.id LIMIT 50');
+ const cupAdd=db.prepare('INSERT INTO rx_a_weekly_cup VALUES(?,?,?,?,?) ON CONFLICT(week,player) DO UPDATE SET wins=wins+excluded.wins,matches=matches+1,kills=kills+excluded.kills');
+ const cupRank=db.prepare('SELECT u.name,c.wins,c.matches,c.kills,c.wins*3+(c.matches-c.wins) points FROM rx_a_weekly_cup c JOIN users u ON u.id=c.player JOIN rx_a_progress p ON p.player=c.player WHERE c.week=? AND u.banned=0 AND p.public=1 ORDER BY points DESC,c.wins DESC,c.kills DESC,c.player ASC LIMIT 50');
+ const cupSelf=db.prepare('SELECT wins,matches,kills,wins*3+(matches-wins) points FROM rx_a_weekly_cup WHERE week=? AND player=?');
+ function weeklyCup(user){
+   const w=cupWindow(clock());
+   const read=index=>({index,start:SEASON_START+index*CUP_WEEK,end:Math.min(SEASON_START+(index+1)*CUP_WEEK,SEASON_END),players:cupRank.all(index),personal:cupSelf.get(index,user.id)||null});
+   return {state:w.state,current:read(w.index),previous:w.index>0?read(w.index-1):null,public:!!get.get(user.id)?.public,notice:'Ranked completed matches only. Three points per win, one per loss; ties use wins, kills and account ID. Opt in to publish your name. Weekly standings reflect current privacy and moderation settings; no prizes.'};
+ }
  const killAdd=db.prepare('INSERT INTO rx_a_season_kills VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET kills=kills+excluded.kills,wins=wins+excluded.wins,deaths=deaths+excluded.deaths');
  const ranking=db.prepare('SELECT k.player,k.kills,k.wins,k.deaths,u.name,COALESCE(p.public,0) visible FROM rx_a_season_kills k JOIN users u ON u.id=k.player LEFT JOIN rx_a_progress p ON p.player=k.player WHERE u.banned=0 ORDER BY k.kills DESC,k.wins DESC,k.deaths ASC,k.player ASC');
  const prize=db.prepare('SELECT rank,kills,tier,equipped FROM rx_a_season_prizes WHERE player=?');
@@ -69,6 +84,7 @@ export function createAProgression(db,{clock=Date.now}={}){
      const won=Number(p.team===result.winner),kills=Math.min(30,Math.max(0,Math.floor(Number(p.kills)||0)));
      const xp=100+won*100+kills*10;
      inc.run(xp,seasonState(now)==='active'?xp:0,won,p.id);
+     if(seasonState(now)==='active'&&result.season&&result.mode==='arena'&&['score','time'].includes(result.reason))cupAdd.run(cupWindow(now).index,p.id,won,1,kills);
      if(seasonState(now)==='active'&&!closed.get()&&!['raid','titanraid','alieninvasion','worldboss','parkour'].includes(result.mode)){
        killAdd.run(p.id,Math.max(0,Math.min(1000,Math.trunc(Number(p.kills)||0))),won,Math.max(0,Math.min(1000,Math.trunc(Number(p.deaths)||0))));
      }
@@ -77,5 +93,5 @@ export function createAProgression(db,{clock=Date.now}={}){
  }
  function setPublic(user,value){if(typeof value!=='boolean')throw Object.assign(Error('Choose a visibility setting.'),{status:400});ensure.run(user.id);db.prepare('UPDATE rx_a_progress SET public=? WHERE player=?').run(+value,user.id);return view(user);}
  function board(){return {state:seasonState(clock()),players:seasonState(clock())==='upcoming'?[]:leaderboard.all(),notice:'Opt-in seasonal leaderboard. Only public game names and earned season XP are listed.'};}
- return {view,settle,setPublic,board,killsBoard,reward,equipReward,finalize,passView,claimPass,equipPass,displayTitle};
+ return {view,settle,setPublic,board,weeklyCup,killsBoard,reward,equipReward,finalize,passView,claimPass,equipPass,displayTitle};
 }

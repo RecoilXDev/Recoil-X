@@ -424,6 +424,7 @@ export function createRecoilServer(options = {}) {
       if(path==='/a/season/kills')return progression.killsBoard(user);
       if(path==='/a/season/reward')return {reward:progression.reward(user)};
       if(path==='/a/community')return progression.board();
+      if(path==='/a/community/cup')return progression.weeklyCup(user);
       if(path==='/a/shield')return shield.status(clients.size);
       if(path==='/a/admin/shield')return shield.inspect(user,clients.size);
       if (['/z5/party','/z5/evolutions','/z5/spectate','/z5/spectate/frame','/z5/anti-cheat/review'].includes(path))
