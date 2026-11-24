@@ -1,5 +1,6 @@
 // RECOIL X Z.5: server-authoritative cosmetic economy and match progression.
 // Existing browser shop coins remain unchanged. This module uses separate Z.5 points.
+import {seasonState} from './a-progression.mjs';
 import { backupBeforeMigration } from './overdrive-store.mjs';
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const isQty=n=>Number.isSafeInteger(n)&&n>=1&&n<=100;
@@ -9,8 +10,12 @@ const catalog=Object.freeze({
   ion_skin:{name:'Ion Rifle Finish',kind:'weapon',tradeable:true},
   winter_knife:{name:'Winter Edge Knife Finish',kind:'knife',tradeable:true},
   bronze_badge:{name:'Bronze Pilot Badge',kind:'badge',tradeable:true},
-  aero_helmet:{name:'Aero Helmet',kind:'outfit',tradeable:true}
+  aero_helmet:{name:'Aero Helmet',kind:'outfit',tradeable:true},
+  dawn_rifle:{name:'New Dawn — Sunrise Rifle Finish',kind:'weapon',tradeable:false},
+  dawn_knife:{name:'New Dawn — Dune Knife Finish',kind:'knife',tradeable:false},
+  dawn_helmet:{name:'New Dawn — Sunburst Helmet',kind:'outfit',tradeable:false}
 });
+const dawnCrates=Object.freeze([{item:'dawn_rifle',xp:500},{item:'dawn_knife',xp:1500},{item:'dawn_helmet',xp:3000}]);
 const recipes=Object.freeze({
   ion_skin:{scrap:4,points:40},
   winter_knife:{scrap:6,points:70},
@@ -79,11 +84,29 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
     for(const a of oldA){addInventory(a.seller,a.item,a.quantity);q("UPDATE rx5_auctions SET status='expired',closed=? WHERE id=?").run(now,a.id);}
     for(const t of oldT){addInventory(t.sender,t.give_item,t.give_qty);q("UPDATE rx5_trades SET status='expired',closed=? WHERE id=?").run(now,t.id);}
   }
+  function seasonCrates(user,now=clock()){
+    const state=seasonState(now);
+    const hasProgress=!!q("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rx_a_progress'").get();
+    const xp=hasProgress?(q('SELECT season_xp FROM rx_a_progress WHERE player=?').get(user.id)?.season_xp||0):0;
+    return {state,xp,crates:dawnCrates.map(c=>({...c,claimed:(itemCount.get(user.id,c.item)?.quantity||0)>0,eligible:state==='active'&&xp>=c.xp}))};
+  }
+  function claimSeasonCrate(user,body){
+    const crate=dawnCrates.find(c=>c.item===body?.item);
+    if(!crate)throw error(400,'Unknown seasonal crate.');
+    return transaction(()=>{
+      const current=seasonCrates(user).crates.find(c=>c.item===crate.item);
+      if(current.claimed)return {ok:true,item:crate.item,alreadyClaimed:true};
+      if(!current.eligible)throw error(403,'Seasonal crate is locked.');
+      addInventory(user.id,crate.item,1);
+      log(user.id,'new-dawn-crate',crate.item);
+      return {ok:true,item:crate.item,alreadyClaimed:false};
+    });
+  }
   function view(user) {
     return transaction(()=>{
       settleExpired();
       const now=clock(),id=user.id;
-      return {userId:id,points:balance(id),catalog,recipes,inventory:inventory.all(id),equipment:q('SELECT slot,item FROM rx5_equipment WHERE account=?').all(id),
+      return {userId:id,points:balance(id),catalog,recipes,seasonCrates:seasonCrates(user,now),inventory:inventory.all(id),equipment:q('SELECT slot,item FROM rx5_equipment WHERE account=?').all(id),
         listings:q("SELECT a.id,u.name seller,a.item,a.quantity,a.price,a.expires FROM rx5_auctions a JOIN users u ON u.id=a.seller WHERE a.status='open' AND a.expires>? ORDER BY a.id DESC LIMIT 50").all(now),
         myListings:q("SELECT id,item,quantity,price,status FROM rx5_auctions WHERE seller=? ORDER BY id DESC LIMIT 30").all(id),
         trades:q("SELECT t.id,us.name sender,ur.name recipient,t.give_item,t.give_qty,t.want_item,t.want_qty,t.status,t.expires,t.sender sender_id,t.recipient recipient_id FROM rx5_trades t JOIN users us ON us.id=t.sender JOIN users ur ON ur.id=t.recipient WHERE t.sender=? OR t.recipient=? ORDER BY t.id DESC LIMIT 40").all(id,id),
@@ -123,7 +146,7 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
   }
   function list(user,body){
     const item=safeItem(body?.item),quantity=body?.quantity,price=body?.price;
-    if(!item||!isQty(quantity)||!isPrice(price))throw error(400,'Invalid auction listing.');
+    if(!item||!catalog[item].tradeable||!isQty(quantity)||!isPrice(price))throw error(400,'Invalid auction listing.');
     return transaction(()=>{
       settleExpired();
       if(q("SELECT COUNT(*) n FROM rx5_auctions WHERE seller=? AND status='open'").get(user.id).n>=8)throw error(409,'Maximum 8 active listings.');
@@ -161,7 +184,7 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
   function offer(user,body){
     const recipient=player(body?.name);
     const give=safeItem(body?.give),want=safeItem(body?.want),giveQty=body?.giveQty,wantQty=body?.wantQty;
-    if(recipient.id===user.id||!give||!want||!isQty(giveQty)||!isQty(wantQty))throw error(400,'Invalid trade offer.');
+    if(recipient.id===user.id||!give||!want||!catalog[give].tradeable||!catalog[want].tradeable||!isQty(giveQty)||!isQty(wantQty))throw error(400,'Invalid trade offer.');
     return transaction(()=>{
       settleExpired();
       if(q("SELECT COUNT(*) n FROM rx5_trades WHERE sender=? AND status='open'").get(user.id).n>=8)throw error(409,'Maximum 8 active offers.');
@@ -218,5 +241,5 @@ export function createZ5Economy(db,{clock=Date.now}={}) {
       return {awarded};
     });
   }
-  return {view,onDailyCheckin,craft,equip,list,buy,cancelListing,offer,accept,decline,onMatchSettled};
+  return {view,claimSeasonCrate,onDailyCheckin,craft,equip,list,buy,cancelListing,offer,accept,decline,onMatchSettled};
 }

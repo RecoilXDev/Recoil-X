@@ -22,7 +22,7 @@ document.body.append(overlay);const dataNode=()=>document.getElementById('rx5-ma
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const message=(t,err=false)=>{notice().textContent=t;notice().classList.toggle('error',err)};
 const tag=(name,caption)=>'<label>'+esc(caption)+'<input name="'+esc(name)+'" required></label>';
-const names=o=>Object.entries(o.catalog).map(([id,item])=>'<option value="'+esc(id)+'">'+esc(item.name)+'</option>').join('');
+const names=o=>Object.entries(o.catalog).filter(([,item])=>item.tradeable).map(([id,item])=>'<option value="'+esc(id)+'">'+esc(item.name)+'</option>').join('');
 const label=(o,id)=>o.catalog[id]?.name||id;
 async function api(path,body) {
  const token=sessionStorage.getItem('rx5-token');
@@ -35,18 +35,19 @@ async function api(path,body) {
 async function refresh(){
  const [d,c]=await Promise.all([api('economy'),api('challenges')]);
  const owned=d.inventory.filter(x=>x.quantity>0);
- const choices=names(d),invChoices=owned.map(x=>'<option value="'+esc(x.item)+'">'+esc(label(d,x.item))+' ('+esc(x.quantity)+')</option>').join('');
+ const choices=names(d),invChoices=owned.filter(x=>d.catalog[x.item]?.tradeable).map(x=>'<option value="'+esc(x.item)+'">'+esc(label(d,x.item))+' ('+esc(x.quantity)+')</option>').join('');
  const equip=d.equipment.map(x=>esc(x.slot)+': '+esc(label(d,x.item))).join(' · ')||'No Z.5 cosmetics equipped yet';
  let html='<p class="muted">'+esc(d.note)+' Crafted cosmetics are saved in Z.5, but not yet applied to the existing 3D weapon meshes.</p>';
  html+='<section class="grid"><div class="card"><h3>Wallet</h3><strong>'+esc(d.points)+' Z.5 points</strong><p class="muted">Earn points in valid matches and by daily check-in.</p></div><div class="card"><h3>Match stats</h3><p>'+esc(d.stats.matches)+' matches / '+esc(d.stats.wins)+' wins</p><p>'+esc(d.stats.kills)+' eliminations / '+esc(d.stats.deaths)+' deaths</p></div></section>';
  html+='<section class="card"><h3>My inventory</h3>'+(!owned.length?'<p>No items. Claim daily supplies in the Z.5 Lab.</p>':owned.map(x=>'<div class="line row"><strong>'+esc(label(d,x.item))+' ×'+esc(x.quantity)+'</strong>'+(d.catalog[x.item]?.kind!=='material'?'<button type="button" data-action="equip" data-item="'+esc(x.item)+'">Equip</button>':'')+'</div>').join(''))+'<p class="muted">'+equip+'</p></section>';
+ if(d.seasonCrates){const sc=d.seasonCrates;html+='<section class="card"><h3>New Dawn · free seasonal crates</h3><p>'+esc(sc.state)+' · '+esc(sc.xp)+' season XP. Guaranteed rewards; no currency or random drops. Account-bound inventory cosmetics, not applied to 3D meshes.</p>'+sc.crates.map(c=>'<div class="line row"><strong>'+esc(label(d,c.item))+'</strong><span>'+esc(c.xp)+' XP</span>'+(c.claimed?'<span>Owned</span>':'<button data-action="season-crate" data-item="'+esc(c.item)+'" '+(!c.eligible?'disabled':'')+'>Open free crate</button>')+'</div>').join('')+'</section>';}
  html+='<section class="card"><h3>Cosmetic crafting</h3><div class="grid">'+Object.entries(d.recipes).map(([key,recipe])=>'<div><strong>'+esc(label(d,key))+'</strong><p class="muted">'+esc(recipe.scrap)+' Kingdom Scrap + '+esc(recipe.points)+' points</p><button type="button" data-action="craft" data-item="'+esc(key)+'">Craft</button></div>').join('')+'</div></section>';
  html+='<section class="card"><h3>Auction house</h3><p class="muted">Z.5-only market. Listings escrow items and automatically expire after 24 hours.</p>';
- html+='<form class="row" data-form="list"><label>Item<select name="item" required>'+invChoices+'</select></label><label>Quantity<input name="quantity" type="number" min="1" max="100" value="1" required></label><label>Price in Z.5 points<input name="price" type="number" min="1" max="100000" value="30" required></label><button '+(!owned.length?'disabled':'')+'>List item</button></form>';
+ html+='<form class="row" data-form="list"><label>Item<select name="item" required>'+invChoices+'</select></label><label>Quantity<input name="quantity" type="number" min="1" max="100" value="1" required></label><label>Price in Z.5 points<input name="price" type="number" min="1" max="100000" value="30" required></label><button '+(!invChoices?'disabled':'')+'>List item</button></form>';
  html+='<h3 style="margin-top:16px">Open listings</h3>'+(!d.listings.length?'<p>No active listings.</p>':d.listings.map(x=>'<div class="line row"><span>'+esc(label(d,x.item))+' ×'+esc(x.quantity)+' by '+esc(x.seller)+' — '+esc(x.price)+' points</span><button type="button" data-action="buy" data-id="'+esc(x.id)+'">Buy</button></div>').join(''));
  html+='<h3 style="margin-top:16px">My listings</h3>'+(!d.myListings.length?'<p>None yet.</p>':d.myListings.map(x=>'<div class="line row"><span>#'+esc(x.id)+' '+esc(label(d,x.item))+' ×'+esc(x.quantity)+' — '+esc(x.status)+'</span>'+(x.status==='open'?'<button type="button" data-action="cancel" data-id="'+esc(x.id)+'">Cancel</button>':'')+'</div>').join(''))+'</section>';
  html+='<section class="card"><h3>Direct trading</h3><p class="muted">Trade offers escrow your offered item. Only the invited player can accept.</p>';
- html+='<form class="row" data-form="offer">'+tag('name','Recipient account')+'<label>Give<select name="give">'+invChoices+'</select></label><label>Quantity<input type="number" name="giveQty" min="1" max="100" value="1" required></label><label>Want<select name="want">'+choices+'</select></label><label>Quantity<input type="number" name="wantQty" min="1" max="100" value="1" required></label><button '+(!owned.length?'disabled':'')+'>Offer</button></form>';
+ html+='<form class="row" data-form="offer">'+tag('name','Recipient account')+'<label>Give<select name="give">'+invChoices+'</select></label><label>Quantity<input type="number" name="giveQty" min="1" max="100" value="1" required></label><label>Want<select name="want">'+choices+'</select></label><label>Quantity<input type="number" name="wantQty" min="1" max="100" value="1" required></label><button '+(!invChoices?'disabled':'')+'>Offer</button></form>';
  html+='<h3 style="margin-top:16px">Trade history</h3>'+(!d.trades.length?'<p>No offers.</p>':d.trades.map(x=>'<div class="line row"><span>#'+esc(x.id)+' '+esc(x.sender)+' → '+esc(x.recipient)+': '+esc(label(d,x.give_item))+' ×'+esc(x.give_qty)+' for '+esc(label(d,x.want_item))+' ×'+esc(x.want_qty)+' — '+esc(x.status)+'</span>'+(x.status==='open'?(x.recipient_id===d.userId?'<button type="button" data-action="accept" data-id="'+esc(x.id)+'">Accept</button>':'')+'<button type="button" data-action="decline" data-id="'+esc(x.id)+'">'+(x.recipient_id===d.userId?'Decline':'Cancel')+'</button>':'')+'</div>').join(''))+'</section>';
  html+='<section class="card"><h3>Rivalries</h3>'+(d.rivals.length?d.rivals.map(x=>'<div class="line">'+esc(x.opponent)+' · '+esc(x.wins)+' wins / '+esc(x.losses)+' losses</div>').join(''):'<p>Finish multiplayer matches to build a rivalry history.</p>')+'</section>';
  html+='<section class="card"><h3>Daily Challenges · '+esc(c.day)+'</h3><p class="muted">Progress is recorded by the game server.</p>'+c.daily.map(x=>'<div class="line row"><span><b>'+esc(x.name)+'</b> '+esc(x.description)+' — '+esc(Math.min(x.progress,x.target))+'/'+esc(x.target)+' (+'+esc(x.reward)+' points)</span>'+(x.claimed?'<span>Claimed ✓</span>':'<button type="button" data-action="daily-claim" data-kind="'+esc(x.kind)+'" '+(x.progress<x.target?'disabled':'')+'>Claim</button>')+'</div>').join('')+'</section>';
@@ -70,11 +71,11 @@ dataNode().addEventListener('submit',async e=>{
 dataNode().addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b)return;
  const action=b.dataset.action,item=b.dataset.item,id=Number(b.dataset.id);
- const endpoints={craft:'craft',equip:'equip',buy:'auction/buy',cancel:'auction/cancel',accept:'trade/accept',decline:'trade/decline','daily-claim':'challenges/claim','story-claim':'story/claim',prestige:'prestige'};
+ const endpoints={'season-crate':'season/crate',craft:'craft',equip:'equip',buy:'auction/buy',cancel:'auction/cancel',accept:'trade/accept',decline:'trade/decline','daily-claim':'challenges/claim','story-claim':'story/claim',prestige:'prestige'};
  if(!endpoints[action])return;
  if(['buy','cancel','accept','decline'].includes(action)&&!confirm('Confirm this '+action+' action?'))return;
  b.disabled=true;
- try{const payload=['craft','equip'].includes(action)?{item}:action==='daily-claim'?{kind:b.dataset.kind}:action==='story-claim'?{chapter:Number(b.dataset.chapter)}:action==='prestige'?{}:{id};await api(endpoints[action],payload);await refresh();message(action+' completed.')}
+ try{const payload=['craft','equip','season-crate'].includes(action)?{item}:action==='daily-claim'?{kind:b.dataset.kind}:action==='story-claim'?{chapter:Number(b.dataset.chapter)}:action==='prestige'?{}:{id};await api(endpoints[action],payload);await refresh();message(action+' completed.')}
  catch(error){message(error.message,true);b.disabled=false}
 });
 window.RXZ5Economy={open};

@@ -527,6 +527,7 @@ export function createRecoilServer(options = {}) {
         if (path === '/z5/challenges/claim') return challenges.claimDaily(user,body);
         if (path === '/z5/story/claim') return challenges.claimStory(user,body);
         if (path === '/z5/prestige') return challenges.prestige(user);
+        if (path === '/z5/season/crate') return economy.claimSeasonCrate(user,body);
         if (path === '/z5/craft') return economy.craft(user,body);
         if (path === '/z5/equip') return economy.equip(user,body);
         if (path === '/z5/auction/list') return economy.list(user,body);

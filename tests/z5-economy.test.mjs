@@ -90,3 +90,19 @@ test('trusted match settlement awards are idempotent and track rivalries',()=>{
  assert.equal(f.eco.view(a).stats.kills,2);
  f.db.close();
 });
+test('New Dawn crates require seasonal XP and active dates, are idempotent and account-bound',()=>{
+ const f=fixture(),[a,b]=f.users;
+ f.db.exec('CREATE TABLE rx_a_progress(player INTEGER PRIMARY KEY,season_xp INTEGER NOT NULL);INSERT INTO rx_a_progress VALUES(1,3000)');
+ assert.throws(()=>f.eco.claimSeasonCrate(a,{item:'dawn_rifle'}),{status:403});
+ f.next(5);
+ assert.equal(f.eco.view(a).seasonCrates.state,'active');
+ assert.throws(()=>f.eco.claimSeasonCrate(b,{item:'dawn_rifle'}),{status:403});
+ assert.equal(f.eco.claimSeasonCrate(a,{item:'dawn_rifle'}).alreadyClaimed,false);
+ assert.equal(f.eco.claimSeasonCrate(a,{item:'dawn_rifle'}).alreadyClaimed,true);
+ assert.equal(f.eco.view(a).inventory.find(x=>x.item==='dawn_rifle').quantity,1);
+ assert.equal(f.eco.equip(a,{item:'dawn_rifle'}).ok,true);
+ assert.throws(()=>f.eco.list(a,{item:'dawn_rifle',quantity:1,price:1}),{status:400});
+ assert.throws(()=>f.eco.offer(a,{name:'Beta',give:'dawn_rifle',giveQty:1,want:'scrap',wantQty:1}),{status:400});
+ assert.throws(()=>f.eco.offer(b,{name:'Alpha',give:'scrap',giveQty:1,want:'dawn_rifle',wantQty:1}),{status:400});
+ f.next(150);assert.throws(()=>f.eco.claimSeasonCrate(a,{item:'dawn_knife'}),{status:403});f.db.close();
+});
