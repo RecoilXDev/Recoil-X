@@ -19,3 +19,19 @@ test('Update A control center opens and closes without replacing the Sand quick-
  assert.equal(h.ui.querySelector('#rx-a').hidden,true);
  assert.equal(h.ui.querySelector('#rx-a-body').textContent,'');
 });
+
+
+test('server-confirmed hit UI accepts only current match damage and does not flash',()=>{
+ const bridge="globalThis.aHitTest={enter:()=>{mode='crown-overdrive';phase='playing';paused=false;pl.alive=true;z2Live.match={id:'current-match'};},packet:z2Packet,end:()=>{z2Live.match=null;},live:z2Live};";
+ const h=makeHarness({},undefined,null,bridge),probe=h.ctx.aHitTest,badge=h.ui.querySelector('#rxAHitConfirm');
+ assert.ok(badge);
+ probe.enter();
+ badge.hidden=true;
+ probe.packet({type:'z2:hit-confirm',id:'stale-match',damage:22});assert.equal(badge.hidden,true);
+ probe.packet({type:'z2:hit-confirm',id:'current-match',damage:-3});assert.equal(badge.hidden,true);
+ probe.packet({type:'z2:hit-confirm',id:'current-match',damage:22});assert.equal(badge.hidden,false);
+ assert.match(badge.textContent,/22/);
+ assert.ok(probe.live.hitConfirmUntil>0);
+ probe.end();badge.hidden=true;
+ probe.packet({type:'z2:hit-confirm',id:'current-match',damage:999});assert.equal(badge.hidden,true);
+});
