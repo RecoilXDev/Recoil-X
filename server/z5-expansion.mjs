@@ -19,6 +19,9 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
     CREATE TABLE IF NOT EXISTS rx5_recovery(
       player INTEGER PRIMARY KEY REFERENCES users(id),
       code_hash TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS rx5_input_evidence(
+      id INTEGER PRIMARY KEY,player INTEGER NOT NULL REFERENCES users(id),at INTEGER NOT NULL,kind TEXT NOT NULL);
+    CREATE INDEX IF NOT EXISTS rx5_input_evidence_player ON rx5_input_evidence(player,id DESC);
   `);
   const parties=createFriendParties();
   const audit=createAntiCheat({maxSpeed:110,now:clock});
@@ -31,7 +34,17 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   const rememberMatch=db.prepare('INSERT OR IGNORE INTO rx5_evo_awards(match_id) VALUES(?)');
   const saveRecovery=db.prepare('INSERT INTO rx5_recovery(player,code_hash,expires) VALUES(?,?,?) ON CONFLICT(player) DO UPDATE SET code_hash=excluded.code_hash,expires=excluded.expires');
   const getRecovery=db.prepare('SELECT code_hash,expires FROM rx5_recovery WHERE player=?');
-  const dropRecovery=db.prepare('DELETE FROM rx5_recovery WHERE player=?');
+  const consumeRecovery=db.prepare('DELETE FROM rx5_recovery WHERE player=? AND code_hash=? AND expires>?');
+  const recentEvidence=db.prepare('SELECT at FROM rx5_input_evidence WHERE player=? ORDER BY id DESC LIMIT 1');
+  const insertEvidence=db.prepare('INSERT INTO rx5_input_evidence(player,at,kind) VALUES(?,?,?)');
+  const trimEvidence=db.prepare('DELETE FROM rx5_input_evidence WHERE player=? AND id NOT IN (SELECT id FROM rx5_input_evidence WHERE player=? ORDER BY id DESC LIMIT 100)');
+  const listEvidence=db.prepare('SELECT at,kind FROM rx5_input_evidence WHERE player=? ORDER BY id DESC LIMIT 100');
+  function onRejectedInput(id,kind,at=clock()){
+    // Only fixed server-defined reason labels, no chat, secrets, or raw packets. Throttle storage per account.
+    if(!Number.isSafeInteger(id)||!['invalid-input','input-flood'].includes(kind))return;
+    const last=recentEvidence.get(id);if(last&&at-last.at<5000)return;
+    insertEvidence.run(id,at,kind);trimEvidence.run(id,id);
+  }
   const changePassword=db.prepare('UPDATE users SET salt=?,secret=? WHERE id=?');
   const revokeSessions=db.prepare('DELETE FROM sessions WHERE account=?');
   function loadEvolutionLevels(playerIds){
@@ -47,7 +60,7 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   const list=()=>[...streamMeta.values()].filter(m=>m.ends>clock()).map(({code,mode})=>({code,mode}));
   function onStart({matchId}){usedWeapons.set(matchId,new Map());}
   function onInput(id,data){const room=overdrive.roomInfo(id),matchId=room?.matchId;
-    if(!matchId||!Number.isInteger(data.weapon)||data.weapon<0||data.weapon>30)return;
+    if(!matchId||!Number.isInteger(data.weapon)||data.weapon<0||data.weapon>3)return;
     const map=usedWeapons.get(matchId);if(!map)return;
     const player=map.get(id)||new Map();player.set(data.weapon,(player.get(data.weapon)||0)+1);map.set(id,player);
   }
@@ -67,7 +80,7 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
   function onEnd(matchId,result){
     streamMeta.delete(matchId);streams.close(matchId);cameras.clear(matchId);lastFrame.delete(matchId);
     const usage=usedWeapons.get(matchId);usedWeapons.delete(matchId);
-    if(result?.reason==='remake'||!usage||!result?.players?.length)return;
+    if(result?.reason==='remake'||!usage||!result?.players?.length||![0,1].includes(result.winner))return;
     db.exec('BEGIN IMMEDIATE');
     try{
       if(rememberMatch.run(matchId).changes){
@@ -107,7 +120,7 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
       const name=new URL(request.url,'http://localhost').searchParams.get('name');
       const target=byName.get(canonical(name));
       if(!target)throw fail(404,'Unknown account.');
-      return {player:target.name,evidence:audit.evidence(target.id),notice:'Heuristics only; human review required.'};
+      return {player:target.name,evidence:audit.evidence(target.id),rejectedInputs:listEvidence.all(target.id),notice:'Heuristics and rejected-input evidence only; network jitter may affect counts. Human review required; no automatic bans.'};
     }
     throw fail(404,'Unknown expansion route.');
   }
@@ -193,10 +206,15 @@ export function createZ5Expansion({db,fail,allowed,clients,isFriend,contact,over
     if(provided.length!==expected.length||!timingSafeEqual(provided,expected))throw fail(401,'Invalid or expired recovery code.');
     const salt=randomBytes(16).toString('hex'),secret=await passwordHash(password,salt);
     db.exec('BEGIN IMMEDIATE');
-    try{changePassword.run(salt,secret,user.id);revokeSessions.run(user.id);dropRecovery.run(user.id);db.exec('COMMIT');}
+    try{
+      // Recheck and consume AFTER async hashing, in the same write transaction as password/session changes.
+      // A concurrent reset, newly issued code, or expiry invalidates this request.
+      if(consumeRecovery.run(user.id,saved.code_hash,clock()).changes!==1)throw fail(401,'Invalid or expired recovery code.');
+      changePassword.run(salt,secret,user.id);revokeSessions.run(user.id);db.exec('COMMIT');
+    }
     catch(e){db.exec('ROLLBACK');throw e;}
     cutConnection(clients.get(user.id),'Password recovered. Sign in again.');
     return {ok:true,message:'Password updated. Sign in with your new password.'};
   }
-  return {get,post,reset,onStart,onInput,onFrame,onEnd,loadEvolutionLevels};
+  return {get,post,reset,onStart,onInput,onRejectedInput,onFrame,onEnd,loadEvolutionLevels};
 }

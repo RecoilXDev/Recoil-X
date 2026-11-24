@@ -136,6 +136,7 @@ export function createRecoilServer(options = {}) {
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
     onLiveInput:(...args)=>expansion?.onInput(...args),
+    onLiveRejected:(...args)=>{try{expansion?.onRejectedInput(...args);}catch(error){console.error('Input evidence write failed',error.message);}},
     onLiveFrame:e=>expansion?.onFrame(e),
     onLiveEnd:(...args)=>expansion?.onEnd(...args),
     onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{z5.recordClanWar(result,now);}}}
@@ -526,7 +527,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:'priority-reliability-1'} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);

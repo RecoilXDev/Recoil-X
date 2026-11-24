@@ -12,14 +12,14 @@ document.body.append(overlay);
 let tab='party',timer=null,broadcastCode=null;
 const status=(message,bad=false)=>{const e=$('rx5-exp-status');e.textContent=message||'';e.style.color=bad?'#ffa7a7':'#ffcf88'};
 const token=()=>sessionStorage.getItem('rx5-token');
-async function api(path,body,auth=true){
+async function api(path,body,auth=true,signal=undefined){
  const headers={'Content-Type':'application/json'};if(auth){if(!token())throw Error('Sign in through Career & Clans first.');headers.Authorization='Bearer '+token();}
- const response=await fetch('/rx-api/'+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+ const response=await fetch('/rx-api/'+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal});
  const payload=await response.json();if(!response.ok)throw Error(payload.error||'Request failed.');return payload;
 }
 const body=()=> $('rx5-exp-body');
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function close(){stop();overlay.classList.remove('open');status('');}
+function close(){stop();body().replaceChildren();overlay.classList.remove('open');status('');}
 async function open(){overlay.classList.add('open');document.exitPointerLock?.();await show(tab);}
 async function show(next){stop();tab=next;body().textContent='Loading...';status('');
  try{
@@ -42,7 +42,7 @@ async function show(next){stop();tab=next;body().textContent='Loading...';status
  }else if(next==='recovery'){
  body().innerHTML='<div class="section"><h3>Create your one-time recovery code</h3><p class="muted">While signed in, generate and store this code offline. It expires after 30 days and can reset your password without an email address.</p><button data-do="recovery-create">Generate code</button><p id="rx5-exp-secret"></p></div><div class="section"><h3>Recover an account</h3><input id="rx5-exp-name" autocomplete="username" placeholder="Account name"><input id="rx5-exp-code" autocomplete="off" placeholder="64-character recovery code"><input id="rx5-exp-password" type="password" autocomplete="new-password" placeholder="New password (10+ characters)"><button data-do="recovery-reset">Reset password</button></div>';
  }else if(next==='network'){
- body().innerHTML='<div class="section"><h3>Connection health</h3><p class="muted">Five authenticated HTTP request samples show approximate RTT and variation; failed requests are not a TCP packet-loss reading.</p><button data-do="measure">Measure now</button><p id="rx5-exp-quality"></p></div>';
+ body().innerHTML='<div class="section"><h3>Connection health</h3><p class="muted">Five lightweight server health requests measure HTTP response time and variation without reconnecting or interrupting multiplayer. Failed requests are not raw network packet loss.</p><button data-do="measure">Measure now</button><p id="rx5-exp-quality"></p></div>';
  }
  }catch(e){status(e.message,true);body().textContent=e.message;}
 }
@@ -73,15 +73,26 @@ overlay.addEventListener('click',async e=>{
  else if(action==='recovery-reset'){const name=$('rx5-exp-name').value,code=$('rx5-exp-code').value,password=$('rx5-exp-password').value;
    const d=await api('recovery/reset',{name,code,password},false);status(d.message||'Password updated.');$('rx5-exp-password').value='';$('rx5-exp-code').value='';}
  else if(action==='measure'){
-   const samples=[];let errors=0;for(let i=0;i<5;i++){const start=performance.now();try{await api('z5/diagnostics');samples.push(Math.round(performance.now()-start));}catch{errors++;}}
-   const avg=samples.length?Math.round(samples.reduce((a,b)=>a+b,0)/samples.length):null;
-   $('rx5-exp-quality').textContent='Average HTTP RTT: '+(avg===null?'N/A':avg+' ms')+' · HTTP failures: '+errors+' / 5. Actual network packet loss cannot be inferred from this test.';
+   if(btn.disabled)return;btn.disabled=true;
+   const output=$('rx5-exp-quality'),samples=[];let errors=0;
+   try{
+     for(let i=0;i<5;i++){
+       if(!overlay.classList.contains('open')||tab!=='network')break;
+       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),3500),start=performance.now();
+       try{await api('health',undefined,false,controller.signal);samples.push(Math.round(performance.now()-start));}
+       catch{errors++;}finally{clearTimeout(timeout);}
+       if(output)output.textContent='Sample '+(i+1)+' / 5…';
+     }
+     const avg=samples.length?Math.round(samples.reduce((a,b)=>a+b,0)/samples.length):null;
+     const jitter=samples.length>1?Math.round(samples.slice(1).reduce((sum,n,i)=>sum+Math.abs(n-samples[i]),0)/(samples.length-1)):null;
+     if(output)output.textContent='Mean HTTP RTT: '+(avg===null?'N/A':avg+' ms')+' · Variation: '+(jitter===null?'N/A':jitter+' ms')+' · HTTP failures: '+errors+' / '+(samples.length+errors)+'. Not TCP packet loss.';
+   }finally{btn.disabled=false;}
  }
  }catch(error){status(error.message,true)}
 });
 overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close()});
-function addEntry(){if($('rx5-exp-entry'))return;const host=$('rx5-native-main')||$('rx5More')||$('rxSimpleActions')||document.body;
+function addEntry(){if($('rx5-exp-entry'))return;const host=$('rx5More')||$('rx5-native-main')||$('rxSimpleActions')||document.body;
  const b=document.createElement('button');b.type='button';b.id='rx5-exp-entry';b.textContent='Z.5 Parties & More';b.style.cssText='min-height:40px;margin:7px;background:#674727;border:1px solid #ac8550;color:#ffdfaa;border-radius:8px;padding:9px;cursor:pointer';b.onclick=open;host.append(b);
 }
 addEntry();window.RXZ5Expansion={open,close};

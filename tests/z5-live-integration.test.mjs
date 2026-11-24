@@ -66,3 +66,51 @@ test('broadcast is host-only, opt-in, delayed, and requires a joined spectator',
  assert.equal(f.x.get(beta,'/z5/spectate/frame',{url:'/rx-api/z5/spectate/frame?code=P12345'}).frame.players.length,1);
  f.db.close();
 });
+
+
+test('concurrent recovery requests consume the same code at most once',async()=>{
+ const f=fixture(),user=f.users.get(1),code=f.x.post(user,'/z5/recovery/create',{}).code;
+ const req={socket:{remoteAddress:'127.0.0.1'}};
+ const result=await Promise.allSettled([
+  f.x.reset(req,{name:'Alpha',code,password:'first-long-password'}),
+  f.x.reset(req,{name:'Alpha',code,password:'second-long-password'})
+ ]);
+ assert.equal(result.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(result.filter(r=>r.status==='rejected'&&r.reason.status===401).length,1);
+ assert.equal(f.db.prepare('SELECT count(*) n FROM rx5_recovery').get().n,0);
+ f.db.close();
+});
+test('a code that expires while hashing is rejected inside the password write transaction',async()=>{
+ const f=fixture(),user=f.users.get(1),code=f.x.post(user,'/z5/recovery/create',{}).code;
+ const pending=f.x.reset({socket:{remoteAddress:'127.0.0.1'}},{name:'Alpha',code,password:'valid-long-password'});
+ f.clock(1000+31*86400000);
+ await assert.rejects(pending,{status:401});
+ assert.equal(f.db.prepare('SELECT secret FROM users WHERE id=1').get().secret,null);
+ f.db.close();
+});
+test('rejected input evidence persists, is throttled, bounded, and admin-only',()=>{
+ const f=fixture(),a=f.users.get(1),b=f.users.get(2);
+ f.x.onRejectedInput(2,'invalid-input',1000);
+ f.x.onRejectedInput(2,'input-flood',1001);
+ f.x.onRejectedInput(2,'untrusted label',7000);
+ for(let i=0;i<110;i++)f.x.onRejectedInput(2,'input-flood',7000+i*6000);
+ const request={url:'/rx-api/z5/anti-cheat/review?name=Beta'};
+ assert.throws(()=>f.x.get(b,'/z5/anti-cheat/review',request),{status:403});
+ const report=f.x.get(a,'/z5/anti-cheat/review',request);
+ assert.equal(report.rejectedInputs.length,100);
+ assert.ok(report.rejectedInputs.every(row=>row.kind==='input-flood'));
+ assert.match(report.notice,/no automatic bans/);
+ f.db.close();
+});
+test('invalid weapon indices and no-winner matches cannot award mastery XP',()=>{
+ const f=fixture(),a=f.users.get(1);
+ f.x.onStart({matchId:'m1'});
+ f.x.onInput(1,{weapon:30});
+ f.x.onEnd('m1',{winner:0,reason:'score',players:[{id:1,team:0,kills:3,inputs:20}]});
+ assert.equal(f.x.get(a,'/z5/evolutions').weapons.length,0);
+ f.x.onStart({matchId:'m1'});
+ f.x.onInput(1,{weapon:0});
+ f.x.onEnd('m1',{winner:null,reason:'abandoned',players:[{id:1,team:0,kills:3,inputs:20}]});
+ assert.equal(f.x.get(a,'/z5/evolutions').weapons.length,0);
+ f.db.close();
+});

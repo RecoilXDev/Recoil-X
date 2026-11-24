@@ -43,7 +43,7 @@ const style=document.createElement('style');style.textContent=[
 '#rx-guide-panel input[type=file]{display:none}',
 ].join('\n');document.head.append(style);
 const shell=document.createElement('div');shell.id='rx-guide-shell';
-shell.innerHTML='<section id="rx-guide-panel" role="dialog" aria-modal="true" aria-label="RECOIL X player information"><div style="display:flex;align-items:start;justify-content:space-between;gap:12px"><div><h2>RECOIL X · Player Guide</h2><p class="sub">How to play · Guest backup · Privacy</p></div><button data-guide="close">Close ✕</button></div><div class="tabs"><button data-guide="overview">Game guide</button><button data-guide="backup">Backup & restore</button><button data-guide="privacy">Privacy</button></div><p id="rx-guide-status" role="status"></p><div id="rx-guide-content"></div></section>';
+shell.innerHTML='<section id="rx-guide-panel" role="dialog" aria-modal="true" aria-label="RECOIL X player information"><div style="display:flex;align-items:start;justify-content:space-between;gap:12px"><div><h2>RECOIL X · Player Guide</h2><p class="sub">How to play · Guest backup · Privacy</p></div><button data-guide="close">Close ✕</button></div><div class="tabs"><button data-guide="overview">Game guide</button><button data-guide="backup">Backup & restore</button><button data-guide="privacy">Privacy</button><button data-guide="share">Share game</button></div><p id="rx-guide-status" role="status"></p><div id="rx-guide-content"></div></section>';
 document.body.append(shell);
 let active='overview',undo=null;
 const status=(txt,error=false)=>{const el=$('rx-guide-status');el.textContent=txt||'';el.style.color=error?'#ffb1a5':'#ffce86';};
@@ -55,6 +55,8 @@ function show(page){
  }else if(page==='backup'){
   const items=entries();const n=items.reduce((sum,e)=>sum+e.key.length+e.value.length,0);
   panel.innerHTML='<div class="guide-card"><h3>Guest-only local backup</h3><p>This saves eligible RECOIL X browser data to a JSON file on your device. It never includes session storage, account authentication, chat, server-side wallets, or server-backed Mission Mode records.</p><p class="sub">Found '+items.length+' eligible local keys ('+Math.ceil(n/1024)+' KB). Available keys: '+(items.length?items.map(e=>'<code>'+escape(e.key)+'</code>').join(', '):'none')+'</p><button data-guide="export">Export local backup</button><label class="guide-upload" tabindex="0">Import backup file<input id="rx-guide-import" type="file" accept=".json,application/json"></label><button data-guide="undo" '+(undo?'':'disabled')+'>Undo last import</button><p class="sub">Importing may overwrite older local settings or guest progress. Existing device data is preserved until you confirm; reload the page after importing. This file is not uploaded to a server.</p></div>';
+ }else if(page==='share'){
+  panel.innerHTML='<div class="guide-card"><h3>Share RECOIL X</h3><p>Challenge friends to a solo bot run, online arena or co-op boss raid. RECOIL X runs in your browser with earned-coin cosmetics and low-performance presets.</p><p><code>https://recoil-x.alwaysdata.net/</code></p><button data-guide="copy-promo">Copy game invitation</button><p class="sub">Nothing is posted automatically. Paste the invitation wherever you want to share it.</p></div>';
  }else if(page==='privacy'){
   panel.innerHTML='<div class="guide-card"><h3>What is stored?</h3><p>Guest settings and some saves are kept in browser storage. Signed-in accounts, password verifiers, account sessions, friends, messages, moderation records and eligible match/mission progress are handled by the RECOIL X server.</p></div><div class="guide-card"><h3>What others may see</h3><p>Players in a shared match or room may receive your public game name, chat messages and gameplay state. Hosted Overdrive uses server WebSocket transport; some legacy private rooms use WebRTC peer connections and may expose network addresses to the participants. Account sessions and authentication secrets must not be shared with other players. Private room codes control access but are not end-to-end encryption.</p></div><div class="guide-card"><h3>Network and payments</h3><p>RECOIL X uses browser requests and WebSocket connections to its hosting service; the host may process IP addresses and technical connection logs. Some networks block multiplayer connections. The reviewed game does not provide a real-money checkout system. Avoid including real names, phone numbers or other private details in game chat.</p><p class="sub">This is a brief player-facing explanation, not a complete legal privacy policy or a promise that no personal data is processed.</p></div>';
  }
@@ -93,8 +95,12 @@ shell.addEventListener('click',event=>{
  const button=event.target.closest('button[data-guide]');if(!button)return;
  const name=button.dataset.guide;
  if(name==='close'){close();return;}
- if(['overview','backup','privacy'].includes(name)){show(name);return;}
- try{if(name==='export')exportData();else if(name==='undo')undoImport();}
+ if(['overview','backup','privacy','share'].includes(name)){show(name);return;}
+ try{if(name==='export')exportData();else if(name==='undo')undoImport();else if(name==='copy-promo'){
+   const invitation='RECOIL X Z.5 Sand Edition — browser FPS, solo bots, online arenas and co-op boss raids. Play: https://recoil-x.alwaysdata.net/';
+   if(!navigator.clipboard?.writeText){status('Copy the game address shown above.');return;}
+   navigator.clipboard.writeText(invitation).then(()=>status('Invitation copied.')).catch(()=>status('Could not copy automatically. Copy the game address above.',true));
+ }}
  catch(error){status(error.message,true);}
 });
 shell.addEventListener('change',event=>{if(event.target?.id!=='rx-guide-import')return;
