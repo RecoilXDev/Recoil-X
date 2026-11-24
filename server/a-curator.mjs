@@ -47,7 +47,7 @@ export function createCurator(db,fail){
   moderate(u,b){admin(u);if(!['approved','rejected'].includes(b.state))throw fail(400,'Invalid review decision.');
    if(typeof b.id!=='string'||typeof b.reason!=='string'||b.reason.length>160)throw fail(400,'Invalid review.');
    const p=q('SELECT * FROM a_curator_projects WHERE id=? AND published=1').get(b.id);
-   if(!p||review(p.id).state!=='pending')throw fail(409,'Project is no longer pending.');
+   if(!p||review(p.id).state!=='pending'||b.updated!==p.updated)throw fail(409,'Project changed or is no longer pending. Refresh the review queue.');
    q('UPDATE a_curator_review SET state=?,reason=?,reviewed=? WHERE project=?').run(b.state,b.reason,Date.now(),p.id);return {project:row(p)};},
   list(u){return {projects:q('SELECT * FROM a_curator_projects WHERE owner=? ORDER BY updated DESC LIMIT 20').all(u.id).map(row)}},
   shared(id){if(typeof id!=='string'||!/^[a-f0-9]{16}$/.test(id))throw fail(400,'Invalid share code.');
