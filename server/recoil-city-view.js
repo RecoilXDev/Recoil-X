@@ -274,6 +274,17 @@
   }
   function actor(m,p,hero,time,weaponId) {
     const base=local(m,p.x,p.y,0,p.angle);shadow(base,hero?2.8:2.15,hero?2:1.65);
+    const shared=window.RecoilCityCharacter;
+    if(shared){
+      const data=shared.emit(hero?{...p,color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
+      for(let i=0;i<data.length;i+=27){
+        const rgb=data.slice(i+3,i+6),shade=.70+.30*Math.max(0,data[i+7]),c={rgb:rgb.map(v=>Math.min(1,v*shade)),css:'rgb('+rgb.map(v=>Math.round(Math.min(1,v*shade)*255)).join(',')+')'};
+        const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
+        m.faces.push({p:points,c,solid:false,uv:null});
+      }
+      if(p.hp>0&&p.mood==='defend'){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
+      return;
+    }
     const g=local(m,p.x,p.y,p.z||0,p.angle), coat=hero?'#327d79':p.color, pants=hero?'#354256':'#474956';
     if(p.hp<=0||p.stunUntil>time){g.box(0,0,.4,5,2.8,2.2,coat);g.box(3.6,0,.5,2.3,2,1.7,'#bc8a69');for(const side of [-1,1]){g.box(-3.8,side*.9,.35,3.6,1,.85,pants);g.box(.1,side*2,.45,2.8,.8,.8,coat);}return;}
     const jumping=p.motion==='jumping', sprint=p.motion==='sprinting'||p.mood==='flee', aiming=(p.aimUntil||0)>time||p.mood==='defend';
@@ -376,7 +387,7 @@
     }
   }
   function dynamic(state,cam) {
-    const m=mesh(), p=state.player, first=cam.mode==='first';
+    const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;
     const near=v=>Math.hypot(v.x-cam.x,v.y-cam.y)<cam.far;
     if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}else{
     for(const v of state.vehicles)if(near(v))automobile(m,v,v.id===p.vehicleId,state.elapsed,first&&v.id===p.vehicleId);
