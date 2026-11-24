@@ -88,6 +88,7 @@ function allowed(key, count, duration) {
   const now = sqlTime();
   let item = windowLimits.get(key);
   if (!item || item.until < now) {
+    if(!item&&windowLimits.size>=50000)return false;
     item = { count: 0, until: now + duration };
     windowLimits.set(key, item);
   }
@@ -248,13 +249,13 @@ export function createRecoilServer(options = {}) {
 
   async function credentials(req, body, signup) {
     const ip = req.socket.remoteAddress || '';
-    if (!allowed('auth-ip:'+ip, 16, 60000)) throw fail(429, 'Wait a minute before trying again.');
+    if (!allowed('auth-ip:'+ip, 16, 60000)){shield.note('auth-ip-rate-limit');throw fail(429, 'Wait a minute before trying again.');}
     const name = typeof body.name === 'string' ? body.name.trim().normalize('NFKC') : '';
     const handle = canonical(name);
     const password = typeof body.password === 'string' ? body.password : '';
     if (!userPattern.test(name) || password.length > 128 || password.length < (signup ? 10 : 1))
       throw fail(400, signup ? 'Use 3–18 letters, numbers, hyphens or underscores and a password of at least 10 characters.' : 'Enter your account name and password.');
-    if (!allowed('auth-name:'+handle, 9, 60000)) throw fail(429, 'Wait a minute before trying again.');
+    if (!allowed('auth-name:'+handle, 9, 60000)){shield.note('auth-name-rate-limit');throw fail(429, 'Wait a minute before trying again.');}
     let account = byName.get(handle);
     if (signup && account) throw fail(409, 'That account name is already taken.');
     const salt = signup ? randomBytes(16).toString('hex') : account?.salt || dummySalt;
@@ -417,6 +418,7 @@ export function createRecoilServer(options = {}) {
       }
       if (path.startsWith('/z5/')) {
         if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
+        if(path==='/z5/party'&&shield.status(clients.size).maintenance&&!user.admin)throw fail(503,'Party changes are paused for maintenance.');
         if (['/z5/party','/z5/spectate','/z5/recovery/create'].includes(path))return expansion.post(user,path,body);
         if (path === '/z5/checkin') {const claim=z5.checkin(user);economy.onDailyCheckin(user,claim);challenges.onCheckin(user,claim);return claim;}
         if (path === '/z5/challenges/claim') return challenges.claimDaily(user,body);
@@ -647,10 +649,11 @@ export function createRecoilServer(options = {}) {
     let ws;
     try{ws=new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});}catch{releasePending();socket.destroy();return;}
     socket.once('close',releasePending);
-    let connected = null;
+    let connected = null,preAuthMessages=0;
     const timeout = setTimeout(()=>{if (!connected) ws.close(1000,'Sign in first');},6000);
     timeout.unref();
     ws.on('message',event=>{
+      if(!connected&&++preAuthMessages>8){ws.close(1008,'Authentication required');return;}
       if (typeof event.data!=='string' || event.data.length>65536) return;
       let overdriveRequest=false;
       try {
