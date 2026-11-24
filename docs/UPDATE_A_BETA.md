@@ -1,4 +1,4 @@
-# Update A — Beta candidate (B3)
+# Update A — Beta candidate (B4)
 This branch inherits all Alpha workstreams. It is not a certified Beta release and must not deploy to the public Z.5 server.
 ## Run a separate instance
 From repository root, using Node 24:
@@ -51,3 +51,9 @@ The health endpoint /rx-api/health reports channel beta and readyForProduction f
 - Graphics: actual equipped New Dawn Sandwyrm assault-rifle geometry uses the four server-authorized seasonal finishes. High-tier shader adds distance-faded ground microdetail and grazing-angle metal highlights; low-tier lighting is unchanged, and weapon trim geometry has a reduced detail path. Candidate requires real GPU shader compilation, screenshots and frame-time measurements; the reward preview is still a concept model, not a pixel-identical in-game mesh.
 - Bot Intelligence: bounded two-hop visibility search around nearby obstacle corners, per-bot cached planning, tighter collision sampling, no unseen target position used for peek direction, and a fresh occlusion/smoke check before firing. Existing standard mode remains. Candidate requires complex-map stress tests and actual bot FPS/playability checks; this is not a full navmesh rewrite.
 - Verified in development smoke checks: both inline index scripts parse, extracted route code finds a reachable detour and returns no detour for a clear route; actual server match module and its ten-module dependency graph executed weapon switch/ammo preservation and reconnect input checks successfully. New regression test is committed. Full Node 24 CI and real device tests remain unverified. All thirteen workstreams now have candidate implementations; do not interpret this as completion of every proposed feature or a stable public release.
+
+## B4 — stability and optimization pass
+- Bot navigation: cheap direct continuation before two-hop probes, narrower fallback search and shared one/two planning calls per simulation frame (low/other graphics). Deferred bots retain existing steering until their next planning slot. In one fixed synthetic obstacle fixture, extracted B4 route code performed 676 collision probes including final path validation, versus 1328 reported for B3; this is a fixture result, not an FPS benchmark.
+- Server Shield counts malformed/binary/oversized messages before JSON parsing, rejects stale sockets, and disconnects hard-backlogged sockets before skipping replaceable state. Unauthenticated upgrade timeout closes the underlying transport.
+- Curator co-op retries transient state polling failures up to five times, uses eight-second request timeout, distinguishes authorization/not-found responses, and uses indexed grid collision and cached target/spawn metadata.
+- Smoke checks passed: two inline game scripts parsed; four changed/test modules parsed; low/other graphics planning limits and reachable obstacle detour; indexed Curator blocked movement and objective completion. Full CI, device GPU/FPS, real multiplayer and staging are not verified. No production deployment.
