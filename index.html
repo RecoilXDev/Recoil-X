@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="Z.5-SAND-8" />
+<meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
 <title>RECOIL X Z.5 · Sand Edition</title>
@@ -986,7 +987,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 </div>
 <div id="mainMenu" class="hide">
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A · NEW DAWN PREVIEW</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -2106,13 +2107,13 @@ function rxAModeScore(id){
   const key='mode:'+id;if(SOUNDTRACK[key])return key;
   // Future modes get their own deterministic score instead of the generic match loop.
   let seed=2166136261;for(const ch of String(id))seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
-  const [tempo,root,style]=RX_A_MUSIC_PROFILES[id]||[90+seed%65,34+seed%15,Object.keys(RX_A_RHYTHMS)[seed%6]];
+  const [tempo,root,style]=(Object.hasOwn(RX_A_MUSIC_PROFILES,id)?RX_A_MUSIC_PROFILES[id]:null)||[90+seed%65,34+seed%15,Object.keys(RX_A_RHYTHMS)[seed%6]];
   const r=RX_A_RHYTHMS[style],offset=(seed%4)*2;
   const vary=(notes,lead)=>Array.from({length:16},(_,i)=>{const n=notes[(i+offset)%16];return n<0?-1:root+n+(lead?24:0)+(i===13?seed%3:0);});
   SOUNDTRACK[key]={tempo,bass:vary(r.bass,false),lead:vary(r.lead,true),wave:r.wave,drums:r.drums};return key;
 }
 function rxAMatchMusic(){
-  if(typeof z2Live!=='undefined'&&mode==='crown-overdrive'&&z2Live.match?.mode)return rxAModeScore(z2Live.match.mode);
+  if(mode==='crown-overdrive'&&z2Live.match?.mode)return rxAModeScore(z2Live.match.mode);
   return rxAModeScore(mode||'solo');
 }
 window.RecoilCityGame = Object.freeze({
@@ -7545,7 +7546,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='VERSION Z.5 · 23 SEASONAL EDITIONS';
+  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='UPDATE A · NEW DAWN PREVIEW';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10625,7 +10626,7 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'+' · UPDATE A PREVIEW';
   $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
