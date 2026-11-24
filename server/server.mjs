@@ -16,6 +16,7 @@ import { createZ5Challenges, migrateZ5Challenges } from './z5-challenges.mjs';
 import { createZ5Operations } from './z5-operations.mjs';
 import { startZ5Backups } from './z5-backups.mjs';
 import { createZ5Expansion } from './z5-expansion.mjs';
+import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -121,6 +122,11 @@ export function createRecoilServer(options = {}) {
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
   const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
+  const delivery=createDeliveryPolicy();
+  const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
+    const active=clients.get(id);
+    if(active&&active.tokenHash!==keep)cutConnection(active,'Session revoked from account settings.');
+  }});
   let expansion;
   let passwordJobs = 0;
   let lastExpiry = 0;
@@ -133,6 +139,7 @@ export function createRecoilServer(options = {}) {
   const overdrive = createOverdrive({
     client:id=>clients.get(id),send,store:overdriveData,fail,allowed,leaveLegacy:leave,cleanChat,
     clanOf:id=>z5.clanFor(id),
+    canSendSnapshot:connection=>delivery.allowSnapshot(connection),
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
     onLiveInput:(...args)=>expansion?.onInput(...args),
@@ -201,7 +208,9 @@ export function createRecoilServer(options = {}) {
       (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
     if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
     if(transport.writableLength>=400000){transport.destroy();return;}
-    client.socket.send(JSON.stringify(event));
+    const payload=JSON.stringify(event);
+    client.socket.send(payload);
+    if(event.type==='z2:state')delivery.sent(client,Buffer.byteLength(payload));
   }
   function refresh(userId) { send(clients.get(userId), { type:'refresh' }); }
 
@@ -261,7 +270,10 @@ export function createRecoilServer(options = {}) {
     } else if (!account || !timingSafeEqual(Buffer.from(secret,'hex'),Buffer.from(account.secret,'hex'))) {
       throw fail(401, 'Account name or password is incorrect.');
     }
-    verifyBan(account);
+    // Password changes and bans may have occurred during asynchronous hashing.
+    const latest=byId.get(account.id);
+    if(!latest||latest.salt!==account.salt||latest.secret!==account.secret)throw fail(401,'Account name or password is incorrect.');
+    account=latest;verifyBan(account);
     const token = randomBytes(32).toString('hex');
     st('INSERT INTO sessions(token_hash,account,expires) VALUES (?,?,?)').run(hashToken(token),account.id,sqlTime()+sessionAge);
     return { token, user:profile(account) };
@@ -356,6 +368,8 @@ export function createRecoilServer(options = {}) {
       if (path === '/z5/ping') return z5.ping();
       if (path === '/z5/admin/audit') return z5.adminAudit(user);
       if (path === '/missions') return missions.read(user.id);
+      if (path === '/a/sessions') return accountSessions.view(user);
+      if (path === '/a/connection') {const c=clients.get(user.id);return delivery.view(c?.tokenHash===user.token_hash?c:null);}
       if (path === '/me') return {user:profile(user)};
       if (path === '/z2/profile') return overdriveData.profile(user.id,sqlTime());
       if (path === '/z2/admin') return overdriveData.history(user);
@@ -385,6 +399,15 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/sessions/revoke-others'){
+        if(!allowed('a-revoke:'+user.id,5,60000))throw fail(429,'Try again shortly.');
+        return accountSessions.revokeOthers(user);
+      }
+      if(path==='/a/connection'){
+        if(!allowed('a-profile:'+user.id,12,60000))throw fail(429,'Try again shortly.');
+        const c=clients.get(user.id);if(!c||c.tokenHash!==user.token_hash)throw fail(409,'Connect through Multiplayer on this session first.');
+        return delivery.setProfile(c,body.profile);
+      }
       if (path.startsWith('/z5/')) {
         if (!allowed('z5:'+user.id,35,60000)) throw fail(429,'Too many Z.5 actions. Try again soon.');
         if (['/z5/party','/z5/spectate','/z5/recovery/create'].includes(path))return expansion.post(user,path,body);
@@ -476,6 +499,13 @@ export function createRecoilServer(options = {}) {
         res.end(req.method==='HEAD'?undefined:js);
       }catch{res.writeHead(404).end();}return;
     }
+    if(path==='/a-control-center.js'){
+      if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
+      try{const js=readFileSync(new URL('./a-control-center.js',import.meta.url));
+        res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});
+        res.end(req.method==='HEAD'?undefined:js);
+      }catch{res.writeHead(404).end();}return;
+    }
     if (path === '/z5-expansion.js') {
       if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
       try{const js=readFileSync(new URL('./z5-expansion.js',import.meta.url));
@@ -514,7 +544,7 @@ export function createRecoilServer(options = {}) {
     if (path === '/' || path === '/index.html') {
       if (req.method!=='GET'&&req.method!=='HEAD') {res.writeHead(405).end();return;}
       try {
-        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script></body>');
+        const html = readFileSync(htmlPath,'utf8').replace(/<\/body>/i,'<script src="/admin-panel.js" defer></script><script src="/z5-panel.js" defer></script><script src="/z5-economy-panel.js" defer></script><script src="/z5-matchhub.js" defer></script><script src="/z5-ingame.js" defer></script><script src="/z5-expansion.js" defer></script><script src="/z5-player-guide.js" defer></script><script src="/a-control-center.js" defer></script></body>');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
         res.end(req.method==='HEAD'?undefined:html);
       } catch {res.writeHead(404).end('Put index.html beside the server folder.');}
