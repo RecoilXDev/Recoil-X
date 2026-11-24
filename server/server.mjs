@@ -17,6 +17,8 @@ import { createZ5Operations } from './z5-operations.mjs';
 import { startZ5Backups } from './z5-backups.mjs';
 import { createZ5Expansion } from './z5-expansion.mjs';
 import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
+import {createServerShield} from './a-server-shield.mjs';
+import {createAProgression} from './a-progression.mjs';
 
 const WebSocket = createRequire(import.meta.url)('faye-websocket');
 const derive = promisify(scrypt);
@@ -123,12 +125,13 @@ export function createRecoilServer(options = {}) {
   const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
   const delivery=createDeliveryPolicy();
+  const shield=createServerShield(db,options.shield);
+  const progression=createAProgression(db);
   const accountSessions=createAccountSessions(db,{disconnect:(id,keep)=>{
     const active=clients.get(id);
     if(active&&active.tokenHash!==keep)cutConnection(active,'Session revoked from account settings.');
   }});
   let expansion;
-  let passwordJobs = 0;
   let lastExpiry = 0;
   const overdriveData = overdriveStore(db,fail);
   const missions = missionStore(db,fail);
@@ -146,7 +149,7 @@ export function createRecoilServer(options = {}) {
     onLiveRejected:(...args)=>{try{expansion?.onRejectedInput(...args);}catch(error){console.error('Input evidence write failed',error.message);}},
     onLiveFrame:e=>expansion?.onFrame(e),
     onLiveEnd:(...args)=>expansion?.onEnd(...args),
-    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{z5.recordClanWar(result,now);}}}
+    onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{try{z5.recordClanWar(result,now);}finally{progression.settle(result,now);}}}}
   });
 
   const operations = createZ5Operations(db,{online:()=>clients.size,roomStats:()=>overdrive.statistics()});
@@ -158,7 +161,7 @@ export function createRecoilServer(options = {}) {
   const session = st(`SELECT u.*,s.expires,s.token_hash FROM sessions s JOIN users u ON s.account=u.id
     WHERE s.token_hash=? AND s.expires>?`);
   expansion=createZ5Expansion({db,fail,allowed,clients,isFriend:(a,b)=>isFriend(a,b),contact,overdrive,byId,byName,
-    canonical,passwordHash,send,cutConnection});
+    canonical,passwordHash:(...args)=>shield.hashJob(()=>passwordHash(...args)),send,cutConnection});
   const roster = st(`SELECT u.id,u.name,u.joins,u.banned,f.accepted,f.requester
     FROM friends f JOIN users u ON u.id=CASE WHEN f.lo=? THEN f.hi ELSE f.lo END WHERE f.lo=? OR f.hi=? ORDER BY u.handle`);
 
@@ -252,14 +255,10 @@ export function createRecoilServer(options = {}) {
     if (!userPattern.test(name) || password.length > 128 || password.length < (signup ? 10 : 1))
       throw fail(400, signup ? 'Use 3–18 letters, numbers, hyphens or underscores and a password of at least 10 characters.' : 'Enter your account name and password.');
     if (!allowed('auth-name:'+handle, 9, 60000)) throw fail(429, 'Wait a minute before trying again.');
-    if (passwordJobs >= 3) throw fail(429, 'The server is busy. Try again in a moment.');
     let account = byName.get(handle);
     if (signup && account) throw fail(409, 'That account name is already taken.');
     const salt = signup ? randomBytes(16).toString('hex') : account?.salt || dummySalt;
-    let secret;
-    passwordJobs++;
-    try { secret = await passwordHash(password, salt); }
-    finally { passwordJobs--; }
+    const secret=await shield.hashJob(()=>passwordHash(password,salt));
     if (signup) {
       try { st('INSERT INTO users(name,handle,salt,secret) VALUES(?,?,?,?)').run(name,handle,salt,secret); }
       catch (error) {
@@ -330,6 +329,7 @@ export function createRecoilServer(options = {}) {
   function moderate(user, body) {
     const now=sqlTime();
     const result=overdriveData.moderation(user,body,now);
+    if (['tempban','ban'].includes(result.action))st('DELETE FROM sessions WHERE account=?').run(result.id);
     if (['kick','tempban','ban'].includes(result.action)) {
       const message=result.action==='kick'?'An administrator removed you from the server.':'This account is banned.';
       overdrive.drop(result.id,now,message);
@@ -346,7 +346,12 @@ export function createRecoilServer(options = {}) {
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const body = req.method === 'POST' ? await readJson(req) : null;
     const user = authenticate(token);
+    if(!allowed('a-http:'+user.id,240,60000))throw fail(429,'Too many requests. Retry shortly.');
     if (req.method === 'GET') {
+      if(path==='/a/progression')return progression.view(user);
+      if(path==='/a/community')return progression.board();
+      if(path==='/a/shield')return shield.status(clients.size);
+      if(path==='/a/admin/shield')return shield.inspect(user,clients.size);
       if (['/z5/party','/z5/evolutions','/z5/spectate','/z5/spectate/frame','/z5/anti-cheat/review'].includes(path))
         return expansion.get(user,path,req);
       if (path === '/z5/rooms') {
@@ -399,6 +404,8 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/community'){if(!allowed('a-public:'+user.id,8,60000))throw fail(429,'Retry shortly.');return progression.setPublic(user,body.public);}
+      if(path==='/a/admin/shield'){if(!allowed('a-maintenance:'+user.id,8,60000))throw fail(429,'Retry shortly.');return shield.setMaintenance(user,body.maintenance);}
       if(path==='/a/sessions/revoke-others'){
         if(!allowed('a-revoke:'+user.id,5,60000))throw fail(429,'Try again shortly.');
         return accountSessions.revokeOthers(user);
@@ -562,17 +569,19 @@ export function createRecoilServer(options = {}) {
     } catch (error) {
       if (!error.status) console.error(error);
       res.statusCode = error.status || 500;
+      if([429,503].includes(res.statusCode))res.setHeader('Retry-After','15');
       res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
     }
   });
 
   function socketPacket(c, data) {
-    if (!allowed('wire:'+c.id,260,1000)) return;
+    if (!shield.packet(c)) return;
     const current = session.get(c.tokenHash,sqlTime());
     if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
       overdrive.drop(c.id,sqlTime(),'This session ended.');
       cutConnection(c,'Sign in again.');return;
     }
+    if(['z2:create','z2:join','z2:queue','host','join'].includes(data.type)&&shield.status(clients.size).maintenance&&!current.admin)throw fail(503,'New matches are paused for maintenance.');
     if(data.type==='z5:quality-ping'){
       if(!Number.isSafeInteger(data.seq)||data.seq<0)throw fail(400,'Invalid ping sequence.');
       send(c,{type:'z5:quality-pong',seq:data.seq,serverAt:sqlTime()});return;
@@ -633,7 +642,11 @@ export function createRecoilServer(options = {}) {
   server.on('upgrade',(req,socket,head)=>{
     if (req.url!=='/rx-live' || !originOk(req) || !WebSocket.isWebSocket(req) ||
       !allowed('upgrade:'+req.socket.remoteAddress,70,60000)) {socket.destroy();return;}
-    const ws = new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});
+    let releasePending;
+    try{releasePending=shield.reserveUpgrade();}catch{socket.end('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 15\r\nConnection: close\r\n\r\n');return;}
+    let ws;
+    try{ws=new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});}catch{releasePending();socket.destroy();return;}
+    socket.once('close',releasePending);
     let connected = null;
     const timeout = setTimeout(()=>{if (!connected) ws.close(1000,'Sign in first');},6000);
     timeout.unref();
@@ -647,6 +660,8 @@ export function createRecoilServer(options = {}) {
         if (!connected) {
           if (data.type!=='auth') throw fail(401,'Sign in first.');
           const user=authenticate(data.token);
+          shield.admission(clients.size,clients.has(user.id),!!user.admin);
+          releasePending();
           cutConnection(clients.get(user.id),'Signed in on another device.');
           connected={id:user.id,tokenHash:user.token_hash,socket:ws,transport:socket,room:null,
             compactState:data.compactState===1};
@@ -664,7 +679,7 @@ export function createRecoilServer(options = {}) {
       }
     });
     ws.on('close',()=>{
-      clearTimeout(timeout);
+      releasePending();clearTimeout(timeout);
       if (connected&&clients.get(connected.id)===connected) {
         leave(connected,'Your friend disconnected.');clients.delete(connected.id);
         overdrive.disconnect(connected);
@@ -672,9 +687,11 @@ export function createRecoilServer(options = {}) {
     });
   });
 
+  server.requestTimeout=20000;server.headersTimeout=10000;
   const cleanup=setInterval(()=>{
     const now=sqlTime();
     for (const [k,value] of windowLimits) if (value.until<now) windowLimits.delete(k);
+    for(const c of clients.values())if(!session.get(c.tokenHash,now))cutConnection(c,'Session expired. Sign in again.');
     if (now-lastExpiry>3600000) {st('DELETE FROM sessions WHERE expires<?').run(now);lastExpiry=now;}
   },60000);
   cleanup.unref();
