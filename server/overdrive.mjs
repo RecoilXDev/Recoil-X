@@ -16,7 +16,7 @@ const maxQueue = 200;
 const passwordKey = (value,salt) => scryptSync(value,salt,32,{N:1024,r:8,p:1});
 const readPassword = value => typeof value === 'string' && value.length <= 64 ? value : '';
 
-export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map()}) {
+export function createOverdrive({client, send, store, fail, allowed, leaveLegacy, cleanChat, clock=Date.now, onError=console.error, onSettled=()=>{}, clanOf=()=>null,onLiveInput=()=>{},onLiveRejected=()=>{},onLiveFrame=()=>{},onLiveEnd=()=>{},onLiveStart=()=>{},loadEvolutionLevels=()=>new Map()}) {
   const rooms = new Map();
   const membership = new Map();
   const queue = new Map();
@@ -312,7 +312,21 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     if(action==='queue'){queuePlayer(c,user,data,now);return;}
     if(action==='leave'){drop(c.id,now);return;}
     const room=roomFor(c.id);
-    if(action==='input'){if(room?.phase==='playing'&&inputMatch(room.match,c.id,data,now))onLiveInput(c.id,data,now);return;}
+    if(action==='input'){
+      if(room?.phase==='playing'){
+        const p=room.match.players.get(c.id);
+        if(inputMatch(room.match,c.id,data,now))onLiveInput(c.id,data,now);
+        else if(p&&!p.offlineAt&&!p.forfeited&&!room.match.result){
+          const malformed=!Number.isSafeInteger(data.seq)||data.seq<0||data.seq>2147483647||
+            ![data.f,data.s,data.yaw,data.pitch].every(Number.isFinite)||
+            !Number.isInteger(data.weapon)||data.weapon<0||data.weapon>3;
+          // Duplicate or stale sequence numbers alone are ordinary network behavior.
+          if(malformed)onLiveRejected(c.id,'invalid-input',now);
+          else if(data.seq>p.seq&&p.rx5InputCount>=120)onLiveRejected(c.id,'input-flood',now);
+        }
+      }
+      return;
+    }
     if(action==='resync'){attach(c);return;}
     demand(room,404,'Join a multiplayer lobby first.');
     const member=room.members.get(c.id);
@@ -411,7 +425,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
     // Rewards are server-generated and idempotent. A rewards error must not end a match.
     try{onSettled(result,now);}catch(error){onError(error);}
     room.result={...result,deltas};
-    onLiveEnd(room.match.id,result);
+    try{onLiveEnd(room.match.id,result);}catch(error){onError(error);}
     room.expires=now+Math.min(idleTime,180000);
     if(room.tournament){
       const t=room.tournament, current=t.bracket[t.index], recordedWinner=result.winner===1?current.b:current.a;
