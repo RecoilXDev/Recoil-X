@@ -72,8 +72,8 @@ test('server-confirmed hit UI accepts only current match damage and does not fla
 
 test('dedicated Season 1 home tab opens only after the server season gate',async()=>{
  const h=makeHarness();
- let state='upcoming',now=1795550399999;
- const start=1795550400000,end=start+100000000;
+ const start=Date.parse('2026-11-25T00:00:00+04:00'),end=Date.parse('2027-04-01T00:00:00+04:00');
+ const state='upcoming',now=start-1;
  h.ctx.fetch=async(path)=>({ok:true,json:async()=>path==='/rx-api/a/season/schedule'?{state,start,end,now}:{}});
  new vm.Script(fs.readFileSync(__dirname+'/../server/a-control-center.js','utf8')).runInContext(h.ctx);
  await new Promise(resolve=>setImmediate(resolve));

@@ -63,6 +63,7 @@ function makeHarness(save={},iso='2026-11-14T12:00:00Z',network=null,bridge=''){
     remove(){const p=this.parentElement;if(!p)return;const i=p.kids.indexOf(this);if(i>=0)p.kids.splice(i,1);this.parentElement=null}
     before(...nodes){const p=this.parentElement;if(!p)return;for(const n of nodes){n.remove();n.parentElement=p;p.kids.splice(p.kids.indexOf(this),0,n);}}
     after(...nodes){const p=this.parentElement;if(!p)return;for(const n of nodes.slice().reverse()){n.remove();n.parentElement=p;p.kids.splice(p.kids.indexOf(this)+1,0,n);}}
+    insertAdjacentHTML(pos,html){const nodes=parse(html);if(pos==='beforebegin')this.before(...nodes);else if(pos==='afterend')this.after(...nodes);else if(pos==='afterbegin')this.prepend(...nodes);else if(pos==='beforeend')this.append(...nodes);else throw Error('Invalid insertion position');}
     insertAdjacentElement(pos,el){if(pos==='afterend')this.after(el);else if(pos==='beforebegin')this.before(el);else if(pos==='afterbegin')this.prepend(el);else this.append(el);return el}
     setAttribute(k,v){this.attrs[k]=String(v);if(k==='value')this.value=v;}
     getAttribute(k){return this.attrs[k]??null}
