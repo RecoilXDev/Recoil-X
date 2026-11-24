@@ -12,7 +12,7 @@ test('clean UI source has valid syntax and explicit current release identity',()
  assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-8"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(sw,/recoil-city-1/);
+ assert.match(sw,/recoil-city-3d-radio/);
  assert.match(sw,/skipWaiting/);
 });
 test('clean UI puts newest changes in front while preserving all advanced features',()=>{

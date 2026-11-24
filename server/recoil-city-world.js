@@ -1,4 +1,4 @@
-// Local city simulation. Canvas coordinates increase east and south.
+// Street coordinates increase east and south. Elevation is measured separately.
 (() => {
   'use strict';
 
@@ -51,7 +51,16 @@
     ['theater', 'Marina Theater', 880, 630], ['docks', 'Pier Nine', 1000, 810],
     ['works', 'Tideworks', 330, 748], ['wharf', 'West Wharf', 150, 805]
   ].map(([id, name, x, y]) => ({id, name, x, y, district: districtAt(x, y)}));
-  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, blocks: makeBlocks()};
+  const shops = [
+    {id: 'cafe', name: 'Copper Café', x: 279, y: 399, price: 12},
+    {id: 'repair', name: 'Pier Nine Motors', x: 1000, y: 798, price: 30}
+  ];
+  const secrets = [
+    {id: 'airwave', name: 'The lost airwave', kind: 'radio', x: 240, y: 233},
+    {id: 'lantern', name: 'The jade lantern', kind: 'lantern', x: 960, y: 252},
+    {id: 'tideclock', name: 'The tide clock', kind: 'clock', x: 720, y: 710}
+  ];
+  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets, blocks: makeBlocks()};
   const buildings = map.blocks.filter(block => block.kind === 'building');
   function clearOfBuildings(x, y, radius) {
     if (x < radius || y < radius || x > width - radius || y > height - radius) return false;
@@ -88,7 +97,8 @@
   }
   function readCareer(saved = {}) {
     const clean = key => Number.isFinite(saved?.[key]) ? clamp(saved[key], 0, 1e9) : 0;
-    return {cash: Math.floor(clean('cash')), deliveries: Math.floor(clean('deliveries')),
+    const discoveries = secrets.map(item => item.id).filter(id => Array.isArray(saved?.discoveries) && saved.discoveries.includes(id));
+    return {...(discoveries.length ? {discoveries} : {}), cash: Math.floor(clean('cash')), deliveries: Math.floor(clean('deliveries')),
       trips: Math.floor(clean('trips')), bestTime: Math.round(clean('bestTime') * 10) / 10,
       paint: finishes.find(f => f.name === saved?.paint)?.name || finishes[0].name};
   }
@@ -123,7 +133,7 @@
         const count = (row + col) % 2 ? 1 : 2;
         for (let i = 0; i < count; i++) {
           const id = walkers.length;
-          const walker = {left, right, top, bottom, length, color: coats[id % coats.length],
+          const walker = {id, hp: 70, mood: 'calm', alarm: 0, downUntil: 0, active: false, left, right, top, bottom, length, color: coats[id % coats.length],
             distance: (id * 83 + i * 137 + 15) % length, speed: (12 + id % 6) * (id % 2 ? -1 : 1)};
           placeWalker(walker);
           walkers.push(walker);
@@ -132,22 +142,69 @@
     }
     return walkers;
   }
-  function stepPedestrians(state, dt) {
+  const quality = {
+    low: {radius: 245, count: 6}, standard: {radius: 410, count: 12}, high: {radius: 610, count: 18}
+  };
+  function populate(state) {
+    const budget = quality[state.quality] || quality.standard;
+    const candidates = [];
     for (const p of state.pedestrians) {
-      // Pause on the sidewalk when the player's vehicle crosses directly ahead.
+      p.active = false;
+      if (p.downUntil && state.elapsed >= p.downUntil && distance(p, state.player) > 110) {
+        p.hp = 70; p.downUntil = 0; p.alarm = 0; p.mood = 'calm';
+      }
+      // Distance to the patrol rectangle keeps its source available as a corner comes into view.
+      const dx = state.player.x - clamp(state.player.x, p.left, p.right);
+      const dy = state.player.y - clamp(state.player.y, p.top, p.bottom);
+      if (Math.hypot(dx, dy) <= budget.radius && distance(p, state.player) <= budget.radius + 80) candidates.push(p);
+    }
+    candidates.sort((a, b) => distance(a, state.player) - distance(b, state.player));
+    state.locals = candidates.slice(0, budget.count);
+    for (const p of state.locals) p.active = true;
+    state.populationAt = state.elapsed + .55;
+  }
+  function stepPedestrians(state, dt) {
+    for (const p of state.locals) {
+      if (p.hp <= 0) continue;
       const player = state.player;
+      if (p.alarm > 0) {
+        p.alarm -= dt;
+        if (p.alarm <= 0) p.mood = 'calm';
+      }
+      if (p.mood === 'defend') {
+        p.angle = Math.atan2(player.y - p.y, player.x - p.x);
+        const near = distance(p, player);
+        if (near < 85 && state.elapsed >= p.counterAt && wallDistance(p.x, p.y, Math.cos(p.angle), Math.sin(p.angle), near) >= near) {
+          p.counterAt = state.elapsed + 2.4;
+          effect(state, 'return', p, player, 8);
+          if (player.vehicleId) damageCar(state, driven(state), 5); else player.hp = Math.max(0, player.hp - 6);
+        }
+        continue;
+      }
       const dx = player.x - p.x, dy = player.y - p.y;
-      if (player.vehicleId && dx * dx + dy * dy < 24 * 24 &&
+      if (p.mood === 'calm' && player.vehicleId && dx * dx + dy * dy < 24 * 24 &&
           dx * Math.cos(p.angle) + dy * Math.sin(p.angle) > 0) continue;
-      p.distance = (p.distance + p.speed * dt + p.length) % p.length;
+      p.distance = (p.distance + p.speed * (p.mood === 'flee' ? 3.4 : 1) * dt + p.length) % p.length;
       placeWalker(p);
     }
   }
-  function create({career, random = Math.random} = {}) {
+  function create({career, random = Math.random, weapons = [], equipped = 0, quality: detail = 'standard', rayHit, sound = () => {}} = {}) {
     const saved = readCareer(career);
-    const state = {map, random, player: {x: 135, y: 169, angle: 0, vehicleId: null}, vehicles: initialFleet(saved.paint), pedestrians: createPedestrians(),
-      career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null, district: '',
-      heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0};
+    const fleet = initialFleet(saved.paint);
+    for (const car of fleet) {
+      Object.assign(car, {hp: 100, wheel: 0, steer: 0, home: {x: car.x, y: car.y, angle: car.angle, kind: car.kind, target: car.target}});
+    }
+    const trafficSources = fleet.filter(car => car.kind === 'traffic').map(car => {
+      car.routeName = car.id;
+      return {...car, home: {...car.home}};
+    });
+    const state = {map, random, sound, rayHit, trafficSources, nextTrafficCheck: 6, trafficSerial: 0, quality: detail, populationAt: 0, locals: [], effects: [], dangerAt: 0,
+      player: {x: 135, y: 169, z: 0, vz: 0, hp: 100, angle: 0, phase: 0, motion: 'idle', vehicleId: null},
+      weapons, weapon: clamp(equipped | 0, 0, Math.max(0, weapons.length - 1)),
+      ammo: weapons.map(w => ({mag: w.max, stock: w.reserve})), nextShot: 0, reloadAt: 0,
+      vehicles: fleet, pedestrians: createPedestrians(), career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
+      district: '', patrolId: 0, heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0};
+    populate(state);
     makeOffer(state);
     updateNearby(state);
     return state;
@@ -167,7 +224,7 @@
     let nearest = null, range = 34;
     if (!player.vehicleId) for (const v of state.vehicles) {
       const gap = distance(player, v);
-      if (v.kind === 'parked' && gap <= range) { nearest = v.id; range = gap; }
+      if (v.hp > 0 && gap <= (v.kind === 'parked' ? range : Math.min(24, range))) { nearest = v.id; range = gap; }
     }
     state.nearbyVehicle = nearest;
   }
@@ -182,7 +239,7 @@
       for (const offset of [-Math.PI / 2, Math.PI / 2, Math.PI, 0]) {
         const x = car.x + Math.cos(car.angle + offset) * 24, y = car.y + Math.sin(car.angle + offset) * 24;
         if (!clearOfBuildings(x, y, footRadius) || !clearOfCars(state, x, y, footRadius, car)) continue;
-        Object.assign(player, {x, y, vehicleId: null});
+        Object.assign(player, {x, y, motion: 'idle', vehicleId: null});
         car.speed = 0;
         updateNearby(state);
         setNotice(state, 'Parked.');
@@ -193,10 +250,24 @@
     }
     updateNearby(state);
     const nearest = state.vehicles.find(v => v.id === state.nearbyVehicle);
-    if (!nearest) { setNotice(state, 'Walk up to a parked car.'); return false; }
-    Object.assign(player, {x: nearest.x, y: nearest.y, angle: nearest.angle, vehicleId: nearest.id});
+    if (!nearest || player.z > 3) { setNotice(state, 'Walk up to a vehicle.'); return false; }
+    if (nearest.kind !== 'parked') {
+      const patrolTaken = nearest.kind === 'patrol';
+      nearest.kind = 'parked';
+      if (nearest.home) nearest.home.kind = 'parked';
+      nearest.speed = 0;
+      heatUp(state, patrolTaken ? 'Patrol vehicle reported stolen.' : 'Vehicle reported stolen.');
+      alertLocals(state, nearest);
+      // The driver leaves on the nearest sidewalk rather than remaining in the vehicle.
+      const driver = state.pedestrians.find(p => p.driver === nearest.routeName);
+      if (!driver && !patrolTaken) {
+        const route = state.pedestrians.reduce((best, p) => sidewalkGap(p, nearest) < sidewalkGap(best, nearest) ? p : best);
+        const newcomer = {...route, id: state.pedestrians.length, driver: nearest.routeName, hp: 70, downUntil: 0, distance: sidewalkPoint(route, nearest), mood: 'flee', alarm: 6};
+        placeWalker(newcomer); state.pedestrians.push(newcomer); populate(state);
+      }
+    } else setNotice(state, 'You’re behind the wheel.');
+    Object.assign(player, {x: nearest.x, y: nearest.y, z: 0, vz: 0, motion: 'driving', angle: nearest.angle, vehicleId: nearest.id});
     state.nearbyVehicle = null;
-    setNotice(state, 'You’re behind the wheel.');
     return true;
   }
   function garageView(state) {
@@ -254,27 +325,45 @@
       dy = Math.sin(p.angle) * (Number(input.forward) || 0);
     }
     const length = Math.hypot(dx, dy);
+    if (p.z > 0 || p.vz) {
+      p.vz -= 122 * dt; p.z = Math.max(0, p.z + p.vz * dt);
+      if (!p.z) p.vz = 0;
+    }
+    p.motion = p.z > 0 ? 'jumping' : !length ? 'idle' : input.sprint ? 'sprinting' : 'walking';
     if (!length) return;
     p.angle = Math.atan2(dy, dx);
-    const pace = (input.brake ? 90 : 72) * dt / Math.max(1, length);
-    const x = p.x + dx * pace, y = p.y + dy * pace;
+    const pace = (input.sprint ? 112 : 72) * dt / Math.max(1, length);
+    const x = p.x + dx * pace, y = p.y + dy * pace, oldX = p.x, oldY = p.y;
     if (clearOfBuildings(x, p.y, footRadius) && clearOfCars(state, x, p.y, footRadius)) p.x = x;
     if (clearOfBuildings(p.x, y, footRadius) && clearOfCars(state, p.x, y, footRadius)) p.y = y;
+    p.phase += Math.hypot(p.x - oldX, p.y - oldY) * .26;
   }
-  function heatUp(state) {
-    state.heat = Math.min(3, state.heat + 1);
-    state.heatTime = 14;
-    if (!state.vehicles.some(v => v.kind === 'patrol')) {
-      const x = roadsX.reduce((best, v) => Math.abs(state.player.x - v) < Math.abs(state.player.x - best) ? v : best);
-      const options = roadsY.filter(v => Math.abs(v - state.player.y) > 220);
-      const y = options.reduce((best, v) => Math.abs(state.player.y - v) < Math.abs(state.player.y - best) ? v : best);
-      state.vehicles.push({id: 'patrol', kind: 'patrol', color: '#4f79be', x, y, angle: 0, speed: 0, goal: null});
+  function jump(state) {
+    const p = state.player;
+    if (p.vehicleId || p.z || p.vz) return false;
+    p.vz = 48; p.motion = 'jumping'; state.sound('jump'); return true;
+  }
+  function heatUp(state, reason) {
+    state.heat = Math.min(5, state.heat + 1);
+    state.heatTime = 14 + 2 * (state.heat - 1);
+    const crossings = roadsX.flatMap(x => roadsY.map(y => ({x, y}))).filter(p => distance(p, state.player) >= 245)
+      .sort((a, b) => distance(a, state.player) - distance(b, state.player));
+    const wanted = Math.ceil(state.heat / 2);
+    state.vehicles = state.vehicles.filter(v => !v.unit || driven(state) === v ||
+      (v.kind === 'patrol' && v.hp > 0) || distance(v, state.player) < 100);
+    let slots = 4 - state.vehicles.filter(v => v.unit).length;
+    const patrols = state.vehicles.filter(v => v.kind === 'patrol' && v.hp > 0);
+    for (let i = patrols.length; i < wanted && slots > 0; i++, slots--) {
+      const point = crossings.find(p => clearOfCars(state, p.x, p.y, carRadius)) || crossings[i];
+      state.vehicles.push({...point, id: 'patrol-' + (++state.patrolId), kind: 'patrol', unit: true,
+        color: '#38576e', angle: 0, hp: 100, speed: 0, wheel: 0, steer: 0, goal: null, contact: 0});
     }
-    setNotice(state, 'Traffic collision. City patrol alerted.');
+    setNotice(state, reason);
   }
   function drive(state, car, input, dt) {
     const throttle = clamp(Number(input.forward) || 0, -1, 1), turn = clamp(Number(input.turn) || 0, -1, 1);
-    const max = onRoad(car.x, car.y) ? 166 : 85;
+    const max = (onRoad(car.x, car.y) ? 166 : 85) * (.6 + .004 * car.hp);
+    car.steer += (turn - car.steer) * Math.min(1, dt * 8);
     if (input.brake) car.speed = Math.sign(car.speed) * Math.max(0, Math.abs(car.speed) - 270 * dt);
     else if (throttle) car.speed += throttle * (Math.sign(car.speed) === -Math.sign(throttle) ? 195 : 102) * dt;
     else car.speed = Math.sign(car.speed) * Math.max(0, Math.abs(car.speed) - 40 * dt);
@@ -286,10 +375,16 @@
       && (v.x - car.x) * dx + (v.y - car.y) * dy > 0);
     if (!clearOfBuildings(x, y, carRadius) || other) {
       if (other?.kind === 'traffic' && Math.abs(car.speed) > 42 && state.hitCooldown <= 0) {
-        heatUp(state);
+        heatUp(state, 'Traffic collision reported.');
         state.hitCooldown = 1.6;
       }
+      const impact = Math.abs(car.speed);
       car.speed *= -.25;
+      if (impact > 32) {
+        damageCar(state, car, (impact - 25) * .35);
+        if (other) damageCar(state, other, (impact - 25) * .26);
+        if (car.hp <= 0) return;
+      }
     } else { car.x = x; car.y = y; }
     Object.assign(state.player, {x: car.x, y: car.y, angle: car.angle});
   }
@@ -300,6 +395,25 @@
     const move = Math.min(1, amount / gap);
     v.x += dx * move; v.y += dy * move;
     return move === 1;
+  }
+  function replenishTraffic(state) {
+    state.nextTrafficCheck = state.elapsed + 5;
+    for (const source of state.trafficSources) {
+      if (state.vehicles.some(c => c.kind === 'traffic' && c.routeName === source.id)) continue;
+      // Reuse an abandoned traffic vehicle only after it has left the player's neighborhood.
+      const extras = state.vehicles.filter(c => c.kind === 'parked' && c.routeName);
+      if (extras.length >= 5) {
+        const old = extras.find(c => c.id !== state.player.vehicleId && distance(c,state.player) > 340);
+        if (!old) return;
+        state.vehicles.splice(state.vehicles.indexOf(old),1);
+      }
+      const index = source.route.findIndex(p => distance(p,state.player) > 365 && clearOfCars(state,p.x,p.y,carRadius));
+      if (index < 0) continue;
+      const start = source.route[index], target = (index+1) % source.route.length, next = source.route[target];
+      const angle = Math.atan2(next.y-start.y,next.x-start.x);
+      const home = {...start,angle,kind:'traffic',target};
+      state.vehicles.push({...source,...home,home,id:source.id+'-'+(++state.trafficSerial),speed:source.cruise,hp:100,wheel:0});
+    }
   }
   function cityTraffic(state, v, dt) {
     const goal = v.route[v.target], gap = distance(v, goal);
@@ -339,7 +453,8 @@
     }
     car.speed = 70 + 14 * state.heat;
     advanceToward(car, car.goal, car.speed * dt);
-    if (distance(car, target) < 24) {
+    car.contact = distance(car, target) < 26 ? car.contact + dt : 0;
+    if (car.contact > 1.8) {
       state.heat = 0;
       const v = driven(state);
       if (v) v.speed *= .2;
@@ -352,7 +467,13 @@
       const dt = Math.min(remaining, 1 / 60);
       remaining -= dt;
       state.elapsed += dt;
+      if (state.elapsed >= state.populationAt) populate(state);
+      if (state.elapsed >= state.nextTrafficCheck) replenishTraffic(state);
       stepPedestrians(state, dt);
+      if (state.reloadAt && state.elapsed >= state.reloadAt) finishReload(state);
+      if (input.fire) fire(state, input.aim);
+      if (state.player.hp <= 0) recover(state);
+      while (state.effects.length && state.effects[0].until <= state.elapsed) state.effects.shift();
       state.noticeSeconds = Math.max(0, state.noticeSeconds - dt);
       if (!state.noticeSeconds) state.notice = '';
       state.hitCooldown = Math.max(0, state.hitCooldown - dt);
@@ -360,6 +481,13 @@
       const vehicle = driven(state);
       if (vehicle) drive(state, vehicle, input, dt); else walk(state, input, dt);
       for (const car of state.vehicles) {
+        if (car.hp <= 0) {
+          if (car.home && car.restoreAt <= state.elapsed && distance(car, state.player) > 80 && distance(car.home, state.player) > 65 && clearOfCars(state, car.home.x, car.home.y, carRadius, car)) {
+            Object.assign(car, car.home, {hp: 100, speed: 0, steer: 0, wheel: 0});
+          }
+          continue;
+        }
+        car.wheel = (car.wheel + car.speed * dt * .52) % (Math.PI * 2);
         if (car.kind === 'traffic') cityTraffic(state, car, dt);
         if (car.kind === 'patrol' && state.heat) patrol(state, car, dt);
       }
@@ -367,10 +495,162 @@
         state.heatTime -= dt;
         if (state.heatTime <= 0) { state.heat--; state.heatTime = 9; }
       }
-      if (!state.heat && state.vehicles.at(-1)?.kind === 'patrol') state.vehicles.pop();
+      if (!state.heat && state.vehicles.some(v => v.kind === 'patrol')) state.vehicles = state.vehicles.filter(v => v.kind !== 'patrol');
     }
+    discover(state);
     updateNearby(state);
     return state;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray});
+  function sidewalkPoint(p, point) {
+    const w = p.right - p.left, h = p.bottom - p.top;
+    const x = clamp(point.x, p.left, p.right), y = clamp(point.y, p.top, p.bottom);
+    const options = [[x,p.top,x-p.left], [p.right,y,w+y-p.top],
+      [x,p.bottom,w+h+p.right-x], [p.left,y,2*w+h+p.bottom-y]];
+    return options.reduce((a,b) => Math.hypot(a[0]-point.x,a[1]-point.y) <= Math.hypot(b[0]-point.x,b[1]-point.y) ? a : b)[2] % p.length;
+  }
+  function sidewalkGap(p, point) {
+    const probe = {...p, distance: sidewalkPoint(p, point)}; placeWalker(probe); return distance(probe, point);
+  }
+  function alertLocals(state, source) {
+    for (const p of state.locals) {
+      if (p.hp <= 0 || distance(source, p) > 135) continue;
+      if (p.alarm <= 0) {
+        const toward = (source.x-p.x)*Math.cos(p.angle) + (source.y-p.y)*Math.sin(p.angle);
+        if (toward > 0) p.speed *= -1;
+        p.mood = p.id % 7 === 4 && distance(source,p) < 76 ? 'defend' : 'flee';
+        p.counterAt = state.elapsed + 1.2;
+      }
+      p.alarm = 5.5;
+    }
+  }
+  function discover(state) {
+    for (const spot of secrets) {
+      if (state.career.discoveries?.includes(spot.id) || distance(state.player, spot) > 14) continue;
+      (state.career.discoveries ||= []).push(spot.id);
+      setNotice(state, 'Discovered ' + spot.name + ' · ' + state.career.discoveries.length + '/' + secrets.length);
+    }
+  }
+  function nearbyShop(state) { return shops.find(s => distance(s,state.player) <= 28); }
+  function shop(state) {
+    const store = nearbyShop(state), car = driven(state);
+    if (!store) return false;
+    const repair = store.id === 'repair';
+    const reason = repair && (!car || Math.abs(car.speed) > 20) ? 'Park a vehicle here for service.' :
+      (repair ? car.hp : state.player.hp) >= 100 ? (repair ? 'Vehicle is in good condition.' : 'You already have full health.') :
+      state.career.cash < store.price ? 'Requires $' + store.price + ' in city earnings.' : '';
+    if (reason) { setNotice(state, reason); return false; }
+    state.career.cash -= store.price;
+    if (repair) car.hp = 100; else state.player.hp = 100;
+    setNotice(state, repair ? 'Vehicle repaired.' : 'Health restored.'); return true;
+  }
+  function recover(state) {
+    const p = state.player, car = driven(state);
+    if (car) car.speed = 0;
+    Object.assign(p,{x:135,y:169,z:0,vz:0,hp:100,vehicleId:null,motion:'idle'});
+    state.heat = 0; state.reloadAt = 0;
+    for (const npc of state.locals) { npc.alarm = 0; npc.mood = 'calm'; }
+    setNotice(state,'Back at Parcel Depot.');
+  }
+  function effect(state, kind, from, to, height) {
+    if (state.effects.length >= 32) state.effects.shift();
+    state.effects.push({kind, x:from.x, y:from.y, z:from.z ?? height, ex:to.x, ey:to.y, ez:to.z ?? height, until:state.elapsed+.16});
+  }
+  function damageCar(state, car, amount) {
+    if (!car || car.hp <= 0) return;
+    car.hp = Math.max(0, car.hp - amount);
+    if (car.hp) return;
+    car.speed = 0; car.destroyedAt = state.elapsed; car.restoreAt = state.elapsed + 40;
+    if (car.id === state.player.vehicleId) {
+      // The normal exit checks walls and vehicles. The depot is a fallback for a trapped wreck.
+      if (!interact(state)) recover(state);
+      state.player.hp = Math.max(15, state.player.hp - 18);
+    }
+    setNotice(state, 'Vehicle wrecked.');
+  }
+  function buildingHeight(b) {
+    const n = Math.abs(b.x*13+b.y*31) % 7;
+    return (b.district === 'Neon Heights' ? 49 : b.district === 'South Docks' ? 19 : 23) + n * (b.district === 'Neon Heights' ? 9 : 4);
+  }
+  // Slab intersection shared by the follow camera, sight checks and weapon contacts.
+  function wallDistance(x, y, dx, dy, limit, z = 8, dz = 0, padding = 0) {
+    let closest = limit;
+    for (const b of buildings) {
+      let enter = 0, leave = closest;
+      const axes = [[x,dx,b.x-padding,b.x+b.w+padding],[y,dy,b.y-padding,b.y+b.h+padding],[z,dz,-1,buildingHeight(b)+padding]];
+      for (const [origin,dir,lo,hi] of axes) {
+        if (Math.abs(dir) < 1e-7) { if (origin < lo || origin > hi) { leave = -1; break; } }
+        else {
+          const a = (lo-origin)/dir, c = (hi-origin)/dir;
+          enter = Math.max(enter,Math.min(a,c)); leave = Math.min(leave,Math.max(a,c));
+          if (leave < enter) break;
+        }
+      }
+      if (leave >= enter) closest = enter;
+    }
+    return closest;
+  }
+  function selectWeapon(state, index) {
+    if (!state.weapons.length) return;
+    state.weapon = ((index % state.weapons.length) + state.weapons.length) % state.weapons.length;
+    state.reloadAt = 0;
+  }
+  function reload(state) {
+    const w = state.weapons[state.weapon], a = state.ammo[state.weapon];
+    if (!w || !a.stock || a.mag >= w.max || state.reloadAt) return false;
+    state.reloadAt = state.elapsed + w.reload; state.sound('reload'); return true;
+  }
+  function finishReload(state) {
+    const a = state.ammo[state.weapon], take = Math.min(a.stock, state.weapons[state.weapon].max-a.mag);
+    a.stock -= take; a.mag += take; state.reloadAt = 0;
+  }
+  function trace(state, origin, dx, dy, dz, range) {
+    let reach = wallDistance(origin.x,origin.y,dx,dy,range,origin.z,dz), hit = null;
+    if (dz < -.0001) reach = Math.min(reach, -origin.z/dz);
+    function test(body, h, r, offset = 0) {
+      const t = state.rayHit(origin.x,origin.y,origin.z,dx,dy,dz,
+        body.x + Math.cos(body.angle)*offset,body.y + Math.sin(body.angle)*offset,h,r);
+      if (t < reach) { reach = t; hit = body; }
+    }
+    for (const p of state.locals) if (p.hp > 0) { test(p,8,3.7); test(p,12,2.5); test(p,3,3); }
+    for (const car of state.vehicles) if (car.hp > 0 && car.id !== state.player.vehicleId) {
+      test(car,4,5.7,5.3); test(car,5,6); test(car,4,5.7,-5.3);
+    }
+    return {x:origin.x+dx*reach,y:origin.y+dy*reach,z:origin.z+dz*reach,hit};
+  }
+  function fire(state, aim) {
+    const p = state.player, w = state.weapons[state.weapon], ammo = state.ammo[state.weapon];
+    if (!w || !state.rayHit || p.vehicleId || state.reloadAt || state.nextShot > state.elapsed) return false;
+    if (!ammo.mag) { reload(state); return false; }
+    const yaw = aim?.yaw ?? p.angle, pitch = aim?.pitch || 0, range = w.range * 5;
+    p.angle = yaw; p.aimUntil = state.elapsed + .28; ammo.mag--; state.nextShot = state.elapsed + w.cadence;
+    const muzzle = {x:p.x + 2*Math.cos(yaw),y:p.y + 2*Math.sin(yaw),z:p.z + 9.7};
+    const cp = Math.cos(pitch);
+    const target = trace(state,aim?.origin || muzzle,Math.cos(yaw)*cp,Math.sin(yaw)*cp,Math.sin(pitch),range);
+    const direction = Math.atan2(target.y-muzzle.y,target.x-muzzle.x);
+    const elevation = Math.atan2(target.z-muzzle.z,Math.hypot(target.x-muzzle.x,target.y-muzzle.y));
+    let hit = false;
+    for (let i = 0; i < w.pellets; i++) {
+      const a = direction + (state.random()-.5)*w.spread, b = elevation + (state.random()-.5)*w.spread;
+      const c = Math.cos(b);
+      const end = trace(state,muzzle,Math.cos(a)*c,Math.sin(a)*c,Math.sin(b),range);
+      if (end.hit) {
+        hit = true;
+        if (end.hit.kind) damageCar(state,end.hit,w.damage);
+        else {
+          end.hit.hp = Math.max(0,end.hit.hp-w.damage);
+          if (!end.hit.hp) { end.hit.downUntil = state.elapsed+34; end.hit.mood = 'down'; }
+        }
+      }
+      if (i < 3) effect(state,'shot',muzzle,end,9);
+    }
+    if (!ammo.mag) reload(state);
+    state.sound(w.id === 'shot' ? 'shotgun' : w.id === 'sniper' ? 'sniper' : 'gun');
+    if (hit) { state.hitAt = state.elapsed; state.sound('hit'); }
+    alertLocals(state,p);
+    if (state.elapsed >= state.dangerAt) {
+      heatUp(state,hit ? 'Hit reported. Patrol responding.' : 'Gunfire reported.'); state.dangerAt = state.elapsed+1.45;
+    }
+    return true;
+  }
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, jump, reload, selectWeapon, buildingHeight, wallDistance});
 })();

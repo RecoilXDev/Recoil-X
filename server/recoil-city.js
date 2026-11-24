@@ -5,8 +5,10 @@
   const careerKey = 'recoil-x.city.career.v1';
   let dialog, controls, world, frame, previousTime, nextHud, nextDraw, frameInterval, previousFocus;
   let lastCareer, lastNotice, paused = false;
+  let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
+  const prefsKey='recoil-x.city.view.v1';
   const held = new Set(), pointers = new Map();
-  const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake'};
+  const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
   const style = document.createElement('style');
   style.textContent = `
     #recoil-city{--ink:#18221e;--glass:#15211df1;--paper:#fff4db;--gold:#ffcd68;--muted:#cfdbce;position:fixed;inset:0;margin:0;padding:0;width:100%;height:100%;max-width:100%;max-height:100%;border:0;background:#496050;color:var(--paper);font:500 14px/1.35 Barlow,Arial,sans-serif;overflow:hidden;isolation:isolate;touch-action:none;user-select:none;color-scheme:dark;z-index:2147483600}
@@ -55,6 +57,22 @@
       #recoil-city .rc-trip{padding:4px;flex-wrap:wrap;gap:2px}#recoil-city kbd{display:none}
       #recoil-city .rc-notice{top:24%;max-width:65%}
     }
+    #recoil-city .rc-sky{position:absolute;inset:0;width:100%;height:100%}
+    #recoil-city .rc-streets{touch-action:none;cursor:crosshair}
+    #recoil-city .rc-reticle{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;background:#fff5dc;border-radius:50%;box-shadow:0 0 0 1px #1e3232,0 1px 4px #2228;pointer-events:none}
+    #recoil-city .rc-reticle.hit{background:#ffc05e;outline:2px solid #a95835}
+    #recoil-city .rc-loadout{display:block;padding:0 9px 7px;font-size:11px;color:var(--muted)}
+    #recoil-city .rc-sheet{width:min(500px,100%);text-align:start}
+    #recoil-city .rc-settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}
+    #recoil-city .rc-settings-row select{min-width:44%;padding:7px;border:1px solid #849885;border-radius:5px;background:#273a31;color:var(--paper);font:inherit}
+    #recoil-city .rc-sheet details{margin:12px 0}
+    #recoil-city .rc-skills{display:none}
+    @media(pointer:coarse),(max-width:740px){
+      #recoil-city .rc-skills{position:absolute;left:0;bottom:96px;display:grid;grid-template-columns:repeat(2,minmax(44px,1fr));gap:3px;max-width:136px}
+      #recoil-city .rc-skills button{font-size:12px;padding:4px;touch-action:none}
+      #recoil-city .rc-loadout{font-size:10px;padding:0 4px 4px}
+      #recoil-city .rc-sheet{max-height:calc(100dvh - 22px)}
+    }
     @media(max-width:450px){#recoil-city .rc-menu button{font-size:12px;padding:6px 8px}#recoil-city .rc-jobhead{gap:4px}#recoil-city .rc-nav{width:98px}}
     @media(max-height:420px){#recoil-city .rc-place{padding:4px 8px}#recoil-city .rc-nav{width:96px}}
   `;
@@ -64,35 +82,57 @@
     dialog.id = 'recoil-city';
     dialog.setAttribute('aria-labelledby','rc-title');
     dialog.innerHTML = `
-      <canvas class="rc-streets" tabindex="-1" aria-label="City streets. Use the map and dispatch directions to find your destination."></canvas>
-      <div class="rc-hud"><div class="rc-head"><div class="rc-panel rc-place"><h2 id="rc-title">Recoil City</h2><span class="rc-area"></span></div>
-        <div class="rc-menu"><button type="button" data-click="help">Controls</button><button type="button" data-click="exit">Exit city</button></div></div>
+      <canvas class="rc-sky" aria-hidden="true"></canvas><canvas class="rc-streets" tabindex="-1" aria-label="City streets. Use the map and dispatch directions to find your destination."></canvas>
+      <div class="rc-hud"><i class="rc-reticle" aria-hidden="true"></i><div class="rc-head"><div class="rc-panel rc-place"><h2 id="rc-title">Recoil City</h2><span class="rc-area"></span></div>
+        <div class="rc-menu"><button type="button" data-click="help">Settings</button><button type="button" data-click="exit">Exit city</button></div></div>
         <div class="rc-bottom"><div class="rc-panel rc-nav"><canvas class="rc-map" width="250" height="150" aria-label="City map, north at the top"></canvas>
-          <div class="rc-trip"><span class="rc-speed"></span><span class="rc-cash"></span></div></div>
+          <div class="rc-trip"><span class="rc-speed"></span><span class="rc-cash"></span></div><span class="rc-loadout"></span></div>
           <div class="rc-panel rc-job"><div class="rc-jobhead"><span class="rc-jobtitle"></span><span class="rc-heat"></span></div>
           <p class="rc-objective"></p><div class="rc-actions"><button type="button" data-click="job" data-primary><span></span><kbd>J</kbd></button>
           <button type="button" data-click="vehicle"><span></span><kbd>E</kbd></button><button type="button" data-hold="brake" hidden>Brake</button>
-          <button type="button" data-click="paint" hidden><span></span><kbd>G</kbd></button></div></div></div>
+          <button type="button" data-click="shop" hidden><span></span><kbd>B</kbd></button><button type="button" data-click="paint" hidden><span></span><kbd>G</kbd></button></div></div></div>
+        <div class="rc-skills" aria-label="On-foot controls"><button data-click="jump">Jump</button><button data-hold="sprint">Sprint</button><button data-hold="fire">Fire</button><button data-click="weapon">Weapon</button></div>
         <div class="rc-pad" aria-label="Movement controls"><button type="button" class="rc-up" data-hold="up" aria-label="Up or accelerate"></button>
           <button type="button" class="rc-left" data-hold="left" aria-label="Left"></button><button type="button" class="rc-down" data-hold="down" aria-label="Down or reverse"></button>
           <button type="button" class="rc-right" data-hold="right" aria-label="Right"></button></div>
         <p class="rc-notice" role="status" aria-live="polite"></p>
-      </div><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City controls</h3>
-        <dl><dt>On foot</dt><dd>WASD or arrow keys to walk.</dd><dt>In a car</dt><dd>Up to accelerate, down to reverse, left and right to steer. Space to brake.</dd>
-        <dt>E</dt><dd>Enter a nearby vehicle or exit at low speed.</dd><dt>J</dt><dd>Take a job, pick up, or drop off at the marked stop.</dd>
-        <dt>G</dt><dd>Park your Vista at Sandline Customs, marked G on the map, to buy a new finish.</dd>
-        <dt>Esc</dt><dd>Leave the city.</dd></dl><p class="rc-career"></p><button type="button" data-click="resume" data-primary>Resume</button></section></div>`;
+      </div><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
+        <label class="rc-settings-row">Camera<select data-option="mode"><option value="third">Third person</option><option value="first">First person</option></select></label>
+        <label class="rc-settings-row">Graphics<select data-option="quality"><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label>
+        <div class="rc-radio-slot"></div>
+        <details><summary>City controls</summary><dl><dt>Move</dt><dd>WASD, arrow keys, or the direction pad. Shift to sprint. Space to jump or brake.</dd>
+        <dt>Look</dt><dd>Drag with the right mouse button or swipe the street. Z/X to turn, Page Up/Down to look vertically. C centers the camera. V switches view.</dd>
+        <dt>Combat</dt><dd>Click or hold F to fire. Q or 1–4 to change weapon. R reloads. On touch, use Fire and Weapon. An empty magazine reloads automatically.</dd>
+        <dt>E</dt><dd>Enter or take a nearby vehicle. Slow down to exit.</dd><dt>J</dt><dd>Accept, collect, or deliver the current city job.</dd>
+        <dt>Shops</dt><dd>G repaints your Vista at Sandline Customs. B buys a meal at Copper Café or repairs a car at Pier Nine Motors.</dd>
+        <dt>Esc</dt><dd>Close settings or leave the city.</dd></dl></details><p class="rc-career"></p><button type="button" data-click="resume" data-primary>Resume</button></section></div>`;
     document.body.append(dialog);
     const find = selector => dialog.querySelector(selector);
     controls = {streets:find('.rc-streets'),map:find('.rc-map'),area:find('.rc-area'),speed:find('.rc-speed'),cash:find('.rc-cash'),jobTitle:find('.rc-jobtitle'),
       heat:find('.rc-heat'),objective:find('.rc-objective'),notice:find('.rc-notice'),job:find('[data-click="job"]'),vehicle:find('[data-click="vehicle"]'),
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
+    controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');
+    window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
+    dialog.addEventListener('change',e=>{const name=e.target.dataset.option;if(name){options[name]=e.target.value;applyOptions();}});
+    controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
+    controls.streets.addEventListener('pointerdown',e=>{
+      if(paused)return;
+      controls.streets.focus({preventScroll:true});controls.streets.setPointerCapture(e.pointerId);
+      if(e.pointerType==='mouse'&&e.button===0){firing=true;queuedShot=true;return;}
+      lookPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
+    });
+    controls.streets.addEventListener('pointermove',e=>{
+      if(lookPointer?.id!==e.pointerId)return;
+      const sensitivity=e.pointerType==='mouse'?.0065:.009;
+      yaw+=(e.clientX-lookPointer.x)*sensitivity;tilt=Math.max(-.6,Math.min(.62,tilt-(e.clientY-lookPointer.y)*sensitivity));
+      manualUntil=world.elapsed+1.4;lookPointer.x=e.clientX;lookPointer.y=e.clientY;
+    });
     dialog.addEventListener('cancel', event => { event.preventDefault(); if (paused) setHelp(false); else close(); });
     dialog.addEventListener('click', event => {
       const action = event.target.closest('button')?.dataset.click;
       if (action === 'exit') close();
       if (action === 'help' || action === 'resume') setHelp(action === 'help');
-      if (action === 'vehicle' || action === 'job' || action === 'paint') act(action);
+      if (['vehicle','job','paint','weapon','shop','jump'].includes(action)) act(action);
     });
     dialog.addEventListener('pointerdown', event => {
       const button = event.target.closest('[data-hold]');
@@ -100,9 +140,12 @@
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
       pointers.set(event.pointerId,button.dataset.hold);
+      if(button.dataset.hold==='fire')queuedShot=true;
       button.setAttribute('data-held','');
     });
     function release(event) {
+      if(event.pointerType==='mouse')firing=false;
+      if(lookPointer?.id===event.pointerId)lookPointer=null;
       const name = pointers.get(event.pointerId);
       if (!name) return;
       pointers.delete(event.pointerId);
@@ -150,6 +193,8 @@
       const gx=x(map.garage.x),gy=y(map.garage.y);
       ctx.fillStyle='#b8ffde';ctx.fillRect(gx-5,gy-6,11,13);ctx.fillStyle='#173528';ctx.font='bold 11px sans-serif';ctx.fillText('G',gx-4,gy+4);
     }
+    for(const shop of map.shops){ctx.fillStyle='#96e3d8';ctx.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}
+    for(const car of world.vehicles)if(car.kind==='patrol'&&car.hp>0){ctx.fillStyle='#ff9986';ctx.fillRect(x(car.x)-1.5,y(car.y)-1.5,3,3);}
     const p=world.player,goal=target();
     if(goal){
       const tx=x(goal.x),ty=y(goal.y);
@@ -165,10 +210,17 @@
   function refresh() {
     if (!world) return;
     const p=world.player,car=world.vehicles.find(v=>v.id===p.vehicleId),goal=target();
-    setText(controls.area,world.district);
-    setText(controls.speed,car ? Math.round(Math.abs(car.speed))+' u/s' : 'On foot');
+    setText(controls.area,world.district+' · '+(options.mode==='first'?'First person':'Third person'));
+    setText(controls.speed,car ? Math.round(Math.abs(car.speed))+' u/s' : p.motion==='idle'?'On foot':p.motion[0].toUpperCase()+p.motion.slice(1));
     setText(controls.cash,'$'+world.career.cash.toLocaleString());
-    setText(controls.heat,world.heat ? 'Heat '+world.heat+'/3' : 'Heat 0/3');
+    setText(controls.heat,'★'.repeat(world.heat)+'☆'.repeat(5-world.heat));
+    controls.heat.setAttribute('aria-label','Wanted level '+world.heat+' of 5');controls.heat.title=controls.heat.getAttribute('aria-label');
+    const gear=world.weapons[world.weapon],ammo=world.ammo[world.weapon];
+    setText(controls.loadout,car?'Condition '+Math.ceil(car.hp)+'%':'HP '+Math.ceil(p.hp)+(gear?' · '+gear.name+' · '+(world.reloadAt?'Reloading':ammo.mag+'/'+ammo.stock):''));
+    controls.skills.hidden=!!car;controls.reticle.hidden=!!car;
+    controls.reticle.classList.toggle('hit',world.hitAt!=null&&world.elapsed-world.hitAt<.22);
+    const shop=window.RecoilCityWorld.nearbyShop(world);controls.shop.hidden=!shop;
+    if(shop)setText(controls.shop.firstElementChild,shop.name+' · $'+shop.price);
     controls.heat.toggleAttribute('data-hot',world.heat>0);
     const job=world.job || world.offer;
     setText(controls.jobTitle,job ? job.kind+' · $'+job.pay : 'Dispatch');
@@ -182,7 +234,8 @@
     const needsCar=world.job?.kind==='Passenger'&&!car;
     setText(controls.job.firstElementChild,goal ? (pickup?'Pick up':'Drop off') : 'Take job');
     controls.job.disabled=!job || (!!goal && (!nearby || needsCar));
-    setText(controls.vehicle.firstElementChild,car ? 'Exit vehicle' : 'Enter vehicle');
+    const candidate=world.vehicles.find(v=>v.id===world.nearbyVehicle);
+    setText(controls.vehicle.firstElementChild,car ? 'Exit vehicle' : candidate&&candidate.kind!=='parked' ? 'Take vehicle' : 'Enter vehicle');
     controls.vehicle.disabled=!car && world.nearbyVehicle==null;
     controls.brake.hidden=!car || !matchMedia('(pointer:coarse),(max-width:740px)').matches;
     const garage=window.RecoilCityWorld.garageView?.(world);
@@ -202,10 +255,16 @@
     if(value===lastCareer)return;
     try{localStorage.setItem(careerKey,value);lastCareer=value;}catch{}
   }
-  function clearHeld(){held.clear();pointers.clear();dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
+  function clearHeld(){held.clear();pointers.clear();lookPointer=null;firing=false;queuedShot=false;dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
   function act(action){
     if(!world || paused)return;
-    if(action==='vehicle')window.RecoilCityWorld.interact(world);
+    if(action==='vehicle'){if(window.RecoilCityWorld.interact(world)){yaw=world.player.angle;tilt=0;manualUntil=0;}}
+    else if(action==='jump')window.RecoilCityWorld.jump(world);
+    else if(action==='shop')window.RecoilCityWorld.shop(world);
+    else if(action==='reload')window.RecoilCityWorld.reload(world);
+    else if(action==='weapon')window.RecoilCityWorld.selectWeapon(world,world.weapon+1);
+    else if(action==='camera'){options.mode=options.mode==='first'?'third':'first';applyOptions();}
+    else if(action==='center'){yaw=world.player.angle;tilt=0;manualUntil=0;}
     else if(action==='paint')window.RecoilCityWorld.respray(world);
     else window.RecoilCityWorld.job(world);
     refresh();
@@ -215,8 +274,9 @@
     if(!world)return;
     paused=show;clearHeld();controls.help.hidden=!show;controls.hud.inert=show;previousTime=0;
     if(show){
+      dialog.querySelector('[data-option=mode]').value=options.mode;dialog.querySelector('[data-option=quality]').value=options.quality;
       const c=world.career;
-      setText(controls.career,c.deliveries+' deliveries · '+c.trips+' passenger trips'+(c.bestTime>0?' · Best job '+Math.round(c.bestTime)+'s':''));
+      setText(controls.career,c.deliveries+' deliveries · '+c.trips+' passenger trips · '+(c.discoveries?.length||0)+'/3 discoveries'+(c.bestTime>0?' · Best job '+Math.round(c.bestTime)+'s':''));
       controls.resume.focus({preventScroll:true});
     }else controls.streets.focus({preventScroll:true});
   }
@@ -227,14 +287,18 @@
       event.preventDefault();if(paused)setHelp(false);else close();return;
     }
     if(paused || event.code==='Tab')return;
+    if(event.code==='Space'&&!world.player.vehicleId&&!event.target.closest?.('button')){
+      event.preventDefault();if(event.type==='keydown'&&!event.repeat)act('jump');return;
+    }
+    if(/^Digit[1-4]$/.test(event.code)&&event.type==='keydown'){window.RecoilCityWorld.selectWeapon(world,+event.code.slice(-1)-1);refresh();return;}
     if(event.code==='Space' && event.target.closest?.('button'))return;
     const key=arrowCodes[event.code];
     if(key){
       event.preventDefault();
-      if(event.type==='keydown')held.add(event.code);else held.delete(event.code);
+      if(event.type==='keydown'){held.add(event.code);if(key==='fire'&&!event.repeat)queuedShot=true;}else held.delete(event.code);
       return;
     }
-    const action={KeyJ:'job',KeyE:'vehicle',KeyG:'paint'}[event.code];
+    const action={KeyJ:'job',KeyE:'vehicle',KeyG:'paint',KeyQ:'weapon',KeyR:'reload',KeyV:'camera',KeyC:'center',KeyB:'shop'}[event.code];
     if(event.type==='keydown'&&!event.repeat && action){
       event.preventDefault();act(action);
     }
@@ -249,23 +313,41 @@
     previousTime=now;
     const pressed=name => [...held].some(code=>arrowCodes[code]===name) || [...pointers.values()].includes(name);
     const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
-    // Project screen-relative walking onto the isometric streets. Vehicle steering stays relative to the car.
-    const length=Math.max(1,Math.hypot(turn,forward));
-    const walkX=(turn-forward)*Math.SQRT1_2/length,walkY=(-turn-forward)*Math.SQRT1_2/length;
-    window.RecoilCityWorld.step(world,{forward,turn,walkX,walkY,brake:pressed('brake')},elapsed);
-    window.RecoilCityView.draw(controls.streets,world);
+    const look=Number(pressed('lookRight'))-Number(pressed('lookLeft')),vertical=Number(pressed('lookUp'))-Number(pressed('lookDown'));
+    if(look||vertical){yaw+=look*elapsed*1.85;tilt=Math.max(-.6,Math.min(.62,tilt+vertical*elapsed));manualUntil=world.elapsed+1.4;}
+    const p=world.player,car=p.vehicleId;
+    if(car && !lookPointer && world.elapsed>=manualUntil){
+      const delta=p.angle-yaw;yaw+=Math.atan2(Math.sin(delta),Math.cos(delta))*(1-Math.exp(-elapsed*5));
+    }
+    const cos=Math.cos(yaw),sin=Math.sin(yaw),walkX=cos*forward-sin*turn,walkY=sin*forward+cos*turn;
+    const view={...options,yaw,tilt,aspect:controls.streets.clientWidth/Math.max(1,controls.streets.clientHeight)};
+    cam=window.RecoilCityView.camera(world,view);
+    const aim={yaw,pitch:cam.pitch,origin:cam};
+    window.RecoilCityWorld.step(world,{forward,turn,walkX,walkY,sprint:pressed('sprint'),brake:pressed('brake'),fire:queuedShot||firing||pressed('fire'),aim},elapsed);
+    if(elapsed>0)queuedShot=false;
+    if(!car && (forward||turn||options.mode==='first'||firing||pressed('fire')))p.angle=yaw;
+    cam=window.RecoilCityView.camera(world,view);
+    window.RecoilCityView.draw(controls.streets,world,cam,controls.sky);
     if(now>=nextHud){refresh();nextHud=now+100;}
+  }
+  function applyOptions(){
+    world.quality=options.quality;world.populationAt=0;
+    frameInterval=1000/(options.quality==='low'||matchMedia('(pointer:coarse)').matches?30:60);
+    try{localStorage.setItem(prefsKey,JSON.stringify(options));}catch{}
+    refresh();
   }
   function open(){
     if(world || !window.RecoilCityWorld || !window.RecoilCityView)return false;
     if(!dialog)mount();
     let career;
     try{career=JSON.parse(localStorage.getItem(careerKey));}catch{}
-    world=window.RecoilCityWorld.create({career});lastCareer=JSON.stringify(world.career);lastNotice=null;
+    let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefsKey))||{};}catch{}
+    options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:(navigator.hardwareConcurrency<=4||matchMedia('(pointer:coarse)').matches?'low':'standard')};
+    world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
-    frameInterval=1000/(matchMedia('(pointer:coarse)').matches || navigator.hardwareConcurrency<=4 ? 30 : 60);
+    applyOptions();window.RecoilCityRadio?.enterCity();
     setHelp(false);previousTime=0;nextHud=0;nextDraw=0;
     window.addEventListener('keydown',keyboard,true);window.addEventListener('keyup',keyboard,true);
     window.addEventListener('blur',clearHeld);document.addEventListener('visibilitychange',visibility);
@@ -280,7 +362,8 @@
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);
-    dialog.close();dialog.remove();dialog=null;controls=null;
+    window.RecoilCityRadio?.leaveCity();window.RecoilCityView.release(controls.streets);
+    dialog.close();dialog.remove();dialog=null;controls=null;cam=null;
     if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;
   }
   window.RecoilCity=Object.freeze({open,close,get active(){return !!world;}});

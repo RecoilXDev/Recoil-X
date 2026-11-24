@@ -199,7 +199,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'recoil-city-1' /tmp/recoil-z5-sw.js
+          grep -Fq 'recoil-city-3d-radio' /tmp/recoil-z5-sw.js
           grep -Fq 'const PASS_MAX=100,PASS_COST=300,PASS_FINAL_COST=500' /tmp/recoil-z5-live.html
           grep -Fq 'RX_PITY_LIMIT=25' /tmp/recoil-z5-live.html
           grep -Fq 'Five classic maps, plus expansion and mystery arenas' /tmp/recoil-z5-live.html
@@ -207,15 +207,19 @@ jobs:
           if grep -Fq '100.5%' /tmp/recoil-z5-live.html; then echo 'Outdated odds adjustment remains' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
-          node -e "if (require('/tmp/recoil-z5-health.json').release !== 'recoil-city-1') process.exit(1)"
+          node -e "if (require('/tmp/recoil-z5-health.json').release !== 'recoil-city-3d-radio') process.exit(1)"
           for asset in a-control-center.js a-curator.js; do
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done
-          for asset in recoil-city-world.js recoil-city-view.js recoil-city.js recoil-city-cover.webp; do
+          for asset in recoil-city-world.js recoil-city-view.js recoil-city-radio.js recoil-city.js recoil-city-cover.webp; do
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/server/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done
+          curl --fail --silent --show-error --output /tmp/live-radio-catalog.json "https://recoil-x.alwaysdata.net/server/city-radio/tracks.json?build=$GITHUB_SHA"
+          cmp server/city-radio/tracks.json /tmp/live-radio-catalog.json
+          curl --fail --silent --show-error --output /tmp/live-city-theme.mp3 "https://recoil-x.alwaysdata.net/server/city-radio/Welcome_to_Recoil_City.mp3?build=$GITHUB_SHA"
+          cmp server/city-radio/Welcome_to_Recoil_City.mp3 /tmp/live-city-theme.mp3
           grep -Fq 'Review rejected inputs' /tmp/recoil-z5-admin.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-priority.js https://recoil-x.alwaysdata.net/z5-expansion.js
           grep -Fq 'Mean HTTP RTT' /tmp/recoil-z5-priority.js
