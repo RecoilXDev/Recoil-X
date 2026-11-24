@@ -1,9 +1,9 @@
 name: Update A Beta checks
 on:
   push:
-    branches: [feature/update-a-beta]
+    branches: [feature/update-a-beta, 'feature/update-a-stability-*']
   pull_request:
-    branches: [feature/update-a-beta]
+    branches: [feature/update-a-beta, 'feature/update-a-stability-*']
   workflow_dispatch:
 permissions:
   contents: read
