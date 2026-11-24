@@ -426,7 +426,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
   function settle(room,now) {
     const result=room.match.result;
     const custom=room.match.field.curator===true;
-    const deltas=custom?[]:store.settle(result,now);
+    const deltas=custom?{}:store.settle(result,now);
     // Rewards are server-generated and idempotent. A rewards error must not end a match.
     if(!custom)try{onSettled(result,now);}catch(error){onError(error);}
     room.result={...result,deltas,...(custom?{curator:true}: {})};
