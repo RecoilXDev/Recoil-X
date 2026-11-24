@@ -87,6 +87,16 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
     assert.equal((await api('/a/connection',undefined,a.token)).value.connected,true);
     assert.equal((await api('/a/connection',{profile:'economy'},a.token)).value.profile,'economy');
     assert.equal((await api('/a/connection',{profile:'standard'},a.token)).value.profile,'standard');
+    assert.equal((await api('/a/shield',undefined,a.token)).value.online,10);
+    assert.equal((await api('/a/admin/shield',undefined,a.token)).status,403);
+    assert.equal((await api('/a/admin/shield',{maintenance:true},a.token)).status,403);
+    assert.equal((await api('/a/admin/shield',{maintenance:true},moderator.token)).value.maintenance,true);
+    assert.equal((await api('/a/shield',undefined,a.token)).value.maintenance,true);
+    assert.equal((await api('/a/admin/shield',{maintenance:false},moderator.token)).value.maintenance,false);
+    assert.equal((await api('/a/progression',undefined,a.token)).value.xp,0);
+    assert.equal((await api('/a/community',{public:true},a.token)).value.public,true);
+    assert.equal((await api('/a/community',{public:false},a.token)).value.public,false);
+    assert(Array.isArray((await api('/a/community',undefined,a.token)).value.players));
 
     for(const size of [1,2,3,5]){
       const count=size*2,round=players.slice(0,count);
