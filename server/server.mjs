@@ -218,8 +218,10 @@ export function createRecoilServer(options = {}) {
     const transport=client.transport;
     const replaceable=event.type==='z2:state'||(event.type==='relay'&&
       (event.packet?.t==='pos'||(event.packet?.t==='z1-frame'&&event.packet.phase==='playing')));
-    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
+    if(transport.destroyed)return;
+    // Hard backlog guard must precede the replaceable-state early return.
     if(transport.writableLength>=400000){transport.destroy();return;}
+    if(replaceable&&(transport.writableNeedDrain||transport.writableLength>=8192))return;
     const payload=JSON.stringify(event);
     client.socket.send(payload);
     if(event.type==='z2:state')delivery.sent(client,Buffer.byteLength(payload));
@@ -638,7 +640,7 @@ export function createRecoilServer(options = {}) {
   });
 
   function socketPacket(c, data) {
-    if (!shield.packet(c)) {if(c.aShieldWindow.count>520){shield.note('wire-flood-disconnect',c.id);cutConnection(c,'Connection exceeded the message rate limit.');}return;}
+    // Wire admission is checked before decoding every message in the upgrade handler.
     const current = session.get(c.tokenHash,sqlTime());
     if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
       overdrive.drop(c.id,sqlTime(),'This session ended.');
@@ -711,10 +713,14 @@ export function createRecoilServer(options = {}) {
     try{ws=new WebSocket(req,socket,head,null,{maxLength:65536,ping:20});}catch{releasePending();socket.destroy();return;}
     socket.once('close',releasePending);
     let connected = null,preAuthMessages=0;
-    const timeout = setTimeout(()=>{if (!connected) ws.close(1000,'Sign in first');},6000);
+    const timeout = setTimeout(()=>{if (!connected) {ws.close(1000,'Sign in first');socket.destroy();}},6000);
     timeout.unref();
     ws.on('message',event=>{
       if(!connected&&++preAuthMessages>8){ws.close(1008,'Authentication required');return;}
+      if(connected){
+        if(clients.get(connected.id)!==connected)return;
+        if(!shield.packet(connected)){if(connected.aShieldWindow.count>520){shield.note('wire-flood-disconnect',connected.id);cutConnection(connected,'Connection exceeded the message rate limit.');}return;}
+      }
       if (typeof event.data!=='string' || event.data.length>65536) return;
       let overdriveRequest=false;
       try {
