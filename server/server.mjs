@@ -136,6 +136,7 @@ export function createRecoilServer(options = {}) {
     loadEvolutionLevels:ids=>expansion?.loadEvolutionLevels(ids)??new Map(),
     onLiveStart:e=>expansion?.onStart(e),
     onLiveInput:(...args)=>expansion?.onInput(...args),
+    onLiveRejected:(...args)=>{try{expansion?.onRejectedInput(...args);}catch(error){console.error('Input evidence write failed',error.message);}},
     onLiveFrame:e=>expansion?.onFrame(e),
     onLiveEnd:(...args)=>expansion?.onEnd(...args),
     onSettled:(result,now)=>{try{economy.onMatchSettled(result,now);}finally{try{challenges.onMatchSettled(result,now);}finally{z5.recordClanWar(result,now);}}}
