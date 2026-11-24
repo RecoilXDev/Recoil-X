@@ -253,7 +253,7 @@ function hit(m,shooter,victim,damage,now,projectileStats=null) {
   if(m.mode==='pawblast'){
     const impulse=pawblastImpact(shooter,victim,damage,now);
     if(projectileStats)projectileStats.hits++;
-    if(impulse>0)m.events.push({type:'z2:notice',only:shooter.id,message:'PAWBLAST · Knockback landed!'});
+    // Confirmation is aggregated per trigger below, rather than once per pellet.
     return;
   }
   const amount=Math.min(victim.hp,damage);
