@@ -19,7 +19,7 @@ export function validateProject(input,fail){
  const rules=input.rules??{};
  if(!rules||typeof rules!=='object'||Array.isArray(rules))bad('Invalid rules.');
  const hazard=rules.hazard??'eliminate',targetBonus=rules.targetBonus??0;
- if(!['eliminate','respawn'].includes(hazard)||![0,5,10].includes(targetBonus))bad('Invalid rule action.');
+ if(!['eliminate','respawn','penalty'].includes(hazard)||hazard==='penalty'&&input.mode==='survive'||![0,5,10].includes(targetBonus))bad('Invalid rule action.');
  return {name,mode:input.mode,seconds:input.seconds,objects,...(input.rules?{rules:{hazard,targetBonus}}:{})};
 }
 export function createCurator(db,fail){
@@ -55,7 +55,7 @@ export function createCurator(db,fail){
    if(!r)throw fail(404,'Shared project not found.');return {project:row(r)};
   },
   save(u,b){const p=validateProject(b,fail),data=JSON.stringify(p),now=Date.now();
-   if(b.id){const r=own(u,b.id);q('UPDATE a_curator_projects SET data=?,updated=?,published=0 WHERE id=? AND owner=?').run(data,now,r.id,u.id);clear(r.id);return {project:row(own(u,r.id))};}
+   if(b.id){const r=own(u,b.id);q('UPDATE a_curator_projects SET data=?,updated=?,published=0 WHERE id=? AND owner=?').run(data,Math.max(now,r.updated+1),r.id,u.id);clear(r.id);return {project:row(own(u,r.id))};}
    if(q('SELECT COUNT(*) AS n FROM a_curator_projects WHERE owner=?').get(u.id).n>=20)throw fail(409,'Project limit reached (20).');
    const id=randomBytes(8).toString('hex');q('INSERT INTO a_curator_projects(id,owner,data,updated) VALUES(?,?,?,?)').run(id,u.id,data,now);return {project:row(own(u,id))};
   },
