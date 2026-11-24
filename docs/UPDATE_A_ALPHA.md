@@ -46,3 +46,14 @@ Season end: March 31, 2027, 23:59:59 Oman time (exclusive cutoff April 1 at midn
 - Authenticated SQLite saves (20 projects per account), owner-only edits/deletes, optional unlisted share code, copy to own editor, revocable sharing. Updating a project makes it private again. Shared maps are declarative data, not scripts; no ranked XP, kills, coins or inventory awards.
 - Four interactive faceted 3D Sandwyrm reward concept previews in Season Kills. These are not replacement equipped weapon meshes; existing in-match geometry and server reward ownership are preserved.
 - Remaining gates: browser/device playtests, CI validation, integrated FPS custom-match runtime and multiplayer lobbies, public moderated discovery, final in-match reward model redesign. Not deployed to Z.5.
+
+## Update A expansion — Curator, New Dawn and Server Shield
+- Curator Discovery: an opt-in public browser for approved saved projects. An authenticated admin must review the exact saved revision; edits/unsharing clear approval. Community listings do not reveal account IDs. Private share-code behavior remains.
+- Curator co-op: server-authoritative grid movement and shared target/survival objectives, up to 4 players per room and 20 concurrent rooms. Room codes, expiry and inactivity cleanup; unranked, no reward farming. This is a grid mini-game runtime, not yet integration with the main FPS combat engine.
+- Rule builder: hazard elimination or respawn; first target pickup can add 0, 5 or 10 seconds (120-second total cap). No arbitrary uploaded executable scripts.
+- New Dawn Season Pass: free five-tier account profile badge track, server-verified seasonal XP and idempotent claims during the season. No paid track, weapon inventory items or crates yet.
+- Server Shield: bounded FIFO admission queue with expiring offers; refresh and leave controls; existing players prioritized. Queue is process-local and must be rejoined after restart.
+- Admin batch ban/unban: preview exact existing non-admin accounts, maximum 10, require typed confirmation and reason, use existing moderation and session revocation; per-account results and audit event. No automated ban waves.
+- Sustained WebSocket message floods trigger disconnection; banned accounts leave Curator rooms and admission queue.
+- Remaining: main FPS custom-map multiplayer, richer visual scripting and in-match 3D models; full graphics and bot overhaul, broader community/tournaments, device performance QA, themed inventory and seasonal event assets; CAPTCHA/verification provider, proxy-aware IP restrictions, device-ban policy, external process supervisor/recovery and edge DDoS protection. These need separate implementation/hosting configuration and verification. No production release.
+- Added node tests for FIFO, moderation/ownership, co-op room isolation, movement and rule enforcement; run complete CI plus real-device tests before any merge/deploy.
