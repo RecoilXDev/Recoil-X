@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="Z.5-SAND-8" />
+<meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
 <title>RECOIL X Z.5 · Sand Edition</title>
@@ -986,7 +987,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 </div>
 <div id="mainMenu" class="hide">
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">LOCK · LOAD · DOMINATE</div></div>
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A · NEW DAWN PREVIEW</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -2092,14 +2093,37 @@ const SOUNDTRACK={
  match:{tempo:142,bass:[36,36,43,36,41,41,43,41,36,36,46,43,41,41,43,39],lead:[72,-1,70,67,72,70,-1,67,75,-1,72,70,67,69,70,-1]},
  victory:{tempo:108,bass:[48,-1,55,-1,60,-1,55,-1,53,-1,57,-1,60,-1,60,-1],lead:[72,76,79,84,79,76,84,-1,81,84,88,91,88,84,91,-1]},
  results:{tempo:80,bass:[43,-1,43,-1,38,-1,38,-1,41,-1,41,-1,36,-1,36,-1],lead:[67,-1,-1,64,62,-1,-1,59,64,-1,-1,62,60,-1,-1,-1]}};
+// Original, procedural New Dawn mode scores; no large audio downloads.
+const RX_A_MUSIC_PROFILES={"solo":[142,36,"drive"],"host":[126,40,"drive"],"guest":[128,43,"drive"],"mystery":[76,38,"shadow"],"boss":[152,33,"raid"],"infection":[108,34,"shadow"],"duel":[116,45,"pulse"],"chaos":[174,37,"break"],"training":[84,48,"calm"],"objective":[132,41,"drive"],"custom":[112,47,"pulse"],"extraction":[98,35,"shadow"],"squad":[122,38,"drive"],"domination":[136,42,"drive"],"ranked":[146,39,"drive"],"campaign":[110,36,"raid"],"heist":[92,37,"shadow"],"convoy":[138,43,"drive"],"survival":[104,32,"shadow"],"builder":[72,50,"calm"],"royale":[160,34,"break"],"titanraid":[150,30,"raid"],"faction":[128,44,"raid"],"sabotage":[102,39,"shadow"],"gungame":[166,42,"break"],"realm":[80,45,"calm"],"zvehicles":[154,38,"break"],"ztournament":[144,45,"raid"],"zundercover":[88,42,"shadow"],"z1drive":[148,47,"break"],"crown-duel":[118,46,"pulse"],"crown-contract":[106,40,"shadow"],"crown-holiday":[120,48,"calm"],"crown-mission":[114,35,"raid"],"z-online":[134,36,"drive"],"arena":[140,36,"drive"],"overcharge":[168,39,"break"],"relic":[112,44,"pulse"],"chess":[82,47,"calm"],"rescue":[124,40,"raid"],"escort":[130,45,"drive"],"hotzone":[156,41,"break"],"elimination":[136,35,"pulse"],"budget":[112,43,"pulse"],"props":[110,49,"calm"],"jeep":[150,46,"break"],"raid":[148,32,"raid"],"onechamber":[96,44,"shadow"],"hardcore":[118,33,"shadow"],"bounty":[128,37,"pulse"],"parkour":[164,48,"break"],"ctf":[152,44,"drive"],"roulette":[120,46,"pulse"],"searchdestroy":[94,36,"shadow"],"clanwar":[140,33,"raid"],"underwater":[66,40,"calm"],"demolition":[158,35,"raid"],"dualwield":[172,40,"break"],"ricochet":[162,46,"break"],"parry":[126,47,"pulse"],"train":[144,38,"drive"],"volcano":[154,31,"raid"],"timefracture":[132,49,"pulse"],"pawblast":[156,48,"break"],"alieninvasion":[126,39,"shadow"],"worldboss":[146,31,"raid"],"z2-daily":[114,44,"pulse"],"crown-dual":[158,40,"break"],"crown-z3-warmup":[96,48,"calm"],"crown-overdrive":[144,41,"drive"],"curator":[70,52,"calm"],"city":[90,45,"calm"]};
+const RX_A_RHYTHMS={
+ drive:{bass:[0,0,7,0,3,3,7,3,0,0,10,7,5,5,3,7],lead:[0,-1,7,3,10,7,-1,3,12,-1,10,7,3,5,7,-1],wave:'triangle',drums:4},
+ shadow:{bass:[0,-1,-1,0,-1,-1,3,-1,0,-1,-1,6,-1,3,-1,-1],lead:[-1,0,-1,-1,3,-1,-1,6,-1,-1,7,-1,-1,3,-1,-1],wave:'sine',drums:8},
+ raid:{bass:[0,0,0,7,3,3,0,6,0,0,10,7,3,3,5,6],lead:[0,7,12,-1,10,7,3,-1,0,3,7,10,12,10,7,3],wave:'sawtooth',drums:4},
+ break:{bass:[0,7,-1,0,5,3,7,-1,0,10,7,0,3,-1,5,7],lead:[0,3,7,10,-1,7,12,10,7,3,0,-1,5,7,10,12],wave:'triangle',drums:2},
+ pulse:{bass:[0,-1,0,7,3,-1,3,5,0,-1,10,7,5,-1,3,7],lead:[0,-1,3,7,-1,10,7,-1,12,-1,10,7,-1,5,3,-1],wave:'triangle',drums:4},
+ calm:{bass:[0,-1,-1,-1,5,-1,-1,-1,3,-1,-1,-1,7,-1,-1,-1],lead:[0,-1,7,-1,12,-1,10,-1,3,-1,7,-1,5,-1,0,-1],wave:'sine',drums:0}
+};
+function rxAModeScore(id){
+  const key='mode:'+id;if(SOUNDTRACK[key])return key;
+  // Future modes get their own deterministic score instead of the generic match loop.
+  let seed=2166136261;for(const ch of String(id))seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
+  const [tempo,root,style]=(Object.hasOwn(RX_A_MUSIC_PROFILES,id)?RX_A_MUSIC_PROFILES[id]:null)||[90+seed%65,34+seed%15,Object.keys(RX_A_RHYTHMS)[seed%6]];
+  const r=RX_A_RHYTHMS[style],offset=(seed%4)*2;
+  const vary=(notes,lead)=>Array.from({length:16},(_,i)=>{const n=notes[(i+offset)%16];return n<0?-1:root+n+(lead?24:0)+(i===13?seed%3:0);});
+  SOUNDTRACK[key]={tempo,bass:vary(r.bass,false),lead:vary(r.lead,true),wave:r.wave,drums:r.drums};return key;
+}
+function rxAMatchMusic(){
+  if(mode==='crown-overdrive'&&z2Live.match?.mode)return rxAModeScore(z2Live.match.mode);
+  return rxAModeScore(mode||'solo');
+}
 window.RecoilCityGame = Object.freeze({
   loadout: () => ({weapons: weapons.map(w => ({...w})), equipped: pl.weapon, rayHit: rayCircle3d, sound: playSound}),
   cues: SOUNDTRACK, scoreBeat, audioEnabled: () => sound, audioContext: audioCtx
 });
 function tone(ac,midi,when,duration,type='triangle',vol=.017,output=ac.destination){if(midi<0)return;const osc=ac.createOscillator(),env=ac.createGain(),freq=440*Math.pow(2,(midi-69)/12);osc.type=type;osc.frequency.setValueAtTime(freq,when);env.gain.setValueAtTime(.00001,when);env.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),when+.022);env.gain.exponentialRampToValueAtTime(.00001,when+duration);osc.connect(env).connect(output);osc.start(when);osc.stop(when+duration+.03)}
-function setMusic(track){musicMode=SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}}
-function scoreBeat(ac,track,beat,when,step,output=ac.destination){const song=SOUNDTRACK[track],i=beat%16;let bass=song.bass[i],lead=song.lead[i];if(bass>=0)tone(ac,bass,when,step*.85,'sine',track==='lobby'?.014:.026,output);if(lead>=0)tone(ac,lead,when,step*.63,track==='victory'?'sine':'triangle',track==='match'?.016:.022,output);if(track==='match'&&i%4===0)tone(ac,28,when,step*.18,'sine',.015,output);}
-function tickMusic(){if(!sound||!allAudioStarted||window.RecoilCityRadio?.playing)return;let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
+function setMusic(track){musicMode=track==='match'?rxAMatchMusic():SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}}
+function scoreBeat(ac,track,beat,when,step,output=ac.destination){const song=SOUNDTRACK[track],i=beat%16;let bass=song.bass[i],lead=song.lead[i];if(bass>=0)tone(ac,bass,when,step*.85,'sine',track==='lobby'?.014:.026,output);if(lead>=0)tone(ac,lead,when,step*.63,song.wave||(track==='victory'?'sine':'triangle'),track.startsWith('mode:')?.012:track==='match'?.016:.022,output);if((song.drums&&i%song.drums===0)||(track==='match'&&i%4===0))tone(ac,28,when,step*.18,'sine',.015,output);}
+function tickMusic(){if(!sound||!allAudioStarted||window.RecoilCity?.active||window.RecoilCityRadio?.playing)return;if(phase==='playing'&&musicMode.startsWith('mode:')){const desired=rxAMatchMusic();if(desired!==musicMode)setMusic(desired);}let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
 // WebGL renderer: all geometry and shaders are embedded in this HTML file.
 let program=null,buffer=null,attrib={},uniform={},staticCount=0;
 let v91StaticChunks=[],v91DynamicCapacity=0,v91DynamicArray=new Float32Array(0);
@@ -7522,7 +7546,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='VERSION Z.5 · 23 SEASONAL EDITIONS';
+  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='UPDATE A · NEW DAWN PREVIEW';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10602,7 +10626,7 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'+' · UPDATE A PREVIEW';
   $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
