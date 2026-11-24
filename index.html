@@ -987,7 +987,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 </div>
 <div id="mainMenu" class="hide">
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A · NEW DAWN PREVIEW</div></div>
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -7579,7 +7579,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · VERSION Z.5';version.textContent='VERSION Z.5 · UPDATE A NEW DAWN PREVIEW';
+  brand.textContent='RECOIL X · UPDATE A';version.textContent='UPDATE A';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10659,7 +10659,7 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'+' · UPDATE A PREVIEW';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A';
   $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
