@@ -129,6 +129,7 @@ export function createRecoilServer(options = {}) {
   const clients = new Map(), rooms = new Map();
   const delivery=createDeliveryPolicy();
   const shield=createServerShield(db,options.shield);
+  const beta=options.beta===true;
   const progression=createAProgression(db);
   const curator=createCurator(db,fail);
   const curatorRooms=createCuratorRooms(fail);
@@ -617,7 +618,7 @@ export function createRecoilServer(options = {}) {
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
     try {
-      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:'priority-reliability-1'} : await endpoint(req,path.slice(7));
+      const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'priority-reliability-1',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
@@ -760,7 +761,9 @@ export function createRecoilServer(options = {}) {
 }
 
 if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const database=process.env.RX_DB || 'recoil-x.sqlite';
+  const beta=process.env.RX_CHANNEL==='beta';
+  const database=process.env.RX_DB || (beta?'recoil-x-beta.sqlite':'recoil-x.sqlite');
+  if(beta&&/^(recoil-x|recoil-x-production)\.sqlite$/i.test(database.split(/[\\/]/).pop()))throw Error('Beta must use a separate database.');
   if (process.argv[2]==='admin') {
     const db=openDb(database);
     const result=db.prepare('UPDATE users SET admin=1 WHERE handle=? AND banned=0').run(canonical(process.argv[3]));
@@ -770,7 +773,9 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
   } else {
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
-    const server=createRecoilServer({database,origins});
-    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X Z.3 listening on port '+port));
+    const integer=(name,fallback)=>{const raw=process.env[name];if(raw===undefined)return fallback;const v=Number(raw);if(!Number.isSafeInteger(v)||v<1)throw Error('Invalid '+name);return v;};
+    const shield={maxPlayers:integer('RX_MAX_PLAYERS',40),maxPending:integer('RX_MAX_PENDING',12),maxRss:integer('RX_MAX_RSS_MIB',512)*1048576,maxAuthJobs:integer('RX_MAX_AUTH_JOBS',2),maxQueue:integer('RX_MAX_QUEUE',100)};
+    const server=createRecoilServer({database,origins,beta,shield});
+    server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X '+(beta?'Update A Beta candidate':'server')+' listening on port '+port));
   }
 }
