@@ -9255,6 +9255,9 @@ function z2Open(){
   showScreen('z2Menu');z2RenderLobby();z2Profile();
   if(!z1Account)z2Say('');
 }
+function z2LobbyName(player){
+  return player.title ? player.name+' · '+player.title : player.name;
+}
 function z2RenderLobby(){
   const root=$('z2Room'),room=z2Live.room,signedIn=!!z1Account;
   if(!root)return;
@@ -9297,7 +9300,7 @@ function z2RenderLobby(){
       catch{z2Say('Invite code '+room.code);}
     }));
   }
-  const list=room.members.map(p=>[p.name,p.spectator?'Spectator':['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)?'Raid party':z2Name(p.team,isTournament),
+  const list=room.members.map(p=>[z2LobbyName(p),p.spectator?'Spectator':['raid','titanraid','alieninvasion','worldboss'].includes(room.mode)?'Raid party':z2Name(p.team,isTournament),
     p.away?'Reconnecting':p.id===room.host?'Host':'Ready',
     room.mode==='chess'?p.draft:room.votes.includes(p.id)?'Voted rematch':'']);
   z2Table(root,['Player','Team','Status',room.mode==='chess'?'Draft':'Vote'],list);
@@ -10802,7 +10805,7 @@ function z3Lobby(root,room){
   if(!room.squad)return false;
   z2Text('h3','Ranked squad · '+room.members.length+'/'+room.capacity,root);
   z3Invite(root,room);
-  z2Table(root,['Player','Ready check'],room.members.map(p=>[p.name,p.away?'Reconnecting':p.ready?'Ready':'Waiting']));
+  z2Table(root,['Player','Ready check'],room.members.map(p=>[z2LobbyName(p),p.away?'Reconnecting':p.ready?'Ready':'Waiting']));
   const actions=document.createElement('div');actions.className='z2-actions';root.append(actions);
   const mine=room.members.find(p=>p.id===z1Account?.id);
   const ready=z2SmallButton(mine?.ready?'Unready':'Ready',()=>z2Send('squad-ready',{ready:!mine?.ready}));

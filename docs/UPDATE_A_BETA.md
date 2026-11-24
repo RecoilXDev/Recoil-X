@@ -1,4 +1,4 @@
-# Update A — Beta candidate (B5)
+# Update A — Beta candidate (B6)
 This branch inherits all Alpha workstreams. It is not a certified Beta release and must not deploy to the public Z.5 server.
 ## Run a separate instance
 From repository root, using Node 24:
@@ -63,3 +63,10 @@ The health endpoint /rx-api/health reports channel beta and readyForProduction f
 - Hard internal framebuffer caps: Pi Lite 320k, School/TV 650k, Balanced 1.6m, Max 3.6m pixels; mobile thermal caps can reduce them further. TV user agents and desktops with no hardware hints auto-select conservative School profile unless already identified as Pi. User-selected profiles remain available. No effect on multiplayer simulation, hitboxes or network protocol.
 - Fractional frame pacing avoids rounding a 24/45 FPS target down to a fixed divisor of the display refresh; menu and paused 3D drawing capped at approximately 8/12 FPS, while service loop continues. Low shader fast path skips expensive material math when advanced effects are inactive. Shader objects released after linking; oversized dynamic GPU/CPU buffers reset on map transitions.
 - Smoke checks: both inline scripts and seven changed/test modules parsed; 12 framebuffer dimension cases passed; Curator penalty and respawn executed successfully. SQLite title ownership test committed but not executed here. Pixel caps are workload limits, not measured device FPS. New full themed weapon crates, richer community features, GPU asset streaming and host-side CAPTCHA/DDoS protections remain outside this candidate scope. Full CI, actual low-end hardware QA and multiplayer staging remain release blockers.
+
+## B6 — Curator and multiplayer lobbies
+
+- **Curator Studio** keeps the last 32 tile edits in the current draft. Undoing a spawn move restores both the old spawn and the replaced tile. Use the Undo and Redo buttons, Ctrl/Command+Z, or Ctrl/Command+Shift+Z. Saving preserves the draft’s history. Opening another project starts its own history.
+- **Curator co-op** restores the player’s seat, position and shared objectives when they return to Studio during the 45-second inactivity window. Leave co-op releases the seat immediately. A server restart ends the room.
+- **First-person Curator playtests** reuse each map’s wall grid and check only the cells crossed by a camera ray. In a 320-column empty arena viewed from the center facing north, one frame used 4,236 wall lookups, down from 44,844 in B5. Device frame rates still need measurement.
+- **Season Pass titles** appear beside player names in multiplayer and ranked squad lobbies. Equip or remove a claimed title in Control Center → Season Pass. Both actions update the open lobby for other players. The New Dawn season opens November 30, 2026 at midnight in Oman.

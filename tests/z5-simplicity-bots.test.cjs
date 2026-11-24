@@ -9,7 +9,8 @@ function tacticsFixture(){
  const player={x:0,z:0,hp:100,alive:true};
  const context={Math,mode:'solo',difficulty:2,pl:player,equippedPet:'none',ARENA_HALF:110,
  getStore:()=> 'veteran',obstacles:[],rx2Covers:[],blocked:()=>false,
- activeMap:()=>({ogClassic:true}),los:()=>false,rx2Facing:()=>true,
+ activeMap:()=>({ogClassic:true}),v91EffectiveGraphics:()=>1,
+ los:()=>false,rx2SmokeBlocks:()=>false,rx2Facing:()=>true,
  rx2Face:()=>{},slide:(bot,dx,dz)=>{bot.x+=dx;bot.z+=dz;move++},
  rand:(min,max)=>(min+max)/2,clamp:(n,min,max)=>Math.max(min,Math.min(max,n)),
  hurt:()=>{shots++},tracers:[],rx2SoundAt:()=>{},remoteConns:new Map()};
@@ -41,10 +42,14 @@ test('tactical bots search genuine occluding cover positions near themselves',()
 test('tactical enemies investigate last seen positions but never fire through walls',()=>{
  const f=tacticsFixture();const bot={id:5,x:12,z:1,alive:true,hp:100,nextShot:-2,strafedir:1,speed:3,personality:'flanker'};
  assert.equal(f.context.botTactics.enabled(),true);
- f.context.botTactics.step(bot,f.player,.08,10,false);
+ f.context.los=()=>true;
+ f.context.botTactics.step(bot,f.player,.08,10,true);
  assert.equal(f.shots(),0);
- assert.ok(bot.rx5Brain);
- assert.equal(f.context.botTactics.step(bot,f.player,.08,11,false),true);
+ f.context.los=()=>false;
+ f.player.x=20;
+ assert.equal(f.context.botTactics.step(bot,f.player,.08,12,false),true);
+ assert.equal(bot.rx5Brain.mode,'investigate');
+ assert.equal(bot.rx5Brain.goal.x,0,'Bot pursues the last visible position');
  assert.equal(f.shots(),0);
  assert.ok(f.moves()>0);
 });
@@ -52,11 +57,19 @@ test('tactical enemies require reaction time and current LOS before damage',()=>
  const f=tacticsFixture();const bot={id:6,x:10,z:0,alive:true,hp:100,nextShot:-2,strafedir:1,speed:3,personality:'rusher'};
  // Force a shot to hit if the bot has visibility and its aim has settled.
  f.context.Math=Object.create(Math);f.context.Math.random=()=>0;
+ f.context.los=()=>true;
  f.context.botTactics.step(bot,f.player,.08,10,true);
  assert.equal(f.shots(),0,'No instant shot on first visual contact');
  bot.rx5Brain.mode='flank';bot.rx5Brain.reactionUntil=0;bot.nextShot=-1;
+ f.context.los=()=>false;
  f.context.botTactics.step(bot,f.player,.08,10.9,true);
- assert.ok(f.shots()>=1);
+ assert.equal(f.shots(),0,'New cover blocks a shot after the initial visibility check');
+ f.context.los=()=>true;f.context.rx2SmokeBlocks=()=>true;
+ f.context.botTactics.step(bot,f.player,.08,11,true);
+ assert.equal(f.shots(),0,'New smoke blocks the shot');
+ f.context.rx2SmokeBlocks=()=>false;
+ f.context.botTactics.step(bot,f.player,.08,11.1,true);
+ assert.equal(f.shots(),1);
 });
 test('standard intelligence remains a supported lighter fallback',()=>{
  const f=tacticsFixture();

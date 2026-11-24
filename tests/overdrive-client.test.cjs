@@ -1,6 +1,10 @@
 const assert=require('node:assert/strict');
 const {test}=require('node:test');
 const {once}=require('node:events');
+const {mkdtempSync,rmSync}=require('node:fs');
+const {tmpdir}=require('node:os');
+const {join}=require('node:path');
+const {DatabaseSync}=require('node:sqlite');
 const {setTimeout:wait}=require('node:timers/promises');
 const {makeHarness}=require('./helpers/dom-harness.cjs');
 
@@ -12,6 +16,7 @@ globalThis.crownTest={
     z1RegisterMode=true;$('z1LoginName').value=name;$('z1LoginPassword').value=password;await z1SignIn();
   },
   account:()=>z1Account,clear:()=>z1ClearAccount(),send:z2Send,ready:()=>z1SocketReady,
+  equipTitle:tier=>z1Fetch('/a/season/pass/equip',{tier}),
   quit:()=>quit(),draw:now=>draw(now),step:(dt,now)=>simulate(dt,now),
   chooseDevice:pickDevice,trial:()=>z2Daily,dual:()=>z2Dual,map:()=>x5Run,
   weapon:()=>pl.weapon,obstacles,portrait:crownCharacterPortrait,
@@ -107,9 +112,13 @@ test('Z.2 menus, ghost, dual boss, ordered mission gates, daily course, avatar a
   assert.deepEqual(game.log,[]);
 });
 
-test('two game clients run Overdrive UI against the real local server',async()=>{
+test('two game clients run Overdrive UI against the real local server',async t=>{
   const {createRecoilServer}=await import('../server/server.mjs');
-  const server=createRecoilServer({database:':memory:'});
+  const {createAProgression,SEASON_START}=await import('../server/a-progression.mjs');
+  const directory=mkdtempSync(join(tmpdir(),'recoil-lobby-'));
+  t.after(()=>rmSync(directory,{recursive:true,force:true}));
+  const database=join(directory,'game.sqlite');
+  const server=createRecoilServer({database});
   server.listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   const desktop=makeHarness({},undefined,{origin},bridge),touch=makeHarness({},undefined,{origin},bridge);
@@ -146,6 +155,31 @@ test('two game clients run Overdrive UI against the real local server',async()=>
     assert(!active(desktop,'z2LobbyForm')&&!active(touch,'z2LobbyForm'));
     assert.match(el(desktop,'z2Room').textContent,/BrowserTestB/);
     assert.match(el(desktop,'z2Room').querySelector('.z2-host-controls').textContent,/Remove BrowserTestB/);
+    await t.test('a claimed season title follows its owner through lobby updates and rejoining',async()=>{
+      const owner=touch.api.account();
+      const nameCells=game=>el(game,'z2Room').querySelectorAll('td').map(cell=>cell.textContent);
+      const titledName=owner.name+' · Dawn Recruit';
+      assert(nameCells(desktop).includes(owner.name));
+      await assert.rejects(touch.api.equipTitle(1),{status:403});
+
+      // Prepare an earned B5 title without moving the test machine's clock into the season.
+      const db=new DatabaseSync(database);
+      try{
+        const progression=createAProgression(db,{clock:()=>SEASON_START});
+        progression.settle({id:'season-match',mode:'arena',winner:0,duration:60000,
+          players:[{id:owner.id,team:0,inputs:25,kills:1}]});
+        progression.claimPass(owner,1);
+      }finally{db.close();}
+      await touch.api.equipTitle(1);
+      await next(()=>both.every(game=>nameCells(game).includes(titledName)),'Both lobbies display the equipped title');
+      const code=desktop.api.live.room.code;
+      touch.api.send('leave');
+      await next(()=>!touch.api.live.room&&desktop.api.live.room.members.length===1,'Player left the lobby');
+      touch.api.send('join',{code});
+      await next(()=>both.every(game=>nameCells(game).includes(titledName)),'The equipped title survives rejoining');
+      await touch.api.equipTitle(null);
+      await next(()=>both.every(game=>nameCells(game).includes(owner.name)&&!nameCells(game).includes(titledName)),'Unequip restores the plain name on both clients');
+    });
     desktop.api.send('start');
     await next(()=>both.every(g=>g.api.live.match&&g.api.live.snapshot),'Both clients receive match state');
     assert(both.every(g=>g.api.match().mode==='crown-overdrive'&&g.api.match().alive));
