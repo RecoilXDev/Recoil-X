@@ -198,7 +198,12 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'z5-sand-8-wave2' /tmp/recoil-z5-sw.js
+          grep -Fq 'z5-sand-8-fair-loot' /tmp/recoil-z5-sw.js
+          grep -Fq 'const PASS_MAX=100,PASS_COST=300,PASS_FINAL_COST=500' /tmp/recoil-z5-live.html
+          grep -Fq 'RX_PITY_LIMIT=25' /tmp/recoil-z5-live.html
+          grep -Fq 'Five classic maps, plus expansion and mystery arenas' /tmp/recoil-z5-live.html
+          if grep -Fq '20 battlegrounds' /tmp/recoil-z5-live.html; then echo 'Outdated map claim remains' >&2; exit 1; fi
+          if grep -Fq '100.5%' /tmp/recoil-z5-live.html; then echo 'Outdated odds adjustment remains' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
           echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
