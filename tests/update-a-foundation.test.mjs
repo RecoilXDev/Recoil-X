@@ -39,4 +39,5 @@ test('combat metrics count only server-fired projectiles and damage-confirmed hi
  assert.deepEqual(report[0],{weapon:0,triggers:1,projectiles:1,hits:1,damage:22,accuracy:100});
  assert.equal(report[1].accuracy,null);
  assert.equal(combatReport(v.aCombat)[0].hits,0);
+ const hit=m.events.find(e=>e.type==='z2:hit-confirm');assert.deepEqual(hit,{type:'z2:hit-confirm',only:1,id:m.id,hits:1,damage:22});
 });
