@@ -60,3 +60,6 @@ References:
 - https://help.alwaysdata.com/en/docs/web-hosting/languages/nodejs/configuration/
 - https://help.alwaysdata.com/en/docs/development/api/
 - https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
+
+## Update A — hosting security checklist
+The in-process API concurrency limit defaults to 48 (RX_MAX_HTTP), excludes health checks, and returns 503 with Retry-After when full. Keep the existing database and deployment regression gate. This is application protection, not upstream DDoS filtering. At the hosting control panel, verify TLS, supported edge request/connection limits and origin restrictions without blocking WebSocket upgrades or trusting arbitrary forwarded-IP headers. Use a separately configured staging site and database for load testing, then measure legitimate API, login, reconnect and WebSocket traffic before tuning capacity. Edge protection and recovery procedures need provider-side configuration and access; do not claim these have been enabled simply because this commit is deployed.

@@ -679,15 +679,17 @@ export function createRecoilServer(options = {}) {
     if (!originOk(req)) {res.writeHead(403).end();return;}
     if (req.method==='OPTIONS') {res.writeHead(204).end();return;}
     res.setHeader('Content-Type','application/json; charset=utf-8');
+    let releaseHttp;
     try {
+      if(path!=='/rx-api/health')releaseHttp=shield.reserveHttp();
       const result = path==='/rx-api/health' ? {recoil:'Z.5',protocol:1,overdrive:1,missionLevels:500,release:beta?'update-a-beta-candidate':'recoil-city-3d-radio',...(beta?{channel:'beta',readyForProduction:false}:{})} : await endpoint(req,path.slice(7));
       res.end(JSON.stringify(result));
     } catch (error) {
       if (!error.status) console.error(error);
       res.statusCode = error.status || 500;
       if([429,503].includes(res.statusCode))res.setHeader('Retry-After','15');
-      res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
-    }
+      if(!res.destroyed)res.end(JSON.stringify({error:error.status?error.message:'Game server error.'}));
+    } finally {releaseHttp?.();}
   });
 
   function socketPacket(c, data) {
@@ -840,7 +842,7 @@ if (process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) 
     const port=Number(process.env.PORT)||8787;
     const origins=(process.env.RX_ORIGINS||'https://recoilxdev.github.io').split(',').map(s=>s.trim()).filter(Boolean);
     const integer=(name,fallback)=>{const raw=process.env[name];if(raw===undefined)return fallback;const v=Number(raw);if(!Number.isSafeInteger(v)||v<1)throw Error('Invalid '+name);return v;};
-    const shield={maxPlayers:integer('RX_MAX_PLAYERS',40),maxPending:integer('RX_MAX_PENDING',12),maxRss:integer('RX_MAX_RSS_MIB',512)*1048576,maxAuthJobs:integer('RX_MAX_AUTH_JOBS',2),maxQueue:integer('RX_MAX_QUEUE',100)};
+    const shield={maxPlayers:integer('RX_MAX_PLAYERS',40),maxPending:integer('RX_MAX_PENDING',12),maxRss:integer('RX_MAX_RSS_MIB',512)*1048576,maxAuthJobs:integer('RX_MAX_AUTH_JOBS',2),maxHttp:integer('RX_MAX_HTTP',48),maxQueue:integer('RX_MAX_QUEUE',100)};
     const server=createRecoilServer({database,origins,beta,shield});
     server.listen(port,process.env.RX_BIND||process.env.IP||process.env.HOST||'127.0.0.1',()=>console.log('RECOIL X '+(beta?'Update A Beta candidate':'server')+' listening on port '+port));
   }

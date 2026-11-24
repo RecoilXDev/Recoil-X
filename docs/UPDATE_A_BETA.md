@@ -82,3 +82,6 @@ Friends > Season leaderboard shows an automatically rotating seven-day ranked po
 
 ### RC4 — seasonal cosmetic rendering
 New Dawn rifle finish, Mystery-mode knife and local third-person helmet use the existing 3D mesh paths with server-owned equipment checks, account-change invalidation and explicit unequip. The championship rifle takes precedence if equipped. Other players do not inherit the local user's finishes. Remote cosmetic replication, GPU/device verification and hosting-edge defenses remain unverified or unfinished. Existing inventory and combat statistics remain unchanged.
+
+### RC5 — API pressure guard
+Server Shield now limits concurrent non-health API calls with a default capacity of 48, adjustable using RX_MAX_HTTP. Releases happen in finally, including rejected requests, and health checks remain available. Control Center reports current API activity. Host edge filtering and actual capacity measurement still require separate provider-side verification.

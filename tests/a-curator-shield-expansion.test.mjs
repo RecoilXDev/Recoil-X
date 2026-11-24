@@ -42,3 +42,19 @@ test('validated target bonus and hazard respawn are applied once',()=>{
  now=400;assert.equal(r.move(u,{dx:1,dz:0}).players[0].x,0);
  now=800;assert.equal(r.move(u,{dx:1,dz:0}).ends,d.ends+10000);
 });
+
+test('HTTP admission bounds concurrent game API calls and releases idempotently',()=>{
+ const db=new DatabaseSync(':memory:');
+ try{
+  assert.throws(()=>createServerShield(db,{maxHttp:0}),/Invalid Server Shield limits/);
+  const shield=createServerShield(db,{maxHttp:2,memory:()=>0});
+  const first=shield.reserveHttp(),second=shield.reserveHttp();
+  assert.equal(shield.status(0).httpJobs,2);
+  assert.equal(shield.status(0).httpLimit,2);
+  assert.throws(()=>shield.reserveHttp(),{status:503});
+  first();first();assert.equal(shield.status(0).httpJobs,1);
+  const third=shield.reserveHttp();third();second();
+  assert.equal(shield.status(0).httpJobs,0);
+  assert.equal(shield.inspect({id:1,admin:true},0).denied,1);
+ }finally{db.close();}
+});
