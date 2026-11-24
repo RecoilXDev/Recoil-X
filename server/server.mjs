@@ -344,6 +344,22 @@ export function createRecoilServer(options = {}) {
     return result;
   }
 
+  function shieldBatch(user,body){
+    if(!user.admin)throw fail(403,'Administrator access required.');
+    if(!Array.isArray(body.names)||body.names.length<1||body.names.length>10||!['ban','unban'].includes(body.action))throw fail(400,'Choose 1–10 accounts and ban or unban.');
+    if(body.names.some(n=>typeof n!=='string'||!userPattern.test(n)))throw fail(400,'Invalid account name.');
+    const handles=[...new Set(body.names.map(canonical))];
+    const targets=handles.map(h=>byName.get(h));
+    if(targets.some(t=>!t||t.admin||t.id===user.id))throw fail(400,'Every target must exist and be a non-admin account.');
+    const names=targets.map(t=>t.name),confirmation=body.action.toUpperCase()+' '+names.length+' ACCOUNTS';
+    if(body.preview===true)return {names,confirmation};
+    if(body.confirmation!==confirmation||typeof body.reason!=='string'||body.reason.trim().length<5||body.reason.length>160)throw fail(400,'Confirm the exact action and provide a reason.');
+    const results=[];
+    for(const name of names){try{moderate(user,{name,action:body.action,reason:body.reason.trim()});results.push({name,ok:true});}
+      catch(e){results.push({name,ok:false,error:e.status?e.message:'Moderation failed.'});}}
+    shield.note('batch-'+body.action,user.id);return {results};
+  }
+
   async function endpoint(req, path) {
     if ((path === '/register' || path === '/login') && req.method === 'POST')
       return credentials(req,await readJson(req),path === '/register');
@@ -418,6 +434,7 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path==='/a/admin/shield/batch'){if(!allowed('a-batch:'+user.id,6,60000))throw fail(429,'Retry shortly.');return shieldBatch(user,body);}
       if(path==='/a/shield/queue'){if(!allowed('a-queue:'+user.id,20,60000))throw fail(429,'Retry shortly.');return body.leave===true?shield.leaveQueue(user):shield.queueStatus(user,clients.size,true);}
       if(path.startsWith('/a/curator/')){
         if(path==='/a/curator/move'){if(!allowed('a-curator-move:'+user.id,175,60000))throw fail(429,'Move more slowly.');return curatorRooms.move(user,body);}
@@ -609,7 +626,7 @@ export function createRecoilServer(options = {}) {
   });
 
   function socketPacket(c, data) {
-    if (!shield.packet(c)) return;
+    if (!shield.packet(c)) {if(c.aShieldWindow.count>520){shield.note('wire-flood-disconnect',c.id);cutConnection(c,'Connection exceeded the message rate limit.');}return;}
     const current = session.get(c.tokenHash,sqlTime());
     if (!current || current.banned || overdriveData.activeBan(c.id,sqlTime())) {
       overdrive.drop(c.id,sqlTime(),'This session ended.');
