@@ -320,6 +320,7 @@ function fire(m,p,now) {
     }
   }
   m.events.push({type:'z2:shot',origin:p.id,team:p.team,a:eye.map(v=>round(v,100)),b:end});
+  if(metrics.hits>hitsBefore&&m.mode==='pawblast')m.events.push({type:'z2:notice',only:p.id,message:'PAWBLAST · Knockback landed!'});
   if(metrics.hits>hitsBefore&&m.mode!=='pawblast')m.events.push({type:'z2:hit-confirm',only:p.id,id:m.id,hits:metrics.hits-hitsBefore,damage:round(metrics.damage-damageBefore,10)});
 }
 
