@@ -79,7 +79,7 @@ window.RXCurator={mount(host,signal,onBack=()=>host.replaceChildren()){
  let p={name:'My Arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:3,z:2}]},angle=.65,firstView=false,yaw=0,playing=false,player=null,timer=null,remaining=0,bonusUsed=0,found=new Set(),busy=false;
  const panel=el('section');panel.className='card';host.replaceChildren(panel);
  const library=el('div'),editor=el('div'),toolbar=el('div'),title=el('h3','Curator Mode');
- library.className='curator-library';editor.className='curator-editor';editor.hidden=true;toolbar.className='curator-top';
+ library.className='curator-library';library.hidden=false;editor.className='curator-editor';editor.hidden=true;toolbar.className='curator-top';
  let editing=false,draftOpened=false,baseline='';
  const fingerprint=()=>JSON.stringify({name:name.value,seconds:seconds.value,mode:mode.value,objects:p.objects,rules:[hazard.value,bonus.value]});
  function canReplace(){return !draftOpened||fingerprint()===baseline||confirm('Replace your unsaved draft?');}
