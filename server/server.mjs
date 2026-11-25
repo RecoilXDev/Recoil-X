@@ -817,7 +817,7 @@ export function createRecoilServer(options = {}) {
   server.requestTimeout=20000;server.headersTimeout=10000;
   const cleanup=setInterval(()=>{
     const now=sqlTime();
-    curatorRooms.sweep();
+    curatorRooms.sweep();citySessions.sweep();
     try{progression.finalize(now);}catch(error){console.error('Season reward finalization failed',error.message);}
     for (const [k,value] of windowLimits) if (value.until<now) windowLimits.delete(k);
     for(const c of clients.values())if(!session.get(c.tokenHash,now))cutConnection(c,'Session expired. Sign in again.');

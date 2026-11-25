@@ -5,6 +5,7 @@ export function createCitySessions({fail=(status,message)=>Object.assign(Error(m
  function sweep(){for(const [id,m] of members)if(clock()-m.at>ttl)remove(id);}
  function add(user,code){sweep();const room=rooms.get(code);if(!room)throw fail(404,'City room not found.');const old=members.get(user.id);if(old?.code===code&&old.session===user.token_hash){old.at=clock();return {code,lease:old.lease};}if(room.size>=8||(!old&&members.size>=max))throw fail(503,'City room or server full.');if(old)remove(user.id);if(!rooms.has(code))rooms.set(code,room);const m={code,id:user.id,session:user.token_hash,lease:randomBytes(12).toString('hex'),at:clock(),position:null};members.set(user.id,m);room.set(user.id,m);return {code,lease:m.lease};}
  return {
+  sweep,
   create(user){sweep();if(members.size>=max&&!members.has(user.id))throw fail(503,'City server full.');let code;do{code=randomBytes(3).toString('hex').toUpperCase();}while(rooms.has(code));rooms.set(code,new Map());return add(user,code);},
   join(user,code){if(typeof code!=='string'||!/^[0-9A-F]{6}$/i.test(code))throw fail(400,'Invalid city room code.');return add(user,code.toUpperCase());},
   leave(user,lease){const m=members.get(user.id);if(m?.session===user.token_hash&&m.lease===lease)remove(user.id);return {ok:true};},

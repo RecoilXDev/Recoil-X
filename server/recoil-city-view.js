@@ -592,11 +592,11 @@
       const groups=[],atlas=facadeAtlas();
       const gl=canvas.getContext('webgl',{alpha:true,antialias:false,premultipliedAlpha:true,powerPreference:'low-power'});
       const make=()=>gl?gpu(gl,groups,atlas):software(canvas.getContext('2d'),groups,atlas);
-      renderer={engine:make(),gl,lost:false,region:null};renderers.set(canvas,renderer);
+      renderer={engine:make(),gl,lost:false,disposed:false,region:null};renderers.set(canvas,renderer);
       canvas.dataset.renderer=gl?'webgl':'software';
       if(gl){
-        canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();renderer.lost=true;});
-        canvas.addEventListener('webglcontextrestored',()=>{renderer.engine=make();renderer.region=null;renderer.lost=false;});
+        renderer.onLost=e=>{if(renderer.disposed)return;e.preventDefault();renderer.lost=true;};renderer.onRestored=()=>{if(renderer.disposed)return;renderer.engine=make();renderer.region=null;renderer.lost=false;};
+        canvas.addEventListener('webglcontextlost',renderer.onLost);canvas.addEventListener('webglcontextrestored',renderer.onRestored);
       }
     }
     if(renderer.lost)return;
@@ -611,7 +611,7 @@
   }
   function release(canvas) {
     const r=renderers.get(canvas);if(!r)return;
-    r.engine.release();r.gl?.getExtension('WEBGL_lose_context')?.loseContext();renderers.delete(canvas);
+    r.disposed=true;renderers.delete(canvas);if(r.onLost)canvas.removeEventListener('webglcontextlost',r.onLost);if(r.onRestored)canvas.removeEventListener('webglcontextrestored',r.onRestored);r.engine.release();r.gl?.getExtension('WEBGL_lose_context')?.loseContext();panoramas.delete(canvas);
   }
   window.RecoilCityView=Object.freeze({draw,camera,release});
 })();

@@ -470,6 +470,7 @@ export function createOverdrive({client, send, store, fail, allowed, leaveLegacy
         routedEvents(room);
         if(match.result){settle(room,now);continue;}
         for(const p of [...room.members.values()])if(p.away&&p.away+ROOM_GRACE<=now)drop(p.id,now);
+        if(!rooms.has(room.code)||room.phase!=='playing'||room.match!==match)continue;
         if(match.tick%2===0){
           const frame=prepareSnapshot(match);
           onLiveFrame({matchId:match.id,code:room.code,host:room.host,mode:room.mode,match,frame,now});

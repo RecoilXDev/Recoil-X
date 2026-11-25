@@ -22,11 +22,11 @@
     }
   }
   function cueDuration(t){return 64*30/bridge().cues[t.cue].tempo;}
+  function prune(){for(const el of panels)if(!el.isConnected)panels.delete(el);}
   function sync(){
     const t=track(),pos=t?.cue?cueOffset+(playing&&gain?gain.context.currentTime-cueStarted:0):audio.currentTime||0;
     const duration=t?.cue?cueDuration(t):(Number.isFinite(audio.duration)?audio.duration:t?.seconds||0);
-    for(const el of panels){
-      if(!el.isConnected){panels.delete(el);continue;}
+    prune();for(const el of panels){
       const get=q=>el.querySelector(q);
       get('select').value=selected;get('[data-radio=play]').textContent=playing||pending?'Pause':'Play';
       get('[data-radio=repeat]').checked=repeat;get('[data-radio=volume]').value=Math.round(volume*100);
@@ -74,7 +74,7 @@
       if(t.cue)startCue(t);
       else{
         if(!audio.hasAttribute('src'))audio.src=new URL(t.file,root).href;
-        await audio.play();if(request!==serial)return;pending=false;playing=true;
+        await audio.play();if(request!==serial){if(!playing&&!pending)audio.pause();return;}pending=false;playing=true;
       }
     }catch{if(request!==serial)return;stop();status='Playback paused. Press Play to retry.';}
     sync();
@@ -91,6 +91,7 @@
     if(wantCity&&!playing&&!pending){cityStarted=true;play();}
   }
   function leaveCity(){sessionCity=false;if(cityStarted)stop();cityStarted=false;}
+  function unmount(root){for(const el of panels)if(root?.contains(el))panels.delete(el);prune();}
   function mount(slot){
     if(!slot||slot.querySelector('.rx-city-radio'))return;
     const el=document.createElement('section');el.className='rx-city-radio';el.setAttribute('aria-label','Recoil Radio');
@@ -129,11 +130,11 @@
   document.head.append(css);
   function mountMain(){mount(document.querySelector('#z1SettingsMenu .z1-screen-body'));}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountMain,{once:true});else mountMain();
-  window.RecoilCityRadio=Object.freeze({mount,enterCity,leaveCity,get playing(){return playing||pending;},
+  window.RecoilCityRadio=Object.freeze({mount,unmount,enterCity,leaveCity,get playing(){return playing||pending;},
     masterChanged(){if(!bridge()?.audioEnabled())stop();}});
   fetch(new URL('tracks.json',root)).then(r=>{if(!r.ok)throw Error();return r.json();}).then(items=>{
     album=items;catalog=[...album,...cues];if(!track())selected='recoilcity';
-    for(const el of panels)fillPanel(el);sync();if(sessionCity)enterCity();
+    prune();for(const el of panels)fillPanel(el);sync();if(sessionCity)enterCity();
   }).catch(()=>{catalog=cues;selected='cue-lobby';status='Recording library unavailable. Original game cues are available.';sync();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&(playing||pending))stop();});
   window.addEventListener('pagehide',stop);

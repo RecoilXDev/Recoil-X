@@ -10,6 +10,8 @@
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
   let online=null,onlinePending=false,onlineConnectBusy=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
+  let onlineFailures=0,onlineRtt=null,onlineLastSuccess=0,perfAverage=0;
+  function retryDelay(failures){return Math.min(8000,1100*2**Math.min(3,Math.max(0,failures)));}
   const remoteTargets=new Map();
   const held = new Set(), pointers = new Map();
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
@@ -234,20 +236,20 @@
     const code=action==='online-join'?prompt('Enter your friend’s six-character city room code'):null;
     if(action==='online-join'&&!code)return;
     const epoch=++onlineEpoch,token=sessionStorage.getItem('rx5-token');onlinePending=true;onlineConnectBusy=true;
-    try{const d=await onlineApi(action==='online-create'?'create':'join',{code},token);if(epoch!==onlineEpoch||!world||token!==sessionStorage.getItem('rx5-token')){await onlineApi('leave',{lease:d.lease},token).catch(()=>{});return;}online={code:d.code,lease:d.lease,token};onlineNote='Room '+d.code;onlineNext=0;}
+    try{const d=await onlineApi(action==='online-create'?'create':'join',{code},token);if(epoch!==onlineEpoch||!world||token!==sessionStorage.getItem('rx5-token')){await onlineApi('leave',{lease:d.lease},token).catch(()=>{});return;}online={code:d.code,lease:d.lease,token};onlineNote='Room '+d.code;onlineNext=0;onlineFailures=0;onlineRtt=null;onlineLastSuccess=performance.now();}
     catch(e){if(epoch===onlineEpoch)onlineNote=e.message;}
     finally{onlineConnectBusy=false;if(epoch===onlineEpoch)onlinePending=false;if(world&&controls&&!controls.hub.hidden)renderHub();}
   }
   function leaveOnline(){
-    const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';remoteTargets.clear();if(world)world.remotePlayers=[];
+    const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';onlineFailures=0;onlineRtt=null;onlineLastSuccess=0;remoteTargets.clear();if(world)world.remotePlayers=[];
     if(old)void onlineApi('leave',{lease:old.lease},old.token).catch(()=>{});
   }
   function sampleRemote(r,now){const t=Math.max(0,Math.min(1,(now-r.at)/1000)),a=r.from,b=r.to;return {...b,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,angle:a.angle+Math.atan2(Math.sin(b.angle-a.angle),Math.cos(b.angle-a.angle))*t};}
   async function onlinePulse(now){
     if(!online||onlinePending||now<onlineNext||!world)return;
-    onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player;
-    try{const d=await onlineApi('pulse',{lease:online.lease,x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
-    catch(e){if(epoch!==onlineEpoch||!world)return;remoteTargets.clear();world.remotePlayers=[];onlineNote=e.message;if([401,403,404,409].includes(e.status)){const message=onlineNote;leaveOnline();onlineNote=message;}}
+    onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player,started=performance.now();
+    try{const d=await onlineApi('pulse',{lease:online.lease,x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);onlineFailures=0;onlineLastSuccess=received;onlineRtt=onlineRtt===null?received-started:onlineRtt*.7+(received-started)*.3;onlineNext=Math.max(onlineNext,received+200);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
+    catch(e){if(epoch!==onlineEpoch||!world)return;onlineFailures++;onlineNext=performance.now()+retryDelay(onlineFailures);onlineNote='Reconnecting · '+e.message;if(performance.now()-onlineLastSuccess>3500){remoteTargets.clear();world.remotePlayers=[];}if([401,403,404,409].includes(e.status)){const message=e.message;leaveOnline();onlineNote=message;}}
     finally{if(epoch===onlineEpoch)onlinePending=false;}
   }
   function renderHub(){
@@ -256,7 +258,8 @@
     const add=(label,action,id,disabled=false)=>{const b=make('button',label);b.type='button';b.dataset.cityAction=action;b.dataset.cityId=id||'';b.disabled=disabled;host.append(b);};
     host.replaceChildren(make('h3','City Unleashed'),make('p','City cash: $'+world.career.cash+' · '+(world.notice||'Explore, earn and build your career.')));
     if(world.interior?.safe){host.append(make('p','Inside '+world.interior.name));add('Exit building','leave-interior','');}
-    host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending||onlineConnectBusy);add('Join private room','online-join','',onlinePending||onlineConnectBusy);}
+    host.append(make('h3','Performance'),make('p',(perfAverage>0?Math.round(1000/perfAverage)+' FPS · '+perfAverage.toFixed(1)+' ms/frame':'Collecting frame samples')+' · '+Math.round((world.renderScale||1)*100)+'% render scale · '+(controls.streets.dataset.renderer||'initializing')+' · '+world.locals.length+' active pedestrians'));
+    host.append(make('h3','Shared city — free roam'),make('p',onlineNote+(onlineRtt===null?'':' · '+Math.round(onlineRtt)+' ms request RTT')+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending||onlineConnectBusy);add('Join private room','online-join','',onlinePending||onlineConnectBusy);}
     if(world.job)add('Cancel current dispatch job','cancel-job','');
     host.append(make('h3','Story campaign'));
     if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',(v.story.active&&!v.story.near)||!!world.job);if(v.story.active)add('Cancel mission','cancel-story','');}else host.append(make('p','All three story missions completed.'));
@@ -377,7 +380,7 @@
     if(now<nextDraw-.75)return;
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
     const raw=previousTime?now-previousTime:0,elapsed=Math.min(.1,raw/1000);previousTime=now;
-    if(raw>0&&raw<250){perfTotal+=raw;perfSamples++;if(perfSamples>=45){const average=perfTotal/perfSamples;perfSlow=average>frameInterval*1.25?perfSlow+1:0;perfFast=average<frameInterval*1.08?perfFast+1:0;const next=adaptScale(world.renderScale||1,average,frameInterval,perfFast,perfSlow);if(next!==(world.renderScale||1)){world.renderScale=next;perfFast=perfSlow=0;}perfTotal=perfSamples=0;}}
+    if(raw>0&&raw<250){perfTotal+=raw;perfSamples++;if(perfSamples>=45){const average=perfTotal/perfSamples;perfAverage=average;perfSlow=average>frameInterval*1.25?perfSlow+1:0;perfFast=average<frameInterval*1.08?perfFast+1:0;const next=adaptScale(world.renderScale||1,average,frameInterval,perfFast,perfSlow);if(next!==(world.renderScale||1)){world.renderScale=next;perfFast=perfSlow=0;}perfTotal=perfSamples=0;}}
     if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     const active=new Set(pointers.values());for(const code of held)active.add(arrowCodes[code]);const pressed=name=>active.has(name);
     const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
@@ -412,7 +415,7 @@
     try{career=JSON.parse(localStorage.getItem(careerKey));}catch{}
     let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefsKey))||{};}catch{}
     options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:(navigator.hardwareConcurrency<=4||matchMedia('(pointer:coarse)').matches?'low':'standard')};
-    mapBase=null;mapRoute=null;routeAt=0;lastFilter='';world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
+    mapBase=null;mapRoute=null;routeAt=0;lastFilter='';perfAverage=0;world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
@@ -431,7 +434,7 @@
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);
-    window.RecoilCityRadio?.leaveCity();window.RecoilCityView.release(controls.streets);
+    window.RecoilCityRadio?.leaveCity();window.RecoilCityRadio?.unmount?.(dialog);window.RecoilCityView.release(controls.streets);
     dialog.close();dialog.remove();dialog=null;controls=null;cam=null;mapBase=null;mapRoute=null;
     if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;
   }
