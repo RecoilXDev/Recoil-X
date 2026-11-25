@@ -483,7 +483,7 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
-      if(path.startsWith('/a1/city/')){if(!allowed('a1-city:'+user.id,100,60000))throw fail(429,'City requests are too frequent.');if(path==='/a1/city/leave')return citySessions.leave(user);if(shield.status(clients.size).busy)throw fail(503,'City server busy.');if(path==='/a1/city/create')return citySessions.create(user);if(path==='/a1/city/join')return citySessions.join(user,body?.code);if(path==='/a1/city/pulse')return citySessions.pulse(user,body);}
+      if(path.startsWith('/a1/city/')){if(!allowed('a1-city:'+user.id,100,60000))throw fail(429,'City requests are too frequent.');if(path==='/a1/city/leave')return citySessions.leave(user,body?.lease);if(shield.status(clients.size).busy)throw fail(503,'City server busy.');if(path==='/a1/city/create')return citySessions.create(user);if(path==='/a1/city/join')return citySessions.join(user,body?.code);if(path==='/a1/city/pulse')return citySessions.pulse(user,body);}
       if(path==='/a/admin/shield/batch'){if(!allowed('a-batch:'+user.id,6,60000))throw fail(429,'Retry shortly.');return shieldBatch(user,body);}
       if(path==='/a/shield/queue'){if(!allowed('a-queue:'+user.id,20,60000))throw fail(429,'Retry shortly.');return body.leave===true?shield.leaveQueue(user):shield.queueStatus(user,clients.size,true);}
       if(path.startsWith('/a/curator/')){

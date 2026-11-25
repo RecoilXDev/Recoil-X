@@ -9,3 +9,6 @@ Authenticated private rooms (up to eight players, 32 city participants per proce
 
 ## Racing and networking polish
 Two timed street races with ordered checkpoints, saved personal records and city-local cash awards; remote avatars interpolate between low-frequency snapshots. Authenticated HTTP integration regression added. Full authoritative co-op gameplay and physical device performance still require verification.
+
+## Stability and quality pass
+Room lease identifiers isolate stale pulse/leave requests; a late connection is cleaned up using its own lease. Dealer recalls and per-owned-car respray persistence, story cancellation and checkpoint route markers added. City death clears active races. Service-worker cache bumped to A.1 and includes the New Dawn menu track. Full CI and physical device verification required.

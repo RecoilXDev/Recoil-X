@@ -112,7 +112,7 @@
     const clean = key => Number.isFinite(saved?.[key]) ? clamp(saved[key], 0, 1e9) : 0;
     const discoveries = secrets.map(item => item.id).filter(id => Array.isArray(saved?.discoveries) && saved.discoveries.includes(id));
     const a=saved?.a1,has=(items,id)=>Array.isArray(items)&&items.includes(id),cars=models.filter(m=>has(a?.cars,m.id)).map(m=>m.id);
-    const a1=a&&typeof a==='object'?{properties:properties.filter(p=>has(a.properties,p.id)).map(p=>p.id),cars,upgrades:Object.fromEntries(['vista',...cars].filter(id=>Number.isInteger(a.upgrades?.[id])&&a.upgrades[id]>0).map(id=>[id,clamp(a.upgrades[id],0,3)])),story:clamp(Number.isInteger(a.story)?a.story:0,0,story.length),...(a.raceBest&&typeof a.raceBest==='object'?{raceBest:Object.fromEntries(races.filter(r=>Number.isFinite(a.raceBest[r.id])&&a.raceBest[r.id]>0&&a.raceBest[r.id]<=r.limit).map(r=>[r.id,a.raceBest[r.id]]))}:{}),visits:venues.filter(v=>has(a.visits,v.id)).map(v=>v.id)}:null;
+    const a1=a&&typeof a==='object'?{properties:properties.filter(p=>has(a.properties,p.id)).map(p=>p.id),cars,upgrades:Object.fromEntries(['vista',...cars].filter(id=>Number.isInteger(a.upgrades?.[id])&&a.upgrades[id]>0).map(id=>[id,clamp(a.upgrades[id],0,3)])),story:clamp(Number.isInteger(a.story)?a.story:0,0,story.length),...(a.paints&&typeof a.paints==='object'?{paints:Object.fromEntries(cars.filter(id=>finishes.some(f=>f.name===a.paints[id])).map(id=>[id,a.paints[id]]))}:{}),...(a.raceBest&&typeof a.raceBest==='object'?{raceBest:Object.fromEntries(races.filter(r=>Number.isFinite(a.raceBest[r.id])&&a.raceBest[r.id]>0&&a.raceBest[r.id]<=r.limit).map(r=>[r.id,a.raceBest[r.id]]))}:{}),visits:venues.filter(v=>has(a.visits,v.id)).map(v=>v.id)}:null;
     return {...(a1?{a1}:{}), ...(discoveries.length ? {discoveries} : {}), cash: Math.floor(clean('cash')), deliveries: Math.floor(clean('deliveries')),
       trips: Math.floor(clean('trips')), bestTime: Math.round(clean('bestTime') * 10) / 10,
       paint: finishes.find(f => f.name === saved?.paint)?.name || finishes[0].name};
@@ -213,7 +213,7 @@
   function create({career, random = Math.random, weapons = [], equipped = 0, quality: detail = 'standard', rayHit, sound = () => {}} = {}) {
     const saved = readCareer(career);
     const fleet = initialFleet(saved.paint);
-    for(const id of saved.a1?.cars||[]){const m=models.find(v=>v.id===id);fleet.push(parked(id,dealer.x+24+models.indexOf(m)*27,dealer.y,0,m.color));}
+    for(const id of saved.a1?.cars||[]){const m=models.find(v=>v.id===id);fleet.push(parked(id,dealer.x+24+models.indexOf(m)*27,dealer.y,0,finishes.find(f=>f.name===saved.a1?.paints?.[id])?.color||m.color));}
     for (const car of fleet) {
       Object.assign(car, {hp: 100, wheel: 0, steer: 0, home: {x: car.x, y: car.y, angle: car.angle, kind: car.kind, target: car.target}});
     }
@@ -296,11 +296,11 @@
   }
   function garageView(state) {
     const car = driven(state), near = distance(state.player, garage) <= garage.radius;
-    const finish = state.career.paint;
+    const finish = car?.id==='vista'?state.career.paint:state.career.a1?.paints?.[car?.id]||finishes.find(f=>f.color===car?.color)?.name||finishes[0].name;
     const nextFinish = finishes[(finishes.findIndex(f => f.name === finish) + 1) % finishes.length].name;
     let reason = '';
     if (!near) reason = 'Visit Sandline Customs.';
-    else if (car?.id !== 'vista') reason = 'Bring your Vista.';
+    else if (!car||!['vista',...(state.career.a1?.cars||[])].includes(car.id)) reason = 'Bring an owned vehicle.';
     else if (Math.abs(car.speed) > 36) reason = 'Slow down to respray.';
     else if (state.career.cash < resprayPrice) reason = 'Earn $45 from city jobs.';
     return {near, eligible: !reason, finish, nextFinish, price: resprayPrice, reason};
@@ -310,9 +310,10 @@
     if (!option.eligible) { setNotice(state, option.reason); return false; }
     const finish = finishes.find(f => f.name === option.nextFinish);
     state.career.cash -= option.price;
-    state.career.paint = finish.name;
-    driven(state).color = finish.color;
-    setNotice(state, 'Vista resprayed in ' + finish.name + '.');
+    const car=driven(state);
+    if(car.id==='vista')state.career.paint=finish.name;else{const a=state.career.a1||(state.career.a1=a1Empty());(a.paints||={})[car.id]=finish.name;}
+    car.color=finish.color;
+    setNotice(state, 'Vehicle resprayed in ' + finish.name + '.');
     return true;
   }
   function job(state) {
@@ -399,6 +400,13 @@
     const v=a1View(s),a=s.career.a1||a1Empty(),cash=s.career.cash,deny=t=>{setNotice(s,t);return false;},done=t=>{s.career.a1=a;setNotice(s,t);return true;};
     if(action==='race')return startRace(s,id);
     if(action==='cancel-race'){s.a1Race=null;setNotice(s,'Race cancelled.');return true;}
+    if(action==='cancel-story'){s.a1Mission=null;setNotice(s,'Story mission cancelled.');return true;}
+    if(action==='recall-car'){
+      if(!v.dealer.near||s.player.vehicleId||!a.cars.includes(id))return deny('Visit Eastline Motors on foot to recall an owned car.');
+      const c=s.vehicles.find(c=>c.id===id),m=models.find(m=>m.id===id),pos={x:dealer.x+24+models.indexOf(m)*27,y:dealer.y};
+      if(!c||!clearOfBuildings(pos.x,pos.y,carRadius)||!clearOfCars(s,pos.x,pos.y,carRadius,c))return deny('Dealer parking blocked.');
+      Object.assign(c,pos,{angle:0,speed:0,hp:100,steer:0,wheel:0,restoreAt:0,destroyedAt:undefined});updateNearby(s);return done(m.name+' recalled to the dealership.');
+    }
     if(action==='buy-property'||action==='rest'||action==='enter-property'){
       const p=v.properties.find(p=>p.id===id);if(!p?.near||s.player.vehicleId)return deny('Visit the property on foot.');
       if(action==='enter-property'){if(!p.owned)return deny('Not owned.');return enterSafeInterior(s,p,'home')&&done('Inside '+p.name);}
@@ -641,7 +649,7 @@
   }
   function recover(state) {
     const p = state.player, car = driven(state);
-    state.interior=null;state.officers.length=0;
+    state.interior=null;state.officers.length=0;state.a1Race=null;
     if (car) car.speed = 0;
     Object.assign(p,{x:135,y:169,z:0,vz:0,hp:100,vehicleId:null,motion:'idle'});
     state.heat = 0; state.reloadAt = 0;
@@ -708,7 +716,7 @@
         body.x + Math.cos(body.angle)*offset,body.y + Math.sin(body.angle)*offset,h,r);
       if (t < reach) { reach = t; hit = body; }
     }
-    for (const p of (state.interior?[state.interior.keeper]:[...state.locals,...state.officers])) if (p.hp > 0) { test(p,8,3.7); test(p,12,2.5); test(p,3,3); }
+    for (const p of (state.interior?(state.interior.keeper?[state.interior.keeper]:[]):[...state.locals,...state.officers])) if (p.hp > 0) { test(p,8,3.7); test(p,12,2.5); test(p,3,3); }
     for (const car of (state.interior?[]:state.vehicles)) if (car.hp > 0 && car.id !== state.player.vehicleId) {
       test(car,4,5.7,5.3); test(car,5,6); test(car,4,5.7,-5.3);
     }

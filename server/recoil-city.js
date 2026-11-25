@@ -7,7 +7,7 @@
   let lastCareer, lastNotice, paused = false;
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
-  let online=null,onlinePending=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
+  let online=null,onlinePending=false,onlineConnectBusy=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
   const remoteTargets=new Map();
   const held = new Set(), pointers = new Map();
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
@@ -159,7 +159,7 @@
     for (const type of ['pointerup','pointercancel','lostpointercapture']) dialog.addEventListener(type,release);
   }
   function setText(node,value) { if(node.textContent !== value) node.textContent=value; }
-  function target() { return world.job && (world.job.stage === 'pickup' ? world.job.pickup : world.job.dropoff); }
+  function target() { return world.job ? (world.job.stage === 'pickup' ? world.job.pickup : world.job.dropoff) : window.RecoilCityWorld.raceView(world).active?.goal||window.RecoilCityWorld.a1View(world).story?.goal||null; }
   function streetRoute(map, start, end) {
     const distance=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
     const nearest=(coords,value)=>coords.reduce((best,c)=>Math.abs(c-value)<Math.abs(best-value)?c:best);
@@ -223,25 +223,26 @@
     try{const r=await fetch('/rx-api/a1/city/'+action,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:controller.signal,cache:'no-store'});const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||'City connection failed.'),{status:r.status});return d;}finally{clearTimeout(timeout);}
   }
   async function cityOnlineAction(action){
-    if(onlinePending||!world)return;
+    if(!world)return;
     if(action==='online-leave'){leaveOnline();renderHub();return;}
+    if(onlinePending||onlineConnectBusy)return;
     const code=action==='online-join'?prompt('Enter your friend’s six-character city room code'):null;
     if(action==='online-join'&&!code)return;
-    const epoch=++onlineEpoch;onlinePending=true;
-    try{const d=await onlineApi(action==='online-create'?'create':'join',{code});if(epoch!==onlineEpoch||!world)return;online={code:d.code,token:sessionStorage.getItem('rx5-token')};onlineNote='Room '+d.code;onlineNext=0;void 0;}
+    const epoch=++onlineEpoch,token=sessionStorage.getItem('rx5-token');onlinePending=true;onlineConnectBusy=true;
+    try{const d=await onlineApi(action==='online-create'?'create':'join',{code},token);if(epoch!==onlineEpoch||!world||token!==sessionStorage.getItem('rx5-token')){await onlineApi('leave',{lease:d.lease},token).catch(()=>{});return;}online={code:d.code,lease:d.lease,token};onlineNote='Room '+d.code;onlineNext=0;}
     catch(e){if(epoch===onlineEpoch)onlineNote=e.message;}
-    finally{if(epoch===onlineEpoch){onlinePending=false;if(world&&!controls.hub.hidden)renderHub();}}
+    finally{onlineConnectBusy=false;if(epoch===onlineEpoch)onlinePending=false;if(world&&controls&&!controls.hub.hidden)renderHub();}
   }
   function leaveOnline(){
     const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';remoteTargets.clear();if(world)world.remotePlayers=[];
-    if(old)void onlineApi('leave',{},old.token).catch(()=>{});
+    if(old)void onlineApi('leave',{lease:old.lease},old.token).catch(()=>{});
   }
   function sampleRemote(r,now){const t=Math.max(0,Math.min(1,(now-r.at)/1000)),a=r.from,b=r.to;return {...b,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,angle:a.angle+Math.atan2(Math.sin(b.angle-a.angle),Math.cos(b.angle-a.angle))*t};}
   async function onlinePulse(now){
     if(!online||onlinePending||now<onlineNext||!world)return;
     onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player;
-    try{const d=await onlineApi('pulse',{x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
-    catch(e){if(epoch!==onlineEpoch||!world)return;remoteTargets.clear();world.remotePlayers=[];onlineNote=e.message;if([401,403,404].includes(e.status))leaveOnline();}
+    try{const d=await onlineApi('pulse',{lease:online.lease,x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
+    catch(e){if(epoch!==onlineEpoch||!world)return;remoteTargets.clear();world.remotePlayers=[];onlineNote=e.message;if([401,403,404,409].includes(e.status)){const message=onlineNote;leaveOnline();onlineNote=message;}}
     finally{if(epoch===onlineEpoch)onlinePending=false;}
   }
   function renderHub(){
@@ -250,20 +251,20 @@
     const add=(label,action,id,disabled=false)=>{const b=make('button',label);b.type='button';b.dataset.cityAction=action;b.dataset.cityId=id||'';b.disabled=disabled;host.append(b);};
     host.replaceChildren(make('h3','City Unleashed'),make('p','City cash: $'+world.career.cash+' · '+(world.notice||'Explore, earn and build your career.')));
     if(world.interior?.safe){host.append(make('p','Inside '+world.interior.name));add('Exit building','leave-interior','');}
-    host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending);add('Join private room','online-join','',onlinePending);}
+    host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending||onlineConnectBusy);add('Join private room','online-join','',onlinePending||onlineConnectBusy);}
     host.append(make('h3','Story campaign'));
-    if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',v.story.active&&!v.story.near);}else host.append(make('p','All three story missions completed.'));
+    if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',v.story.active&&!v.story.near);if(v.story.active)add('Cancel mission','cancel-story','');}else host.append(make('p','All three story missions completed.'));
     const races=window.RecoilCityWorld.raceView(world);host.append(make('h3','Street races'));if(races.active){host.append(make('p',races.active.name+' · '+Math.ceil(races.active.remaining)+' seconds left'));add('Cancel race','cancel-race','');}else for(const r of races.courses){host.append(make('p',r.name+' · $'+r.pay+(r.best?' · Best '+r.best+'s':'')));add('Start race','race',r.id,!r.near||!world.player.vehicleId||!!world.job||!!world.a1Mission||!!world.heat);}
     host.append(make('h3','Properties'));
     for(const p of v.properties){host.append(make('p',p.name+' · '+(p.owned?'Owned':'$'+p.price)+(p.near?' · Nearby':'')));add(p.owned?'Rest / heal':'Purchase',p.owned?'rest':'buy-property',p.id,!p.near||!!world.player.vehicleId||(!p.owned&&world.career.cash<p.price));if(p.owned)add('Enter home','enter-property',p.id,!p.near||!!world.player.vehicleId);}
     host.append(make('h3','Eastline Motors'));
-    for(const m of v.cars){host.append(make('p',m.name+' · '+(m.owned?'Owned':'$'+m.price)));add(m.owned?'Owned':'Buy vehicle','buy-car',m.id,m.owned||!v.dealer.near||!!world.player.vehicleId||world.career.cash<m.price);}
+    for(const m of v.cars){host.append(make('p',m.name+' · '+(m.owned?'Owned':'$'+m.price)));add(m.owned?'Recall to dealership':'Buy vehicle',m.owned?'recall-car':'buy-car',m.id,!v.dealer.near||!!world.player.vehicleId||(!m.owned&&world.career.cash<m.price));}
     if(v.upgrade){host.append(make('p','Engine level '+v.upgrade.level+'/3'));add('Upgrade engine · $'+v.upgrade.price,'upgrade','',!v.upgrade.near||v.upgrade.level>=3||world.career.cash<v.upgrade.price);}
     host.append(make('h3','City venues'));for(const p of v.venues){host.append(make('p',p.name+(p.visited?' · Visited':'')));add('Visit','visit',p.id,!p.near||!!world.player.vehicleId);}
   }
   function refresh() {
     if (!world) return;
-    const p=world.player,car=world.vehicles.find(v=>v.id===p.vehicleId),goal=target();
+    const p=world.player,car=world.vehicles.find(v=>v.id===p.vehicleId),goal=world.job?target():null;
     setText(controls.area,world.district+' · '+String(Math.floor(world.cityHour)).padStart(2,'0')+':'+String(Math.floor(world.cityHour%1*60)).padStart(2,'0')+' · '+world.weather+(online?' · '+onlineNote:'')+' · '+(options.mode==='first'?'First person':'Third person'));
     setText(controls.speed,car ? Math.round(Math.abs(car.speed))+' u/s' : p.motion==='idle'?'On foot':p.motion[0].toUpperCase()+p.motion.slice(1));
     setText(controls.cash,'$'+world.career.cash.toLocaleString());
@@ -299,7 +300,8 @@
       controls.paint.disabled=!garage.eligible;
     }
     if(nearby && needsCar) setText(controls.objective,objective+' · Vehicle required');
-    const race=window.RecoilCityWorld.raceView(world).active;if(race){setText(controls.jobTitle,race.name+' · '+Math.ceil(race.remaining)+'s');setText(controls.objective,'Checkpoint '+(race.index+1)+'/'+race.total+' · '+Math.round(Math.hypot(p.x-race.goal.x,p.y-race.goal.y))+' u');}
+    const story=window.RecoilCityWorld.a1View(world).story;if(!world.job&&story?.active&&story.goal){setText(controls.jobTitle,story.name);setText(controls.objective,'Story checkpoint: '+story.goal.name+' · '+Math.round(Math.hypot(p.x-story.goal.x,p.y-story.goal.y))+' u');controls.job.disabled=true;}
+    const race=window.RecoilCityWorld.raceView(world).active;if(race){controls.job.disabled=true;setText(controls.jobTitle,race.name+' · '+Math.ceil(race.remaining)+'s');setText(controls.objective,'Checkpoint '+(race.index+1)+'/'+race.total+' · '+Math.round(Math.hypot(p.x-race.goal.x,p.y-race.goal.y))+' u');}
     if(world.notice!==lastNotice){lastNotice=world.notice;setText(controls.notice,world.notice);}
     mapDraw();
     saveCareer();
