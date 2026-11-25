@@ -2532,12 +2532,31 @@ renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,
 
 function minimap(){let c=$('minimap'),ctx=c.getContext('2d');if(!ctx)return;const w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#483422';ctx.fillRect(0,0,w,h);let s=w/ARENA_SIDE;ctx.save();ctx.translate(w/2,h/2);for(const o of obstacles){if(v92Active()&&o.w*s<1&&o.d*s<1)continue;ctx.fillStyle='#aa8056';ctx.fillRect((o.x-o.w/2)*s,(o.z-o.d/2)*s,o.w*s,o.d*s);}for(const p of pickups)if(p.ready<performance.now()/1000){ctx.fillStyle=p.type==='health'?'#55e784':p.type==='shield'?'#639eff':'#ffe26b';ctx.fillRect((p.x-.4)*s,(p.z-.4)*s,3,3);}for(const b of bots){if(!b.alive)continue;ctx.fillStyle='#ed6651';ctx.beginPath();ctx.arc(b.x*s,b.z*s,3.2,0,6.283);ctx.fill();}for(const p of remotePlayers.values()){ctx.fillStyle='#5ca9ff';ctx.beginPath();ctx.arc(p.x*s,p.z*s,3.3,0,6.283);ctx.fill();}ctx.fillStyle='#ffdb90';ctx.translate(pl.x*s,pl.z*s);ctx.rotate(pl.yaw);ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(5,5);ctx.lineTo(-5,5);ctx.closePath();ctx.fill();ctx.restore();}
 
-let lastNameplateFrame=0;
-function updateNameplates(ts){if(ts-lastNameplateFrame<145)return;lastNameplateFrame=ts;const parent=$('nameplates');parent.replaceChildren();if(phase!=='playing'||paused)return;
-let eye,center;if(spectating&&selectedSpectator()){let t=selectedSpectator(),a=t.yaw||0;eye=[clamp(t.x-Math.sin(a)*4.3,-ARENA_HALF+1,ARENA_HALF-1),2.5,clamp(t.z+Math.cos(a)*4.3,-ARENA_HALF+1,ARENA_HALF-1)];center=[t.x,1.45,t.z];}else{({eye,center}=v8Camera());}
-const forward=norm(center.map((v,i)=>v-eye[i])),right=norm(cross(forward,[0,1,0])),up=cross(right,forward),focal=rxVH()/(2*Math.tan((mobile?81:77)*Math.PI/360));
-const players=[...bots.filter(b=>b.alive).map(b=>({...b,human:false})),...Array.from(remotePlayers.values()).filter(p=>p.hp>0&&p.alive!==false&&!p.spectating).map(p=>({...p,human:true}))];
-for(const p of players){let d=Math.hypot(p.x-eye[0],p.z-eye[2]);if(d>31)continue;let v=[p.x-eye[0],(p.human?2.8:2.6)-eye[1],p.z-eye[2]],z=dot(v,forward);if(z<=.2)continue;let xx=rxVW()/2+dot(v,right)*focal/z,yy=rxVH()/2-dot(v,up)*focal/z;if(xx<-40||xx>rxVW()+40||yy<-20||yy>rxVH()+20)continue;let tag=document.createElement('div');tag.className='nameplate'+(p.human?' human':'');tag.textContent=(p.human?'👤 ':'🤖 ')+String(p.name||tr('player')).slice(0,18);tag.style.left=xx+'px';tag.style.top=yy+'px';parent.append(tag);}
+let lastNameplateFrame=0,a2PlateParent=null,a2PlateCount=0;const a2PlatePool=[];
+function updateNameplates(ts){
+ if(ts-lastNameplateFrame<145)return;lastNameplateFrame=ts;
+ const parent=$('nameplates');if(!parent)return;
+ if(a2PlateParent!==parent){a2PlateParent=parent;a2PlateCount=0;a2PlatePool.length=0;parent.replaceChildren();}
+ let used=0;
+ if(phase==='playing'&&!paused){
+  let eye,center;const target=spectating?selectedSpectator():null;
+  if(target){let a=target.yaw||0;eye=[clamp(target.x-Math.sin(a)*4.3,-ARENA_HALF+1,ARENA_HALF-1),2.5,clamp(target.z+Math.cos(a)*4.3,-ARENA_HALF+1,ARENA_HALF-1)];center=[target.x,1.45,target.z];}else{({eye,center}=v8Camera());}
+  const forward=norm(center.map((v,i)=>v-eye[i])),right=norm(cross(forward,[0,1,0])),up=cross(right,forward),w=rxVW(),h=rxVH(),focal=h/(2*Math.tan((mobile?81:77)*Math.PI/360));
+  function place(p,human){
+   const dx=p.x-eye[0],dz=p.z-eye[2];if(dx*dx+dz*dz>31*31)return;
+   const v=[dx,(human?2.8:2.6)-eye[1],dz],z=dot(v,forward);if(z<=.2)return;
+   const xx=w/2+dot(v,right)*focal/z,yy=h/2-dot(v,up)*focal/z;if(xx<-40||xx>w+40||yy<-20||yy>h+20)return;
+   let tag=a2PlatePool[used];if(!tag){tag=document.createElement('div');a2PlatePool[used]=tag;}
+   const cls='nameplate'+(human?' human':''),label=(human?'👤 ':'🤖 ')+String(p.name||tr('player')).slice(0,18);
+   if(tag.className!==cls)tag.className=cls;if(tag.textContent!==label)tag.textContent=label;
+   tag.style.left=xx+'px';tag.style.top=yy+'px';used++;
+  }
+  for(const bot of bots)if(bot.alive)place(bot,false);
+  for(const player of remotePlayers.values())if(player.hp>0&&player.alive!==false&&!player.spectating)place(player,true);
+ }
+ if(used!==a2PlateCount||parent.children.length!==used){parent.replaceChildren(...a2PlatePool.slice(0,used));a2PlateCount=used;}
+ // Retain a small warm pool but release excess detached DOM nodes after crowded rounds.
+ if(a2PlatePool.length>Math.max(used,48))a2PlatePool.length=Math.max(used,48);
 }
 
 let aNextPresent=0,aLastCap=0,aLastScene=0;
@@ -2551,11 +2570,11 @@ function loop(ts){
  aNextPresent=aNextPresent&&ts-aNextPresent<interval?aNextPresent+interval:ts+interval;
  const actualFrame=lastPresented?ts-lastPresented:16.7;
  lastPresented=ts;rxMemoryTick(actualFrame,ts);
- v92TickBudget(actualFrame,1000/v91FpsTarget(),ts);v92Badge(ts);rx2HardwareTick(actualFrame,ts);if(x4Benchmark)x4BenchmarkSample(ts);
+ v92TickBudget(actualFrame,interval,ts);v92Badge(ts);rx2HardwareTick(actualFrame,ts);if(x4Benchmark)x4BenchmarkSample(ts);
  let now=ts/1000,dt=clamp((ts-lastFrame)/1000,0,.09);lastFrame=ts;
  // Adjust internal resolution without changing visual mode, conservatively.
- const frameBudget=1000/v91FpsTarget();
- if(actualFrame>frameBudget*1.45){perfFramesSlow++;perfFramesFast=0;}else if(actualFrame<frameBudget*1.09){perfFramesFast++;perfFramesSlow=0;}
+ const frameBudget=interval;
+ if(phase==='playing'&&!paused){if(actualFrame>frameBudget*1.45){perfFramesSlow++;perfFramesFast=0;}else if(actualFrame<frameBudget*1.09){perfFramesFast++;perfFramesSlow=0;}}else{perfFramesSlow=0;perfFramesFast=0;}
  if(perfFramesSlow>65){perfResolutionScale=Math.max(.66,perfResolutionScale-.06);perfFramesSlow=0;}
  if(perfFramesFast>180){perfResolutionScale=Math.min(1,perfResolutionScale+.03);perfFramesFast=0;}
  tickMusic();updateFPS(ts);rx3Tick(now,dt,actualFrame);
