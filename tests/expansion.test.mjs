@@ -295,7 +295,8 @@ test('offline files are served and the worker caches only its scoped game shell'
   let job;
   listeners.get('install')({waitUntil:value=>job=value});
   await job;
-  assert.equal(cached.size,11);
+  assert.equal(cached.size,12);
+  assert.ok(cached.has('https://example.test/Recoil-X/server/city-radio/47_menu.mp3'),'New Dawn is available offline');
   for(const file of ['recoil-city-world.js','recoil-city-view.js','recoil-city-radio.js','recoil-city.js','recoil-city-cover.webp']){
     assert.ok(cached.has('https://example.test/Recoil-X/server/'+file));
   }
