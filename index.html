@@ -1815,14 +1815,21 @@ function resetPlayer(){crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:
 const botNames=['SandViper_01','DuneHunter_07','FalconBot_12','MirageGhost','Scorpion_X','DustStriker','OasisSniper','RedCanyonAI','StormRider','NightRecon','GoldWarden','NomadZero'];
 function spawnBot(id){const og=activeMap()?.ogClassic;let spots=og?z5ClassicSpawnPoints:spawns;let spot=spots[(id+1)%spots.length],pos=spot;for(let i=0;i<25;i++){let hot=id<6;let range=og?29:ARENA_HALF-4;let travel=og?26:52;let tryx=hot?clamp(pl.x+rand(-travel,travel),-range,range):rand(-range,range),tryz=hot?clamp(pl.z+rand(-travel,travel),-range,range):rand(-range,range);if(len2(tryx-pl.x,tryz-pl.z)>16&&!blocked(tryx,tryz,.7)){pos=[tryx,tryz];break;}}
 return {id,x:pos[0],z:pos[1],hp:100,yaw:rand(-3,3),speed:rand(2.0,3.1),nextShot:rand(2.4,4.3),sawTarget:false,alive:true,respawn:0,strafedir:Math.random()>.5?1:-1,turn:rand(.9,2),walk:0,name:botNames[id%botNames.length],skinId:skins[1+id%(skins.length-1)].id,personality:['rusher','flanker','guardian','hunter'][id%4]};}
-function resetBots(){bots.length=0;for(let i=0;i<(mode==='solo'?v91Config().bots:12);i++)bots.push(spawnBot(i));pickups.length=0;for(const [x,z,type] of [[-30,0,'health'],[30,0,'health'],[0,-29,'ammo'],[0,29,'ammo'],[-27,18,'shield'],[27,-18,'shield'],[-84,15,'health'],[84,-15,'health'],[-71,-61,'ammo'],[71,61,'ammo'],[-65,68,'shield'],[65,-68,'shield'],[18,85,'health'],[-18,-85,'ammo'],[90,52,'shield'],[-90,-52,'health'],[52,-88,'ammo'],[-52,88,'shield']])if(!blocked(x,z,.8))pickups.push({x,z,type,ready:0,spin:rand(0,6)});tracers.length=0;}
+function resetBots(){aiAccumulator=0;bots.length=0;for(let i=0;i<(mode==='solo'?v91Config().bots:12);i++)bots.push(spawnBot(i));pickups.length=0;for(const [x,z,type] of [[-30,0,'health'],[30,0,'health'],[0,-29,'ammo'],[0,29,'ammo'],[-27,18,'shield'],[27,-18,'shield'],[-84,15,'health'],[84,-15,'health'],[-71,-61,'ammo'],[71,61,'ammo'],[-65,68,'shield'],[65,-68,'shield'],[18,85,'health'],[-18,-85,'ammo'],[90,52,'shield'],[-90,-52,'health'],[52,-88,'ammo'],[-52,88,'shield']])if(!blocked(x,z,.8))pickups.push({x,z,type,ready:0,spin:rand(0,6)});tracers.length=0;}
 function shuffleBotsAfterDeath(){if(mode==='guest')return;for(const b of bots){let fresh=spawnBot(b.id);Object.assign(b,fresh);b.nextShot=rand(2.8,4.5);}tracers.length=0;}
 function blocked(x,z,r){if(rx2CoverBlocked(x,z,r))return true;const half=crownArena?.half||ARENA_HALF;if(Math.abs(x)>half-r||Math.abs(z)>half-r)return true;for(const o of obstacles){const bx=clamp(x,o.x-o.w/2,o.x+o.w/2),bz=clamp(z,o.z-o.d/2,o.z+o.d/2);if(len2(x-bx,z-bz)<r+.01)return true;}return false;}
 function slide(entity,dx,dz,r=.44){if(!blocked(entity.x+dx,entity.z,r))entity.x+=dx;if(!blocked(entity.x,entity.z+dz,r))entity.z+=dz;}
 function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
-function rayBox(ox,oy,oz,dx,dy,dz,b){let min=-1e9,max=1e9;for(const [p,v,low,high] of [[ox,dx,b.x-b.w/2,b.x+b.w/2],[oy,dy,0,b.h],[oz,dz,b.z-b.d/2,b.z+b.d/2]]){if(Math.abs(v)<1e-6){if(p<low||p>high)return Infinity;}else{let t1=(low-p)/v,t2=(high-p)/v;if(t1>t2)[t1,t2]=[t2,t1];min=Math.max(min,t1);max=Math.min(max,t2);if(min>max)return Infinity;}}return max<.01?Infinity:Math.max(.01,min)}
+function rayBox(ox,oy,oz,dx,dy,dz,b){
+ let min=-1e9,max=1e9,low=b.x-b.w/2,high=b.x+b.w/2,t1,t2;
+ if(Math.abs(dx)<1e-6){if(ox<low||ox>high)return Infinity;}else{t1=(low-ox)/dx;t2=(high-ox)/dx;min=Math.max(min,Math.min(t1,t2));max=Math.min(max,Math.max(t1,t2));if(min>max)return Infinity;}
+ if(Math.abs(dy)<1e-6){if(oy<0||oy>b.h)return Infinity;}else{t1=-oy/dy;t2=(b.h-oy)/dy;min=Math.max(min,Math.min(t1,t2));max=Math.min(max,Math.max(t1,t2));if(min>max)return Infinity;}
+ low=b.z-b.d/2;high=b.z+b.d/2;
+ if(Math.abs(dz)<1e-6){if(oz<low||oz>high)return Infinity;}else{t1=(low-oz)/dz;t2=(high-oz)/dz;min=Math.max(min,Math.min(t1,t2));max=Math.min(max,Math.max(t1,t2));if(min>max)return Infinity;}
+ return max<.01?Infinity:Math.max(.01,min);
+}
 function wallHit(ox,oy,oz,dx,dy,dz){let t=rx2CoverRay(ox,oy,oz,dx,dy,dz);for(const o of obstacles)t=Math.min(t,rayBox(ox,oy,oz,dx,dy,dz,o));return t;}
-function los(ax,az,bx,bz,y=1.55){let dx=bx-ax,dz=bz-az,d=Math.hypot(dx,dz);return wallHit(ax,y,az,dx/d,0,dz/d)>d-.5;}
+function los(ax,az,bx,bz,y=1.55){let dx=bx-ax,dz=bz-az,d=Math.hypot(dx,dz);if(!d||!Number.isFinite(d))return wallHit(ax,y,az,dx/d,0,dz/d)>d-.5;dx/=d;dz/=d;const limit=d-.5;if(!(rx2CoverRay(ax,y,az,dx,0,dz)>limit))return false;for(const o of obstacles)if(!(rayBox(ax,y,az,dx,0,dz,o)>limit))return false;return true;}
 function rayCircle3d(ox,oy,oz,dx,dy,dz,x,y,z,r){let bx=x-ox,by=y-oy,bz=z-oz,t=bx*dx+by*dy+bz*dz;if(t<0)return Infinity;let ds=bx*bx+by*by+bz*bz-t*t;if(ds>r*r)return Infinity;return Math.max(.01,t-Math.sqrt(r*r-ds));}
 function aimVector(yaw,pitch){return {x:Math.sin(yaw)*Math.cos(pitch),y:Math.sin(pitch),z:-Math.cos(yaw)*Math.cos(pitch)}}
 function fireCore(shooter,weapon,byGuest=false){if(!shooter.alive)return;let origin={x:shooter.x,y:shooter.crouched?1.05:1.63+(shooter.jump||0),z:shooter.z},hits=0;
@@ -2037,8 +2044,9 @@ function rx5BotTacticalStep(b,target,dt,now,canSee){
   return true;
 }
 
+function a2NearestBotTarget(b,player,remotes,allowRemotes,playerSpectating){let target=null,best=Infinity;const valid=t=>t.alive!==false&&t.hp>0&&t.spectating!==true;if(!playerSpectating&&valid(player)){target=player;best=dist(player,b);}if(allowRemotes)for(const t of remotes){if(!valid(t))continue;const d=dist(t,b);if(!target||d<best){target=t;best=d;}}return target;}
 function botBehavior(b,dt,now){if(rx2BotBehavior(b,dt,now))return;if(mode==='infection'){rxInfectionBot(b,dt,now);return;}if(mode==='duel'){rxDuelBot(b,dt,now);return;}rxBotAdjust(b,dt,now);if(mode==='mystery'){vxMysteryBot(b,dt,now);return;}if(mode==='boss'&&b.isBoss){vxBossAI(b,dt,now);return;}if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.respawn=0;}return;}
-let targets=[pl];if(mode==='host'||z1IsPartyHost()&&!Z1_SOLO_SEAT_MODES.has(mode))targets.push(...remotePlayers.values());targets=targets.filter(t=>t.alive!==false&&t.hp>0&&t.spectating!==true&&(t!==pl||!spectating));if(!targets.length)return;let target=targets.reduce((a,t)=>dist(t,b)<dist(a,b)?t:a,targets[0]);const lure=rx2Gadgets.find(g=>g.type==='decoy'&&performance.now()/1000-g.started<g.duration&&Math.hypot(g.x-b.x,g.z-b.z)<25);if(lure)target={x:lure.x,z:lure.z,alive:true,hp:100000,shield:0};let d=dist(b,target),dx=(target.x-b.x)/Math.max(d,.01),dz=(target.z-b.z)/Math.max(d,.01),canSee=los(b.x,b.z,target.x,target.z)&&!rx2SmokeBlocks(b,target);
+let target=a2NearestBotTarget(b,pl,remotePlayers.values(),mode==='host'||z1IsPartyHost()&&!Z1_SOLO_SEAT_MODES.has(mode),spectating);if(!target)return;const lure=rx2Gadgets.find(g=>g.type==='decoy'&&now-g.started<g.duration&&Math.hypot(g.x-b.x,g.z-b.z)<25);if(lure)target={x:lure.x,z:lure.z,alive:true,hp:100000,shield:0};let d=dist(b,target),dx=(target.x-b.x)/Math.max(d,.01),dz=(target.z-b.z)/Math.max(d,.01),canSee=los(b.x,b.z,target.x,target.z)&&!rx2SmokeBlocks(b,target);
 // Sneaking reduces bots' ability to notice you at a distance; standing and close-range combat still reveal you.
 if(target.crouched&&d>12&&Math.random()<.992)canSee=false;if(target.crouched&&d>9&&!rx2Facing(b,target,1.0))canSee=false;
 if(rx5BotTacticsEnabled()&&rx5BotTacticalStep(b,target,dt,now,canSee))return;
@@ -2474,7 +2482,7 @@ function applyGraphics(){document.body.classList.remove('graphics-low','graphics
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
-function updateFPS(ts){fpsFrames++;if(ts-fpsStart>=500){fpsValue=Math.round(fpsFrames*1000/Math.max(1,ts-fpsStart));fpsFrames=0;fpsStart=ts;$('fpsCounter').textContent=fpsValue+' FPS';}}
+function updateFPS(ts){fpsFrames++;if(ts-fpsStart>=500){fpsValue=Math.round(fpsFrames*1000/Math.max(1,ts-fpsStart));fpsFrames=0;fpsStart=ts;const label=$('fpsCounter'),value=fpsValue+' FPS';if(label.textContent!==value)label.textContent=value;}}
 
 // Hard framebuffer pixel budgets, independent of device pixel ratio or screen resolution.
 function aFramePixelBudget(profile,mobileBudget=Infinity){return Math.min(mobileBudget,({pi:320000,school:650000,balanced:1600000,max:3600000})[profile]||650000);}
