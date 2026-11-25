@@ -5,13 +5,14 @@
   const careerKey = 'recoil-x.city.career.v1';
   let dialog, controls, world, frame, previousTime, nextHud, nextDraw, frameInterval, previousFocus;
   let lastCareer, lastNotice, paused = false;
-  let perfSamples=0,perfTotal=0,perfSlow=0,perfFast=0,lastFilter='',lastHudFrame=0,mapBase=null,mapRoute=null,routeAt=0;
+  let perfSamples=0,perfTotal=0,perfSlow=0,perfFast=0,lastFilter='',mapBase=null,mapRoute=null,routeAt=0;
   const adaptScale=(scale,average,budget,fast,slow)=>slow>=2?Math.max(.65,Math.round((scale-.08)*100)/100):fast>=4?Math.min(1,Math.round((scale+.04)*100)/100):scale;
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
   let online=null,onlinePending=false,onlineConnectBusy=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
   let onlineFailures=0,onlineRtt=null,onlineLastSuccess=0,perfAverage=0;
   function retryDelay(failures){return Math.min(8000,1100*2**Math.min(3,Math.max(0,failures)));}
+  function cityDeviceProfile(ua,cores,ram,touch){const tv=/SMART-TV|SmartTV|Tizen|Web0S|WebOS|HbbTV|NetCast/i.test(ua||''),weak=tv||touch||/Raspberry Pi|Raspbian|armv7l/i.test(ua||'')||(cores>0&&cores<=4)||(ram>0&&ram<=4)||(!cores&&!ram);return {tv,weak,quality:weak?'low':'standard',fps:weak?30:60};}
   const remoteTargets=new Map();
   const held = new Set(), pointers = new Map();
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
@@ -207,8 +208,7 @@
     for(const r of map.races){const p=r.checkpoints[0];base.fillStyle='#7dd6ff';base.fillRect(x(p.x)-3,y(p.y)-3,6,6);}
     for(const shop of map.shops){base.fillStyle='#96e3d8';base.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}}
     ctx.drawImage(mapBase,0,0);
-    const activeRace=window.RecoilCityWorld.raceView(world).active;if(activeRace?.goal){ctx.fillStyle='#7dd6ff';ctx.fillRect(x(activeRace.goal.x)-4,y(activeRace.goal.y)-4,8,8);}
-    const story=window.RecoilCityWorld.a1View(world).story?.goal;if(story){ctx.fillStyle='#f0b0ff';ctx.fillRect(x(story.x)-3,y(story.y)-3,6,6);}
+    const objective=target();if(objective&&!world.job){ctx.fillStyle=world.a1Race?'#7dd6ff':'#f0b0ff';ctx.fillRect(x(objective.x)-3,y(objective.y)-3,6,6);}
 
     for(const remote of world.remotePlayers){ctx.fillStyle='#8acbff';ctx.fillRect(x(remote.x)-3,y(remote.y)-3,6,6);}
     for(const car of world.vehicles)if(car.kind==='patrol'&&car.hp>0){ctx.fillStyle='#ff9986';ctx.fillRect(x(car.x)-1.5,y(car.y)-1.5,3,3);}
@@ -402,9 +402,10 @@
     const night=world.cityHour<6||world.cityHour>=19,filter=night?'night':world.weather;if(filter!==lastFilter){lastFilter=filter;controls.sky.style.filter=night?'brightness(.4) saturate(.75)':world.weather==='Rain'?'brightness(.72)':'';controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';}
     if(now>=nextHud){refresh();nextHud=now+100;}
   }
+  function currentDevice(){return cityDeviceProfile(navigator.userAgent,Number(navigator.hardwareConcurrency)||0,Number(navigator.deviceMemory)||0,matchMedia('(pointer:coarse)').matches);}
   function applyOptions(){
     world.quality=options.quality;world.populationAt=0;world.renderScale=1;perfSamples=perfTotal=perfSlow=perfFast=0;
-    frameInterval=1000/(options.quality==='low'||matchMedia('(pointer:coarse)').matches?30:60);
+    frameInterval=1000/(options.quality==='low'?30:currentDevice().fps);
     try{localStorage.setItem(prefsKey,JSON.stringify(options));}catch{}
     refresh();
   }
@@ -414,7 +415,7 @@
     let career;
     try{career=JSON.parse(localStorage.getItem(careerKey));}catch{}
     let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefsKey))||{};}catch{}
-    options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:(navigator.hardwareConcurrency<=4||matchMedia('(pointer:coarse)').matches?'low':'standard')};
+    options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:currentDevice().quality};
     mapBase=null;mapRoute=null;routeAt=0;lastFilter='';perfAverage=0;world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
