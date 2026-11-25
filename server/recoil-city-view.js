@@ -401,7 +401,7 @@
       hands.bar([.9,1.34,9.65+sway],[3.67,1.12,10.14+sway],.33,'#ba9474');
       heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id);
     }
-    const g=local(m),goal=!state.interior&&(state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff)||W().a1View(state).story?.goal);
+    const g=local(m),goal=!state.interior&&(state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff)||W().a1View(state).story?.goal||W().raceView(state).active?.goal);
     if(!state.interior)for(const site of [...state.map.properties,state.map.dealer,...state.map.venues])if(near(site))g.bar([site.x,site.y,.2],[site.x,site.y,.4],5.5,'#77c7ce',10);
     if(!state.interior)for(const site of state.map.signals)if(near(site)){g.box(site.x+30,site.y+30,0,1,1,10,'#777a71');g.box(site.x+30,site.y+30,10,2,2,3,W().signalRed(state,site,true)?'#ed655c':'#61d79a');}
     if(goal&&near(goal)){

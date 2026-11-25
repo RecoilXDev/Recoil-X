@@ -68,8 +68,9 @@
   const models=[{id:'a1-sprint',name:'Sprint GT',price:350,color:'#b24b40',speed:1.16},{id:'a1-trail',name:'Trail 4x4',price:550,color:'#597b5b',speed:1.07},{id:'a1-nova',name:'Nova RS',price:900,color:'#7865bc',speed:1.29}];
   const venues=[{id:'mega',name:"Mega's Club",x:1080,y:390},{id:'beach',name:'East Beach Promenade',x:2040,y:630},{id:'airport',name:'Airport Plaza',x:2040,y:150}];
   const story=[{name:'A New Beginning',contact:'Maya',checkpoints:['depot','market'],pay:125},{name:'Eastbound',contact:'Rafi',checkpoints:['east','airport'],pay:230},{name:'Coastal Connections',contact:'Maya',checkpoints:['marina','south'],pay:320}];
+  const races=[{id:'speedway',name:'Dune Speedway Sprint',pay:180,limit:110,checkpoints:[{x:2040,y:2070},{x:2280,y:2040},{x:2280,y:2280},{x:2040,y:2310}]},{id:'harbor',name:'Sunrise Harbor Run',pay:230,limit:150,checkpoints:[{x:2520,y:1590},{x:2760,y:1560},{x:2760,y:1800},{x:2520,y:1830}]}];
   const signals=[{x:2520,y:360},{x:2520,y:1080},{x:1320,y:2040},{x:2280,y:2280}];
-  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets,properties,dealer,venues,signals,blocks: makeBlocks()};
+  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets,properties,dealer,venues,signals,races,blocks: makeBlocks()};
   const buildings = map.blocks.filter(block => block.kind === 'building');
   const cellSize=240,buildingCells=new Map();
   for(const b of buildings)for(let i=Math.floor(b.x/cellSize);i<=Math.floor((b.x+b.w)/cellSize);i++)for(let j=Math.floor(b.y/cellSize);j<=Math.floor((b.y+b.h)/cellSize);j++){const k=i+','+j;if(!buildingCells.has(k))buildingCells.set(k,[]);buildingCells.get(k).push(b);}
@@ -111,7 +112,7 @@
     const clean = key => Number.isFinite(saved?.[key]) ? clamp(saved[key], 0, 1e9) : 0;
     const discoveries = secrets.map(item => item.id).filter(id => Array.isArray(saved?.discoveries) && saved.discoveries.includes(id));
     const a=saved?.a1,has=(items,id)=>Array.isArray(items)&&items.includes(id),cars=models.filter(m=>has(a?.cars,m.id)).map(m=>m.id);
-    const a1=a&&typeof a==='object'?{properties:properties.filter(p=>has(a.properties,p.id)).map(p=>p.id),cars,upgrades:Object.fromEntries(['vista',...cars].filter(id=>Number.isInteger(a.upgrades?.[id])&&a.upgrades[id]>0).map(id=>[id,clamp(a.upgrades[id],0,3)])),story:clamp(Number.isInteger(a.story)?a.story:0,0,story.length),visits:venues.filter(v=>has(a.visits,v.id)).map(v=>v.id)}:null;
+    const a1=a&&typeof a==='object'?{properties:properties.filter(p=>has(a.properties,p.id)).map(p=>p.id),cars,upgrades:Object.fromEntries(['vista',...cars].filter(id=>Number.isInteger(a.upgrades?.[id])&&a.upgrades[id]>0).map(id=>[id,clamp(a.upgrades[id],0,3)])),story:clamp(Number.isInteger(a.story)?a.story:0,0,story.length),...(a.raceBest&&typeof a.raceBest==='object'?{raceBest:Object.fromEntries(races.filter(r=>Number.isFinite(a.raceBest[r.id])&&a.raceBest[r.id]>0&&a.raceBest[r.id]<=r.limit).map(r=>[r.id,a.raceBest[r.id]]))}:{}),visits:venues.filter(v=>has(a.visits,v.id)).map(v=>v.id)}:null;
     return {...(a1?{a1}:{}), ...(discoveries.length ? {discoveries} : {}), cash: Math.floor(clean('cash')), deliveries: Math.floor(clean('deliveries')),
       trips: Math.floor(clean('trips')), bestTime: Math.round(clean('bestTime') * 10) / 10,
       paint: finishes.find(f => f.name === saved?.paint)?.name || finishes[0].name};
@@ -225,7 +226,7 @@
       weapons, weapon: clamp(equipped | 0, 0, Math.max(0, weapons.length - 1)),
       ammo: weapons.map(w => ({mag: w.max, stock: w.reserve})), nextShot: 0, reloadAt: 0,
       vehicles: fleet, pedestrians: createPedestrians(Math.floor(random()*4294967296)), officers: [], stores: shops.map((s,i)=>({...s,keeper:{id:10000+i,x:s.x+6,y:s.y,angle:Math.PI,color:'#af8050',hp:70,phase:0},cooldown:0})), interior:null, deathUntil:0, deathLabel:'', career: saved, elapsed: 0, job: null, offer: null, nearbyVehicle: null,
-      district: '', patrolId: 0, heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0,a1Mission:null,cityHour:8,weather:'Clear',remotePlayers:[]};
+      district: '', patrolId: 0, heat: 0, heatTime: 0, hitCooldown: 0, notice: '', noticeSeconds: 0,a1Mission:null,a1Race:null,cityHour:8,weather:'Clear',remotePlayers:[]};
     populate(state);
     makeOffer(state);
     updateNearby(state);
@@ -316,6 +317,7 @@
   }
   function job(state) {
     if (!state.job) {
+      if(state.a1Race){setNotice(state,'Finish or cancel the race first.');return false;}
       state.job = {...state.offer, stage: 'pickup', elapsed: 0};
       setNotice(state, 'Head to ' + state.job.pickup.name + '.');
       return true;
@@ -390,8 +392,13 @@
     return {properties:properties.map(p=>({...p,owned:a.properties.includes(p.id),near:a1Near(s,p)})),dealer:{...dealer,near:a1Near(s,dealer)},cars:models.map(m=>({...m,owned:a.cars.includes(m.id)})),upgrade:car&&['vista',...a.cars].includes(car.id)?{id:car.id,level:a.upgrades[car.id]||0,price:120+80*(a.upgrades[car.id]||0),near:a1Near(s,garage,garage.radius)&&Math.abs(car.speed)<20}:null,venues:venues.map(v=>({...v,near:a1Near(s,v),visited:a.visits.includes(v.id)})),story:chapter?{...chapter,number:a.story+1,total:story.length,active:!!s.a1Mission,goal,near:!!goal&&a1Near(s,goal,jobRadius)}:null};
   }
   function enterSafeInterior(s,site,kind){if(s.heat){setNotice(s,'Lose the wanted level before entering.');return false;}s.interior={...site,safe:true,kind,price:0};Object.assign(s.player,{x:site.x-10,y:site.y,z:0,vz:0,angle:0});return true;}
+  function raceView(s){const r=s.a1Race;return {courses:races.map(c=>({...c,near:a1Near(s,c.checkpoints[0],42),best:s.career.a1?.raceBest?.[c.id]||null})),active:r?{id:r.course.id,name:r.course.name,goal:r.course.checkpoints[r.index],index:r.index,total:r.course.checkpoints.length,remaining:Math.max(0,r.course.limit-(s.elapsed-r.started))}:null};}
+  function startRace(s,id){const c=races.find(r=>r.id===id);if(!c||!a1Near(s,c.checkpoints[0],42)||!driven(s)||s.a1Race||s.heat||s.job||s.a1Mission){setNotice(s,'Bring a car to the start with no active job, mission or wanted level.');return false;}s.a1Race={course:c,index:1,started:s.elapsed};setNotice(s,c.name+' · drive through the checkpoints.');return true;}
+  function stepRace(s){const r=s.a1Race;if(!r)return;if(!driven(s)||s.heat||s.elapsed-r.started>r.course.limit||s.deathUntil){s.a1Race=null;setNotice(s,'Race ended.');return;}if(distance(s.player,r.course.checkpoints[r.index])>28)return;if(++r.index<r.course.checkpoints.length){setNotice(s,'Race checkpoint '+r.index+'/'+r.course.checkpoints.length);return;}const t=Math.max(.1,Math.round((s.elapsed-r.started)*10)/10),a=s.career.a1||(s.career.a1=a1Empty());a.raceBest||={};a.raceBest[r.course.id]=Math.min(a.raceBest[r.course.id]||Infinity,t);s.career.cash=Math.min(1e9,s.career.cash+r.course.pay);s.a1Race=null;setNotice(s,'Race complete · '+t+'s · $'+r.course.pay);}
   function a1Action(s,action,id){
     const v=a1View(s),a=s.career.a1||a1Empty(),cash=s.career.cash,deny=t=>{setNotice(s,t);return false;},done=t=>{s.career.a1=a;setNotice(s,t);return true;};
+    if(action==='race')return startRace(s,id);
+    if(action==='cancel-race'){s.a1Race=null;setNotice(s,'Race cancelled.');return true;}
     if(action==='buy-property'||action==='rest'||action==='enter-property'){
       const p=v.properties.find(p=>p.id===id);if(!p?.near||s.player.vehicleId)return deny('Visit the property on foot.');
       if(action==='enter-property'){if(!p.owned)return deny('Not owned.');return enterSafeInterior(s,p,'home')&&done('Inside '+p.name);}
@@ -410,6 +417,7 @@
     if(action==='upgrade'){const u=v.upgrade;if(!u?.near||u.level>=3||cash<u.price)return deny('Bring your owned car to Sandline Customs with enough cash.');s.career.cash-=u.price;a.upgrades[u.id]=u.level+1;return done('Engine level '+(u.level+1));}
     if(action==='story'){
       const c=v.story;if(!c)return deny('All story missions completed.');
+      if(s.a1Race)return deny('Finish or cancel the race first.');
       if(!s.a1Mission){s.a1Mission={stage:0};return done(c.contact+': Meet at '+stops.find(x=>x.id===c.checkpoints[0]).name);}
       if(!c.near||Math.abs(driven(s)?.speed||0)>20)return deny('Reach '+c.goal.name+' and slow down.');
       if(++s.a1Mission.stage<c.checkpoints.length)return done('Checkpoint reached. Next: '+stops.find(x=>x.id===c.checkpoints[s.a1Mission.stage]).name);
@@ -563,7 +571,7 @@
       if (state.job) state.job.elapsed += dt;
       const vehicle = driven(state);
       if(state.interior)walkInterior(state,input,dt);else if (vehicle) drive(state, vehicle, input, dt); else walk(state, input, dt);
-      stepOfficers(state,dt);
+      stepOfficers(state,dt);stepRace(state);
       for (const car of state.vehicles) {
         if (car.hp <= 0) {
           if (car.home && car.restoreAt <= state.elapsed && distance(car, state.player) > 80 && distance(car.home, state.player) > 65 && clearOfCars(state, car.home.x, car.home.y, carRadius, car)) {
@@ -741,5 +749,5 @@
     }
     return true;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed});
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed,raceView});
 })();

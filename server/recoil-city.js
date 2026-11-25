@@ -8,6 +8,7 @@
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
   let online=null,onlinePending=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
+  const remoteTargets=new Map();
   const held = new Set(), pointers = new Map();
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
   const style = document.createElement('style');
@@ -198,6 +199,8 @@
       ctx.fillStyle='#b8ffde';ctx.fillRect(gx-5,gy-6,11,13);ctx.fillStyle='#173528';ctx.font='bold 11px sans-serif';ctx.fillText('G',gx-4,gy+4);
     }
     for(const site of [...map.properties,map.dealer,...map.venues]){ctx.fillStyle='#d8b9ff';ctx.fillRect(x(site.x)-2,y(site.y)-2,4,4);}
+    for(const r of map.races){const p=r.checkpoints[0];ctx.fillStyle='#7dd6ff';ctx.fillRect(x(p.x)-3,y(p.y)-3,6,6);}
+    const activeRace=window.RecoilCityWorld.raceView(world).active;if(activeRace?.goal){ctx.fillStyle='#7dd6ff';ctx.fillRect(x(activeRace.goal.x)-4,y(activeRace.goal.y)-4,8,8);}
     const story=window.RecoilCityWorld.a1View(world).story?.goal;if(story){ctx.fillStyle='#f0b0ff';ctx.fillRect(x(story.x)-3,y(story.y)-3,6,6);}
     for(const shop of map.shops){ctx.fillStyle='#96e3d8';ctx.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}
     for(const remote of world.remotePlayers){ctx.fillStyle='#8acbff';ctx.fillRect(x(remote.x)-3,y(remote.y)-3,6,6);}
@@ -230,14 +233,15 @@
     finally{if(epoch===onlineEpoch){onlinePending=false;if(world&&!controls.hub.hidden)renderHub();}}
   }
   function leaveOnline(){
-    const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';if(world)world.remotePlayers=[];
+    const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';remoteTargets.clear();if(world)world.remotePlayers=[];
     if(old)void onlineApi('leave',{},old.token).catch(()=>{});
   }
+  function sampleRemote(r,now){const t=Math.max(0,Math.min(1,(now-r.at)/1000)),a=r.from,b=r.to;return {...b,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,angle:a.angle+Math.atan2(Math.sin(b.angle-a.angle),Math.cos(b.angle-a.angle))*t};}
   async function onlinePulse(now){
     if(!online||onlinePending||now<onlineNext||!world)return;
     onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player;
-    try{const d=await onlineApi('pulse',{x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;world.remotePlayers=d.players.filter(v=>!v.inside);onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
-    catch(e){if(epoch!==onlineEpoch||!world)return;world.remotePlayers=[];onlineNote=e.message;if([401,403,404].includes(e.status))leaveOnline();}
+    try{const d=await onlineApi('pulse',{x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
+    catch(e){if(epoch!==onlineEpoch||!world)return;remoteTargets.clear();world.remotePlayers=[];onlineNote=e.message;if([401,403,404].includes(e.status))leaveOnline();}
     finally{if(epoch===onlineEpoch)onlinePending=false;}
   }
   function renderHub(){
@@ -249,6 +253,7 @@
     host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending);add('Join private room','online-join','',onlinePending);}
     host.append(make('h3','Story campaign'));
     if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',v.story.active&&!v.story.near);}else host.append(make('p','All three story missions completed.'));
+    const races=window.RecoilCityWorld.raceView(world);host.append(make('h3','Street races'));if(races.active){host.append(make('p',races.active.name+' · '+Math.ceil(races.active.remaining)+' seconds left'));add('Cancel race','cancel-race','');}else for(const r of races.courses){host.append(make('p',r.name+' · $'+r.pay+(r.best?' · Best '+r.best+'s':'')));add('Start race','race',r.id,!r.near||!world.player.vehicleId||!!world.job||!!world.a1Mission||!!world.heat);}
     host.append(make('h3','Properties'));
     for(const p of v.properties){host.append(make('p',p.name+' · '+(p.owned?'Owned':'$'+p.price)+(p.near?' · Nearby':'')));add(p.owned?'Rest / heal':'Purchase',p.owned?'rest':'buy-property',p.id,!p.near||!!world.player.vehicleId||(!p.owned&&world.career.cash<p.price));if(p.owned)add('Enter home','enter-property',p.id,!p.near||!!world.player.vehicleId);}
     host.append(make('h3','Eastline Motors'));
@@ -294,6 +299,7 @@
       controls.paint.disabled=!garage.eligible;
     }
     if(nearby && needsCar) setText(controls.objective,objective+' · Vehicle required');
+    const race=window.RecoilCityWorld.raceView(world).active;if(race){setText(controls.jobTitle,race.name+' · '+Math.ceil(race.remaining)+'s');setText(controls.objective,'Checkpoint '+(race.index+1)+'/'+race.total+' · '+Math.round(Math.hypot(p.x-race.goal.x,p.y-race.goal.y))+' u');}
     if(world.notice!==lastNotice){lastNotice=world.notice;setText(controls.notice,world.notice);}
     mapDraw();
     saveCareer();
@@ -357,7 +363,9 @@
   function tick(now){
     if(!world)return;
     frame=requestAnimationFrame(tick);
+    if(online&&online.token!==sessionStorage.getItem('rx5-token'))leaveOnline();
     if(!document.hidden)void onlinePulse(now);
+    if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     if(paused || document.hidden){previousTime=0;nextDraw=0;return;}
     if(now<nextDraw-.75)return;
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
