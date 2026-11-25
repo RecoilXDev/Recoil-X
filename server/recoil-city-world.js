@@ -77,13 +77,15 @@
   function localBuildings(x,y,r){const found=new Set();for(let i=Math.floor((x-r)/cellSize);i<=Math.floor((x+r)/cellSize);i++)for(let j=Math.floor((y-r)/cellSize);j<=Math.floor((y+r)/cellSize);j++)for(const b of buildingCells.get(i+','+j)||[])found.add(b);return found;}
   function clearOfBuildings(x, y, radius) {
     if (x < radius || y < radius || x > width - radius || y > height - radius) return false;
-    return ![...localBuildings(x,y,radius)].some(b => {
-      const dx = x - clamp(x, b.x, b.x + b.w), dy = y - clamp(y, b.y, b.y + b.h);
-      return dx * dx + dy * dy < radius * radius;
-    });
+    const r2=radius*radius;
+    for(let i=Math.floor((x-radius)/cellSize);i<=Math.floor((x+radius)/cellSize);i++)for(let j=Math.floor((y-radius)/cellSize);j<=Math.floor((y+radius)/cellSize);j++){
+      const blocks=buildingCells.get(i+','+j);if(!blocks)continue;
+      for(const b of blocks){const dx=x-clamp(x,b.x,b.x+b.w),dy=y-clamp(y,b.y,b.y+b.h);if(dx*dx+dy*dy<r2)return false;}
+    }return true;
   }
-  const onRoad = (x, y) => roadsX.some(road => Math.abs(x - road) <= roadWidth / 2)
-    || roadsY.some(road => Math.abs(y - road) <= roadWidth / 2);
+  // All existing roads lie on the same 240-unit grid. Avoid scanning every road per physics step.
+  const axisRoad=(v,roads)=>Math.abs(v-roads[clamp(Math.round((v-roads[0])/240),0,roads.length-1)])<=roadWidth/2;
+  const onRoad=(x,y)=>axisRoad(x,roadsX)||axisRoad(y,roadsY);
 
   const paint = ['#e97e49', '#48aaa7', '#e1bd62', '#959be0', '#e3d4bd', '#dc7774'];
   function parked(id, x, y, angle, color) {
@@ -388,6 +390,7 @@
   }
   const a1Empty=()=>({properties:[],cars:[],upgrades:{},story:0,visits:[]});
   const a1Near=(s,p,r=42)=>!s.interior&&!s.deathUntil&&distance(s.player,p)<=r;
+  function objectiveGoal(s){if(s.job)return s.job.stage==='pickup'?s.job.pickup:s.job.dropoff;if(s.a1Race)return s.a1Race.course.checkpoints[s.a1Race.index]||null;if(s.a1Mission){const chapter=story[s.career.a1?.story||0];return stops.find(v=>v.id===chapter?.checkpoints[s.a1Mission.stage])||null;}return null;}
   function a1View(s){
     const a=s.career.a1||a1Empty(),car=driven(s),chapter=story[a.story],goal=s.a1Mission&&chapter?stops.find(v=>v.id===chapter.checkpoints[s.a1Mission.stage]):null;
     return {properties:properties.map(p=>({...p,owned:a.properties.includes(p.id),near:a1Near(s,p)})),dealer:{...dealer,near:a1Near(s,dealer)},cars:models.map(m=>({...m,owned:a.cars.includes(m.id)})),upgrade:car&&['vista',...a.cars].includes(car.id)?{id:car.id,level:a.upgrades[car.id]||0,price:120+80*(a.upgrades[car.id]||0),near:a1Near(s,garage,garage.radius)&&Math.abs(car.speed)<20}:null,venues:venues.map(v=>({...v,near:a1Near(s,v),visited:a.visits.includes(v.id)})),story:chapter?{...chapter,number:a.story+1,total:story.length,active:!!s.a1Mission,goal,near:!!goal&&a1Near(s,goal,jobRadius)}:null};
@@ -559,13 +562,14 @@
       if(gap<105&&state.elapsed>=o.nextShot&&wallDistance(o.x,o.y,dx/gap,dy/gap,gap)>=gap){o.nextShot=state.elapsed+1.5;const head=state.random()<.16;effect(state,'return',{x:o.x,y:o.y,z:9}, {x:p.x,y:p.y,z:head?12:8},8);if(p.vehicleId)damageCar(state,driven(state),8);else{p.hp=Math.max(0,p.hp-(head?100:12));if(!p.hp){state.deathUntil=state.elapsed+2.4;state.deathLabel='DEAD';}}}
     }
   }
+  const weatherCycle=['Clear','Haze','Rain','Clear'];
   function step(state, input = {}, seconds = 0) {
     let remaining = clamp(Number(seconds) || 0, 0, .25);
-    while (remaining > 0) {
+    while (remaining > 1e-9) {
       const dt = Math.min(remaining, 1 / 60);
       remaining -= dt;
       state.elapsed += dt;
-      state.cityHour=(8+state.elapsed/90)%24;state.weather=['Clear','Haze','Rain','Clear'][Math.floor(state.elapsed/180)%4];
+      state.cityHour=(8+state.elapsed/90)%24;state.weather=weatherCycle[Math.floor(state.elapsed/180)%4];
       if(state.deathUntil){if(state.elapsed>=state.deathUntil){state.deathUntil=0;state.deathLabel='';recover(state);}continue;}
       if (state.elapsed >= state.populationAt) populate(state);
       if (state.elapsed >= state.nextTrafficCheck) replenishTraffic(state);
@@ -596,7 +600,7 @@
         if(!state.interior)state.heatTime -= dt;
         if (state.heatTime <= 0) { state.heat--; state.heatTime = 9; }
       }
-      if (!state.heat){state.officers.length=0;if(state.vehicles.some(v=>v.kind==='patrol'))state.vehicles=state.vehicles.filter(v=>v.kind!=='patrol');}
+      if (!state.heat){state.officers.length=0;for(let i=state.vehicles.length-1;i>=0;i--)if(state.vehicles[i].kind==='patrol')state.vehicles.splice(i,1);}
     }
     discover(state);
     updateNearby(state);
@@ -758,5 +762,5 @@
     }
     return true;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed,raceView});
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed,raceView,objectiveGoal});
 })();

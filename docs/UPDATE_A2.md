@@ -1,0 +1,2 @@
+# A.2 — Operation Polish
+Baseline: A.1 241/241 tests and Alwaysdata deployment succeeded. First optimization pass: direct mission-goal lookup, early exit collision query, constant-time road checks, reusable typed GPU geometry buffer, cached minimap geometry and routes, reduced input allocations and redundant camera work, adaptive render scale with hysteresis, weather filter changes only when needed, hide weapon mesh in safe interiors, cache version bump. Simulation and controls unchanged. Full CI and actual device benchmarks pending; no FPS increase claimed.

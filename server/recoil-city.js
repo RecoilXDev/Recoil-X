@@ -5,6 +5,8 @@
   const careerKey = 'recoil-x.city.career.v1';
   let dialog, controls, world, frame, previousTime, nextHud, nextDraw, frameInterval, previousFocus;
   let lastCareer, lastNotice, paused = false;
+  let perfSamples=0,perfTotal=0,perfSlow=0,perfFast=0,lastFilter='',lastHudFrame=0,mapBase=null,mapRoute=null,routeAt=0;
+  const adaptScale=(scale,average,budget,fast,slow)=>slow>=2?Math.max(.65,Math.round((scale-.08)*100)/100):fast>=4?Math.min(1,Math.round((scale+.04)*100)/100):scale;
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
   let online=null,onlinePending=false,onlineConnectBusy=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
@@ -159,7 +161,7 @@
     for (const type of ['pointerup','pointercancel','lostpointercapture']) dialog.addEventListener(type,release);
   }
   function setText(node,value) { if(node.textContent !== value) node.textContent=value; }
-  function target() { return world.job ? (world.job.stage === 'pickup' ? world.job.pickup : world.job.dropoff) : window.RecoilCityWorld.raceView(world).active?.goal||window.RecoilCityWorld.a1View(world).story?.goal||null; }
+  function target() { return window.RecoilCityWorld.objectiveGoal(world); }
   function streetRoute(map, start, end) {
     const distance=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
     const nearest=(coords,value)=>coords.reduce((best,c)=>Math.abs(c-value)<Math.abs(best-value)?c:best);
@@ -189,27 +191,30 @@
     const map = world.map, width = canvas.width, height = canvas.height;
     const scale=Math.min((width-12)/map.width,(height-8)/map.height), ox=(width-map.width*scale)/2, oy=(height-map.height*scale)/2;
     const x=value=>ox+value*scale, y=value=>oy+value*scale;
-    ctx.fillStyle='#182820';ctx.fillRect(0,0,width,height);
-    ctx.fillStyle='#26392d';ctx.fillRect(ox,oy,map.width*scale,map.height*scale);
-    ctx.strokeStyle='#869383';ctx.lineWidth=Math.max(2,map.roadWidth*scale*.55);ctx.beginPath();
-    for(const road of map.roadsX){ctx.moveTo(x(road),oy);ctx.lineTo(x(road),y(map.height));}
-    for(const road of map.roadsY){ctx.moveTo(ox,y(road));ctx.lineTo(x(map.width),y(road));}ctx.stroke();
+    if(!mapBase||mapBase.width!==width||mapBase.height!==height){mapBase=document.createElement('canvas');mapBase.width=width;mapBase.height=height;const base=mapBase.getContext('2d');
+    base.fillStyle='#182820';base.fillRect(0,0,width,height);
+    base.fillStyle='#26392d';base.fillRect(ox,oy,map.width*scale,map.height*scale);
+    base.strokeStyle='#869383';base.lineWidth=Math.max(2,map.roadWidth*scale*.55);base.beginPath();
+    for(const road of map.roadsX){base.moveTo(x(road),oy);base.lineTo(x(road),y(map.height));}
+    for(const road of map.roadsY){base.moveTo(ox,y(road));base.lineTo(x(map.width),y(road));}base.stroke();
     if(map.garage){
       const gx=x(map.garage.x),gy=y(map.garage.y);
-      ctx.fillStyle='#b8ffde';ctx.fillRect(gx-5,gy-6,11,13);ctx.fillStyle='#173528';ctx.font='bold 11px sans-serif';ctx.fillText('G',gx-4,gy+4);
+      base.fillStyle='#b8ffde';base.fillRect(gx-5,gy-6,11,13);base.fillStyle='#173528';base.font='bold 11px sans-serif';base.fillText('G',gx-4,gy+4);
     }
-    for(const site of [...map.properties,map.dealer,...map.venues]){ctx.fillStyle='#d8b9ff';ctx.fillRect(x(site.x)-2,y(site.y)-2,4,4);}
-    for(const r of map.races){const p=r.checkpoints[0];ctx.fillStyle='#7dd6ff';ctx.fillRect(x(p.x)-3,y(p.y)-3,6,6);}
+    for(const site of [...map.properties,map.dealer,...map.venues]){base.fillStyle='#d8b9ff';base.fillRect(x(site.x)-2,y(site.y)-2,4,4);}
+    for(const r of map.races){const p=r.checkpoints[0];base.fillStyle='#7dd6ff';base.fillRect(x(p.x)-3,y(p.y)-3,6,6);}
+    for(const shop of map.shops){base.fillStyle='#96e3d8';base.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}}
+    ctx.drawImage(mapBase,0,0);
     const activeRace=window.RecoilCityWorld.raceView(world).active;if(activeRace?.goal){ctx.fillStyle='#7dd6ff';ctx.fillRect(x(activeRace.goal.x)-4,y(activeRace.goal.y)-4,8,8);}
     const story=window.RecoilCityWorld.a1View(world).story?.goal;if(story){ctx.fillStyle='#f0b0ff';ctx.fillRect(x(story.x)-3,y(story.y)-3,6,6);}
-    for(const shop of map.shops){ctx.fillStyle='#96e3d8';ctx.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}
+
     for(const remote of world.remotePlayers){ctx.fillStyle='#8acbff';ctx.fillRect(x(remote.x)-3,y(remote.y)-3,6,6);}
     for(const car of world.vehicles)if(car.kind==='patrol'&&car.hp>0){ctx.fillStyle='#ff9986';ctx.fillRect(x(car.x)-1.5,y(car.y)-1.5,3,3);}
     const p=world.player,goal=target();
     if(goal){
       const tx=x(goal.x),ty=y(goal.y);
       ctx.setLineDash([3,3]);ctx.strokeStyle='#ffd783';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x(p.x),y(p.y));
-      for(const point of streetRoute(map,p,goal))ctx.lineTo(x(point.x),y(point.y));
+      const now=performance.now();if(!mapRoute||mapRoute.goal!==goal||now-routeAt>500||Math.hypot(p.x-mapRoute.x,p.y-mapRoute.y)>42){mapRoute={goal,x:p.x,y:p.y,points:streetRoute(map,p,goal)};routeAt=now;}for(const point of mapRoute.points.slice(1))ctx.lineTo(x(point.x),y(point.y));
       ctx.stroke();ctx.setLineDash([]);
       ctx.save();ctx.translate(tx,ty);ctx.rotate(Math.PI/4);ctx.fillStyle='#ffcd68';ctx.fillRect(-4.5,-4.5,9,9);ctx.restore();
     }
@@ -368,13 +373,13 @@
     frame=requestAnimationFrame(tick);
     if(online&&online.token!==sessionStorage.getItem('rx5-token'))leaveOnline();
     if(!document.hidden)void onlinePulse(now);
-    if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     if(paused || document.hidden){previousTime=0;nextDraw=0;return;}
     if(now<nextDraw-.75)return;
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
-    const elapsed=previousTime ? Math.min(.1,(now-previousTime)/1000) : 0;
-    previousTime=now;
-    const pressed=name => [...held].some(code=>arrowCodes[code]===name) || [...pointers.values()].includes(name);
+    const raw=previousTime?now-previousTime:0,elapsed=Math.min(.1,raw/1000);previousTime=now;
+    if(raw>0&&raw<250){perfTotal+=raw;perfSamples++;if(perfSamples>=45){const average=perfTotal/perfSamples;perfSlow=average>frameInterval*1.25?perfSlow+1:0;perfFast=average<frameInterval*1.08?perfFast+1:0;const next=adaptScale(world.renderScale||1,average,frameInterval,perfFast,perfSlow);if(next!==(world.renderScale||1)){world.renderScale=next;perfFast=perfSlow=0;}perfTotal=perfSamples=0;}}
+    if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
+    const active=new Set(pointers.values());for(const code of held)active.add(arrowCodes[code]);const pressed=name=>active.has(name);
     const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
     const look=Number(pressed('lookRight'))-Number(pressed('lookLeft')),vertical=Number(pressed('lookUp'))-Number(pressed('lookDown'));
     if(look||vertical){yaw+=look*elapsed*1.85;tilt=Math.max(-.6,Math.min(.62,tilt+vertical*elapsed));manualUntil=world.elapsed+1.4;}
@@ -384,18 +389,18 @@
     }
     const cos=Math.cos(yaw),sin=Math.sin(yaw),walkX=cos*forward-sin*turn,walkY=sin*forward+cos*turn;
     const view={...options,yaw,tilt,aspect:controls.streets.clientWidth/Math.max(1,controls.streets.clientHeight)};
-    cam=window.RecoilCityView.camera(world,view);
-    const aim={yaw,pitch:cam.pitch,origin:cam};
-    window.RecoilCityWorld.step(world,{forward,turn,walkX,walkY,sprint:pressed('sprint'),brake:pressed('brake'),fire:queuedShot||firing||pressed('fire'),aim},elapsed);
+    const fire=queuedShot||firing||pressed('fire');let aim;
+    if(fire){cam=window.RecoilCityView.camera(world,view);aim={yaw,pitch:cam.pitch,origin:cam};}
+    window.RecoilCityWorld.step(world,{forward,turn,walkX,walkY,sprint:pressed('sprint'),brake:pressed('brake'),fire,aim},elapsed);
     if(elapsed>0)queuedShot=false;
     if(!car && (forward||turn||options.mode==='first'||firing||pressed('fire')))p.angle=yaw;
     cam=window.RecoilCityView.camera(world,view);
     window.RecoilCityView.draw(controls.streets,world,cam,controls.sky);
-    const night=world.cityHour<6||world.cityHour>=19;controls.sky.style.filter=night?'brightness(.4) saturate(.75)':world.weather==='Rain'?'brightness(.72)':'';controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';
+    const night=world.cityHour<6||world.cityHour>=19,filter=night?'night':world.weather;if(filter!==lastFilter){lastFilter=filter;controls.sky.style.filter=night?'brightness(.4) saturate(.75)':world.weather==='Rain'?'brightness(.72)':'';controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';}
     if(now>=nextHud){refresh();nextHud=now+100;}
   }
   function applyOptions(){
-    world.quality=options.quality;world.populationAt=0;
+    world.quality=options.quality;world.populationAt=0;world.renderScale=1;perfSamples=perfTotal=perfSlow=perfFast=0;
     frameInterval=1000/(options.quality==='low'||matchMedia('(pointer:coarse)').matches?30:60);
     try{localStorage.setItem(prefsKey,JSON.stringify(options));}catch{}
     refresh();
@@ -407,7 +412,7 @@
     try{career=JSON.parse(localStorage.getItem(careerKey));}catch{}
     let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefsKey))||{};}catch{}
     options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:(navigator.hardwareConcurrency<=4||matchMedia('(pointer:coarse)').matches?'low':'standard')};
-    world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
+    mapBase=null;mapRoute=null;routeAt=0;lastFilter='';world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
@@ -427,7 +432,7 @@
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);
     window.RecoilCityRadio?.leaveCity();window.RecoilCityView.release(controls.streets);
-    dialog.close();dialog.remove();dialog=null;controls=null;cam=null;
+    dialog.close();dialog.remove();dialog=null;controls=null;cam=null;mapBase=null;mapRoute=null;
     if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;
   }
   window.RecoilCity=Object.freeze({open,close,get active(){return !!world;}});

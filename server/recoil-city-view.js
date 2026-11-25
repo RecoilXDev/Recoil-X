@@ -388,20 +388,20 @@
   }
   function dynamic(state,cam) {
     const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;
-    const near=v=>Math.hypot(v.x-cam.x,v.y-cam.y)<cam.far;
+    const far2=cam.far*cam.far,near=v=>(v.x-cam.x)**2+(v.y-cam.y)**2<far2;
     if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');if(s.safe){if(s.kind==='club'){g.box(10,0,0,7,16,1.3,'#77538d');for(let i=-2;i<=2;i++)g.box(0,i*3,.02,4,2.5,.12,i%2?'#cb75ad':'#607fcb');g.box(12,0,1.3,2,8,2,'#493450');}else{g.box(9,-6,0,7,5,1.7,'#c6ad91');g.box(9,6,0,5,3,2,'#84664e');g.box(1,6,0,5,2,1.4,'#517d72');}}else{g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}}else{
     for(const v of state.vehicles)if(near(v))automobile(m,v,v.id===p.vehicleId,state.elapsed,first&&v.id===p.vehicleId);
     for(const person of [...state.locals,...state.officers])if(near(person))actor(m,person,false,state.elapsed,'ar');}
     if(!state.interior)for(const r of state.remotePlayers||[])if(near(r)){if(r.vehicle)automobile(m,{...r,id:'remote-'+r.id,kind:'parked',hp:100,wheel:0,steer:0,color:'#597cbe'},false,state.elapsed,false);else actor(m,{...r,hp:100,z:0,color:'#6d8bb9',pants:'#354256',skinTone:'#c4926d',hair:'#362a27',phase:r.moving?Math.sin(state.elapsed*5):0,motion:r.moving?'walking':'idle'},false,state.elapsed);}
     if(!first&&!p.vehicleId)actor(m,p,true,state.elapsed,state.weapons[state.weapon]?.id);
-    if(first&&!p.vehicleId){
+    if(first&&!p.vehicleId&&!state.interior?.safe){
       const hands=local(m,p.x,p.y,p.z,cam.yaw);
       const sway=p.motion==='walking'||p.motion==='sprinting'?Math.sin(p.phase)*.11:0;
       const kick=Math.max(0,(p.aimUntil||0)-state.elapsed)*.55;
       hands.bar([.9,1.34,9.65+sway],[3.67,1.12,10.14+sway],.33,'#ba9474');
       heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id);
     }
-    const g=local(m),goal=!state.interior&&(state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff)||W().a1View(state).story?.goal||W().raceView(state).active?.goal);
+    const g=local(m),goal=!state.interior&&W().objectiveGoal(state);
     if(!state.interior)for(const site of [...state.map.properties,state.map.dealer,...state.map.venues])if(near(site))g.bar([site.x,site.y,.2],[site.x,site.y,.4],5.5,'#77c7ce',10);
     if(!state.interior)for(const site of state.map.signals)if(near(site)){g.box(site.x+30,site.y+30,0,1,1,10,'#777a71');g.box(site.x+30,site.y+30,10,2,2,3,W().signalRed(state,site,true)?'#ed655c':'#61d79a');}
     if(goal&&near(goal)){
@@ -473,14 +473,12 @@
     }
     g.fillStyle='#7fa8a1';g.fillRect(0,horizon+4,w,h);
   }
-  function pack(groups) {
-    const data=[];
-    for(const m of groups)for(const face of m.faces)for(let j=1;j<face.p.length-1;j++){
-      for(const i of [0,j,j+1]){
-        const uv=face.uv?.[i];data.push(...face.p[i],...face.c.rgb,uv?uv[0]/1024:-1,uv?uv[1]/1024:-1);
-      }
-    }
-    return new Float32Array(data);
+  function pack(groups,reusable){
+    let count=0;for(const m of groups)for(const face of m.faces)count+=Math.max(0,face.p.length-2)*24;
+    const data=reusable&&reusable.length>=count?reusable:new Float32Array(reusable?Math.max(count,Math.ceil(reusable.length*1.5),1024):count);let offset=0;
+    for(const m of groups)for(const face of m.faces){const rgb=face.c.rgb;for(let j=1;j<face.p.length-1;j++)for(let k=0;k<3;k++){
+      const i=k===0?0:k===1?j:j+1,p=face.p[i],uv=face.uv?.[i];data[offset++]=p[0];data[offset++]=p[1];data[offset++]=p[2];data[offset++]=rgb[0];data[offset++]=rgb[1];data[offset++]=rgb[2];data[offset++]=uv?uv[0]/1024:-1;data[offset++]=uv?uv[1]/1024:-1;
+    }}return {data,used:data.subarray(0,offset)};
   }
   function gpu(gl,groups,atlas) {
     const vs='attribute vec3 p;attribute vec3 color;attribute vec2 uv;uniform vec3 eye;uniform vec4 turn;uniform vec3 lens;varying vec3 tint;varying vec2 st;varying float mist;void main(){vec3 q=p-eye;float front=dot(q.xy,turn.xy);float side=dot(q.xy,vec2(-turn.y,turn.x));float depth=front*turn.z+q.z*turn.w;float up=q.z*turn.z-front*turn.w;gl_Position=vec4(side*lens.x,up*lens.y,(lens.z+0.45)/(lens.z-0.45)*depth-0.9*lens.z/(lens.z-0.45),depth);tint=color;st=uv;mist=smoothstep(lens.z*0.34,lens.z,depth)*0.82;}';
@@ -498,7 +496,7 @@
     const attributes=['p','color','uv'].map(name=>gl.getAttribLocation(program,name));
     const uniforms=['eye','turn','lens'].map(name=>gl.getUniformLocation(program,name));
     const fixed=gl.createBuffer(),moving=gl.createBuffer(),tex=gl.createTexture();
-    let count=0;function replace(groups){const vertices=pack(groups);gl.bindBuffer(gl.ARRAY_BUFFER,fixed);gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);count=vertices.length/8;}replace(groups);
+    let count=0,dynamicBuffer=new Float32Array(1024);function replace(groups){const vertices=pack(groups).used;gl.bindBuffer(gl.ARRAY_BUFFER,fixed);gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);count=vertices.length/8;}replace(groups);
     gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlas);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
     gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(0,0,0,0);
@@ -512,7 +510,7 @@
         const f=1/Math.tan(.525);gl.viewport(0,0,w,h);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
         gl.uniform3f(uniforms[0],cam.x,cam.y,cam.z);gl.uniform4f(uniforms[1],cam.cx,cam.sy,cam.cp,cam.sp);gl.uniform3f(uniforms[2],f*h/w,f,cam.far);
         bind(fixed);gl.drawArrays(gl.TRIANGLES,0,count);
-        const verts=pack([m]);bind(moving);gl.bufferData(gl.ARRAY_BUFFER,verts,gl.STREAM_DRAW);gl.drawArrays(gl.TRIANGLES,0,verts.length/8);
+        const packed=pack([m],dynamicBuffer);dynamicBuffer=packed.data;const verts=packed.used;bind(moving);gl.bufferData(gl.ARRAY_BUFFER,verts,gl.STREAM_DRAW);gl.drawArrays(gl.TRIANGLES,0,verts.length/8);
       },
       release(){gl.deleteBuffer(fixed);gl.deleteBuffer(moving);gl.deleteTexture(tex);gl.deleteProgram(program);}
     };
@@ -602,9 +600,9 @@
       }
     }
     if(renderer.lost)return;
-    const size=renderer.gl?tiers[state.quality].pixels:Math.min(400000,tiers[state.quality].pixels);
+    const size=(renderer.gl?tiers[state.quality].pixels:Math.min(400000,tiers[state.quality].pixels))*(state.renderScale||1)**2;
     const scale=Math.min(devicePixelRatio||1,1.5,Math.sqrt(size/(w*h)));
-    const bw=Math.max(1,Math.round(w*scale)),bh=Math.max(1,Math.round(h*scale));
+    const bw=Math.max(1,Math.floor(w*scale)),bh=Math.max(1,Math.floor(h*scale));
     if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
     if(!renderer.gl)cam={...cam,far:Math.min(cam.far,350)};
     const region=state.interior?'inside':Math.floor(cam.x/240)+','+Math.floor(cam.y/240)+','+state.quality;
