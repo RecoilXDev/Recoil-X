@@ -12,3 +12,5 @@ Two timed street races with ordered checkpoints, saved personal records and city
 
 ## Stability and quality pass
 Room lease identifiers isolate stale pulse/leave requests; a late connection is cleaned up using its own lease. Dealer recalls and per-owned-car respray persistence, story cancellation and checkpoint route markers added. City death clears active races. Service-worker cache bumped to A.1 and includes the New Dawn menu track. Full CI and physical device verification required.
+
+Activities are mutually exclusive with a cancellation path; remote and local avatar animation phase bounded. Direct deterministic 600-second simulation per tier (7,200 total steps) passed finite-state and population-limit assertions. A shorter version is in CI. No physical-device FPS certification or complete multiplayer authority is claimed.

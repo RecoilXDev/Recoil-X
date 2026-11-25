@@ -318,7 +318,7 @@
   }
   function job(state) {
     if (!state.job) {
-      if(state.a1Race){setNotice(state,'Finish or cancel the race first.');return false;}
+      if(state.a1Race||state.a1Mission){setNotice(state,'Finish or cancel your current activity first.');return false;}
       state.job = {...state.offer, stage: 'pickup', elapsed: 0};
       setNotice(state, 'Head to ' + state.job.pickup.name + '.');
       return true;
@@ -401,6 +401,7 @@
     if(action==='race')return startRace(s,id);
     if(action==='cancel-race'){s.a1Race=null;setNotice(s,'Race cancelled.');return true;}
     if(action==='cancel-story'){s.a1Mission=null;setNotice(s,'Story mission cancelled.');return true;}
+    if(action==='cancel-job'){s.job=null;makeOffer(s);setNotice(s,'City job cancelled.');return true;}
     if(action==='recall-car'){
       if(!v.dealer.near||s.player.vehicleId||!a.cars.includes(id))return deny('Visit Eastline Motors on foot to recall an owned car.');
       const c=s.vehicles.find(c=>c.id===id),m=models.find(m=>m.id===id),pos={x:dealer.x+24+models.indexOf(m)*27,y:dealer.y};
@@ -425,7 +426,7 @@
     if(action==='upgrade'){const u=v.upgrade;if(!u?.near||u.level>=3||cash<u.price)return deny('Bring your owned car to Sandline Customs with enough cash.');s.career.cash-=u.price;a.upgrades[u.id]=u.level+1;return done('Engine level '+(u.level+1));}
     if(action==='story'){
       const c=v.story;if(!c)return deny('All story missions completed.');
-      if(s.a1Race)return deny('Finish or cancel the race first.');
+      if(s.a1Race||s.job)return deny('Finish or cancel your current activity first.');
       if(!s.a1Mission){s.a1Mission={stage:0};return done(c.contact+': Meet at '+stops.find(x=>x.id===c.checkpoints[0]).name);}
       if(!c.near||Math.abs(driven(s)?.speed||0)>20)return deny('Reach '+c.goal.name+' and slow down.');
       if(++s.a1Mission.stage<c.checkpoints.length)return done('Checkpoint reached. Next: '+stops.find(x=>x.id===c.checkpoints[s.a1Mission.stage]).name);
