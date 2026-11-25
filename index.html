@@ -2347,7 +2347,7 @@ function renderPickups(out,now){for(const p of pickups){if(now<p.ready)continue;
 // RECOIL X V9.1 — separate graphics quality from device performance.
 // No RAM or GPU capacity is inferred from this data; browser hints are approximate.
 const V91_MODES={
- tv:{fps:20,scale:.40,view:64,aiHz:12,bots:6,minimap:3,hud:6,nameplates:3},
+ tv:{fps:30,scale:.40,view:64,aiHz:12,bots:6,minimap:3,hud:6,nameplates:3},
  pi:{fps:24,scale:.52,view:48,aiHz:12,bots:8,minimap:4,hud:6,nameplates:4},
  school:{fps:30,scale:.76,view:84,aiHz:16,bots:12,minimap:6,hud:10,nameplates:5},
  balanced:{fps:45,scale:.94,view:140,aiHz:22,bots:16,minimap:8,hud:12,nameplates:6},
@@ -2438,7 +2438,7 @@ function v91AutoMode(){
 }
 function v91Resolved(){return perfChoice==='auto'?v91AutoMode():perfChoice;}
 function v91Config(){return v92Active()?v92Limits():(V91_MODES[v91Resolved()]||V91_MODES.balanced);}
-function v91FpsTarget(){const f=fpsChoice==='auto'?v91Config().fps:Number(fpsChoice);return rxTvUltraLight()?Math.min(f,20):mobile&&v92Active()?Math.min(f,v92Limits().fps):f;}
+function v91FpsTarget(){const f=fpsChoice==='auto'?v91Config().fps:Number(fpsChoice);return rxTvUltraLight()?Math.min(f,30):mobile&&v92Active()?Math.min(f,v92Limits().fps):f;}
 function v91RenderDistance(){return v92RenderDistance();}
 function v91EffectiveGraphics(){if(rxTvUltraLight())return 0;const q={low:0,medium:1,high:2,ultra:3,cinematic:4}[graphicsQuality]??1;if(v92Active()){return Math.min(q,Math.max(0,(v92MobileResolved()==='quality'?2:v92MobileResolved()==='balanced'?1:0)-v92QualityPenalty));}return v91Resolved()==='pi'?0:v91Resolved()==='school'?Math.min(q,1):q;}
 function v91SetMode(v){if(!['auto','pi','school','balanced','max','tv'].includes(v))return;perfChoice=v;if(!mobile)setStore('recoilDesktopPerfMode',v);setStore('recoilPerfMode',v);perfResolutionScale=1;aiAccumulator=0;v91Apply();}
@@ -2454,7 +2454,7 @@ function v91RenderControls(){
  $('v91PerfTitle').textContent=trn.title;$('v91FpsLabel').textContent=trn.fps;$('v91PerfInfo').textContent=trn.info;
  el.replaceChildren();for(const [i,key] of ['auto','pi','school','balanced','max','tv'].entries()){
  const b=document.createElement('button');b.type='button';b.className=perfChoice===key?'selected':'';
- b.innerHTML=key==='tv'?'<strong>📺 Smart TV Ultra Light</strong><small>20 FPS cap · simplified 3D models · low GPU memory</small>':'<strong>'+trn.name[i]+'</strong><small>'+trn.desc[i]+'</small>';
+ b.innerHTML=key==='tv'?'<strong>📺 Smart TV Ultra Light</strong><small>30 FPS cap · simplified 3D models · low GPU memory</small>':'<strong>'+trn.name[i]+'</strong><small>'+trn.desc[i]+'</small>';
  b.setAttribute('aria-pressed',String(perfChoice===key));b.onclick=()=>v91SetMode(key);el.append(b);
  }
  $('v91PauseProfile').value=perfChoice;$('v91FpsLimit').value=String(fpsChoice);
