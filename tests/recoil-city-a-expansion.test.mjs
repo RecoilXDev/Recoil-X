@@ -22,6 +22,6 @@ test('vehicle impacts cause bounded knockdown or defeat',()=>{
  for(const speed of [30,95]){
  const s=W.create({quality:'low'}),c=s.vehicles[0];Object.assign(s.player,{x:c.x,y:c.y,vehicleId:c.id});c.speed=speed;s.populationAt=99;
  const npc={id:99,x:c.x+8,y:c.y,hp:70,mood:'defend',alarm:100,counterAt:100,phase:0,color:'#fff',angle:0};s.locals=[npc];
- W.step(s,{forward:1},.03);assert.equal(npc.hp,speed>=52?0:70);assert(npc.stunUntil>s.elapsed);assert.equal(s.heat,1);
+ W.step(s,{forward:1},.03);assert.equal(npc.hp,speed>=52?0:70);assert(npc.stunUntil>s.elapsed);assert(Number.isFinite(npc.impactAt));assert(npc.impactAt<=s.elapsed);assert.equal(s.heat,1);
  }
 });

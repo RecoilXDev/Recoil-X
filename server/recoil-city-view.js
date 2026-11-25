@@ -282,7 +282,7 @@
         const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
         m.faces.push({p:points,c,solid:false,uv:null});
       }
-      if(p.hp>0&&p.mood==='defend'){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
+      if(p.hp>0&&!(p.stunUntil>time)&&(p.mood==='defend'||(p.aimUntil||0)>time)){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
       return;
     }
     const g=local(m,p.x,p.y,p.z||0,p.angle), coat=hero?'#327d79':p.color, pants=hero?'#354256':'#474956';

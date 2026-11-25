@@ -10,3 +10,5 @@ City automatically selects a conservative 30 FPS render target for TVs, mobile t
 
 ## Cinematic Replay
 Four deterministic, repeatable director sequences (drive, pursuit, action props and skyline) and a 35-second sequence playlist. Isolated world using existing driving/combat logic, playback pause/restart/next/speed, hide controls and restore original career on exit. Not a video encoder or replay of recorded player input. Browser capture remains external. Full CI and visual QA outstanding.
+
+Cinematic follow-up: full HUD-free capture, tap/H reveal, manual next from any selected scene, actual weapon regression with the game loadout (18 rounds fired and three props damaged in direct test). Camera finite in all four scenes. Impact animation now eases into the existing knockdown pose, and the shared third-person rig shows aiming/weapon on firing. Ragdoll is still a simulated pose, not independent limb physics.

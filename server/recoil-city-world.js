@@ -175,7 +175,7 @@
     for (const p of state.pedestrians) {
       p.active = false;
       if (p.downUntil && state.elapsed >= p.downUntil && distance(p, state.player) > 110) {
-        p.hp = 70; p.downUntil = 0; p.alarm = 0; p.mood = 'calm';
+        p.hp = 70; p.downUntil = 0; p.impactAt=undefined; p.alarm = 0; p.mood = 'calm';
       }
       // Distance to the patrol rectangle keeps its source available as a corner comes into view.
       const dx = state.player.x - clamp(state.player.x, p.left, p.right);
@@ -474,7 +474,7 @@
       if(npc.hp<=0||npc.stunUntil>state.elapsed)continue;
       const t=clamp(((npc.x-oldX)*dx+(npc.y-oldY)*dy)/l,0,1);
       if(Math.hypot(npc.x-oldX-t*dx,npc.y-oldY-t*dy)>13)continue;
-      npc.angle=Math.atan2(dy,dx);npc.stunUntil=state.elapsed+2.5;
+      npc.angle=Math.atan2(dy,dx);npc.impactAt=state.elapsed;npc.stunUntil=state.elapsed+2.5;
       if(speed>=52){npc.hp=0;npc.downUntil=state.elapsed+34;npc.mood='down';}
       if(state.hitCooldown<=0){heatUp(state,'Vehicle impact reported.');state.hitCooldown=1.6;}
     }

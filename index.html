@@ -5987,9 +5987,10 @@ window.RecoilCityCharacter=Object.freeze({
       }
       cityCivilianMeshes.set(key,mesh);
     }
-    const swing=Number(person.phase)||0,aim=person.mood==='defend';
+    const swing=Number(person.phase)||0,aim=person.mood==='defend'||(person.aimUntil||0)>time;
     const down=person.hp<=0||person.stunUntil>time;
-    const pose={root:[0,-(person.angle||0),down?1.45:0,0,down?.55:0,0]};
+    const impact=down&&Number.isFinite(person.impactAt)?clamp((time-person.impactAt)/.24,0,1):down?1:0,fall=impact*impact*(3-2*impact);
+    const pose={root:[0,-(person.angle||0),1.45*fall,0,.55*fall,0]};
     for(const sign of [-1,1]){
       const side=sign>0?'R':'L',step=swing*sign;
       pose['thigh'+side]=[step*.42,0,sign*.03];
