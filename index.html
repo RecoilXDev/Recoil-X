@@ -2116,14 +2116,42 @@ function rxAMatchMusic(){
   if(mode==='crown-overdrive'&&z2Live.match?.mode)return rxAModeScore(z2Live.match.mode);
   return rxAModeScore(mode||'solo');
 }
+// Dedicated recorded menu theme. A single media element owns playback; gameplay scores remain procedural.
+function createNewDawnMenuMusic(makeAudio){
+  let player=null,pending=false,blocked=false,failed=false,wanted=false;
+  function sync(active,gesture=false){
+    wanted=!!active;
+    if(!wanted){if(player&&!player.paused)player.pause();blocked=false;return false;}
+    if(failed)return false;
+    if(!player){
+      try{player=makeAudio();player.loop=true;player.preload='none';player.volume=.42;player.addEventListener('error',()=>{failed=true;player.pause();});}
+      catch{failed=true;return false;}
+    }
+    if(gesture)blocked=false;
+    if(player.paused&&!pending&&!blocked){
+      pending=true;
+      try{Promise.resolve(player.play()).then(()=>{if(!wanted)player.pause();},error=>{if(wanted){if(error?.name==='NotSupportedError')failed=true;else blocked=true;}}).finally(()=>{pending=false;});}
+      catch{pending=false;blocked=true;}
+    }
+    return !failed;
+  }
+  return {sync};
+}
+const aNewDawnMusic=createNewDawnMenuMusic(()=>new Audio(new URL('server/city-radio/47_menu.mp3',document.baseURI||location.href).href));
+function aSyncMenuMusic(gesture=false){
+  return aNewDawnMusic.sync(sound&&allAudioStarted&&musicMode==='lobby'&&!document.hidden&&!window.RecoilCity?.active&&!window.RecoilCityRadio?.playing,gesture);
+}
+function aMenuAudioGesture(){if(sound&&musicMode==='lobby'){allAudioStarted=true;aSyncMenuMusic(true);}}
+for(const event of ['pointerup','click','keydown'])document.addEventListener(event,aMenuAudioGesture,true);
+document.addEventListener('visibilitychange',()=>aSyncMenuMusic());
 window.RecoilCityGame = Object.freeze({
   loadout: () => ({weapons: weapons.map(w => ({...w})), equipped: pl.weapon, rayHit: rayCircle3d, sound: playSound}),
-  cues: SOUNDTRACK, scoreBeat, audioEnabled: () => sound, audioContext: audioCtx
+  cues: SOUNDTRACK, scoreBeat, audioEnabled: () => sound, audioContext: audioCtx, suspendMenuMusic:()=>aNewDawnMusic.sync(false)
 });
 function tone(ac,midi,when,duration,type='triangle',vol=.017,output=ac.destination){if(midi<0)return;const osc=ac.createOscillator(),env=ac.createGain(),freq=440*Math.pow(2,(midi-69)/12);osc.type=type;osc.frequency.setValueAtTime(freq,when);env.gain.setValueAtTime(.00001,when);env.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),when+.022);env.gain.exponentialRampToValueAtTime(.00001,when+duration);osc.connect(env).connect(output);osc.start(when);osc.stop(when+duration+.03)}
-function setMusic(track){musicMode=track==='match'?rxAMatchMusic():SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}}
+function setMusic(track){musicMode=track==='match'?rxAMatchMusic():SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}aSyncMenuMusic();}
 function scoreBeat(ac,track,beat,when,step,output=ac.destination){const song=SOUNDTRACK[track],i=beat%16;let bass=song.bass[i],lead=song.lead[i];if(bass>=0)tone(ac,bass,when,step*.85,'sine',track==='lobby'?.014:.026,output);if(lead>=0)tone(ac,lead,when,step*.63,song.wave||(track==='victory'?'sine':'triangle'),track.startsWith('mode:')?.012:track==='match'?.016:.022,output);if((song.drums&&i%song.drums===0)||(track==='match'&&i%4===0))tone(ac,28,when,step*.18,'sine',.015,output);}
-function tickMusic(){if(!sound||!allAudioStarted||window.RecoilCity?.active||window.RecoilCityRadio?.playing){nextMusicBeat=0;return;}if(phase==='playing'&&musicMode.startsWith('mode:')){const desired=rxAMatchMusic();if(desired!==musicMode)setMusic(desired);}let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
+function tickMusic(){if(aSyncMenuMusic()){nextMusicBeat=0;return;}if(!sound||!allAudioStarted||window.RecoilCity?.active||window.RecoilCityRadio?.playing){nextMusicBeat=0;return;}if(phase==='playing'&&musicMode.startsWith('mode:')){const desired=rxAMatchMusic();if(desired!==musicMode)setMusic(desired);}let ac=audioCtx();if(!ac)return;let song=SOUNDTRACK[musicMode],step=60/song.tempo/2;if(!nextMusicBeat||nextMusicBeat<ac.currentTime-.2){nextMusicBeat=ac.currentTime+.045;musicBeat=0;}let scheduled=0;while(nextMusicBeat<ac.currentTime+.16&&scheduled++<4){scoreBeat(ac,musicMode,musicBeat++,nextMusicBeat,step);nextMusicBeat+=step;}}
 // WebGL renderer: all geometry and shaders are embedded in this HTML file.
 let program=null,buffer=null,attrib={},uniform={},staticCount=0;
 let v91StaticChunks=[],v91DynamicCapacity=0,v91DynamicArray=new Float32Array(0);
@@ -2515,7 +2543,7 @@ for(const p of players){let d=Math.hypot(p.x-eye[0],p.z-eye[2]);if(d>31)continue
 let aNextPresent=0,aLastCap=0,aLastScene=0;
 function loop(ts){
  requestAnimationFrame(loop);
- if(document.hidden||window.RecoilCity?.active){lastFrame=ts;lastPresented=ts;aNextPresent=0;return;}
+ if(document.hidden||window.RecoilCity?.active){aNewDawnMusic.sync(false);lastFrame=ts;lastPresented=ts;aNextPresent=0;return;}
  const cap=v91FpsTarget(),interval=1000/cap;
  if(cap!==aLastCap){aLastCap=cap;aNextPresent=0;}
  if(aNextPresent&&ts<aNextPresent-1)return;
@@ -2566,7 +2594,7 @@ function capturePointer(){
 function startGame(which){rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';rx5QualityReset();setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
 function quit(){rx3ClearVisuals();vxAfterQuit();rxAfterQuit();if(mode==='host')for(const s of [...tradeSessions.values()])hostCancelTrade(s,'room closed');activeTrade=null;tradeSessions.clear();tradeInvites.clear();roomRoster=[];socialHide();spectating=false;updateSpectatorUI();clearDeathTimers();setMusic('lobby');phase='menu';paused=false;mouseDown=false;mobileFire=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();if(hostConn){hostConn.close();hostConn=null}if(peer){peer.destroy();peer=null}for(const c of remoteConns.values())c.close();remoteConns.clear();remotePlayers.clear();roomCode='';roomPlayerCount=1;lobbyVotes.clear();showScreen('mainMenu');refreshWallet();}
 $('soloBtn').onclick=showVoteSolo;$('roomBtn').onclick=()=>{mode='host';lobbyVotes.clear();showScreen('roomMenu');};$('backToMainBtn').onclick=()=>showScreen('mainMenu');$('helpBtn').onclick=()=>showScreen('helpMenu');$('helpBackBtn').onclick=()=>showScreen('mainMenu');$('resumeBtn').onclick=()=>{hideOverlay();capturePointer();};$('spectateBtn').onclick=enterSpectator;$('deathSpectateBtn').onclick=enterSpectator;$('spectatePrev').onclick=()=>cycleSpectator(-1);$('spectateNext').onclick=()=>cycleSpectator(1);$('spectateExit').onclick=exitSpectator;$('quitBtn').onclick=quit;$('endHomeBtn').onclick=quit;$('againBtn').onclick=()=>{if(mode==='mystery'){vxShowMysteryMenu();return;}if(mode==='boss'){vxBossStart();return;}if(mode==='solo')showVoteSolo();else if(mode==='host'){lobbyVotes.clear();showScreen('roomMenu');$('roomHostSection').classList.remove('hide');$('lobbyVotes').classList.remove('hide');drawVoteCards();}else quit();};
-$('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound)setMusic(musicMode);};
+$('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound){setMusic(musicMode);aSyncMenuMusic(true);}else aNewDawnMusic.sync(false);};
 $('difficultyBtn').onclick=()=>{difficulty=(difficulty+1)%3;$('difficultyName').textContent=tr(['easy','medium','hard'][difficulty])};
 $('choosePC').onclick=()=>pickDevice(false);
 $('chooseMobile').onclick=()=>pickDevice(true);

@@ -349,7 +349,7 @@
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
-    applyOptions();window.RecoilCityRadio?.enterCity();
+    applyOptions();window.RecoilCityGame?.suspendMenuMusic?.();window.RecoilCityRadio?.enterCity();
     setHelp(false);previousTime=0;nextHud=0;nextDraw=0;
     window.addEventListener('keydown',keyboard,true);window.addEventListener('keyup',keyboard,true);
     window.addEventListener('blur',clearHeld);document.addEventListener('visibilitychange',visibility);

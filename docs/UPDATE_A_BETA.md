@@ -91,3 +91,6 @@ A dedicated New Dawn tab appears on the native main menu when the public server 
 
 ### RC7 — remote seasonal visuals and network regression
 Overdrive matches capture owned, equipped New Dawn cosmetics at match start from the server database and include only whitelisted identifiers in the begin roster. Remote rifle and helmet use existing WebGL mesh paths, at normal detail distance; no cosmetic fields are added to high-frequency state frames or accepted from client input. Reconnects receive the same captured roster. The existing 2/4/6/10-player integration test now checks ownership isolation across every client. Cosmetic changes are reflected on the next match; legacy peer-hosted Mystery knife synchronization and actual device/production load remain unverified.
+
+### Main menu — New Dawn soundtrack
+The original 38.4-second New Dawn recording already in the radio library (`47_menu.mp3`) loops in menus after browser audio permission. It pauses on mute, hidden tabs, gameplay and City entry. A media failure falls back to the existing procedural lobby cue. Gameplay and City radio tracks remain unchanged. Actual TV/browser audio playback needs verification.
