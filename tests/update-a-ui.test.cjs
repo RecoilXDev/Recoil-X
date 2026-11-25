@@ -92,3 +92,18 @@ test('dedicated Season 1 home tab opens only after the server season gate',async
  await b.onclick();assert.match(active.ui.getElementById('rx-a').textContent,/NEW DAWN/i);
  assert.match(active.ui.getElementById('rx-a').textContent,/Sign in through Friends/);
 });
+
+test('Curator library displays saved and approved map cards and opens the selected project',async()=>{
+ const h=makeHarness(),host=h.ui.createElement('div');
+ h.ctx.sessionStorage.setItem('rx5-token','test-session');
+ const map=(id,name)=>({id,name,mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:1,z:2}]});
+ h.ctx.fetch=async path=>({ok:true,json:async()=>({projects:path.endsWith('/discover')?[map('public','Community Arena')]:[map('saved','My Desert Arena')]})});
+ new vm.Script(fs.readFileSync(__dirname+'/../server/a-curator.js','utf8')).runInContext(h.ctx);
+ let back=false;h.ctx.RXCurator.mount(host,new AbortController().signal,()=>{back=true;});
+ await new Promise(resolve=>setImmediate(resolve));
+ const cards=host.querySelectorAll('.curator-map');assert.equal(cards.length,2);
+ assert.match(cards[0].textContent,/My Desert Arena/);assert.match(cards[1].textContent,/Community Arena/);
+ cards[0].querySelector('button').click();assert.equal(host.querySelector('.curator-editor').hidden,false);assert.equal(host.querySelector('.curator-editor input').value,'My Desert Arena');
+ host.querySelector('#rx-curator-back').click();assert.equal(host.querySelector('.curator-library').hidden,false);
+ host.querySelector('#rx-curator-back').click();assert.equal(back,true);
+});

@@ -46,7 +46,7 @@ test('Curator Studio resumes the same co-op seat and objectives until the player
    return fetch(new URL(url,origin),opts);
   };
   runInContext(studio,ctx);mount();
-  await displays('My projects');
+  await displays('My maps');
   button('Host co-op').click();await displays('Co-op room ');
   button('→').click();await displays('Targets: 1');
   const {activeRoom}=await api('/a/curator/list',undefined,token);
