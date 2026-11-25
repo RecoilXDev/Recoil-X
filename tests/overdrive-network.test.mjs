@@ -129,7 +129,8 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
       const hostsId=a.user.id;
       const startZ=first.rows.find(r=>r[0]===hostsId)[2];
       const trafficStart=performance.now();
-      for(let sequence=0;sequence<25;sequence++){
+      const inputCount=size===5?125:25;
+      for(let sequence=0;sequence<inputCount;sequence++){
         await wait(50);
         for(const p of round){
           const team=last(p,'z2:begin').team;
@@ -138,7 +139,7 @@ test('existing accounts, live 2/4/6/10-player matches, private rooms and moderat
       }
       await until(()=>round.every(p=>{
         const row=last(p,'z2:state')?.rows.find(v=>v[0]===p.account.user.id);
-        return row?.[15]>=23;
+        return row?.[15]>=inputCount-2;
       }),'All clients receive their input acknowledgments');
       const state=last(host,'z2:state'), endZ=state.rows.find(row=>row[0]===hostsId)[2];
       assert(Math.abs(endZ-startZ)>3);

@@ -15,3 +15,6 @@ Cinematic follow-up: full HUD-free capture, tap/H reveal, manual next from any s
 
 ## Bot and arena CPU pass
 Allocation-free ray/AABB slabs, early-exit line-of-sight checks, single-pass nearest eligible target selection, AI accumulator reset between matches and avoiding identical FPS counter text writes. 12,000 direct ray and sight comparisons passed against the preceding implementation; automated regression includes randomized rays, cover blocking and target eligibility/ties. Bot count, accuracy and tactical policy not intentionally changed. Hardware performance still unmeasured.
+
+## Extended stability verification
+Direct 30-minute high-detail city simulation (7,200 steps): bounded vehicle count (16), active pedestrians (18), finite positions/HP/cash, no negative balances. This is a world simulation, not a browser heap measurement. Automated 10-client WebSocket match traffic increased from 25 to 125 input intervals per client; six-minute simulated 10-player match and bounded history tests added. Pending CI. No claim of production load or latency certification.
