@@ -254,6 +254,7 @@ body.graphics-high #v9Atmosphere{opacity:.6}body.graphics-ultra #v9Atmosphere{op
 .v91-pause-row select{max-width:160px}
 body.v91-lite #v9Atmosphere{display:none!important}
 body.v91-lite #fx{display:none!important}
+body.rx-tv-ultralight #game{filter:none!important}body.rx-tv-ultralight #weaponArt.active{opacity:1!important;filter:none!important}body.rx-tv-ultralight .panel,body.rx-tv-ultralight .hudbox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 @media(max-width:480px){.v91-perf-options{gap:5px}.v91-perf-options button{padding:7px}.v91-perf-line{font-size:11px}}
 
 /* V9.2 MOBILE SURVIVAL — reduce GPU compositing overhead on touch devices */
@@ -1107,7 +1108,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
  <div id="rxDailyMenu" class="hide rx-mini-menu"><div class="eyebrow">RECOIL X // X.1</div><h2 class="vx-panel-title" data-rx12="daily">🎯 DAILY MISSIONS</h2><p class="rx-note">Daily resets at midnight in Oman. Weekly missions reset on Mondays. All rewards use earned in-game coins.</p><p class="rx-note" id="rxDailyDay"></p><div class="rx-grid" id="rxDailyList"></div><button class="secondary full" id="rxDailyBack" data-rx12="back">BACK</button></div>
 <div id="rxAchievementsMenu" class="hide rx-mini-menu"><div class="eyebrow">RECOIL X // X.1</div><h2 class="vx-panel-title" data-rx12="achieve">🏆 ACHIEVEMENTS</h2><p class="rx-note">50 achievements across 10 progression categories; achievements and equipped titles are saved locally.</p><h3 class="vx-section-title" id="rxAchCount">0 / 50</h3><div class="rx-settings"><label for="rxTitleSelect">Equip player title:</label><select id="rxTitleSelect" class="langpicker"><option value="">No title</option></select></div><div class="rx-grid" id="rxAchievementList"></div><button class="secondary full" id="rxAchBack" data-rx12="back">BACK</button></div>
 <div id="rxSettingsMenu" class="hide rx-mini-menu"><div class="eyebrow">RECOIL X // X.1</div><h2 class="vx-panel-title" data-rx12="settings">⚙️ X.1 SETTINGS</h2><div class="rx-settings"><button class="primary" id="rxGuardBtn">Smart RAM Guard: ON</button><button class="primary" id="rxWeatherBtn">Weather: ON</button></div><p class="rx-note" id="rxMemoryInfo"></p><p class="rx-note">RAM Guard watches sustained frame slowdowns and reduces render resolution and optional particles. Browsers do not allow a guaranteed RAM ceiling. Weather is cosmetic and automatically reduced on low-end devices.</p><p class="rx-note">Weapons: inspect using F on computer or the INSPECT button in mobile matches. Knife Mastery grows when you eliminate opponents as the Murderer.</p><button class="secondary full" id="rxSettingsBack" data-rx12="back">BACK</button></div>
-<div id="pauseMenu" class="hide"><div class="eyebrow" data-t="pausedTag">GAME PAUSED</div><h2 class="overlay-heading" data-t="paused">متوقف مؤقتاً</h2><p class="subtitle" data-t="pauseSub">الصحراء تنتظرك</p><div class="status center" id="pausedMusicNote" data-t="musicHint">Original music is synthesized in your browser.</div><div class="v9-visual-modes" id="v9PauseQuality" aria-label="Visual quality modes"></div><div class="v92-pause-row" id="v92PauseRow"><span>📱 Mobile:</span><select class="langpicker" id="v92PauseMobile"><option value="auto">Auto</option><option value="eco">Eco</option><option value="balanced">Balanced</option><option value="quality">Quality</option></select></div><div class="v91-pause-row"><span id="v91PauseLabel">Performance:</span><select class="langpicker" id="v91PauseProfile"><option value="auto">Auto</option><option value="pi">Pi Lite</option><option value="school">School PC</option><option value="balanced">Balanced</option><option value="max">Full power</option></select></div><div class="mode-grid"><button class="primary" id="resumeBtn" data-t="resume">متابعة</button><button class="secondary" id="quitBtn" data-t="mainMenu">القائمة الرئيسية</button></div><button class="secondary full" style="margin-top:10px" id="spectateBtn" data-t="spectate">Spectate players</button><p class="menu-note" id="pauseRoomCode"></p></div>
+<div id="pauseMenu" class="hide"><div class="eyebrow" data-t="pausedTag">GAME PAUSED</div><h2 class="overlay-heading" data-t="paused">متوقف مؤقتاً</h2><p class="subtitle" data-t="pauseSub">الصحراء تنتظرك</p><div class="status center" id="pausedMusicNote" data-t="musicHint">Original music is synthesized in your browser.</div><div class="v9-visual-modes" id="v9PauseQuality" aria-label="Visual quality modes"></div><div class="v92-pause-row" id="v92PauseRow"><span>📱 Mobile:</span><select class="langpicker" id="v92PauseMobile"><option value="auto">Auto</option><option value="eco">Eco</option><option value="balanced">Balanced</option><option value="quality">Quality</option></select></div><div class="v91-pause-row"><span id="v91PauseLabel">Performance:</span><select class="langpicker" id="v91PauseProfile"><option value="auto">Auto</option><option value="pi">Pi Lite</option><option value="school">School PC</option><option value="balanced">Balanced</option><option value="max">Full power</option><option value="tv">Smart TV Ultra Light</option></select></div><div class="mode-grid"><button class="primary" id="resumeBtn" data-t="resume">متابعة</button><button class="secondary" id="quitBtn" data-t="mainMenu">القائمة الرئيسية</button></div><button class="secondary full" style="margin-top:10px" id="spectateBtn" data-t="spectate">Spectate players</button><p class="menu-note" id="pauseRoomCode"></p></div>
 <div id="endMenu" class="hide"><div id="rx3EndPose" aria-hidden="true">🏆</div><div class="eyebrow" data-t="matchFinished">MATCH FINISHED</div><h2 class="overlay-heading" id="endTitle" data-t="matchOver">انتهت المباراة</h2><div class="score-list"><div class="center"><b id="endKills">0</b><span class="small" data-t="kills">القتل</span></div><div class="center"><b id="endDeaths">0</b><span class="small" data-t="deaths">الموت</span></div><div class="center"><b id="endAccuracy">0%</b><span class="small" data-t="accuracy">الدقة</span></div><div class="center"><b id="endCoins">0</b><span class="small" data-t="earned">العملات المكتسبة</span></div></div><div id="rx2MatchStats" class="rx2-matchstats"></div><div class="mode-grid"><button class="primary" id="againBtn" data-t="playAgain">العب مجدداً</button><button class="secondary" id="endHomeBtn" data-t="mainMenu">القائمة الرئيسية</button></div></div>
 <div id="deadMenu" class="hide"><div class="eyebrow" data-t="eliminated">YOU WERE ELIMINATED</div><h2 class="overlay-heading" data-t="eliminated">تمت هزيمتك 💥</h2><p class="subtitle" data-t="respawnSub">عد إلى ساحة المعركة!</p><canvas id="rx2ReplayCanvas" width="320" height="100" style="display:block;max-width:100%;margin:3px auto 0;border-radius:8px;background:#071f30" aria-label="Your last movement positions"></canvas><div class="respawn-clock" id="respawnCountdown" aria-live="polite">3</div><p class="center small" data-t="autoRespawn">Automatic respawn in 3 seconds</p><button class="secondary full" id="deathSpectateBtn" data-t="spectate">Spectate players</button></div>
 </div></div></div>
@@ -1119,7 +1120,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 // RECOIL X V8.2: LOCK-LOAD-DOMINATE — 3D browser FPS, token jackpots, pass, spectator, cosmetics and 5 maps.
 const GAME_VERSION="UPDATE Z · CROWN TRIALS", GAME_NAME="RECOIL X";
 const $=id=>document.getElementById(id), canvas=$('game');
-let gl=canvas.getContext('webgl',{alpha:true,antialias:false,depth:true,preserveDrawingBuffer:false,powerPreference:/iPhone|iPad|Android/i.test(navigator.userAgent)?'low-power':'default'});
+let gl=canvas.getContext('webgl',{alpha:true,antialias:false,depth:true,preserveDrawingBuffer:false,powerPreference:/iPhone|iPad|Android|Tizen|SMART[- .]?TV|WebOS|HbbTV/i.test(navigator.userAgent)?'low-power':'default'});
 let ctx2d=gl?null:canvas.getContext('2d',{alpha:false});
 let crownArena=null;
 let running=false,phase='menu',mode='solo',paused=false,gameSeconds=480,lastFrame=performance.now(),roundEnd=0;
@@ -1435,7 +1436,7 @@ function updateRoomVotes(data){lobbyVotes=new Map((Array.isArray(data.votes)?dat
 // Lightweight 2D particles / collectible sprites, no external assets
 const fx=$('fxCanvas'),fxctx=fx.getContext('2d');let particles=[];
 function sparkleCoins(amount){let cx=rxVW()/2,cy=rxVH()*.35;for(let i=0;i<(v92Active()?3:15);i++){let angle=Math.random()*Math.PI*2,speed=60+Math.random()*110;particles.push({x:cx,y:cy,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-55,life:1,max:1,size:3+Math.random()*4,type:'coin'});}toast(`🪙 +${amount} ${tr('coinsEarned')}`,1400);}
-function drawParticles(dt){if((v92Active()&&v92MobileResolved()!=='quality')||graphicsQuality==='low'||v91Resolved()==='pi'||v91Resolved()==='school'){particles.length=0;fxctx.clearRect(0,0,fx.width,fx.height);return;}let scale=Math.min(devicePixelRatio||1,1.5),w=rxVW(),h=rxVH();if(fx.width!==Math.floor(w*scale)||fx.height!==Math.floor(h*scale)){fx.width=Math.floor(w*scale);fx.height=Math.floor(h*scale)}fxctx.setTransform(scale,0,0,scale,0,0);fxctx.clearRect(0,0,w,h);for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;if(p.life<=0){particles.splice(i,1);continue;}fxctx.globalAlpha=p.life/p.max;fxctx.fillStyle=p.type==='coin'?'#ffd070':p.type==='smoke'?'#d7ba96':'#ffa276';fxctx.beginPath();fxctx.arc(p.x,p.y,p.size,0,Math.PI*2);fxctx.fill();fxctx.strokeStyle='#915b25';fxctx.lineWidth=1.5;fxctx.stroke();}fxctx.globalAlpha=1;}
+function drawParticles(dt){if(rxTvUltraLight()){if(particles.length)particles.length=0;if(fx.width>1||fx.height>1){fx.width=1;fx.height=1;}return;}if((v92Active()&&v92MobileResolved()!=='quality')||graphicsQuality==='low'||v91Resolved()==='pi'||v91Resolved()==='school'){particles.length=0;fxctx.clearRect(0,0,fx.width,fx.height);return;}let scale=Math.min(devicePixelRatio||1,1.5),w=rxVW(),h=rxVH();if(fx.width!==Math.floor(w*scale)||fx.height!==Math.floor(h*scale)){fx.width=Math.floor(w*scale);fx.height=Math.floor(h*scale)}fxctx.setTransform(scale,0,0,scale,0,0);fxctx.clearRect(0,0,w,h);for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;if(p.life<=0){particles.splice(i,1);continue;}fxctx.globalAlpha=p.life/p.max;fxctx.fillStyle=p.type==='coin'?'#ffd070':p.type==='smoke'?'#d7ba96':'#ffa276';fxctx.beginPath();fxctx.arc(p.x,p.y,p.size,0,Math.PI*2);fxctx.fill();fxctx.strokeStyle='#915b25';fxctx.lineWidth=1.5;fxctx.stroke();}fxctx.globalAlpha=1;}
 
 const weapons=[{id:'ar',name:'ASSAULT RIFLE',ar:'بندقية هجومية',mag:30,max:30,reserve:180,damage:19,cadence:.104,reload:1.65,spread:.023,pellets:1,range:140,zoom:1},
 {id:'shot',name:'TACTICAL SHOTGUN',ar:'بندقية شوزن',mag:8,max:8,reserve:64,damage:13,cadence:.76,reload:2.1,spread:.13,pellets:8,range:40,zoom:1},
@@ -2179,7 +2180,7 @@ function v91RebuildStaticGPU(){
  for(let i=0;i<staticVerts.length;i+=27){
   const x0=staticVerts[i],z0=staticVerts[i+2],x1=staticVerts[i+9],z1=staticVerts[i+11],x2=staticVerts[i+18],z2=staticVerts[i+20];
   const xmin=Math.min(x0,x1,x2),xmax=Math.max(x0,x1,x2),zmin=Math.min(z0,z1,z2),zmax=Math.max(z0,z1,z2);
-  if(v92Active()&&v92MobileResolved()==='eco'&&Math.abs(staticVerts[i+1]+.07)<.065&&(xmax-xmin<.1||zmax-zmin<.1))continue;
+  if((rxTvUltraLight()||v92Active()&&v92MobileResolved()==='eco')&&Math.abs(staticVerts[i+1]+.07)<.065&&(xmax-xmin<.1||zmax-zmin<.1))continue;
   const giant=xmax-xmin>29||zmax-zmin>29;
   const cx=Math.floor((x0+x1+x2)/3/size),cz=Math.floor((z0+z1+z2)/3/size);
   const key=giant?'world':`${cx}:${cz}`;
@@ -2346,6 +2347,7 @@ function renderPickups(out,now){for(const p of pickups){if(now<p.ready)continue;
 // RECOIL X V9.1 — separate graphics quality from device performance.
 // No RAM or GPU capacity is inferred from this data; browser hints are approximate.
 const V91_MODES={
+ tv:{fps:20,scale:.40,view:64,aiHz:12,bots:6,minimap:3,hud:6,nameplates:3},
  pi:{fps:24,scale:.52,view:48,aiHz:12,bots:8,minimap:4,hud:6,nameplates:4},
  school:{fps:30,scale:.76,view:84,aiHz:16,bots:12,minimap:6,hud:10,nameplates:5},
  balanced:{fps:45,scale:.94,view:140,aiHz:22,bots:16,minimap:8,hud:12,nameplates:6},
@@ -2380,7 +2382,7 @@ function v92AutoChoice(){
  return ((ram>=6||cores>=6)&&!(ram&&ram<=4))?'balanced':'eco';
 }
 function v92MobileResolved(){return v92MobileChoice==='auto'?v92AutoChoice():v92MobileChoice;}
-function v92Active(){return mobile&&perfChoice==='auto';}
+function v92Active(){return mobile&&perfChoice==='auto'&&!rxIsSmartTV();}
 function v92Limits(){return V92_MOBILE[v92MobileResolved()]||V92_MOBILE.eco;}
 function v92MaxPixelCount(){return v92Limits().pixels*(v92ThermalSafe?Math.max(.55,1-v92QualityPenalty*.12):1);}
 function v92RenderDistance(){return v92Active()?Math.max(36,v92Limits().view-v92QualityPenalty*12):v91Config().view;}
@@ -2418,7 +2420,9 @@ function v92TickBudget(actual,budget,ts){
 function v92Badge(ts){if(!mobile||ts-v92LastBadge<1200)return;v92LastBadge=ts;
  $('v92MobileIndicator').textContent='📱 '+v92MobileResolved().toUpperCase()+(v92QualityPenalty?' · COOLING':'');
 }
-let perfChoice=getStore('recoilPerfMode','auto');if(!['auto','pi','school','balanced','max'].includes(perfChoice))perfChoice='auto';
+function rxIsSmartTV(){return /SMART[- .]?TV|Tizen|Web0S|WebOS|HbbTV|NetCast|Android TV|GoogleTV/i.test(navigator.userAgent||'');}
+function rxTvUltraLight(){return v91Resolved()==='tv';}
+let perfChoice=getStore('recoilPerfMode','auto');if(!['auto','pi','school','balanced','max','tv'].includes(perfChoice))perfChoice='auto';
 let fpsChoice=getStore('recoilFpsCap','auto');if(!['auto','20','24','30','45','60'].includes(String(fpsChoice)))fpsChoice='auto';
 let aiAccumulator=0,lastPresented=0,lastHudUpdate=0,lastMiniUpdate=0,lastViewUI=0;
 let perfResolutionScale=1,perfFramesSlow=0,perfFramesFast=0;
@@ -2426,28 +2430,31 @@ let perfResolutionScale=1,perfFramesSlow=0,perfFramesFast=0;
 function v91AutoMode(){
  const ram=Number(navigator.deviceMemory)||0,cores=Number(navigator.hardwareConcurrency)||0;
  const ua=navigator.userAgent||'';
+ if(rxIsSmartTV())return 'tv';
  if(/Raspberry Pi|Raspbian|armv7l|aarch64/i.test(ua)||(ram>0&&ram<=2)||(cores>0&&cores<=2))return 'pi';
- if(/SMART-TV|SmartTV|Tizen|Web0S|WebOS|HbbTV|NetCast/i.test(ua))return 'school';
+ 
  if((ram>0&&ram<=4)||(cores>0&&cores<=4)||mobile||(!ram&&!cores))return 'school';
  return 'balanced';
 }
 function v91Resolved(){return perfChoice==='auto'?v91AutoMode():perfChoice;}
 function v91Config(){return v92Active()?v92Limits():(V91_MODES[v91Resolved()]||V91_MODES.balanced);}
-function v91FpsTarget(){const f=fpsChoice==='auto'?v91Config().fps:Number(fpsChoice);return mobile&&v92Active()?Math.min(f,v92Limits().fps):f;}
+function v91FpsTarget(){const f=fpsChoice==='auto'?v91Config().fps:Number(fpsChoice);return rxTvUltraLight()?Math.min(f,20):mobile&&v92Active()?Math.min(f,v92Limits().fps):f;}
 function v91RenderDistance(){return v92RenderDistance();}
-function v91EffectiveGraphics(){const q={low:0,medium:1,high:2,ultra:3,cinematic:4}[graphicsQuality]??1;if(v92Active()){return Math.min(q,Math.max(0,(v92MobileResolved()==='quality'?2:v92MobileResolved()==='balanced'?1:0)-v92QualityPenalty));}return v91Resolved()==='pi'?0:v91Resolved()==='school'?Math.min(q,1):q;}
-function v91SetMode(v){if(!['auto','pi','school','balanced','max'].includes(v))return;perfChoice=v;if(!mobile)setStore('recoilDesktopPerfMode',v);setStore('recoilPerfMode',v);perfResolutionScale=1;aiAccumulator=0;v91Apply();}
+function v91EffectiveGraphics(){if(rxTvUltraLight())return 0;const q={low:0,medium:1,high:2,ultra:3,cinematic:4}[graphicsQuality]??1;if(v92Active()){return Math.min(q,Math.max(0,(v92MobileResolved()==='quality'?2:v92MobileResolved()==='balanced'?1:0)-v92QualityPenalty));}return v91Resolved()==='pi'?0:v91Resolved()==='school'?Math.min(q,1):q;}
+function v91SetMode(v){if(!['auto','pi','school','balanced','max','tv'].includes(v))return;perfChoice=v;if(!mobile)setStore('recoilDesktopPerfMode',v);setStore('recoilPerfMode',v);perfResolutionScale=1;aiAccumulator=0;v91Apply();}
 function v91Apply(){
- document.body.classList.toggle('v91-lite',['pi','school'].includes(v91Resolved())||(v92Active()&&v92MobileResolved()!=='quality'));
+ document.body.classList.toggle('v91-lite',['pi','school','tv'].includes(v91Resolved())||(v92Active()&&v92MobileResolved()!=='quality'));
+ document.body.classList.toggle('rx-tv-ultralight',rxTvUltraLight());
+ if(rxTvUltraLight()&&crownUltraPipeline)crownDropUltra();
  v91RenderControls();v92RenderMobileControls();
  canvas.width=0;canvas.height=0;
 }
 function v91RenderControls(){
  const trn=V91_TEXT[language]||V91_TEXT.en,el=$('v91PerfModes');if(!el)return;
  $('v91PerfTitle').textContent=trn.title;$('v91FpsLabel').textContent=trn.fps;$('v91PerfInfo').textContent=trn.info;
- el.replaceChildren();for(const [i,key] of ['auto','pi','school','balanced','max'].entries()){
+ el.replaceChildren();for(const [i,key] of ['auto','pi','school','balanced','max','tv'].entries()){
  const b=document.createElement('button');b.type='button';b.className=perfChoice===key?'selected':'';
- b.innerHTML='<strong>'+trn.name[i]+'</strong><small>'+trn.desc[i]+'</small>';
+ b.innerHTML=key==='tv'?'<strong>📺 Smart TV Ultra Light</strong><small>20 FPS cap · simplified 3D models · low GPU memory</small>':'<strong>'+trn.name[i]+'</strong><small>'+trn.desc[i]+'</small>';
  b.setAttribute('aria-pressed',String(perfChoice===key));b.onclick=()=>v91SetMode(key);el.append(b);
  }
  $('v91PauseProfile').value=perfChoice;$('v91FpsLimit').value=String(fpsChoice);
@@ -2485,7 +2492,7 @@ function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityBut
 function updateFPS(ts){fpsFrames++;if(ts-fpsStart>=500){fpsValue=Math.round(fpsFrames*1000/Math.max(1,ts-fpsStart));fpsFrames=0;fpsStart=ts;const label=$('fpsCounter'),value=fpsValue+' FPS';if(label.textContent!==value)label.textContent=value;}}
 
 // Hard framebuffer pixel budgets, independent of device pixel ratio or screen resolution.
-function aFramePixelBudget(profile,mobileBudget=Infinity){return Math.min(mobileBudget,({pi:320000,school:650000,balanced:1600000,max:3600000})[profile]||650000);}
+function aFramePixelBudget(profile,mobileBudget=Infinity){return Math.min(mobileBudget,({tv:230400,pi:320000,school:650000,balanced:1600000,max:3600000})[profile]||650000);}
 function aFrameDimensions(width,height,scale,budget){const limit=Math.max(1,Math.floor(budget)),area=Math.max(1,width*height),dpr=Math.min(scale,Math.sqrt(limit/area));let w=Math.max(1,Math.floor(width*dpr)),h=Math.max(1,Math.floor(height*dpr));if(w*h>limit){if(w>=h)w=Math.max(1,Math.floor(limit/h));else h=Math.max(1,Math.floor(limit/w));}return [w,h];}
 function resize(){
  const preferred=({low:.75,medium:1,high:1.18,ultra:1.35})[graphicsQuality]||1;
@@ -2502,7 +2509,7 @@ gl.uniformMatrix4fv(uniform.proj,false,perspective((mobile?81:77)/zoom*Math.PI/1
 dynVerts.length=0;
 crownDrawCharacters(dynVerts,eye,center,now,menu);
 z1DrawVehicles(dynVerts,eye,now);z1PartyMarker(dynVerts,now);
-renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);crownDrawGameplay(dynVerts,now);if(v91Resolved()!=='pi'&&graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
+renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);crownDrawGameplay(dynVerts,now);if(!rxTvUltraLight()&&v91Resolved()!=='pi'&&graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
 for(const t of tracers)putBeam(dynVerts,t.a.x,t.a.y,t.a.z,t.b.x,t.b.y,t.b.z,.055,t.color);vxDrawEffects(dynVerts,now);
 v92EyeForward=[center[0]-eye[0],0,center[2]-eye[2]];{const l=Math.hypot(v92EyeForward[0],v92EyeForward[2])||1;v92EyeForward[0]/=l;v92EyeForward[2]/=l;}v91DrawStatic(eye);
 v91DrawDynamic();
@@ -2521,7 +2528,7 @@ function drawFallback(now){
  let scale=h/(2*Math.tan((mobile?81:77)/zoom*Math.PI/360));
  dynVerts.length=0;crownDrawCharacters(dynVerts,eye,center,now,menu);
 z1DrawVehicles(dynVerts,eye,now);z1PartyMarker(dynVerts,now);
-renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);crownDrawGameplay(dynVerts,now);if(graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
+renderPickups(dynVerts,now);renderChests(dynVerts,now);rx2RenderExtras(dynVerts,now);x4Draw(dynVerts,now);x5Draw(dynVerts,now);crownDrawGameplay(dynVerts,now);if(!rxTvUltraLight()&&graphicsQuality!=='low')renderPet(dynVerts,now,eye,center);
  for(const t of tracers)putBeam(dynVerts,t.a.x,t.a.y,t.a.z,t.b.x,t.b.y,t.b.z,.055,t.color);vxDrawEffects(dynVerts,now);
  const tris=[],fallbackRange=Math.max(28,v91RenderDistance());
  for(const all of [staticVerts,dynVerts]){
@@ -2590,7 +2597,7 @@ function loop(ts){
  if(phase==='playing'&&!paused){rxTvKeyboardAim(dt);rxTvUpdate(dt);simulate(dt,now);}
  z1PartyService(now);z1InterpolateParty(dt);z1UpdateJeepHUD();
  // Menus do not require full-rate 3D scenes; keep game simulation and network service independent.
- const sceneInterval=phase==='playing'&&!paused?0:(v91EffectiveGraphics()===0?125:83);
+ const sceneInterval=phase==='playing'&&!paused?0:rxTvUltraLight()?500:(v91EffectiveGraphics()===0?125:83);
  if(!sceneInterval||ts-aLastScene>=sceneInterval){aLastScene=ts;draw(now);drawParticles(dt);crownPaintPreviews(now);crownSampleUltra(actualFrame);}
  if(phase==='playing'){
   if(now-lastMiniUpdate>1/v91Config().minimap){lastMiniUpdate=now;minimap();v8SyncViewUI();}
@@ -3883,9 +3890,9 @@ function rx2Tick(dt,now){if(phase!=='playing')return;rx2Covers=rx2Covers.filter(
 function rx2FinishMatch(){if(mode==='training')rx5AcademyFinish();if(!mode.startsWith('crown-')&&!['training','objective','custom','solo','boss','mystery','infection','duel','chaos'].includes(mode))return;rx2MatchHistory.unshift({mode,at:new Date().toISOString(),kills:pl.kills,shots:pl.shots,hits:pl.hits,headshots:rx2HitHead,received:Math.round(rx2DamageReceived),damage:Math.round(rx2DamageDealt),survived:Math.max(0,Math.round(performance.now()/1000-rx2ModeStarted)),objective:rx2ObjectiveIndex});rx2MatchHistory=rx2MatchHistory.slice(0,25);setStore('rx2_match_history',rx2MatchHistory);}
 function rx2ShowMatchStats(){const el=$('rx2MatchStats');if(!el)return;const m=rx2MatchHistory[0];if(!m){el.replaceChildren();return;}el.innerHTML='<span>🎯 HITS '+m.hits+'/'+m.shots+'</span><span>💥 DMG '+m.damage+'</span><span>❤️ LOST '+m.received+'</span><span>⏱ '+m.survived+'s</span><span>✹ HEAD '+m.headshots+'</span>'+(mode==='objective'?'<span>📍 '+m.objective+'/3</span>':'');}
 function rx2UpdateHud(){if($('rx2TouchGadget')){$('rx2TouchGadget').textContent='⚙ '+String(rx2Settings.gadget||'smoke').toUpperCase();$('rx2TouchGadget').classList.toggle('hide',!mobile||phase!=='playing'||paused);$('rx2TouchSlide').classList.toggle('hide',!mobile||phase!=='playing'||paused);}const now=performance.now()/1000;if(now-rx2LastHudAt<.19)return;rx2LastHudAt=now;const el=$('rx2HudStatus');if(!el)return;const heat=rx2Heat>55?' 🔥'+Math.round(rx2Heat)+'%':'';el.textContent='Z.5 · '+rx2EffectiveName()+' · 🎒 '+rx2GadgetStock+' '+String(rx2Settings.gadget||'smoke').toUpperCase()+heat;const o=$('rx2Objective');o.textContent=mode==='objective'?rx2ObjectiveIndex<3?'📍 '+RX2_OBJECTIVES[rx2ObjectiveIndex].title+' ('+(rx2ObjectiveIndex+1)+'/3)':'OBJECTIVES COMPLETE':mode==='training'?'🎯 TARGET PRACTICE · '+rx2Kills+' DOWN':'';}
-function rx2Effective(){const preset=rx2Settings.preset;const mobileLimiter=mobile?2:4,profile=preset==='off'?0:preset==='balanced'?1:preset==='enhanced'?3:preset==='ultra'?4:mobile?1:v91Resolved()==='max'?3:2;return Math.max(0,Math.min(mobileLimiter,profile-rx2DynamicLevel));}
+function rx2Effective(){if(rxTvUltraLight())return 0;const preset=rx2Settings.preset;const mobileLimiter=mobile?2:4,profile=preset==='off'?0:preset==='balanced'?1:preset==='enhanced'?3:preset==='ultra'?4:mobile?1:v91Resolved()==='max'?3:2;return Math.max(0,Math.min(mobileLimiter,profile-rx2DynamicLevel));}
 function rx2EffectiveName(){return ['ECO','BALANCED','ENHANCED','ULTRA','CINEMATIC'][rx2Effective()]||'AUTO';}
-function rx2ShaderUniforms(){if(!gl||!program)return;const q=rx2Effective(),rain=rxWeather==='rain'||rxWeather==='storm',storm=rxWeather==='storm';if(uniform.rx2int)gl.uniform1f(uniform.rx2int,rx2Settings.materials?q*.25:0);if(uniform.rx2wet)gl.uniform1f(uniform.rx2wet,rx2Settings.reflections&&rx2Settings.weather&&rain?.9:0);if(uniform.rx2night)gl.uniform1f(uniform.rx2night,rx2Settings.lighting&&storm?.3:rx2MapSurprise===1?.12:0);if(uniform.rx2shade)gl.uniform1f(uniform.rx2shade,rx2Settings.shadows?q*.22:0);if(uniform.rx2light)gl.uniform1f(uniform.rx2light,rx2Settings.lighting?q*.22:0);const gold=gunFinishFor(pl.weapon);if(uniform.rx2godly)gl.uniform1f(uniform.rx2godly,rx2Settings.godly&&q>1&&gold&&['godly','silver','golden'].includes(gold.rarity)?q*.16:0);}
+function rx2ShaderUniforms(){if(!gl||!program)return;if(rxTvUltraLight()){for(const k of ['rx2int','rx2wet','rx2night','rx2shade','rx2light','rx2godly'])if(uniform[k])gl.uniform1f(uniform[k],0);return;}const q=rx2Effective(),rain=rxWeather==='rain'||rxWeather==='storm',storm=rxWeather==='storm';if(uniform.rx2int)gl.uniform1f(uniform.rx2int,rx2Settings.materials?q*.25:0);if(uniform.rx2wet)gl.uniform1f(uniform.rx2wet,rx2Settings.reflections&&rx2Settings.weather&&rain?.9:0);if(uniform.rx2night)gl.uniform1f(uniform.rx2night,rx2Settings.lighting&&storm?.3:rx2MapSurprise===1?.12:0);if(uniform.rx2shade)gl.uniform1f(uniform.rx2shade,rx2Settings.shadows?q*.22:0);if(uniform.rx2light)gl.uniform1f(uniform.rx2light,rx2Settings.lighting?q*.22:0);const gold=gunFinishFor(pl.weapon);if(uniform.rx2godly)gl.uniform1f(uniform.rx2godly,rx2Settings.godly&&q>1&&gold&&['godly','silver','golden'].includes(gold.rarity)?q*.16:0);}
 function rx2HardwareTick(ms,ts){if(!rx2Settings.autoBoost)return;const budget=1000/v91FpsTarget();if(ms>budget*1.35){rx2SlowSamples++;rx2FastSamples=0;}else if(ms<budget*.97){rx2FastSamples++;rx2SlowSamples=0;}
  if(ts-rx2LastAdaptive>10000&&rx2SlowSamples>65){rx2DynamicLevel=Math.min(3,rx2DynamicLevel+1);perfResolutionScale=Math.max(.48,perfResolutionScale-.08);rx2LastAdaptive=ts;rx2SlowSamples=0;}
  if(ts-rx2LastAdaptive>20000&&rx2FastSamples>200){rx2DynamicLevel=Math.max(0,rx2DynamicLevel-1);rx2LastAdaptive=ts;rx2FastSamples=0;}
@@ -6011,8 +6018,19 @@ window.RecoilCityCharacter=Object.freeze({
     return out;
   }
 });
+// TV fallback models retain visible silhouettes without animated rig meshes.
+function rxTvDrawActor(out,b,kind){
+  const model=crownModel(b),palette=crownPalette(kind==='player'?equipped:b.skinId||'sandstorm',model),k=CROWN_SCALES[model]||1;
+  const y=Number.isFinite(b.jump)?Math.max(0,b.jump):0,x=b.x,z=b.z,c=b.crouched?.72:1;
+  if(model==='scorpion'){putBox(out,x,y,z,1.45*k,.7*k,1.7*k,palette[0]);putBox(out,x,y+.5*k,z,.7*k,.5*k,.7*k,palette[1]);return;}
+  putBox(out,x,y,z,.58*k,.72*k*c,.36*k,palette[2]);
+  putBox(out,x,y+.72*k*c,z,.76*k,.72*k*c,.43*k,palette[0]);
+  putBox(out,x,y+1.44*k*c,z,.46*k,.48*k*c,.44*k,palette[1]);
+  if(!(mode==='mystery'&&(b.role==='innocent'||(kind==='player'&&vxRole==='innocent')))&&!b.crownUnarmed){const yaw=b.yaw||0;putBox(out,x+Math.sin(yaw)*.43*k,y+1.02*k*c,z+Math.cos(yaw)*.43*k,.22*k,.20*k,.48*k,palette[2]);}
+}
 function crownDrawActor(out,b,distance,now,kind='bot') {
   if(b.alive===false||(kind==='remote'&&!(b.hp>0)))return;
+  if(rxTvUltraLight()){rxTvDrawActor(out,b,kind);return;}
   const {model,id,variant,lod,scale}=crownActorSpec(b,distance);
   const motion=crownMotion(b,now),mesh=crownMesh(model,lod,variant);
   const pose=model==='scorpion'?crownScorpionPose(b,now,motion):crownHumanoidPose(b,now,model,motion);
@@ -6133,9 +6151,9 @@ function crownDrawCharacters(out,eye,center,now,menu) {
   if(v8ThirdPerson){
     crownDrawActor(out,pl,Math.hypot(pl.x-eye[0],pl.z-eye[2]),now,'player');
   }else if(mode==='mystery'&&vxRole==='murderer'){
-    crownViewArms(out,now,true);vxDrawHeldKnife(out,now);
+    if(!rxTvUltraLight())crownViewArms(out,now,true);vxDrawHeldKnife(out,now);
   }else if(mode!=='mystery'||vxRole==='sheriff'){
-    if(!v92Active()||v92MobileResolved()!=='eco'){
+    if(!rxTvUltraLight()&&(!v92Active()||v92MobileResolved()!=='eco')){
       crownViewArms(out,now);
       v8DrawWeapon(out,pl,pl.weapon,gunFinishFor(pl.weapon),true,now);
     }
@@ -6281,6 +6299,7 @@ function crownPrepareTargets() {
 }
 
 function crownBeginUltra() {
+  if(rxTvUltraLight())return false;
   if(!crownUltraWanted||crownUltraSuspended||crownUltraFault||!deviceChosen)return false;
   // Avoid WebGL queries in the render loop. The settings and context handlers invalidate this cache.
   const key=(mobile?v92MobileResolved():v91Resolved());
