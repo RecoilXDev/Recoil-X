@@ -15,13 +15,19 @@ test('game features open inline from their native screens and return to the same
  ])for(const key of keys)assert.ok(button(parent,key),key+' is accessible from '+parent);
  assert.equal(h.ui.querySelector('#rx-a-entry'),null);
  assert.equal(h.ui.querySelector('#z1Home [data-game-feature]'),null);
+ assert.ok(h.ui.querySelector('#rx-a-home-pair #rx-a-season-tab'));
+ const homeCurator=h.ui.querySelector('#rx-a-home-pair #rx-a-curator-tab');assert.ok(homeCurator);
+ await homeCurator.onclick();assert.equal(h.ui.querySelector('.curator-library').hidden,false);assert.equal(h.ui.querySelector('.curator-editor').hidden,true);
+ h.ui.getElementById('rx-curator-new').click();assert.equal(h.ui.querySelector('.curator-editor').hidden,false);
+ h.ui.getElementById('rx-curator-back').click();assert.equal(h.ui.querySelector('.curator-library').hidden,false);
+ h.ui.getElementById('rx-curator-back').click();assert.equal(h.ui.getElementById('rx-a').hidden,true);
 
  h.ui.getElementById('z1PlayBtn').click();h.ui.getElementById('z1TrainingTab').click();
  const curator=button('#z1PlayMenu','curator');
  await curator.onclick();
  const feature=h.ui.querySelector('#rx-a');
  assert.equal(feature.closest('#z1PlayMenu'),h.ui.getElementById('z1PlayMenu'));
- assert.match(feature.textContent,/Curator Studio/);
+ assert.match(feature.textContent,/Curator Mode/);
  assert.ok(feature.querySelector('canvas'));
  await curator.onclick();
  assert.equal(curator.getAttribute('aria-expanded'),'false');

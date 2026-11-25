@@ -75,10 +75,23 @@ function firstPerson(canvas,objects,found,player,yaw){
  c.strokeStyle='#fff';c.beginPath();c.moveTo(w/2-7,h/2);c.lineTo(w/2+7,h/2);c.moveTo(w/2,h/2-7);c.lineTo(w/2,h/2+7);c.stroke();
 }
 async function api(path,data){const t=sessionStorage.getItem('rx5-token');if(!t)throw Error('Sign in through Career & Clans to save or share.');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const r=await fetch('/rx-api/a/curator'+path,{signal:controller.signal,method:data===undefined?'GET':'POST',headers:{Authorization:'Bearer '+t,...(data===undefined?{}:{'Content-Type':'application/json'})},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const d=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status});if(!d)throw Error('Invalid server response.');return d;}finally{clearTimeout(timeout);}}
-window.RXCurator={mount(host,signal){
+window.RXCurator={mount(host,signal,onBack=()=>host.replaceChildren()){
  let p={name:'My Arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:3,z:2}]},angle=.65,firstView=false,yaw=0,playing=false,player=null,timer=null,remaining=0,bonusUsed=0,found=new Set(),busy=false;
  const panel=el('section');panel.className='card';host.replaceChildren(panel);
- panel.append(el('h3','Curator Studio · 3D map & mini-game builder'),el('p','Build, test and save account-owned projects. Share an unlisted code with friends. No ranked XP or currency.'));
+ const library=el('div'),editor=el('div'),toolbar=el('div'),title=el('h3','Curator Mode');
+ library.className='curator-library';editor.className='curator-editor';editor.hidden=true;toolbar.className='curator-top';
+ let editing=false,draftOpened=false,baseline='';
+ const fingerprint=()=>JSON.stringify({name:name.value,seconds:seconds.value,mode:mode.value,objects:p.objects,rules:[hazard.value,bonus.value]});
+ function canReplace(){return !draftOpened||fingerprint()===baseline||confirm('Replace your unsaved draft?');}
+ function showEditor(){editing=true;draftOpened=true;library.hidden=true;editor.hidden=false;title.textContent='Curator Editor';resume.hidden=true;refresh();}
+ function showLibrary(){if(room||roomBusy){msg('Leave co-op before returning to maps.');return;}stop();editing=false;library.hidden=false;editor.hidden=true;title.textContent='Curator Mode';resume.hidden=!draftOpened;}
+ const back=button('← Back',()=>{if(editing)showLibrary();else if(canReplace())onBack();});
+ const newMap=button('New +',()=>{if(room||roomBusy){msg('Leave co-op before creating a map.');return;}if(!canReplace())return;load({name:'New arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:3,z:2}]});});
+ back.id='rx-curator-back';newMap.id='rx-curator-new';
+ const resume=button('Resume draft',showEditor);resume.hidden=true;
+ toolbar.append(back,title,newMap);panel.append(toolbar,library,editor);
+ library.append(el('p','Your saved maps and approved community maps. Select a map to open it or use New + to build one.'),resume);
+ editor.append(el('p','Build, test and save account-owned projects. No ranked XP or currency.'));
  const status=el('p');status.setAttribute('role','status');const msg=t=>status.textContent=t;
  const canvas=el('canvas');canvas.width=760;canvas.height=440;canvas.style.cssText='width:100%;height:auto;border:1px solid #806549;border-radius:10px';canvas.setAttribute('aria-label','3D preview of your arena');
  const field=(label,type,value)=>{const wrap=el('label',label+' '),n=el('input');n.type=type;n.value=value;n.style.cssText='max-width:100%;padding:8px;background:#191510;color:white;border:1px solid #806549';wrap.append(n);return [wrap,n]};
@@ -159,7 +172,7 @@ window.RXCurator={mount(host,signal){
   room=d;
   roomCode.value=d.code;
   roomPanel.replaceChildren(el('h3','Co-op room '+d.code),el('p',d.result||('Time left: '+Math.max(0,Math.ceil((d.ends-d.now)/1000))+'s · Targets: '+d.found.length)),el('p',d.players.map(p=>p.name+(p.alive?'':' (out)')).join(' · ')));
-  if(entering)refresh();else draw();
+  if(entering)showEditor();else draw();
   if(!poll)poll=setInterval(()=>roomCall('/room'),1500);
  }
  function clearRoomView(){
@@ -199,16 +212,16 @@ window.RXCurator={mount(host,signal){
  }
  signal?.addEventListener('abort',()=>{roomGeneration++;clearInterval(poll);},{once:true});
  async function hostFPS(q){if(room)throw Error('Leave the co-op room first.');const password=prompt('Private FPS room password (4–64 characters)');if(password===null)return;if(password.length<4||password.length>64)throw Error('Choose 4–64 characters.');const size=Number(prompt('Players per team: 1, 2, 3 or 5','1'));if(![1,2,3,5].includes(size))throw Error('Choose a valid team size.');const d=await api('/create-fps',{id:q.id,size,limit:15,password});msg('Private FPS lobby '+d.code+' created. Share the code and password separately. Return to Multiplayer to start.');}
- async function discover(){const d=await api('/discover');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Community games · moderated'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Copy',()=>load(q,true)),button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q)))));if(!d.projects.length)discovery.append(el('p','No approved games yet.'));}
- async function reviews(){const d=await api('/review');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Administrator review queue'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Inspect copy',()=>load(q,true)),button('Approve',()=>run(async()=>{if(!confirm('Approve this saved version for discovery?'))return;await api('/review',{id:q.id,updated:q.updated,state:'approved',reason:''});await reviews();})),button('Reject',()=>run(async()=>{const reason=prompt('Reason for rejection (max 160 characters)');if(reason===null)return;await api('/review',{id:q.id,updated:q.updated,state:'rejected',reason:reason.slice(0,160)});await reviews();}))));}
+ async function discover(){const d=await api('/discover');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Community games · moderated'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Copy',()=>{if(canReplace())load(q,true);}),button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q)))));if(!d.projects.length)discovery.append(el('p','No approved games yet.'));}
+ async function reviews(){const d=await api('/review');if(signal?.aborted)return;discovery.replaceChildren(el('h3','Administrator review queue'));for(const q of d.projects)discovery.append(row(el('span',q.name+' · '+q.mode),button('Inspect copy',()=>{if(canReplace())load(q,true);}),button('Approve',()=>run(async()=>{if(!confirm('Approve this saved version for discovery?'))return;await api('/review',{id:q.id,updated:q.updated,state:'approved',reason:''});await reviews();})),button('Reject',()=>run(async()=>{const reason=prompt('Reason for rejection (max 160 characters)');if(reason===null)return;await api('/review',{id:q.id,updated:q.updated,state:'rejected',reason:reason.slice(0,160)});await reviews();}))));}
 const [cl,code]=field('Share code','text','');
  async function run(fn){if(busy||signal?.aborted)return;busy=true;try{await fn();}catch(e){msg(e.message);}finally{busy=false;}}
- function load(q,copy=false){if(room){msg('Leave co-op before editing a project.');return;}stop();past.length=0;future.length=0;p={...q,objects:q.objects.map(o=>({...o}))};if(copy){delete p.id;delete p.published;p.name=p.name.slice(0,43)+' copy';}name.value=p.name;mode.value=p.mode;seconds.value=p.seconds;hazard.value=p.rules?.hazard||'eliminate';bonus.value=String(p.rules?.targetBonus||0);refresh();}
+ function load(q,copy=false){if(room){msg('Leave co-op before editing a project.');return;}stop();past.length=0;future.length=0;p={...q,objects:q.objects.map(o=>({...o}))};if(copy){delete p.id;delete p.published;p.name=p.name.slice(0,43)+' copy';}name.value=p.name;mode.value=p.mode;seconds.value=p.seconds;hazard.value=p.rules?.hazard||'eliminate';bonus.value=String(p.rules?.targetBonus||0);baseline=fingerprint();showEditor();}
  async function saveDraft(){
   if(room)throw Error('Leave co-op before saving.');
   stop();
   sync();
-  const draft=p;
+  const draft=p,savedFingerprint=fingerprint();
   const {project}=await api('/save',draft);
   if(signal?.aborted)return;
   // Keep edits and undo history made while the saved revision was in flight.
@@ -216,7 +229,7 @@ const [cl,code]=field('Share code','text','');
    p.id=project.id;
    p.updated=project.updated;
    p.published=project.published;
-   p.review=project.review;
+   p.review=project.review;baseline=savedFingerprint;
   }
   await projects();
   msg('Saved privately.');
@@ -228,7 +241,12 @@ const [cl,code]=field('Share code','text','');
   if(resume&&d.activeRoom&&generation===roomGeneration&&!room&&!playing){
    roomView(d.activeRoom);msg('Resumed your co-op room.');
   }
-  list.replaceChildren(el('h3','My projects'));for(const q of d.projects){list.append(row(el('span',q.name+(q.published?' · Shared: '+q.id:'')+' · '+(q.review?.state||'private')),button('Open',()=>load(q)),button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q))),button('Submit for discovery',()=>run(async()=>{await api('/submit',{id:q.id});await projects();msg('Submitted for administrator review.');})),button('Delete',()=>run(async()=>{if(!confirm('Delete this project?'))return;await api('/delete',{id:q.id});if(p.id===q.id)delete p.id;await projects();msg('Deleted.');}))));}}
- panel.append(row(nl,tl,mode),el('h3','Event rules'),row(el('span','On hazard → (penalty: respawn −5s; collect/explore only)'),hazard,el('span','On first target pickup → add seconds'),bonus),canvas,row(button('Toggle first-person (solo)',()=>{if(room)return msg('First-person is currently solo only.');firstView=!firstView;draw();msg(firstView?'First-person during solo playtest. Q/E to turn.':'Isometric view.');}),button('Rotate left',()=>{if(firstView&&playing)yaw-=Math.PI/2;else angle-=.35;draw();}),button('Rotate right',()=>{if(firstView&&playing)yaw+=Math.PI/2;else angle+=.35;draw();})),row(kind,xl,zl,button('Place / replace',()=>edit(false)),button('Erase',()=>edit(true)),undo,redo),el('p','Tap a grid cell to place the selected object.'),grid,row(button('Playtest',start),button('Stop',()=>stop('Test ended.')),button('↑',()=>move(0,-1)),button('←',()=>move(-1,0)),button('↓',()=>move(0,1)),button('→',()=>move(1,0))),row(button('New project',()=>{load({name:'New arena',mode:'collect',seconds:60,objects:[{type:'spawn',x:0,z:0},{type:'target',x:2,z:2}]});}),button('Save',()=>run(saveDraft)),button('Share saved version',()=>run(async()=>{if(!p.id)throw Error('Save first.');const d=await api('/share',{id:p.id,published:true});code.value=d.project.id;await projects();msg('Share code: '+d.project.id+' (saved version only).');})),button('Unshare',()=>run(async()=>{if(!p.id)throw Error('Save first.');await api('/share',{id:p.id,published:false});await projects();msg('Unshared.');}))),row(cl,button('Open shared copy',()=>run(async()=>{const d=await api('/shared?id='+encodeURIComponent(code.value.trim()));load(d.project,true);msg('Copied into editor. Save as your own project.');}))),row(rl,button('Join co-op',()=>enter('/join-room',{code:roomCode.value.trim()})),button('Leave co-op',exitRoom)),roomPanel,row(button('Browse community games',()=>run(discover)),button('Review queue (admins)',()=>run(reviews))),discovery,status,list);refresh();run(()=>projects(true));
+  list.replaceChildren(el('h3','My maps'));const maps=el('div');maps.className='curator-maps';list.append(maps);
+  if(!d.projects.length)maps.append(el('p','No saved maps yet. Choose New + to create one.'));
+  for(const q of d.projects){const card=el('div');card.className='curator-map';card.append(el('strong',q.name),el('p',q.mode+' · '+q.objects.length+' objects · '+(q.review?.state||'private')+(q.published?' · Shared: '+q.id:'')),button('Open',()=>{if(canReplace())load(q);}),row(button('Host co-op',()=>enter('/create-room',{id:q.id})),button('Host FPS',()=>run(()=>hostFPS(q))),button('Submit for discovery',()=>run(async()=>{await api('/submit',{id:q.id});await projects();msg('Submitted for administrator review.');})),button('Delete',()=>run(async()=>{if(!confirm('Delete this project?'))return;await api('/delete',{id:q.id});if(p.id===q.id)delete p.id;await projects();msg('Deleted.');}))));maps.append(card);}
+ }
+ editor.append(row(nl,tl,mode),el('h3','Event rules'),row(el('span','On hazard → (penalty: respawn −5s; collect/explore only)'),hazard,el('span','On first target pickup → add seconds'),bonus),canvas,row(button('Toggle first-person (solo)',()=>{if(room)return msg('First-person is currently solo only.');firstView=!firstView;draw();msg(firstView?'First-person during solo playtest. Q/E to turn.':'Isometric view.');}),button('Rotate left',()=>{if(firstView&&playing)yaw-=Math.PI/2;else angle-=.35;draw();}),button('Rotate right',()=>{if(firstView&&playing)yaw+=Math.PI/2;else angle+=.35;draw();})),row(kind,xl,zl,button('Place / replace',()=>edit(false)),button('Erase',()=>edit(true)),undo,redo),el('p','Tap a grid cell to place the selected object.'),grid,row(button('Playtest',start),button('Stop',()=>stop('Test ended.')),button('↑',()=>move(0,-1)),button('←',()=>move(-1,0)),button('↓',()=>move(0,1)),button('→',()=>move(1,0))),row(button('Save',()=>run(saveDraft)),button('Share saved version',()=>run(async()=>{if(!p.id)throw Error('Save first.');const d=await api('/share',{id:p.id,published:true});code.value=d.project.id;await projects();msg('Share code: '+d.project.id+' (saved version only).');})),button('Unshare',()=>run(async()=>{if(!p.id)throw Error('Save first.');await api('/share',{id:p.id,published:false});await projects();msg('Unshared.');}))),row(button('Leave co-op',exitRoom)),roomPanel);
+ library.append(list,row(cl,button('Open shared copy',()=>run(async()=>{if(!canReplace())return;const d=await api('/shared?id='+encodeURIComponent(code.value.trim()));load(d.project,true);msg('Copied into editor. Save as your own project.');}))),row(rl,button('Join co-op',()=>enter('/join-room',{code:roomCode.value.trim()}))),row(button('Browse community games',()=>run(discover)),button('Review queue (admins)',()=>run(reviews))),discovery);
+ panel.append(status);list.append(el('p','Sign in to view your saved maps, or choose New + to start building.'));refresh();run(()=>projects(true));
 },preview(tier){const c=el('canvas');c.width=420;c.height=230;c.style.cssText='width:100%;height:auto;cursor:grab;touch-action:none';c.setAttribute('aria-label',tier+' Sandwyrm 3D concept model; drag to rotate');const colors={gold:'#d6ad42',silver:'#b6c9da',bronze:'#ad7546',blue:'#3e97dc'};let a=.42,start=null;c.tabIndex=0;const draw=()=>renderer(c,[{color:colors[tier]}],a,true);c.onpointerdown=e=>{start=e.clientX;c.setPointerCapture(e.pointerId);};c.onpointermove=e=>{if(start!==null){a+=(e.clientX-start)*.015;start=e.clientX;draw();}};c.onpointerup=c.onpointercancel=()=>start=null;c.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();a+=e.key==='ArrowLeft'?-.2:.2;draw();}};draw();return c;}};
 })();

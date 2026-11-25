@@ -9,6 +9,7 @@ function mountStudio() {
   const host = h.ui.createElement('div');
   new vm.Script(fs.readFileSync(__dirname + '/../server/a-curator.js', 'utf8')).runInContext(h.ctx);
   h.ctx.RXCurator.mount(host, new AbortController().signal);
+  host.querySelector('#rx-curator-new').click();
   const buttons = host.querySelectorAll('button');
   return {
     host,
@@ -54,7 +55,7 @@ test('Curator undo restores both tiles after moving a spawn and leaves text-fiel
   kind.value = 'wall';
   target.click();
   assert.equal(redo.disabled, true);
-  button('New project').click();
+  button('New +').click();
   assert.equal(undo.disabled, true);
   assert.equal(origin.title, 'spawn');
 });

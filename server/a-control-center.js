@@ -5,6 +5,18 @@ const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,
 const style=document.createElement('style');style.id='rx-feature-styles';style.textContent=`
 #rx-a{width:100%;min-width:0;grid-column:1/-1;text-align:left;color:#f5e4ce;font:14px/1.5 system-ui}
 #rx-a[hidden],#rx-a-season-tab[hidden]{display:none!important}
+#rx-a-home-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;grid-column:1/-1;width:100%;margin:8px 0}
+#z1Home #rx-a-home-pair button{margin:0;min-height:54px;white-space:normal;overflow-wrap:anywhere}
+#rx-a-home-pair.season-pending{grid-template-columns:1fr}
+#rx-a-curator-tab{background:linear-gradient(135deg,#34291e,#5a4835);border:1px solid #a78960;color:#ffe3b4}
+#rx-a.curator-view #rx-a-panel>.head{display:none}
+#rx-a .curator-library[hidden],#rx-a .curator-editor[hidden]{display:none!important}
+#rx-a .curator-top{display:grid;grid-template-columns:1fr minmax(0,2fr) 1fr;align-items:center;gap:6px;direction:ltr}
+#rx-a .curator-top h3{text-align:center;margin:0}
+#rx-a .curator-top button:last-child{justify-self:end}
+#rx-a .curator-top button:first-child{justify-self:start}
+#rx-a .curator-maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+#rx-a .curator-map{display:grid;gap:7px;align-content:start;border:1px solid #8c6b48;background:#382a1e;border-radius:10px;padding:12px;overflow-wrap:anywhere}
 #rx-a-season-tab{border:1px solid #e2b66b;background:linear-gradient(135deg,#563620,#8c5e32);color:#fff0ca;margin:8px 0;min-height:54px}
 #rx-a-season-tab[aria-expanded="true"]{outline:2px solid #ffd18b}#rx-a *{box-sizing:border-box}
 #z1SettingsMenu #rx5Options [data-game-feature="network"]{display:none}
@@ -53,7 +65,7 @@ function close(restoreFocus=true){
 function alive(id){return id===generation&&!root.hidden;}
 async function open(tab,button){
  if(launcher===button&&!root.hidden){close();return;}
- close(false);launcher=button;button.after(root);root.hidden=false;
+ close(false);launcher=button;(button.closest('#rx-a-home-pair')||button).after(root);root.hidden=false;
  button.setAttribute('aria-expanded','true');
  const heading=root.querySelector('#rx-a-title');heading.textContent=button.textContent;heading.focus();
  for(let node=button.parentElement;visibility&&node;node=node.parentElement){
@@ -62,7 +74,7 @@ async function open(tab,button){
  await show(tab);
 }
 async function show(tab){
- const id=invalidate();status('');controller=new AbortController();
+ const id=invalidate();status('');root.classList.toggle('curator-view',tab==='curator');controller=new AbortController();
  const signal=controller.signal;
  body().textContent='Loading…';
  try{
@@ -76,7 +88,7 @@ async function show(tab){
   const sc=e.seasonCrates,owned=new Map(e.equipment.map(x=>[x.slot,x.item]));
   body().insertAdjacentHTML('beforeend','<div class="card"><h3>Your season progress</h3><div class="metrics">'+metric('Season XP',p.season.xp)+metric('Season level',p.season.level)+'</div><div class="row"><button data-a-tab="pass">Season Pass</button><button data-a-tab="seasonkills">Kill Championship</button><button data-a-tab="community">Weekly Ranked Cup</button><button data-a-tab="progression">Full progression</button></div></div><div class="card"><h3>Free seasonal crates</h3>'+sc.crates.map(c=>{const item=e.catalog[c.item],equipped=owned.get(item.kind)===c.item;return '<div class="card row"><div style="flex:1"><b>'+esc(item.name)+'</b><p>'+esc(c.xp)+' XP · '+(c.claimed?(equipped?'Equipped':'Owned'):c.eligible?'Ready':'Locked')+'</p></div>'+(c.claimed?'<button data-a-action="season-cosmetic" data-item="'+esc(c.item)+'" data-slot="'+esc(item.kind)+'" data-equipped="'+equipped+'">'+(equipped?'Unequip':'Equip')+'</button>':'<button data-a-action="season-crate" data-item="'+esc(c.item)+'" '+(!c.eligible?'disabled':'')+'>Claim free crate</button>')+'</div>';}).join('')+'</div>');
  }else if(tab==='curator'){
-  if(!window.RXCurator)throw Error('Curator editor unavailable.');window.RXCurator.mount(body(),signal);
+  if(!window.RXCurator)throw Error('Curator editor unavailable.');window.RXCurator.mount(body(),signal,()=>close());
  }else if(tab==='network'){
   const d=await api('a/connection',undefined,signal);if(!alive(id))return;
   body().innerHTML='<div class="card"><h3>'+ (d.connected?'Multiplayer connection active':'No active connection on this session')+'</h3><div class="metrics">'+metric('Profile',d.profile)+metric('State snapshots sent',d.snapshotsSent)+metric('Snapshots skipped',d.snapshotsSkipped)+metric('State data (KiB)',(d.stateBytes/1024).toFixed(1))+'</div><p class="muted">'+esc(d.note)+'</p><p>Economy mode reduces the frequency of position/state snapshots to around 5 per second. It may make movement less smooth but uses less bandwidth. Reliable match events are not intentionally skipped. The setting lasts for this connection.</p><div class="row"><button data-a-action="profile" data-profile="standard" '+(!d.connected?'disabled':'')+'>Standard</button><button data-a-action="profile" data-profile="economy" '+(!d.connected?'disabled':'')+'>Economy</button><button data-a-tab="network">Refresh</button><button data-a-action="network-probe">Measure connection</button><div id="rx-a-probe" role="status"></div></div></div>';
@@ -173,13 +185,15 @@ window.addEventListener('rx5-auth-changed',()=>{if(!root.hidden)close(false);});
 // The dedicated home tab is revealed by the server clock, not the device clock.
 const seasonHost=document.querySelector('#z1Home .z1-home-shortcuts')||document.querySelector('#z1Home');
 if(seasonHost){
- const button=document.createElement('button');button.type='button';button.id='rx-a-season-tab';button.className='secondary';button.hidden=true;button.textContent='Season 1 — New Dawn';button.setAttribute('aria-expanded','false');button.onclick=()=>open('seasonhome',button);seasonHost.append(button);
+ const pair=document.createElement('div');pair.id='rx-a-home-pair';pair.className='season-pending';seasonHost.append(pair);
+ const curator=document.createElement('button');curator.type='button';curator.id='rx-a-curator-tab';curator.className='secondary';curator.textContent='Curator Mode';curator.setAttribute('aria-expanded','false');curator.onclick=()=>open('curator',curator);
+ const button=document.createElement('button');button.type='button';button.id='rx-a-season-tab';button.className='secondary';button.hidden=true;button.textContent='Season 1 — New Dawn';button.setAttribute('aria-expanded','false');button.onclick=()=>open('seasonhome',button);pair.append(button,curator);
  let pending=false;
  async function refreshSeasonTab(){
   if(pending)return;pending=true;
   const c=new AbortController(),timeout=setTimeout(()=>c.abort(),8000);
   try{const r=await fetch('/rx-api/a/season/schedule',{cache:'no-store',signal:c.signal});if(!r.ok)return;const d=await r.json();if(!Number.isFinite(d.start)||!Number.isFinite(d.end)||!Number.isFinite(d.now)||!['upcoming','active','ended'].includes(d.state))return;
-   seasonSchedule=d;button.hidden=d.state==='upcoming'||d.now<d.start;
+   seasonSchedule=d;button.hidden=d.state==='upcoming'||d.now<d.start;pair.classList.toggle('season-pending',button.hidden);
   }catch{}finally{clearTimeout(timeout);pending=false;}
  }
  void refreshSeasonTab();setInterval(refreshSeasonTab,60000);

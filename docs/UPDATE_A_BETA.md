@@ -94,3 +94,6 @@ Overdrive matches capture owned, equipped New Dawn cosmetics at match start from
 
 ### Main menu — New Dawn soundtrack
 The original 38.4-second New Dawn recording already in the radio library (`47_menu.mp3`) loops in menus after browser audio permission. It pauses on mute, hidden tabs, gameplay and City entry. A media failure falls back to the existing procedural lobby cue. Gameplay and City radio tracks remain unchanged. Actual TV/browser audio playback needs verification.
+
+### Curator library menu
+Season 1 and Curator Mode share a responsive two-column main-menu row. Curator opens a map library with Back on the left, New + on the right, and saved map cards in the center. New/open enters the existing editor; Back returns to the library with a resumable draft. Guests can build and test; account-owned saves, community discovery, co-op, hosting and moderation retain existing server permissions.
