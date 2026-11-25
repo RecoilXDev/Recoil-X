@@ -18,6 +18,7 @@ import { startZ5Backups } from './z5-backups.mjs';
 import { createZ5Expansion } from './z5-expansion.mjs';
 import {createAccountSessions,createDeliveryPolicy} from './a-foundation.mjs';
 import {createServerShield} from './a-server-shield.mjs';
+import {createCitySessions} from './a1-city-sessions.mjs';
 import {createAProgression,SEASON_START,SEASON_END,seasonState} from './a-progression.mjs';
 import {createCurator} from './a-curator.mjs';
 import {createCuratorRooms} from './a-curator-rooms.mjs';
@@ -165,6 +166,7 @@ export function createRecoilServer(options = {}) {
   const htmlPath = options.html ?? new URL('../index.html', import.meta.url);
   const assetDirectory=dirname(htmlPath instanceof URL?fileURLToPath(htmlPath):htmlPath);
   const clients = new Map(), rooms = new Map();
+  const citySessions=createCitySessions({fail,clock:sqlTime});
   const delivery=createDeliveryPolicy();
   const shield=createServerShield(db,options.shield);
   const beta=options.beta===true;
@@ -481,6 +483,7 @@ export function createRecoilServer(options = {}) {
       }
     }
     if (req.method === 'POST') {
+      if(path.startsWith('/a1/city/')){if(!allowed('a1-city:'+user.id,100,60000))throw fail(429,'City requests are too frequent.');if(path==='/a1/city/leave')return citySessions.leave(user);if(shield.status(clients.size).busy)throw fail(503,'City server busy.');if(path==='/a1/city/create')return citySessions.create(user);if(path==='/a1/city/join')return citySessions.join(user,body?.code);if(path==='/a1/city/pulse')return citySessions.pulse(user,body);}
       if(path==='/a/admin/shield/batch'){if(!allowed('a-batch:'+user.id,6,60000))throw fail(429,'Retry shortly.');return shieldBatch(user,body);}
       if(path==='/a/shield/queue'){if(!allowed('a-queue:'+user.id,20,60000))throw fail(429,'Retry shortly.');return body.leave===true?shield.leaveQueue(user):shield.queueStatus(user,clients.size,true);}
       if(path.startsWith('/a/curator/')){

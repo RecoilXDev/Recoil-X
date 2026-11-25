@@ -7,6 +7,7 @@
   let lastCareer, lastNotice, paused = false;
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
   const prefsKey='recoil-x.city.view.v1';
+  let online=null,onlinePending=false,onlineEpoch=0,onlineNext=0,onlineNote='Offline';
   const held = new Set(), pointers = new Map();
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
   const style = document.createElement('style');
@@ -134,7 +135,7 @@
       if (action === 'exit') close();
       if (action === 'help' || action === 'resume') {controls.hub.hidden=true;setHelp(action === 'help');}
       if(action==='cityhub'){setHelp(true);controls.hub.hidden=false;renderHub();}
-      const b=event.target.closest('button');if(b?.dataset.cityAction&&world){window.RecoilCityWorld.a1Action(world,b.dataset.cityAction,b.dataset.cityId);renderHub();saveCareer();}
+      const b=event.target.closest('button');if(b?.dataset.cityAction&&world){if(b.dataset.cityAction.startsWith('online-'))void cityOnlineAction(b.dataset.cityAction);else{window.RecoilCityWorld.a1Action(world,b.dataset.cityAction,b.dataset.cityId);renderHub();saveCareer();}}
       if (['vehicle','job','paint','weapon','shop','jump','interior','rob'].includes(action)) act(action);
     });
     dialog.addEventListener('pointerdown', event => {
@@ -199,6 +200,7 @@
     for(const site of [...map.properties,map.dealer,...map.venues]){ctx.fillStyle='#d8b9ff';ctx.fillRect(x(site.x)-2,y(site.y)-2,4,4);}
     const story=window.RecoilCityWorld.a1View(world).story?.goal;if(story){ctx.fillStyle='#f0b0ff';ctx.fillRect(x(story.x)-3,y(story.y)-3,6,6);}
     for(const shop of map.shops){ctx.fillStyle='#96e3d8';ctx.fillRect(x(shop.x)-2,y(shop.y)-2,4,4);}
+    for(const remote of world.remotePlayers){ctx.fillStyle='#8acbff';ctx.fillRect(x(remote.x)-3,y(remote.y)-3,6,6);}
     for(const car of world.vehicles)if(car.kind==='patrol'&&car.hp>0){ctx.fillStyle='#ff9986';ctx.fillRect(x(car.x)-1.5,y(car.y)-1.5,3,3);}
     const p=world.player,goal=target();
     if(goal){
@@ -212,11 +214,38 @@
     ctx.fillStyle='#fffbee';ctx.strokeStyle='#17251e';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-5,4.5);ctx.lineTo(-3,0);ctx.lineTo(-5,-4.5);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     ctx.font='bold 13px sans-serif';ctx.fillStyle='#fff7de';ctx.fillText('N',4,15);
   }
+  async function onlineApi(action,data={},token=sessionStorage.getItem('rx5-token')){
+    if(!token)throw Error('Sign in to RECOIL X first.');
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),6000);
+    try{const r=await fetch('/rx-api/a1/city/'+action,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:controller.signal,cache:'no-store'});const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||'City connection failed.'),{status:r.status});return d;}finally{clearTimeout(timeout);}
+  }
+  async function cityOnlineAction(action){
+    if(onlinePending||!world)return;
+    if(action==='online-leave'){leaveOnline();renderHub();return;}
+    const code=action==='online-join'?prompt('Enter your friend’s six-character city room code'):null;
+    if(action==='online-join'&&!code)return;
+    const epoch=++onlineEpoch;onlinePending=true;
+    try{const d=await onlineApi(action==='online-create'?'create':'join',{code});if(epoch!==onlineEpoch||!world)return;online={code:d.code,token:sessionStorage.getItem('rx5-token')};onlineNote='Room '+d.code;onlineNext=0;void 0;}
+    catch(e){if(epoch===onlineEpoch)onlineNote=e.message;}
+    finally{if(epoch===onlineEpoch){onlinePending=false;if(world&&!controls.hub.hidden)renderHub();}}
+  }
+  function leaveOnline(){
+    const old=online;onlineEpoch++;online=null;onlinePending=false;onlineNote='Offline';if(world)world.remotePlayers=[];
+    if(old)void onlineApi('leave',{},old.token).catch(()=>{});
+  }
+  async function onlinePulse(now){
+    if(!online||onlinePending||now<onlineNext||!world)return;
+    onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player;
+    try{const d=await onlineApi('pulse',{x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;world.remotePlayers=d.players.filter(v=>!v.inside);onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
+    catch(e){if(epoch!==onlineEpoch||!world)return;world.remotePlayers=[];onlineNote=e.message;if([401,403,404].includes(e.status))leaveOnline();}
+    finally{if(epoch===onlineEpoch)onlinePending=false;}
+  }
   function renderHub(){
     if(!world)return;const v=window.RecoilCityWorld.a1View(world),host=controls.hub;
     const make=(tag,t)=>{const n=document.createElement(tag);n.textContent=t;return n;};
     const add=(label,action,id,disabled=false)=>{const b=make('button',label);b.type='button';b.dataset.cityAction=action;b.dataset.cityId=id||'';b.disabled=disabled;host.append(b);};
     host.replaceChildren(make('h3','City Unleashed'),make('p','City cash: $'+world.career.cash+' · '+(world.notice||'Explore, earn and build your career.')));
+    host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending);add('Join private room','online-join','',onlinePending);}
     host.append(make('h3','Story campaign'));
     if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',v.story.active&&!v.story.near);}else host.append(make('p','All three story missions completed.'));
     host.append(make('h3','Properties'));
@@ -229,7 +258,7 @@
   function refresh() {
     if (!world) return;
     const p=world.player,car=world.vehicles.find(v=>v.id===p.vehicleId),goal=target();
-    setText(controls.area,world.district+' · '+String(Math.floor(world.cityHour)).padStart(2,'0')+':'+String(Math.floor(world.cityHour%1*60)).padStart(2,'0')+' · '+world.weather+' · '+(options.mode==='first'?'First person':'Third person'));
+    setText(controls.area,world.district+' · '+String(Math.floor(world.cityHour)).padStart(2,'0')+':'+String(Math.floor(world.cityHour%1*60)).padStart(2,'0')+' · '+world.weather+(online?' · '+onlineNote:'')+' · '+(options.mode==='first'?'First person':'Third person'));
     setText(controls.speed,car ? Math.round(Math.abs(car.speed))+' u/s' : p.motion==='idle'?'On foot':p.motion[0].toUpperCase()+p.motion.slice(1));
     setText(controls.cash,'$'+world.career.cash.toLocaleString());
     setText(controls.heat,'★'.repeat(world.heat)+'☆'.repeat(5-world.heat));
@@ -327,6 +356,7 @@
   function tick(now){
     if(!world)return;
     frame=requestAnimationFrame(tick);
+    if(!document.hidden)void onlinePulse(now);
     if(paused || document.hidden){previousTime=0;nextDraw=0;return;}
     if(now<nextDraw-.75)return;
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
@@ -380,7 +410,7 @@
   function visibility(){clearHeld();previousTime=0;if(document.hidden)saveCareer();}
   function close(){
     if(!world)return;
-    saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
+    leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);
