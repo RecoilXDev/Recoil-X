@@ -2,9 +2,9 @@
 (() => {
   'use strict';
 
-  const roadsX = Array.from({length:10},(_,i)=>120+240*i);
-  const roadsY = Array.from({length:8},(_,i)=>120+240*i);
-  const width = 2400, height = 1920, roadWidth = 76;
+  const roadsX = Array.from({length:12},(_,i)=>120+240*i);
+  const roadsY = Array.from({length:10},(_,i)=>120+240*i);
+  const width = 2880, height = 2400, roadWidth = 76;
   const jobRadius = 34, carRadius = 12, footRadius = 5;
   const garage = {name: 'Sandline Customs', x: 298, y: 150, radius: 40};
   const resprayPrice = 45;
@@ -20,6 +20,7 @@
     {name: 'South Docks', x: 600, y: 480, w: 600, h: 480}
   ];
   for(const [name,x,y,w,h] of [['East Market',1200,0,600,480],['Airport Quarter',1800,0,600,480],['Industrial Park',1200,480,600,480],['East Beach',1800,480,600,480],['Garden Estates',0,960,600,480],['Police Quarter',600,960,600,480],['Sunset Farms',1200,960,600,480],['Marina East',1800,960,600,480],['South Village',0,1440,600,480],['West Coast',600,1440,600,480],['Highway Ward',1200,1440,600,480],['Southern Bay',1800,1440,600,480]])districts.push({name,x,y,w,h});
+  for(const [name,x,y,w,h] of [['Aero Heights',2400,0,480,480],['Coral Coast',2400,480,480,480],['East Business Park',2400,960,480,480],['Sunrise Harbor',2400,1440,480,480],['West Desert',0,1920,600,480],['Southern Highway',600,1920,600,480],['Oasis Gardens',1200,1920,600,480],['Dune Speedway',1800,1920,600,480],['New Dawn Peninsula',2400,1920,480,480]])districts.push({name,x,y,w,h});
   const districtAt = (x,y) => districts.find(d=>x>=d.x&&y>=d.y&&x<d.x+d.w&&y<d.y+d.h)?.name||'City outskirts';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -50,12 +51,12 @@
     ['cinema', 'Starline Cinema', 892, 150], ['station', 'North Station', 1070, 325],
     ['market', 'Copper Market', 280, 385], ['gardens', 'Canal Gardens', 460, 570],
     ['theater', 'Marina Theater', 880, 630], ['docks', 'Pier Nine', 1000, 810],
-    ['works', 'Tideworks', 330, 748], ['wharf', 'West Wharf', 150, 805], ['east','East Market',1320,150],['airport','Airport Quarter',2040,150],['estate','Garden Estates',360,1110],['marina','Marina East',2040,1350],['south','Southern Bay',2280,1830]
+    ['works', 'Tideworks', 330, 748], ['wharf', 'West Wharf', 150, 805], ['east','East Market',1320,150],['airport','Airport Quarter',2040,150],['estate','Garden Estates',360,1110],['marina','Marina East',2040,1350],['south','Southern Bay',2280,1830],['aero','Aero Heights',2520,150],['oasis','Oasis Gardens',1320,2070],['speedway','Dune Speedway',2040,2310],['peninsula','New Dawn Peninsula',2760,2310]
   ].map(([id, name, x, y]) => ({id, name, x, y, district: districtAt(x, y)}));
   const shops = [
     {id: 'cafe', name: 'Copper Café', x: 279, y: 399, price: 12},
     {id: 'repair', name: 'Pier Nine Motors', x: 1000, y: 798, price: 30},
-    {id:'eastshop',name:'East Market Store',x:1320,y:165,price:12},{id:'southshop',name:'Southern Bay Store',x:2280,y:1845,price:12}
+    {id:'eastshop',name:'East Market Store',x:1320,y:165,price:12},{id:'southshop',name:'Southern Bay Store',x:2280,y:1845,price:12},{id:'oasis-cafe',name:'Oasis Restaurant',x:1320,y:2085,price:15},{id:'sunrise-cafe',name:'Sunrise Café',x:2520,y:1590,price:15}
   ];
   const secrets = [
     {id: 'airwave', name: 'The lost airwave', kind: 'radio', x: 240, y: 233},
@@ -67,7 +68,8 @@
   const models=[{id:'a1-sprint',name:'Sprint GT',price:350,color:'#b24b40',speed:1.16},{id:'a1-trail',name:'Trail 4x4',price:550,color:'#597b5b',speed:1.07},{id:'a1-nova',name:'Nova RS',price:900,color:'#7865bc',speed:1.29}];
   const venues=[{id:'mega',name:"Mega's Club",x:1080,y:390},{id:'beach',name:'East Beach Promenade',x:2040,y:630},{id:'airport',name:'Airport Plaza',x:2040,y:150}];
   const story=[{name:'A New Beginning',contact:'Maya',checkpoints:['depot','market'],pay:125},{name:'Eastbound',contact:'Rafi',checkpoints:['east','airport'],pay:230},{name:'Coastal Connections',contact:'Maya',checkpoints:['marina','south'],pay:320}];
-  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets,properties,dealer,venues,blocks: makeBlocks()};
+  const signals=[{x:2520,y:360},{x:2520,y:1080},{x:1320,y:2040},{x:2280,y:2280}];
+  const map = {width, height, roadWidth, roadsX, roadsY, districts, stops, garage, shops, secrets,properties,dealer,venues,signals,blocks: makeBlocks()};
   const buildings = map.blocks.filter(block => block.kind === 'building');
   const cellSize=240,buildingCells=new Map();
   for(const b of buildings)for(let i=Math.floor(b.x/cellSize);i<=Math.floor((b.x+b.w)/cellSize);i++)for(let j=Math.floor(b.y/cellSize);j<=Math.floor((b.y+b.h)/cellSize);j++){const k=i+','+j;if(!buildingCells.has(k))buildingCells.set(k,[]);buildingCells.get(k).push(b);}
@@ -102,7 +104,7 @@
       parked('cobalt', 285, 805, 0, paint[4]), parked('coral', 635, 525, Math.PI / 2, paint[5]),
       traffic('cab', 0, 0, 2, 2, 0, .41, 50, paint[2]), traffic('mint', 1, 0, 4, 1, 1, .72, 44, paint[1]),
       traffic('rose', 2, 1, 4, 3, 2, .45, 52, paint[5]), traffic('lilac', 0, 1, 2, 3, 3, .36, 46, paint[3]),
-      traffic('milk', 1, 2, 3, 3, 0, .54, 39, paint[4]), traffic('ember', 2, 0, 4, 2, 3, .52, 51, paint[0])
+      traffic('milk', 1, 2, 3, 3, 0, .54, 39, paint[4]), traffic('ember', 2, 0, 4, 2, 3, .52, 51, paint[0]),traffic('eastline',9,0,11,3,0,.3,48,paint[1]),traffic('sunrise',9,4,11,7,1,.5,42,paint[3]),traffic('oasis',4,7,7,9,2,.4,46,paint[4]),traffic('speedway',8,7,11,9,3,.35,55,paint[5])
     ];
   }
   function readCareer(saved = {}) {
@@ -387,10 +389,12 @@
     const a=s.career.a1||a1Empty(),car=driven(s),chapter=story[a.story],goal=s.a1Mission&&chapter?stops.find(v=>v.id===chapter.checkpoints[s.a1Mission.stage]):null;
     return {properties:properties.map(p=>({...p,owned:a.properties.includes(p.id),near:a1Near(s,p)})),dealer:{...dealer,near:a1Near(s,dealer)},cars:models.map(m=>({...m,owned:a.cars.includes(m.id)})),upgrade:car&&['vista',...a.cars].includes(car.id)?{id:car.id,level:a.upgrades[car.id]||0,price:120+80*(a.upgrades[car.id]||0),near:a1Near(s,garage,garage.radius)&&Math.abs(car.speed)<20}:null,venues:venues.map(v=>({...v,near:a1Near(s,v),visited:a.visits.includes(v.id)})),story:chapter?{...chapter,number:a.story+1,total:story.length,active:!!s.a1Mission,goal,near:!!goal&&a1Near(s,goal,jobRadius)}:null};
   }
+  function enterSafeInterior(s,site,kind){if(s.heat){setNotice(s,'Lose the wanted level before entering.');return false;}s.interior={...site,safe:true,kind,price:0};Object.assign(s.player,{x:site.x-10,y:site.y,z:0,vz:0,angle:0});return true;}
   function a1Action(s,action,id){
     const v=a1View(s),a=s.career.a1||a1Empty(),cash=s.career.cash,deny=t=>{setNotice(s,t);return false;},done=t=>{s.career.a1=a;setNotice(s,t);return true;};
-    if(action==='buy-property'||action==='rest'){
+    if(action==='buy-property'||action==='rest'||action==='enter-property'){
       const p=v.properties.find(p=>p.id===id);if(!p?.near||s.player.vehicleId)return deny('Visit the property on foot.');
+      if(action==='enter-property'){if(!p.owned)return deny('Not owned.');return enterSafeInterior(s,p,'home')&&done('Inside '+p.name);}
       if(action==='rest'){if(!p.owned)return deny('Not owned.');s.player.hp=100;return done('Rested at '+p.name);}
       if(p.owned||cash<p.price)return deny(p.owned?'Already owned.':'Not enough city cash.');
       s.career.cash-=p.price;a.properties.push(p.id);return done('Purchased '+p.name);
@@ -411,7 +415,8 @@
       if(++s.a1Mission.stage<c.checkpoints.length)return done('Checkpoint reached. Next: '+stops.find(x=>x.id===c.checkpoints[s.a1Mission.stage]).name);
       a.story++;s.a1Mission=null;s.career.cash=Math.min(1e9,cash+c.pay);return done('Mission complete: $'+c.pay);
     }
-    if(action==='visit'){const site=v.venues.find(x=>x.id===id);if(!site?.near||s.player.vehicleId)return deny('Visit the venue on foot.');if(!a.visits.includes(id))a.visits.push(id);return done('Welcome to '+site.name);}
+    if(action==='visit'){const site=v.venues.find(x=>x.id===id);if(!site?.near||s.player.vehicleId)return deny('Visit the venue on foot.');if(site.id==='mega'&&!enterSafeInterior(s,site,'club'))return false;if(!a.visits.includes(id))a.visits.push(id);return done('Welcome to '+site.name);}
+    if(action==='leave-interior'&&s.interior?.safe)return enterShop(s);
     return false;
   }
   function drive(state, car, input, dt) {
@@ -481,6 +486,7 @@
       state.vehicles.push({...source,...home,home,id:source.id+'-'+(++state.trafficSerial),speed:source.cruise,hp:100,wheel:0});
     }
   }
+  function signalRed(state,site,horizontal){const phase=(Math.floor(state.elapsed/9)+Math.floor(site.x/240)+Math.floor(site.y/240))%2;return horizontal?phase===1:phase===0;}
   function cityTraffic(state, v, dt) {
     const goal = v.route[v.target], gap = distance(v, goal);
     if (!gap) { v.target = (v.target + 1) % v.route.length; return; }
@@ -495,7 +501,8 @@
         // Parallel traffic queues. Crossing routes use stable priority to avoid a mutual stop.
         return other.kind !== 'traffic' || Math.cos(v.angle - other.angle) > .8 || v.id > other.id;
       });
-    v.speed = yielding ? 0 : Math.min(v.cruise, v.speed + dt * 45);
+    const red=signals.some(s=>{const dx=s.x-v.x,dy=s.y-v.y,ahead=dx*towardX+dy*towardY;return ahead>12&&ahead<40&&Math.abs(dx*towardY-dy*towardX)<25&&signalRed(state,s,Math.abs(towardX)>Math.abs(towardY));});
+    v.speed = yielding||red ? 0 : Math.min(v.cruise, v.speed + dt * 45);
     if (advanceToward(v, goal, v.speed * dt)) v.target = (v.target + 1) % v.route.length;
   }
   function patrol(state, car, dt) {
@@ -610,10 +617,10 @@
   function nearbyShop(state) { return state.interior||state.stores.find(s=>distance(s,state.player)<=28); }
   function enterShop(state){const p=state.player;if(state.deathUntil||p.vehicleId)return false;if(state.interior){const s=state.interior;state.interior=null;Object.assign(p,{x:s.x,y:s.y,z:0,vz:0});return true;}const s=nearbyShop(state);if(!s||s.id==='repair')return false;if(s.cooldown<=state.elapsed&&s.keeper.hp<=0){s.keeper.hp=70;s.keeper.mood='calm';s.keeper.downUntil=0;}state.interior=s;Object.assign(p,{x:s.x-10,y:s.y,z:0,vz:0,angle:0});return true;}
   function walkInterior(state,input,dt){const p=state.player,s=state.interior,dx=clamp(Number(input.walkX)||0,-1,1),dy=clamp(Number(input.walkY)||0,-1,1),n=Math.max(1,Math.hypot(dx,dy));p.x=clamp(p.x+dx*60*dt/n,s.x-14,s.x+14);p.y=clamp(p.y+dy*60*dt/n,s.y-10,s.y+10);p.motion=dx||dy?'walking':'idle';p.phase+=dt*5;}
-  function robShop(state){const s=state.interior;if(!s||state.deathUntil)return false;if(s.cooldown>state.elapsed){setNotice(state,'Register unavailable.');return false;}s.cooldown=state.elapsed+90;state.career.cash=Math.min(1e9,state.career.cash+75);heatUp(state,'Shop alarm · patrol responding.');return true;}
+  function robShop(state){const s=state.interior;if(!s||s.safe||state.deathUntil)return false;if(s.cooldown>state.elapsed){setNotice(state,'Register unavailable.');return false;}s.cooldown=state.elapsed+90;state.career.cash=Math.min(1e9,state.career.cash+75);heatUp(state,'Shop alarm · patrol responding.');return true;}
   function shop(state) {
     const store = nearbyShop(state), car = driven(state);
-    if (!store) return false;
+    if (!store||store.safe) return false;
     const repair = store.id === 'repair';
     if(!repair&&store.keeper.hp<=0){setNotice(state,'Shop temporarily closed.');return false;}
     const reason = repair && (!car || Math.abs(car.speed) > 20) ? 'Park a vehicle here for service.' :
@@ -701,7 +708,7 @@
   }
   function fire(state, aim) {
     const p = state.player, w = state.weapons[state.weapon], ammo = state.ammo[state.weapon];
-    if (state.deathUntil || !w || !state.rayHit || p.vehicleId || state.reloadAt || state.nextShot > state.elapsed) return false;
+    if (state.deathUntil || state.interior?.safe || !w || !state.rayHit || p.vehicleId || state.reloadAt || state.nextShot > state.elapsed) return false;
     if (!ammo.mag) { reload(state); return false; }
     const yaw = aim?.yaw ?? p.angle, pitch = aim?.pitch || 0, range = w.range * 5;
     p.angle = yaw; p.aimUntil = state.elapsed + .28; ammo.mag--; state.nextShot = state.elapsed + w.cadence;
@@ -734,5 +741,5 @@
     }
     return true;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action});
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed});
 })();

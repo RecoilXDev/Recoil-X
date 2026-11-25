@@ -389,7 +389,7 @@
   function dynamic(state,cam) {
     const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;
     const near=v=>Math.hypot(v.x-cam.x,v.y-cam.y)<cam.far;
-    if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}else{
+    if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');if(s.safe){if(s.kind==='club'){g.box(10,0,0,7,16,1.3,'#77538d');for(let i=-2;i<=2;i++)g.box(0,i*3,.02,4,2.5,.12,i%2?'#cb75ad':'#607fcb');g.box(12,0,1.3,2,8,2,'#493450');}else{g.box(9,-6,0,7,5,1.7,'#c6ad91');g.box(9,6,0,5,3,2,'#84664e');g.box(1,6,0,5,2,1.4,'#517d72');}}else{g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}}else{
     for(const v of state.vehicles)if(near(v))automobile(m,v,v.id===p.vehicleId,state.elapsed,first&&v.id===p.vehicleId);
     for(const person of [...state.locals,...state.officers])if(near(person))actor(m,person,false,state.elapsed,'ar');}
     if(!state.interior)for(const r of state.remotePlayers||[])if(near(r)){if(r.vehicle)automobile(m,{...r,id:'remote-'+r.id,kind:'parked',hp:100,wheel:0,steer:0,color:'#597cbe'},false,state.elapsed,false);else actor(m,{...r,hp:100,z:0,color:'#6d8bb9',pants:'#354256',skinTone:'#c4926d',hair:'#362a27',phase:state.elapsed*5,motion:r.moving?'walking':'idle'},false,state.elapsed);}
@@ -403,6 +403,7 @@
     }
     const g=local(m),goal=!state.interior&&(state.job&&(state.job.stage==='pickup'?state.job.pickup:state.job.dropoff)||W().a1View(state).story?.goal);
     if(!state.interior)for(const site of [...state.map.properties,state.map.dealer,...state.map.venues])if(near(site))g.bar([site.x,site.y,.2],[site.x,site.y,.4],5.5,'#77c7ce',10);
+    if(!state.interior)for(const site of state.map.signals)if(near(site)){g.box(site.x+30,site.y+30,0,1,1,10,'#777a71');g.box(site.x+30,site.y+30,10,2,2,3,W().signalRed(state,site,true)?'#ed655c':'#61d79a');}
     if(goal&&near(goal)){
       g.bar([goal.x,goal.y,.2],[goal.x,goal.y,.38],6.5,'#edb955',10);
       const z=11+Math.sin(state.elapsed*2)*.9;

@@ -245,11 +245,12 @@
     const make=(tag,t)=>{const n=document.createElement(tag);n.textContent=t;return n;};
     const add=(label,action,id,disabled=false)=>{const b=make('button',label);b.type='button';b.dataset.cityAction=action;b.dataset.cityId=id||'';b.disabled=disabled;host.append(b);};
     host.replaceChildren(make('h3','City Unleashed'),make('p','City cash: $'+world.career.cash+' · '+(world.notice||'Explore, earn and build your career.')));
+    if(world.interior?.safe){host.append(make('p','Inside '+world.interior.name));add('Exit building','leave-interior','');}
     host.append(make('h3','Shared city — free roam'),make('p',onlineNote+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending);add('Join private room','online-join','',onlinePending);}
     host.append(make('h3','Story campaign'));
     if(v.story){host.append(make('p',v.story.number+'/'+v.story.total+' · '+v.story.name+' — '+v.story.contact+(v.story.goal?' · Next: '+v.story.goal.name:'')));add(v.story.active?'Complete checkpoint':'Start mission','story','',v.story.active&&!v.story.near);}else host.append(make('p','All three story missions completed.'));
     host.append(make('h3','Properties'));
-    for(const p of v.properties){host.append(make('p',p.name+' · '+(p.owned?'Owned':'$'+p.price)+(p.near?' · Nearby':'')));add(p.owned?'Rest / heal':'Purchase',p.owned?'rest':'buy-property',p.id,!p.near||!!world.player.vehicleId||(!p.owned&&world.career.cash<p.price));}
+    for(const p of v.properties){host.append(make('p',p.name+' · '+(p.owned?'Owned':'$'+p.price)+(p.near?' · Nearby':'')));add(p.owned?'Rest / heal':'Purchase',p.owned?'rest':'buy-property',p.id,!p.near||!!world.player.vehicleId||(!p.owned&&world.career.cash<p.price));if(p.owned)add('Enter home','enter-property',p.id,!p.near||!!world.player.vehicleId);}
     host.append(make('h3','Eastline Motors'));
     for(const m of v.cars){host.append(make('p',m.name+' · '+(m.owned?'Owned':'$'+m.price)));add(m.owned?'Owned':'Buy vehicle','buy-car',m.id,m.owned||!v.dealer.near||!!world.player.vehicleId||world.career.cash<m.price);}
     if(v.upgrade){host.append(make('p','Engine level '+v.upgrade.level+'/3'));add('Upgrade engine · $'+v.upgrade.price,'upgrade','',!v.upgrade.near||v.upgrade.level>=3||world.career.cash<v.upgrade.price);}
@@ -267,8 +268,8 @@
     setText(controls.loadout,car?'Condition '+Math.ceil(car.hp)+'%':'HP '+Math.ceil(p.hp)+(gear?' · '+gear.name+' · '+(world.reloadAt?'Reloading':ammo.mag+'/'+ammo.stock):''));
     controls.skills.hidden=!!car;controls.reticle.hidden=!!car;
     controls.reticle.classList.toggle('hit',world.hitAt!=null&&world.elapsed-world.hitAt<.22);
-    const shop=window.RecoilCityWorld.nearbyShop(world);controls.shop.hidden=!shop;controls.death.hidden=!world.deathUntil;controls.interior.hidden=!!car||!shop||shop.id==='repair';setText(controls.interior.firstElementChild,world.interior?'Exit shop':'Enter shop');controls.rob.hidden=!world.interior;controls.rob.disabled=!!world.interior&&world.interior.cooldown>world.elapsed;
-    if(shop)setText(controls.shop.firstElementChild,shop.name+' · $'+shop.price);
+    const shop=window.RecoilCityWorld.nearbyShop(world);controls.shop.hidden=!shop||!!shop.safe;controls.death.hidden=!world.deathUntil;controls.interior.hidden=!!car||!shop||shop.id==='repair';setText(controls.interior.firstElementChild,world.interior?(world.interior.safe?'Exit building':'Exit shop'):'Enter shop');controls.rob.hidden=!world.interior||!!world.interior.safe;controls.rob.disabled=!!world.interior&&world.interior.cooldown>world.elapsed;
+    if(shop&&!shop.safe)setText(controls.shop.firstElementChild,shop.name+' · $'+shop.price);
     controls.heat.toggleAttribute('data-hot',world.heat>0);
     const job=world.job || world.offer;
     setText(controls.jobTitle,job ? job.kind+' · $'+job.pay : 'Dispatch');
@@ -379,7 +380,7 @@
     if(!car && (forward||turn||options.mode==='first'||firing||pressed('fire')))p.angle=yaw;
     cam=window.RecoilCityView.camera(world,view);
     window.RecoilCityView.draw(controls.streets,world,cam,controls.sky);
-    const night=world.cityHour<6||world.cityHour>=19;controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';
+    const night=world.cityHour<6||world.cityHour>=19;controls.sky.style.filter=night?'brightness(.4) saturate(.75)':world.weather==='Rain'?'brightness(.72)':'';controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';
     if(now>=nextHud){refresh();nextHud=now+100;}
   }
   function applyOptions(){

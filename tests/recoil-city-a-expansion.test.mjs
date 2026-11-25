@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import '../server/recoil-city-world.js';
 const W=globalThis.RecoilCityWorld;
 test('expanded map retains original coordinates and bounds low-end population',()=>{
- const s=W.create({quality:'low'});assert.equal(W.map.width,2400);assert.equal(W.map.height,1920);assert.equal(W.map.districts.length,16);assert(s.locals.length<=6);assert.equal(s.player.x,135);
+ const s=W.create({quality:'low'});assert.equal(W.map.width,2880);assert.equal(W.map.height,2400);assert.equal(W.map.districts.length,25);assert(W.map.districts.some(d=>d.name==='Old Quarter'));assert(s.locals.length<=6);assert.equal(s.player.x,135);
 });
 test('shop entry, robbery cooldown and exit',()=>{
  const s=W.create({quality:'low'}),shop=s.stores[0];Object.assign(s.player,{x:shop.x,y:shop.y});
