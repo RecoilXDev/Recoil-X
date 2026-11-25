@@ -6,6 +6,7 @@
   const tau = Math.PI * 2;
   const renderers = new WeakMap(), panoramas = new WeakMap(), colors = new Map();
   const tiers = {low:{pixels:330000, far:335},standard:{pixels:900000, far:565},high:{pixels:1750000, far:820}};
+  const tvSafe=()=>/SMART[- .]?TV|Tizen|Web0S|WebOS|HbbTV|NetCast|Android TV|GoogleTV/i.test(typeof navigator==='undefined'?'':navigator.userAgent||'');
   function color(hex, light=1) {
     const key = hex + light;
     if (colors.has(key)) return colors.get(key);
@@ -275,7 +276,7 @@
   function actor(m,p,hero,time,weaponId) {
     const base=local(m,p.x,p.y,0,p.angle);shadow(base,hero?2.8:2.15,hero?2:1.65);
     const shared=window.RecoilCityCharacter;
-    if(shared){
+    if(shared&&!tvSafe()){
       const data=shared.emit(hero?{...p,phase:p.motion==='idle'?0:Math.sin(p.phase||0),color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
       for(let i=0;i<data.length;i+=27){
         const rgb=data.slice(i+3,i+6),shade=.70+.30*Math.max(0,data[i+7]),c={rgb:rgb.map(v=>Math.min(1,v*shade)),css:'rgb('+rgb.map(v=>Math.round(Math.min(1,v*shade)*255)).join(',')+')'};
@@ -481,8 +482,8 @@
     }}return {data,used:data.subarray(0,offset)};
   }
   function gpu(gl,groups,atlas) {
-    const vs='attribute vec3 p;attribute vec3 color;attribute vec2 uv;uniform vec3 eye;uniform vec4 turn;uniform vec3 lens;varying vec3 tint;varying vec2 st;varying float mist;void main(){vec3 q=p-eye;float front=dot(q.xy,turn.xy);float side=dot(q.xy,vec2(-turn.y,turn.x));float depth=front*turn.z+q.z*turn.w;float up=q.z*turn.z-front*turn.w;gl_Position=vec4(side*lens.x,up*lens.y,(lens.z+0.45)/(lens.z-0.45)*depth-0.9*lens.z/(lens.z-0.45),depth);tint=color;st=uv;mist=smoothstep(lens.z*0.34,lens.z,depth)*0.82;}';
-    const fs='precision mediump float;varying vec3 tint;varying vec2 st;varying float mist;uniform sampler2D atlas;void main(){vec3 rgb=tint;if(st.x>=0.)rgb*=texture2D(atlas,st).rgb;gl_FragColor=vec4(mix(rgb,vec3(.76,.77,.68),mist),1.);}';
+    const vs='precision highp float;attribute vec3 p;attribute vec3 color;attribute vec2 uv;uniform vec3 eye;uniform vec4 turn;uniform vec3 lens;varying mediump vec3 tint;varying mediump vec2 st;varying mediump float mist;void main(){vec3 q=p-eye;float front=dot(q.xy,turn.xy);float side=dot(q.xy,vec2(-turn.y,turn.x));float depth=front*turn.z+q.z*turn.w;float up=q.z*turn.z-front*turn.w;gl_Position=vec4(side*lens.x,up*lens.y,(lens.z+0.45)/(lens.z-0.45)*depth-0.9*lens.z/(lens.z-0.45),depth);tint=color;st=uv;mist=smoothstep(lens.z*0.34,lens.z,depth)*0.82;}';
+    const fs='precision mediump float;varying mediump vec3 tint;varying mediump vec2 st;varying mediump float mist;uniform sampler2D atlas;void main(){vec3 rgb=tint;if(st.x>=0.)rgb*=texture2D(atlas,st).rgb;gl_FragColor=vec4(mix(rgb,vec3(.76,.77,.68),mist),1.);}';
     function shader(type,source){
       const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);
       if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));
@@ -592,26 +593,28 @@
       const groups=[],atlas=facadeAtlas();
       const gl=canvas.getContext('webgl',{alpha:true,antialias:false,premultipliedAlpha:true,powerPreference:'low-power'});
       const make=()=>gl?gpu(gl,groups,atlas):software(canvas.getContext('2d'),groups,atlas);
-      renderer={engine:make(),gl,lost:false,disposed:false,region:null};renderers.set(canvas,renderer);
-      canvas.dataset.renderer=gl?'webgl':'software';
+      renderer={engine:null,gl,lost:false,disposed:false,region:null,layer:null};
+      function fallback(){const layer=document.createElement('canvas');layer.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';const ctx=layer.getContext('2d');if(!ctx)return false;canvas.insertAdjacentElement('afterend',layer);renderer.layer=layer;renderer.gl=null;renderer.engine=software(ctx,[],atlas);renderer.region=null;renderer.lost=false;canvas.dataset.renderer='software TV fallback';return true;}
+      try{renderer.engine=make();}catch(error){if(!tvSafe()||!fallback())throw error;}
+      renderers.set(canvas,renderer);if(!renderer.layer)canvas.dataset.renderer=gl?'webgl':'software';
       if(gl){
-        renderer.onLost=e=>{if(renderer.disposed)return;e.preventDefault();renderer.lost=true;};renderer.onRestored=()=>{if(renderer.disposed)return;renderer.engine=make();renderer.region=null;renderer.lost=false;};
+        renderer.onLost=e=>{if(renderer.disposed)return;e.preventDefault();if(tvSafe()&&!renderer.layer&&fallback())return;renderer.lost=!renderer.layer;};renderer.onRestored=()=>{if(renderer.disposed||renderer.layer)return;renderer.engine=make();renderer.region=null;renderer.lost=false;};
         canvas.addEventListener('webglcontextlost',renderer.onLost);canvas.addEventListener('webglcontextrestored',renderer.onRestored);
       }
     }
     if(renderer.lost)return;
-    const size=(renderer.gl?tiers[state.quality].pixels:Math.min(400000,tiers[state.quality].pixels))*(state.renderScale||1)**2;
+    const size=Math.min(tvSafe()?230400:Infinity,renderer.gl?tiers[state.quality].pixels:Math.min(400000,tiers[state.quality].pixels))*(state.renderScale||1)**2;
     const scale=Math.min(devicePixelRatio||1,1.5,Math.sqrt(size/(w*h)));
     const bw=Math.max(1,Math.floor(w*scale)),bh=Math.max(1,Math.floor(h*scale));
-    if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh;}
-    if(!renderer.gl)cam={...cam,far:Math.min(cam.far,350)};
+    const target=renderer.layer||canvas;if(target.width!==bw||target.height!==bh){target.width=bw;target.height=bh;}
+    if(!renderer.gl||tvSafe())cam={...cam,far:Math.min(cam.far,tvSafe()?235:350)};
     const region=state.interior?'inside':Math.floor(cam.x/240)+','+Math.floor(cam.y/240)+','+state.quality;
     if(renderer.region!==region){renderer.engine.replace(state.interior?[]:scenery(state.map,{x:Math.floor(cam.x/240)*240+120,y:Math.floor(cam.y/240)*240+120,radius:cam.far+160}));renderer.region=region;}
     sky(backdrop,cam);renderer.engine.frame(cam,bw,bh,dynamic(state,cam));
   }
   function release(canvas) {
     const r=renderers.get(canvas);if(!r)return;
-    r.disposed=true;renderers.delete(canvas);if(r.onLost)canvas.removeEventListener('webglcontextlost',r.onLost);if(r.onRestored)canvas.removeEventListener('webglcontextrestored',r.onRestored);r.engine.release();r.gl?.getExtension('WEBGL_lose_context')?.loseContext();panoramas.delete(canvas);
+    r.disposed=true;renderers.delete(canvas);if(r.onLost)canvas.removeEventListener('webglcontextlost',r.onLost);if(r.onRestored)canvas.removeEventListener('webglcontextrestored',r.onRestored);r.engine.release();r.gl?.getExtension('WEBGL_lose_context')?.loseContext();r.layer?.remove();panoramas.delete(canvas);
   }
   window.RecoilCityView=Object.freeze({draw,camera,release});
 })();
