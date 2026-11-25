@@ -762,5 +762,64 @@
     }
     return true;
   }
-  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed,raceView,objectiveGoal});
+  // Replayable director scenes use independent, seeded city sessions and the normal world physics.
+  const cinematicScenes=Object.freeze([
+    Object.freeze({id:'drive',name:'New Dawn Drive',seconds:9,description:'Coastal driving and tracking camera'}),
+    Object.freeze({id:'chase',name:'Highway Pursuit',seconds:10,description:'Fast driving with pursuit vehicles'}),
+    Object.freeze({id:'action',name:'Action Cut',seconds:8,description:'Scripted weapon demonstration against parked props'}),
+    Object.freeze({id:'skyline',name:'City Reveal',seconds:8,description:'Moving skyline and wide establishing shot'})
+  ]);
+  function cinematicSeed(index){let n=(0x9e3779b9^(index+1))>>>0;return()=>((n=(Math.imul(n,1664525)+1013904223)>>>0)/4294967296);}
+  function createCinematic(id,opts={}){
+    const index=cinematicScenes.findIndex(v=>v.id===id);if(index<0)return null;
+    const scene=cinematicScenes[index],s=create({...opts,career:{cash:0},random:cinematicSeed(index)});
+    s.cinematic={id,seconds:scene.seconds,time:0,done:false,accumulator:0,shots:0};
+    // Keep the film set clear of incidental traffic collisions. No career or online state is shared.
+    const p=s.player,car=s.vehicles[0],position=id==='drive'?{x:1320,y:2040}:id==='chase'?{x:1560,y:2280}:id==='skyline'?{x:360,y:120}:{x:1320,y:120};
+    s.vehicles=[];s.trafficSources=[];s.nextTrafficCheck=Infinity;s.pedestrians=[];s.locals=[];s.populationAt=Infinity;s.officers=[];s.job=null;s.offer=null;
+    if(id==='drive'||id==='chase'){
+      Object.assign(car,position,{angle:0,speed:id==='chase'?100:72,hp:100,wheel:0,steer:0,color:id==='chase'?'#486b99':'#e97e49'});
+      s.vehicles.push(car);Object.assign(p,position,{vehicleId:car.id,angle:0});
+      if(id==='chase'){
+        // An independent moving picture car provides a visible pursuit without changing wanted state.
+        const follow=parked('film-pursuit',position.x-50,position.y+18,0,'#38576e');Object.assign(follow,{hp:100,wheel:0,steer:0,speed:0,filmPolice:true});s.vehicles.push(follow);
+      }
+    }else{
+      Object.assign(p,position,{angle:0,vehicleId:null});
+      if(id==='action'){
+        for(let i=0;i<3;i++){const prop=parked('film-prop-'+i,position.x+65+i*40,position.y+(i%2?18:-16),0,['#a66c49','#566e88','#b49a68'][i]);Object.assign(prop,{hp:100,wheel:0,steer:0});s.vehicles.push(prop);}
+      }
+    }
+    return s;
+  }
+  function stepCinematic(s,seconds){
+    const f=s.cinematic;if(!f||f.done)return s;
+    f.accumulator+=clamp(Number(seconds)||0,0,.25);
+    while(f.accumulator+1e-9>=1/60&&!f.done){
+      const dt=1/60;f.accumulator-=dt;const t=f.time,p=s.player;
+      let input={};
+      if(f.id==='drive'||f.id==='chase'){
+        const c=driven(s),limit=f.id==='chase'?115:92;
+        if(c){const throttle=clamp((limit-c.speed)/25,-.15,.65);input={forward:throttle,turn:0};}
+      }else if(f.id==='action'){
+        const prop=s.vehicles.find(v=>v.hp>0),yaw=prop?Math.atan2(prop.y-p.y,prop.x-p.x):0;
+        p.angle=yaw;input={fire:t>1&&t<7&&!!prop,aim:{yaw,pitch:-.018}};
+      }else{
+        input={walkX:t<4?.65:0,walkY:0,sprint:false};
+      }
+      const before=s.ammo[s.weapon]?.mag;step(s,input,dt);if(before!==undefined&&s.ammo[s.weapon]?.mag<before)f.shots++;
+      // Film vehicles are kinematic background actors, not shared multiplayer objects.
+      if(f.id==='chase'){const c=driven(s),v=s.vehicles.find(v=>v.filmPolice);if(c&&v){v.x=c.x-50;v.y=c.y+18;v.angle=c.angle;v.wheel=c.wheel;v.speed=c.speed;}}
+      // The scripted action is confined to the film set; no police response or career effects are carried out.
+      s.heat=0;s.heatTime=0;s.officers.length=0;s.vehicles=s.vehicles.filter(v=>v.kind!=='patrol');
+      f.time=Math.min(f.seconds,t+dt);if(f.time+1e-8>=f.seconds){f.time=f.seconds;f.done=true;f.accumulator=0;}
+    }
+    return s;
+  }
+  function cinematicView(s,aspect=1.6){
+    const f=s.cinematic,t=f?.time||0,p=s.player,car=!!p.vehicleId;
+    const angle=f?.id==='drive'?.5*Math.sin(t*.6):f?.id==='chase'?.9*Math.sin(t*.45):f?.id==='action'?.30*Math.sin(t*.7):1.05*Math.sin(t*.32);
+    return {mode:'third',yaw:p.angle+angle,tilt:f?.id==='skyline'?-.18:car?-.02:.04,aspect,cinematic:true};
+  }
+  globalThis.RecoilCityWorld = Object.freeze({map, jobRadius, create, step, interact, job, garageView, respray, nearbyShop, shop, enterShop, robShop, jump, reload, selectWeapon, buildingHeight, wallDistance,a1View,a1Action,signalRed,raceView,objectiveGoal,cinematicScenes,createCinematic,stepCinematic,cinematicView});
 })();

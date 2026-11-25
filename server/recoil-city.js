@@ -5,6 +5,7 @@
   const careerKey = 'recoil-x.city.career.v1';
   let dialog, controls, world, frame, previousTime, nextHud, nextDraw, frameInterval, previousFocus;
   let lastCareer, lastNotice, paused = false;
+  let film=null;
   let perfSamples=0,perfTotal=0,perfSlow=0,perfFast=0,lastFilter='',mapBase=null,mapRoute=null,routeAt=0;
   const adaptScale=(scale,average,budget,fast,slow)=>slow>=2?Math.max(.65,Math.round((scale-.08)*100)/100):fast>=4?Math.min(1,Math.round((scale+.04)*100)/100):scale;
   let options, yaw=0, tilt=0, manualUntil=0, lookPointer=null, firing=false, queuedShot=false, cam=null;
@@ -43,6 +44,7 @@
     #recoil-city .rc-actions button{font-size:13px;padding:7px 10px}#recoil-city kbd{font:inherit;color:inherit;opacity:.76;margin-left:5px}
     #recoil-city .rc-notice{position:absolute;top:15%;left:50%;transform:translateX(-50%);max-width:min(420px,90%);margin:0;text-align:center;color:var(--paper);background:var(--glass);border-radius:6px;padding:6px 12px;font-weight:650}#recoil-city .rc-notice:empty{display:none}
     #recoil-city .rc-pad{display:none}
+    #recoil-city .rc-film{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;width:min(94%,760px);padding:10px;background:#101916e8;border:1px solid #b6a57e;border-radius:8px}#recoil-city .rc-film small{flex-basis:100%;text-align:center}#recoil-city .rc-film button{min-height:38px}#recoil-city .rc-film-reveal{position:absolute;right:10px;top:10px;z-index:7;opacity:.3}#recoil-city .rc-film-reveal:hover,#recoil-city .rc-film-reveal:focus-visible{opacity:1}
     #recoil-city .rc-help{position:absolute;inset:0;z-index:4;display:grid;align-content:center;justify-items:center;background:#0d1716c9;pointer-events:auto;padding:14px;touch-action:pan-y}
     #recoil-city .rc-sheet{width:min(390px,100%);padding:20px;max-height:100%;overflow:auto}
     #recoil-city .rc-a1-hub{display:grid;gap:7px;margin:12px 0;padding:10px;border:1px solid #93a58f;border-radius:8px}#recoil-city .rc-a1-hub button{min-height:36px}#recoil-city .rc-a1-hub h3{font-size:18px;margin-top:8px}
@@ -104,7 +106,7 @@
           <button type="button" class="rc-left" data-hold="left" aria-label="Left"></button><button type="button" class="rc-down" data-hold="down" aria-label="Down or reverse"></button>
           <button type="button" class="rc-right" data-hold="right" aria-label="Right"></button></div>
         <p class="rc-notice" role="status" aria-live="polite"></p><div class="rc-death" hidden style="position:absolute;inset:0;z-index:50;pointer-events:none;background:#100000aa;text-align:center;align-content:center;color:#ed3030;font:900 clamp(48px,15vw,140px) system-ui;letter-spacing:.08em;text-shadow:0 4px 12px #000" role="alert">DEAD</div>
-      </div><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
+      </div><div class="rc-film" hidden aria-label="Cinematic replay controls"><small class="rc-film-status"></small><button type="button" data-click="film-pause">Pause</button><button type="button" data-click="film-replay">Replay</button><button type="button" data-click="film-next">Next scene</button><button type="button" data-click="film-speed">1×</button><button type="button" data-click="film-hide">Hide controls</button><button type="button" data-click="film-stop">Exit cinematic</button></div><button class="rc-film-reveal" data-click="film-show" hidden type="button" aria-label="Show cinematic controls">⋯</button><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
         <label class="rc-settings-row">Camera<select data-option="mode"><option value="third">Third person</option><option value="first">First person</option></select></label>
         <label class="rc-settings-row">Graphics<select data-option="quality"><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label>
         <div class="rc-radio-slot"></div><section class="rc-a1-hub" hidden></section>
@@ -119,7 +121,7 @@
     controls = {streets:find('.rc-streets'),map:find('.rc-map'),area:find('.rc-area'),speed:find('.rc-speed'),cash:find('.rc-cash'),jobTitle:find('.rc-jobtitle'),
       heat:find('.rc-heat'),objective:find('.rc-objective'),notice:find('.rc-notice'),job:find('[data-click="job"]'),vehicle:find('[data-click="vehicle"]'),
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
-    controls.hub=find('.rc-a1-hub');controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
+    controls.film=find('.rc-film');controls.filmStatus=find('.rc-film-status');controls.filmReveal=find('.rc-film-reveal');controls.hub=find('.rc-a1-hub');controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
     window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
     dialog.addEventListener('change',e=>{const name=e.target.dataset.option;if(name){options[name]=e.target.value;applyOptions();}});
     controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
@@ -135,13 +137,14 @@
       yaw+=(e.clientX-lookPointer.x)*sensitivity;tilt=Math.max(-.6,Math.min(.62,tilt-(e.clientY-lookPointer.y)*sensitivity));
       manualUntil=world.elapsed+1.4;lookPointer.x=e.clientX;lookPointer.y=e.clientY;
     });
-    dialog.addEventListener('cancel', event => { event.preventDefault(); if (paused) setHelp(false); else close(); });
+    dialog.addEventListener('cancel', event => { event.preventDefault(); if(film){stopFilm();return;} if (paused) setHelp(false); else close(); });
     dialog.addEventListener('click', event => {
       const action = event.target.closest('button')?.dataset.click;
+      if(action?.startsWith('film-')){filmAction(action);return;}
       if (action === 'exit') close();
       if (action === 'help' || action === 'resume') {controls.hub.hidden=true;setHelp(action === 'help');}
       if(action==='cityhub'){setHelp(true);controls.hub.hidden=false;renderHub();}
-      const b=event.target.closest('button');if(b?.dataset.cityAction&&world){if(b.dataset.cityAction.startsWith('online-'))void cityOnlineAction(b.dataset.cityAction);else{window.RecoilCityWorld.a1Action(world,b.dataset.cityAction,b.dataset.cityId);renderHub();saveCareer();}}
+      const b=event.target.closest('button');if(b?.dataset.cityAction&&world){if(b.dataset.cityAction==='cinematic'){startFilm(b.dataset.cityId);return;}if(b.dataset.cityAction.startsWith('online-'))void cityOnlineAction(b.dataset.cityAction);else{window.RecoilCityWorld.a1Action(world,b.dataset.cityAction,b.dataset.cityId);renderHub();saveCareer();}}
       if (['vehicle','job','paint','weapon','shop','jump','interior','rob'].includes(action)) act(action);
     });
     dialog.addEventListener('pointerdown', event => {
@@ -257,6 +260,7 @@
     const make=(tag,t)=>{const n=document.createElement(tag);n.textContent=t;return n;};
     const add=(label,action,id,disabled=false)=>{const b=make('button',label);b.type='button';b.dataset.cityAction=action;b.dataset.cityId=id||'';b.disabled=disabled;host.append(b);};
     host.replaceChildren(make('h3','City Unleashed'),make('p','City cash: $'+world.career.cash+' · '+(world.notice||'Explore, earn and build your career.')));
+    host.append(make('h3','Cinematic Replay'),make('p','Automatic trailer scenes in an isolated film set. Your career, money and inventory are not changed.'));for(const scene of window.RecoilCityWorld.cinematicScenes)add(scene.name+' · '+scene.seconds+'s','cinematic',scene.id,!!online||onlinePending||onlineConnectBusy);add('Play all scenes','cinematic','all',!!online||onlinePending||onlineConnectBusy);
     if(world.interior?.safe){host.append(make('p','Inside '+world.interior.name));add('Exit building','leave-interior','');}
     host.append(make('h3','Performance'),make('p',(perfAverage>0?Math.round(1000/perfAverage)+' FPS · '+perfAverage.toFixed(1)+' ms/frame':'Collecting frame samples')+' · '+Math.round((world.renderScale||1)*100)+'% render scale · '+(controls.streets.dataset.renderer||'initializing')+' · '+world.locals.length+' active pedestrians'));
     host.append(make('h3','Shared city — free roam'),make('p',onlineNote+(onlineRtt===null?'':' · '+Math.round(onlineRtt)+' ms request RTT')+' · Local traffic and money remain independent.'));if(online)add('Leave room','online-leave','');else{add('Create private room','online-create','',onlinePending||onlineConnectBusy);add('Join private room','online-join','',onlinePending||onlineConnectBusy);}
@@ -316,14 +320,14 @@
     saveCareer();
   }
   function saveCareer(){
-    if(!world)return;
+    if(!world||film)return;
     const value=JSON.stringify(world.career);
     if(value===lastCareer)return;
     try{localStorage.setItem(careerKey,value);lastCareer=value;}catch{}
   }
   function clearHeld(){held.clear();pointers.clear();lookPointer=null;firing=false;queuedShot=false;dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
   function act(action){
-    if(!world || paused||world.deathUntil)return;
+    if(!world || paused||film||world.deathUntil)return;
     if(action==='vehicle'){if(window.RecoilCityWorld.interact(world)){yaw=world.player.angle;tilt=0;manualUntil=0;}}
     else if(action==='jump')window.RecoilCityWorld.jump(world);
     else if(action==='shop')window.RecoilCityWorld.shop(world);
@@ -351,6 +355,7 @@
   function keyboard(event){
     if(!world || event.ctrlKey || event.metaKey || event.altKey)return;
     event.stopImmediatePropagation();
+    if(film){if(event.type==='keydown'&&!event.repeat){const action={Escape:'film-stop',Space:'film-pause',KeyR:'film-replay',KeyN:'film-next',KeyH:controls.film.hidden?'film-show':'film-hide'}[event.code];if(action){event.preventDefault();filmAction(action);}}return;}
     if(event.code==='Escape' && event.type==='keydown' && !event.repeat){
       event.preventDefault();if(paused)setHelp(false);else close();return;
     }
@@ -371,6 +376,17 @@
       event.preventDefault();act(action);
     }
   }
+  function startFilm(id){
+    if(film||online||onlinePending||onlineConnectBusy||!world)return;
+    const W=window.RecoilCityWorld,sequence=id==='all'?W.cinematicScenes.map(s=>s.id):[id],next=W.createCinematic(sequence[0],{quality:options.quality,...window.RecoilCityGame?.loadout()});if(!next)return;
+    saveCareer();film={world,sequence,index:0,playing:true,speed:1,yaw,tilt,manualUntil,scale:world.renderScale||1};world=next;world.renderScale=film.scale;clearHeld();setHelp(false);controls.hub.hidden=true;controls.hud.hidden=true;controls.film.hidden=false;controls.filmReveal.hidden=true;previousTime=0;nextDraw=0;filmStatus();controls.streets.focus({preventScroll:true});
+  }
+  function filmStatus(){if(!film)return;const f=world.cinematic,scene=window.RecoilCityWorld.cinematicScenes.find(s=>s.id===f.id);setText(controls.filmStatus,scene.name+' · '+f.time.toFixed(1)+' / '+f.seconds+'s'+(f.done?' · Complete':''));setText(controls.film.querySelector('[data-click=film-pause]'),film.playing&&!f.done?'Pause':'Play');setText(controls.film.querySelector('[data-click=film-speed]'),film.speed+'×');}
+  function resetFilm(index){const next=window.RecoilCityWorld.createCinematic(film.sequence[index],{quality:options.quality,...window.RecoilCityGame?.loadout()});if(!next)return;film.index=index;film.playing=true;next.renderScale=world.renderScale||1;world=next;previousTime=0;lastFilter='';filmStatus();}
+  function stopFilm(){if(!film)return;const saved=film;film=null;world=saved.world;yaw=saved.yaw;tilt=saved.tilt;manualUntil=saved.manualUntil;controls.hud.hidden=false;controls.film.hidden=true;controls.filmReveal.hidden=true;lastFilter='';previousTime=0;nextDraw=0;lastNotice=null;clearHeld();refresh();}
+  function filmAction(action){if(!film)return;if(action==='film-stop'){stopFilm();return;}if(action==='film-pause'){if(world.cinematic.done)resetFilm(film.index);else film.playing=!film.playing;}if(action==='film-replay')resetFilm(film.index);if(action==='film-next')resetFilm((film.index+1)%film.sequence.length);if(action==='film-speed')film.speed=film.speed===1?.5:film.speed===.5?2:1;if(action==='film-hide'){controls.film.hidden=true;controls.filmReveal.hidden=false;}if(action==='film-show'){controls.film.hidden=false;controls.filmReveal.hidden=true;}filmStatus();controls.streets.focus({preventScroll:true});}
+  function filmTick(now,elapsed){const W=window.RecoilCityWorld;if(film.playing){W.stepCinematic(world,elapsed*film.speed);if(world.cinematic.done&&film.index+1<film.sequence.length){resetFilm(film.index+1);}}
+    const view=W.cinematicView(world,controls.streets.clientWidth/Math.max(1,controls.streets.clientHeight));cam=window.RecoilCityView.camera(world,view);window.RecoilCityView.draw(controls.streets,world,cam,controls.sky);if(lastFilter!=='film'){lastFilter='film';controls.sky.style.filter='';controls.streets.style.filter='';}if(now>=nextHud){filmStatus();nextHud=now+100;}}
   function tick(now){
     if(!world)return;
     frame=requestAnimationFrame(tick);
@@ -381,6 +397,7 @@
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
     const raw=previousTime?now-previousTime:0,elapsed=Math.min(.1,raw/1000);previousTime=now;
     if(raw>0&&raw<250){perfTotal+=raw;perfSamples++;if(perfSamples>=45){const average=perfTotal/perfSamples;perfAverage=average;perfSlow=average>frameInterval*1.25?perfSlow+1:0;perfFast=average<frameInterval*1.08?perfFast+1:0;const next=adaptScale(world.renderScale||1,average,frameInterval,perfFast,perfSlow);if(next!==(world.renderScale||1)){world.renderScale=next;perfFast=perfSlow=0;}perfTotal=perfSamples=0;}}
+    if(film){filmTick(now,elapsed);return;}
     if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     const active=new Set(pointers.values());for(const code of held)active.add(arrowCodes[code]);const pressed=name=>active.has(name);
     const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
@@ -431,7 +448,7 @@
   function visibility(){clearHeld();previousTime=0;if(document.hidden)saveCareer();}
   function close(){
     if(!world)return;
-    leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
+    if(film)stopFilm();leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);

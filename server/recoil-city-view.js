@@ -362,7 +362,7 @@
       g.box(-.4,side*5.15,3.3,17,.12,.18,'#808882');
       g.bar([3.4,side*4.7,4.7],[1.18,side*3.78,8.02],.21,body,4);
     }
-    if(v.kind==='patrol'){
+    if(v.kind==='patrol'||v.filmPolice){
       g.box(-1.6,0,8.16,1.45,4.6,.37,'#303844');
       for(const side of [-1,1])g.box(-1.6,side*1.16,8.5,1.3,2,.52,Math.sin(time*12)*side>0?'#fc8064':'#679bc9');
     }
@@ -422,8 +422,8 @@
       if(car){x+=Math.cos(p.angle)*.1+Math.sin(p.angle)*1.85;y+=Math.sin(p.angle)*.1-Math.cos(p.angle)*1.85;}
       else {x+=cx*.4;y+=sy*.4;}
     }else{
-      const back=car?46:28,shoulder=car?0:Math.min(3.5,(options.aspect||1.6)*2.5);
-      const dx=-cx*back-sy*shoulder,dy=-sy*back+cx*shoulder,dz=car?11.2:4.85;
+      const back=options.cinematic?(car?56:36):(car?46:28),shoulder=car?0:Math.min(3.5,(options.aspect||1.6)*2.5);
+      const dx=-cx*back-sy*shoulder,dy=-sy*back+cx*shoulder,dz=options.cinematic?(car?14.5:9.5):(car?11.2:4.85);
       const len=Math.hypot(dx,dy,dz), wall=W().wallDistance(x,y,dx/len,dy/len,len,focus,dz/len,1.15);
       const scale=Math.max(0,wall-.35)/len;
       x+=dx*scale;y+=dy*scale;z+=dz*scale;
