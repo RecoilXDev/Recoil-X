@@ -31,7 +31,7 @@ test('primary game session is shared with Career and gated Admin, without hardco
  assert.match(html,/source:'game',token:sameOrigin\?z1Token:''/);
  assert.match(html,/if\(update\?\.source!=='career'\)return/);
  assert.match(html,/z1Token=update\.token;z1UseAccount\(update\.user\)/);
- assert.match(html,/VERSION Z\.5 · EVOLUTION/);
+ assert.match(html,/RECOIL X · UPDATE A/);
  const admin=read('admin-panel.js');
  assert.ok(!/salim158/i.test(admin),'admin names must never be hardcoded as an authorization rule');
 });

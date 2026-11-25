@@ -131,8 +131,9 @@ jobs:
           grep -Fq 'content="Z.5-SAND-8"' /tmp/recoil-z5-live.html
           grep -Fq 'content="A-NEW-DAWN-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
-          grep -Fq '<title>RECOIL X Z.5 · Sand Edition</title>' /tmp/recoil-z5-live.html
-          grep -Fq "querySelector('.brandchip').textContent='RECOIL X · VERSION Z.5'" /tmp/recoil-z5-live.html
+          grep -Fq '<title>RECOIL X — Update A</title>' /tmp/recoil-z5-live.html
+          grep -Fq "querySelector('.brandchip').textContent='RECOIL X · UPDATE A'" /tmp/recoil-z5-live.html
+          if grep -Eq 'UPDATE A (NEW DAWN )?PREVIEW|UPDATE A · NEW DAWN PREVIEW' /tmp/recoil-z5-live.html; then echo 'Outdated public preview branding' >&2; exit 1; fi
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
             echo 'Legacy Z.3 startup branding unexpectedly present' >&2; exit 1
           fi
