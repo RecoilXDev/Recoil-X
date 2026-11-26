@@ -273,11 +273,22 @@
     if(id==='sniper')g.box(x+.55,y,z+.6,.95,.43,.31,'#526064');
     else g.box(x+1.12,y,z+.54,.22,.19,.19,'#8d9892');
   }
+  const a3CityMotion=new WeakMap();
+  function a3CityStride(p,time,enabled){
+    const target=p.motion==='walking'||p.motion==='sprinting'?1:0;
+    if(!enabled)return target*Math.sin(p.phase||0);
+    let state=a3CityMotion.get(p);if(!state||time<state.at||time-state.at>.3){state={at:time,blend:target,swing:target*Math.sin(p.phase||0)};a3CityMotion.set(p,state);return state.swing;}
+    const dt=time-state.at;if(dt<=0)return state.swing;
+    state.blend+=(target-state.blend)*(1-Math.exp(-dt*12));
+    if(target)state.swing=Math.sin(p.phase||0)*state.blend;else state.swing*=Math.exp(-dt*15);
+    state.at=time;return state.swing;
+  }
+  function a3CityVisuals(m){return !tvSafe()&&m.detail!=='low'&&!(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)&&!document.body?.classList?.contains('rx5-reduce-motion');}
   function actor(m,p,hero,time,weaponId) {
     const base=local(m,p.x,p.y,0,p.angle);shadow(base,hero?2.8:2.15,hero?2:1.65);
     const shared=window.RecoilCityCharacter;
     if(shared&&!tvSafe()){
-      const data=shared.emit(hero?{...p,phase:p.motion==='idle'?0:Math.sin(p.phase||0),color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
+      const data=shared.emit(hero?{...p,phase:a3CityStride(p,time,a3CityVisuals(m)),color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
       for(let i=0;i<data.length;i+=27){
         const rgb=data.slice(i+3,i+6),shade=.70+.30*Math.max(0,data[i+7]),c={rgb:rgb.map(v=>Math.min(1,v*shade)),css:'rgb('+rgb.map(v=>Math.round(Math.min(1,v*shade)*255)).join(',')+')'};
         const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
@@ -397,7 +408,7 @@
     if(!first&&!p.vehicleId)actor(m,p,true,state.elapsed,state.weapons[state.weapon]?.id);
     if(first&&!p.vehicleId&&!state.interior?.safe){
       const hands=local(m,p.x,p.y,p.z,cam.yaw);
-      const sway=p.motion==='walking'||p.motion==='sprinting'?Math.sin(p.phase)*.11:0;
+      const sway=a3CityStride(p,state.elapsed,a3CityVisuals(m))*.11;
       const kick=Math.max(0,(p.aimUntil||0)-state.elapsed)*.55;
       hands.bar([.9,1.34,9.65+sway],[3.67,1.12,10.14+sway],.33,'#ba9474');
       heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id);
