@@ -1424,6 +1424,7 @@ function drawGunModel(i){const gun=weapons[i]?.id||'ar',s=skinBy(equipped),art=$
 art.innerHTML=`<defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${s.trim}"/><stop offset=".35" stop-color="${s.body}"/><stop offset="1" stop-color="${s.mask}"/></linearGradient></defs><path d="M261 324L408 178L448 206L341 350L186 350Z" fill="${s.mask}" stroke="${s.trim}" stroke-width="5"/>${GUN_ART[gun]}<path d="M182 267L224 239L268 259L285 320L247 347H181Z" fill="#a98461" stroke="#624934" stroke-width="8"/><path d="M302 260L347 229L382 253L394 314L344 347H289Z" fill="#9a7354" stroke="#604835" stroke-width="8"/>`;
 }
 let switchTimeout1=0,switchTimeout2=0;
+function a2CancelWeaponSwitch(){clearTimeout(switchTimeout1);clearTimeout(switchTimeout2);switchTimeout1=switchTimeout2=0;const art=$('weaponArt');if(art)art.classList.remove('holstering','equipping','switching');}
 function switchGunWithAnimation(n){if(n<0||n>=weapons.length||pl.weapon===n)return;v8GunChangeAt=performance.now()/1000;
  rx2GunReadyAt=v8GunChangeAt+([.38,.58,.79,.43][n]||.48);
 clearTimeout(switchTimeout1);clearTimeout(switchTimeout2);const art=$('weaponArt');art.classList.remove('equipping','holstering','shoot','reload','switching');void art.offsetWidth;art.classList.add('holstering');
@@ -1822,7 +1823,7 @@ function renderPet(out,now,eye=null,center=null){
  }
  crownDrawPet(out,p,x,y,z,a,now);
 }
-function resetPlayer(){crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:1.63,yaw:0,pitch:0,jump:0,vy:0,hp:100,shield:75,kills:0,deaths:0,shots:0,hits:0,weapon:0,nextShot:0,reloadEnd:0,alive:true,walk:0,crouched:false,sprintUsed:0,sprintLockedUntil:0,spawnProtectedUntil:0});pl.mags=weapons.map(w=>w.mag);pl.stocks=weapons.map(w=>w.reserve);drawGunModel(0);}
+function resetPlayer(){a2CancelWeaponSwitch();crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:1.63,yaw:0,pitch:0,jump:0,vy:0,hp:100,shield:75,kills:0,deaths:0,shots:0,hits:0,weapon:0,nextShot:0,reloadEnd:0,alive:true,walk:0,crouched:false,sprintUsed:0,sprintLockedUntil:0,spawnProtectedUntil:0});pl.mags=weapons.map(w=>w.mag);pl.stocks=weapons.map(w=>w.reserve);drawGunModel(0);}
 const botNames=['SandViper_01','DuneHunter_07','FalconBot_12','MirageGhost','Scorpion_X','DustStriker','OasisSniper','RedCanyonAI','StormRider','NightRecon','GoldWarden','NomadZero'];
 function spawnBot(id){const og=activeMap()?.ogClassic;let spots=og?z5ClassicSpawnPoints:spawns;let spot=spots[(id+1)%spots.length],pos=spot;for(let i=0;i<25;i++){let hot=id<6;let range=og?29:ARENA_HALF-4;let travel=og?26:52;let tryx=hot?clamp(pl.x+rand(-travel,travel),-range,range):rand(-range,range),tryz=hot?clamp(pl.z+rand(-travel,travel),-range,range):rand(-range,range);if(len2(tryx-pl.x,tryz-pl.z)>16&&!blocked(tryx,tryz,.7)){pos=[tryx,tryz];break;}}
 return {id,x:pos[0],z:pos[1],hp:100,yaw:rand(-3,3),speed:rand(2.0,3.1),nextShot:rand(2.4,4.3),sawTarget:false,alive:true,respawn:0,strafedir:Math.random()>.5?1:-1,turn:rand(.9,2),walk:0,name:botNames[id%botNames.length],skinId:skins[1+id%(skins.length-1)].id,personality:['rusher','flanker','guardian','hunter'][id%4]};}
@@ -2634,7 +2635,7 @@ function cycleSpectator(step){spectateIndex+=step;updateSpectatorUI();}
 function enterSpectator(){if(mode==='solo'||phase!=='playing'){toast(tr('noPlayers'));return;}if(!availableSpectators().length){toast(tr('noPlayers'));return;}spectating=true;spectateIndex=0;mouseDown=false;mobileFire=false;mobileSprint=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();hideOverlay();updateSpectatorUI();}
 function exitSpectator(){if(z1IsPartyGuest()&&z1Room.watch)return;spectating=false;updateSpectatorUI();if(phase==='playing'&&!pl.alive){showScreen('deadMenu');}else if(phase==='playing'&&mode==='host'){hideOverlay();}else if(phase==='playing'){hideOverlay();}if(phase==='playing'&&pl.alive)capturePointer();updateHUD();}
 
-function showScreen(screen){if(screen==='vxEventMenu'&&!vxEventLive())screen='mainMenu';if(screen==='rxseHubMenu'&&!rxseActive().length)screen='mainMenu';if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen))setMusic('lobby');$('overlay').classList.remove('hidden');for(const id of ['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','pauseMenu','endMenu','deadMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'])$(id).classList.add('hide');$(screen).classList.remove('hide');if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen)){phase='menu';$('hud').classList.remove('active');$('crosshair').classList.remove('active');$('weaponArt').classList.remove('active');$('mobileControls').classList.remove('active');}else{paused=true;}mouseDown=false;mobileFire=false;rxSyncPlayOrientation();}
+function showScreen(screen){if(screen==='vxEventMenu'&&!vxEventLive())screen='mainMenu';if(screen==='rxseHubMenu'&&!rxseActive().length)screen='mainMenu';if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen))setMusic('lobby');$('overlay').classList.remove('hidden');for(const id of ['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','pauseMenu','endMenu','deadMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'])$(id).classList.add('hide');$(screen).classList.remove('hide');if(['rxDailyMenu','rxAchievementsMenu','rxSettingsMenu','rx2HubMenu','deviceMenu','mainMenu','voteMenu','shopMenu','crateMenu','v8GunMenu','petMenu','passMenu','graphicsMenu','roomMenu','helpMenu','rxseHubMenu','vxEventMenu','vxKnifeMenu','vxForgeMenu','vxMysteryMenu'].includes(screen)){phase='menu';$('hud').classList.remove('active');$('crosshair').classList.remove('active');$('weaponArt').classList.remove('active');$('mobileControls').classList.remove('active');}else{paused=true;}a2ClearHeldInputs();rxSyncPlayOrientation();}
 function hideOverlay(){$('overlay').classList.add('hidden');paused=false;rxSyncPlayOrientation();}
 function capturePointer(){
  if(mobile||rxTvMouseEnabled)return;
@@ -2652,7 +2653,7 @@ $('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();
 $('difficultyBtn').onclick=()=>{difficulty=(difficulty+1)%3;$('difficultyName').textContent=tr(['easy','medium','hard'][difficulty])};
 $('choosePC').onclick=()=>pickDevice(false);
 $('chooseMobile').onclick=()=>pickDevice(true);
-$('deviceBtn').onclick=()=>showScreen('deviceMenu');$('usernameInput').value=username;$('saveUsername').onclick=()=>{const value=$('usernameInput').value.trim();if(value.length<2||value.length>18||!(/^[\p{L}\p{N}_ -]+$/u.test(value))){$('usernameStatus').textContent=tr('nameInvalid');return;}username=value;pl.name=value;setStore('username',value);$('usernameStatus').textContent=tr('nameSaved');if(mode==='host')hostRoster();if(mode==='guest'&&hostConn?.open)hostConn.send({t:'join',name:username,skin:equipped,pet:equippedPet});roomRoster=[{id:peer.id,name:username}];socialCount();};
+$('deviceBtn').onclick=()=>showScreen('deviceMenu');$('usernameInput').value=username;$('saveUsername').onclick=()=>{const value=$('usernameInput').value.trim();if(value.length<2||value.length>18||!(/^[\p{L}\p{N}_ -]+$/u.test(value))){$('usernameStatus').textContent=tr('nameInvalid');return;}username=value;pl.name=value;setStore('username',value);$('usernameStatus').textContent=tr('nameSaved');if(mode==='host')hostRoster();if(mode==='guest'&&hostConn?.open)hostConn.send({t:'join',name:username,skin:equipped,pet:equippedPet});roomRoster=[{id:peer?.id||'self',name:username}];socialCount();};
 $('mapsBtn').onclick=showVoteSolo;
 $('shopBtn').onclick=()=>{showScreen('shopMenu');renderShop();refreshWallet();};
 $('shopBackBtn').onclick=()=>showScreen('mainMenu');
@@ -2694,7 +2695,7 @@ if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
  },{capture:true,passive:false});
  document.addEventListener('touchcancel',()=>press=null,{passive:true});
 }
-window.addEventListener('keydown',e=>{if($('socialShell').classList.contains('visible')){if(e.code==='Escape'){socialHide();e.preventDefault();}return;}if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)){
+window.addEventListener('keydown',e=>{if($('socialShell').classList.contains('visible')){if(e.code==='Escape'){socialHide();e.preventDefault();}return;}if(e.target?.closest?.('input,textarea,select,[contenteditable=true]'))return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)){
   if(!$('overlay').classList.contains('hidden')||!document.pointerLockElement&&e.target?.closest?.('#z2MatchHud button'))return;
   e.preventDefault();
 }keys[e.code]=true;if(e.code==='KeyV'&&phase==='playing'&&!paused&&!e.repeat&&!spectating){v8ToggleCamera();e.preventDefault();}if(spectating){if(e.code==='ArrowLeft'||e.code==='KeyQ')cycleSpectator(-1);if(e.code==='ArrowRight'||e.code==='KeyE')cycleSpectator(1);if(e.code==='Escape')exitSpectator();return;}if(e.code==='Escape'&&phase==='playing'&&!paused){paused=true;if(document.pointerLockElement)document.exitPointerLock();showScreen('pauseMenu');$('pauseRoomCode').textContent=roomCode?'رمز الغرفة: '+roomCode:'';}if(e.code==='Tab'&&phase==='playing'){$('scoreBoard').classList.add('active');refreshScores();}if(phase!=='playing'||paused||e.repeat)return;if(e.code==='KeyE'&&mode!=='mystery')openNearbyChest();if(e.code==='KeyR'&&mode!=='mystery')reload();if(mode!=='mystery'&&/^Digit[1-4]$/.test(e.code))changeWeapon(+e.code.slice(-1)-1);});
@@ -2734,7 +2735,14 @@ function refreshScores(){const rows=[{name:username+' ('+tr('player')+')',kills:
 // Room codes use PeerJS over an internet connection (CDN + public PeerServer signaling).
 // This is real peer-to-peer networking, not simulated LAN. If offline, solo still runs.
 let peerLoad=null;
-function ensurePeer(){if(window.Peer)return Promise.resolve();if(peerLoad)return peerLoad;peerLoad=new Promise((resolve,reject)=>{let sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';sc.onload=()=>window.Peer?resolve():reject(new Error('PeerJS unavailable'));sc.onerror=()=>reject(new Error('Could not load the multiplayer library'));document.head.append(sc)});return peerLoad;}
+function ensurePeer(){
+ if(window.Peer)return Promise.resolve();if(peerLoad)return peerLoad;
+ peerLoad=new Promise((resolve,reject)=>{const sc=document.createElement('script');let settled=false;sc.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';
+  const finish=error=>{if(settled)return;settled=true;clearTimeout(timer);sc.onload=sc.onerror=null;if(error){sc.remove();reject(error);}else resolve();};
+  const timer=setTimeout(()=>finish(new Error('Multiplayer library timed out')),10000);
+  sc.onload=()=>finish(window.Peer?null:new Error('PeerJS unavailable'));sc.onerror=()=>finish(new Error('Could not load the multiplayer library'));document.head.append(sc);
+ }).catch(error=>{peerLoad=null;throw error;});return peerLoad;
+}
 function setStatus(s,error=false){$('roomStatus').textContent=s;$('roomStatus').classList.toggle('error',error)}
 function makeCode(){return 'Z90-'+Array.from({length:5},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('')}
 $('hostBtn').onclick=async()=>{ mode='host';roomPlayerCount=1;lobbyVotes.clear();$('lobbyVotes').classList.remove('hide');drawVoteCards();$('roomJoinSection').classList.add('hide');$('roomHostSection').classList.add('hide');setStatus('جاري إنشاء الغرفة...');try{await ensurePeer();roomCode=makeCode();peer=new Peer('zone90-room-'+roomCode.toLowerCase());peer.on('open',()=>{$('roomCode').textContent=roomCode;$('roomHostSection').classList.remove('hide');setStatus('الغرفة جاهزة. أعطِ رمزها لصديقك.');hostRoster();});peer.on('connection',conn=>{conn.on('open',()=>{remoteConns.set(conn.peer,conn);remotePlayers.set(conn.peer,{id:conn.peer,name:'Guest',x:0,z:29,yaw:0,pitch:0,hp:100,shield:75,kills:0,deaths:0,alive:true,skinId:'nomad'});conn.send({t:'welcome',code:roomCode});broadcastVotes();if(phase==='playing')conn.send({t:'start',map:currentMapId});toast('✅ انضم لاعب جديد');addFeed('انضم لاعب إلى الغرفة')});conn.on('data',data=>handleHostData(conn,data));conn.on('close',()=>{socialDisconnect(conn.peer);remoteConns.delete(conn.peer);remotePlayers.delete(conn.peer);lobbyVotes.delete(conn.peer);broadcastVotes();addFeed('غادر أحد اللاعبين الغرفة')});});peer.on('error',e=>setStatus('تعذر إنشاء الغرفة: '+(e.message||e),true));}catch(e){setStatus('الاتصال غير متاح. تحتاج إنترنت لفتح الغرف الخاصة.',true);}};
@@ -2914,7 +2922,7 @@ $('socialShell').addEventListener('pointerdown',e=>{if(e.target===$('socialShell
 
 // Touch: move on left stick, look by swiping right half, and shoot/reload/jump.
 {const base=$('joybase'),stick=$('joystick');base.addEventListener('pointerdown',e=>{joyTouchId=e.pointerId;base.setPointerCapture(e.pointerId);joyMove(e)});base.addEventListener('pointermove',e=>{if(e.pointerId===joyTouchId)joyMove(e)});for(const ev of ['pointerup','pointercancel'])base.addEventListener(ev,e=>{if(e.pointerId===joyTouchId){joyTouchId=null;if(rx31StickTouchIdentifier===null){moveJoy={x:0,y:0};stick.style.transform='translate(0,0)'}}});function joyMove(e){let r=base.getBoundingClientRect(),x=rxRotated()?e.clientY-r.top-r.height/2:e.clientX-r.left-r.width/2,y=rxRotated()?r.left+r.width/2-e.clientX:e.clientY-r.top-r.height/2,d=Math.max(1,Math.hypot(x,y)),fac=Math.min(45,d)/d;moveJoy={x:x*fac/45,y:y*fac/45};stick.style.transform=`translate(${x*fac}px,${y*fac}px)`;}
-let prev=null;const swipe=$('touchswipe');swipe.addEventListener('pointerdown',e=>{prev={...rxClientPoint(e),id:e.pointerId};swipe.setPointerCapture(e.pointerId)});swipe.addEventListener('pointermove',e=>{if(!prev||e.pointerId!==prev.id)return;const pt=rxClientPoint(e);pl.yaw+=(pt.x-prev.x)*.008;pl.pitch=clamp(pl.pitch-(pt.y-prev.y)*.008,-1.2,1.2);prev.x=pt.x;prev.y=pt.y;});swipe.addEventListener('pointerup',()=>prev=null);
+let prev=null;document.addEventListener('rx-input-reset',()=>{prev=null;});const swipe=$('touchswipe');swipe.addEventListener('pointerdown',e=>{prev={...rxClientPoint(e),id:e.pointerId};swipe.setPointerCapture(e.pointerId)});swipe.addEventListener('pointermove',e=>{if(!prev||e.pointerId!==prev.id)return;const pt=rxClientPoint(e);pl.yaw+=(pt.x-prev.x)*.008;pl.pitch=clamp(pl.pitch-(pt.y-prev.y)*.008,-1.2,1.2);prev.x=pt.x;prev.y=pt.y;});for(const type of ['pointerup','pointercancel','lostpointercapture'])swipe.addEventListener(type,e=>{if(prev?.id===e.pointerId)prev=null;});
 $('touchfire').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true;fire(performance.now()/1000)});for(const ev of ['pointerup','pointercancel','pointerleave'])$('touchfire').addEventListener(ev,()=>mobileFire=false);$('touchchest').onclick=()=>openNearbyChest();$('touchreload').onclick=()=>reload();$('touchweapon').onclick=()=>changeWeapon((pl.weapon+1)%weapons.length);$('touchcrouch').onclick=()=>{mobileCrouch=!mobileCrouch;};const sprint=$('touchsprint');sprint.addEventListener('pointerdown',e=>{e.preventDefault();mobileSprint=true;sprint.setPointerCapture(e.pointerId)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(ev,()=>mobileSprint=false);}
 const touchJump=$('touchjump');
 let touchJumpPointer=null,touchJumpUntil=0;
@@ -2948,10 +2956,15 @@ touchJump.onclick=event=>{
   if(event.detail===0)touchJumpUntil=performance.now()+160;
 };
 
-window.addEventListener('blur',()=>{
-  mouseDown=false;mobileFire=false;mobileSprint=false;resetTouchJump();
+function a2ClearHeldInputs(){
+  mouseDown=false;mobileFire=false;mobileSprint=false;mobileCrouch=false;isScope=false;resetTouchJump();
   for(const key in keys)keys[key]=false;
-});
+  moveJoy.x=moveJoy.y=0;joyTouchId=null;rx31StickTouchIdentifier=null;
+  const stick=$('joystick');if(stick)stick.style.transform='translate(0,0)';
+  $('scoreBoard')?.classList.remove('active');
+  document.dispatchEvent(new Event('rx-input-reset'));
+}
+window.addEventListener('blur',a2ClearHeldInputs);
 
 // -------- V8 LOCK-LOAD-DOMINATE: ORIGINAL MM2-COLOR-TIER WEAPON FINISHES --------
 const V8_RARITY_COLORS={common:'#858585',uncommon:'#01deeb',rare:'#00c703',legendary:'#db0106',godly:'#fa03b0',silver:'#b7c9e3',golden:'#efc63d'};
@@ -4141,7 +4154,7 @@ function rx3LoadUI(){
 }
 function rx3UpdateQualityLabel(){let q=rx3Tier();if($('rx3QualityInfo'))$('rx3QualityInfo').textContent=`Active detail: ${['MINIMAL','LIGHT','BALANCED','FULL'][q]} · adaptive motion budget · no forced RAM reservation`;}
 function rx3NewMatch(){rx3ClearVisuals();rx3Recoil=0;rx3CrouchBlend=0;rx3LandVisual=0;rx3WasAirborne=false;rx3AnimSlow=0;rx3AnimFast=0;}
-function rx3ClearVisuals(){rx3Reload={start:0,end:0,stage:''};if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');if($('rx3HurtRing'))$('rx3HurtRing').classList.remove('active');if($('weaponArt'))$('weaponArt').classList.remove('rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing');}
+function rx3ClearVisuals(){a2CancelWeaponSwitch();rx3Reload={start:0,end:0,stage:''};if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');if($('rx3HurtRing'))$('rx3HurtRing').classList.remove('active');if($('weaponArt'))$('weaponArt').classList.remove('rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing');}
 function rx3ReloadStart(now,end){rx3Reload={start:now,end,stage:'out'};if(rx3Tier()<1)return;}
 function rx3ReloadPose(now){const duration=rx3Reload.end-rx3Reload.start;if(duration<=0||now>rx3Reload.end)return 0;
  const t=Math.max(0,Math.min(1,(now-rx3Reload.start)/duration));
@@ -4226,6 +4239,7 @@ rxseSetup();v8GrantArmoryWithToken();vxSetup();rxSetupX1();rx2Setup();vxSyncTrus
  },true);
  // The joystick uses its own dedicated Touch.identifier, never the action finger.
  const base=$('joybase'),stick=$('joystick');let finger=null;
+  document.addEventListener('rx-input-reset',()=>{finger=null;last.clear();});
  const move=t=>{
   const r=base.getBoundingClientRect();
   const x=rxRotated()?t.clientY-r.top-r.height/2:t.clientX-r.left-r.width/2;
@@ -4243,8 +4257,8 @@ rxseSetup();v8GrantArmoryWithToken();vxSetup();rxSetupX1();rx2Setup();vxSyncTrus
 })();
 
 
-document.addEventListener('visibilitychange',()=>{if(document.hidden){mouseDown=false;mobileFire=false;mobileSprint=false;moveJoy.x=moveJoy.y=0;try{audioCtx()?.suspend();}catch(e){}}else if(sound&&allAudioStarted){try{audioCtx()?.resume();}catch(e){}}});
-window.addEventListener('pagehide',()=>{mouseDown=false;mobileFire=false;mobileSprint=false;moveJoy.x=moveJoy.y=0;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){a2ClearHeldInputs();try{audioCtx()?.suspend();}catch(e){}}else if(sound&&allAudioStarted){try{audioCtx()?.resume();}catch(e){}}});
+window.addEventListener('pagehide',a2ClearHeldInputs);
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();mouseDown=false;mobileFire=false;if(rxTvUltraLight()&&rxTvSwitchToSoftware()){console.warn('RECOIL X: TV GPU lost; using software renderer.');return;}paused=true;console.warn('RECOIL X: GPU context lost. Pausing rendering until recovered.');});
 canvas.addEventListener('webglcontextrestored',()=>{if(!gl)return;try{v91StaticChunks=[];program=null;buffer=null;v91DynamicCapacity=0;setupGL();paused=false;console.info('RECOIL X: GPU context restored.');}catch(error){console.error('GPU recovery failed',error);}});
 function runCrownGame(){

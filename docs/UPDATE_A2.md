@@ -18,3 +18,6 @@ Allocation-free ray/AABB slabs, early-exit line-of-sight checks, single-pass nea
 
 ## Extended stability verification
 Direct 30-minute high-detail city simulation (7,200 steps): bounded vehicle count (16), active pedestrians (18), finite positions/HP/cash, no negative balances. This is a world simulation, not a browser heap measurement. Automated 10-client WebSocket match traffic increased from 25 to 125 input intervals per client; six-minute simulated 10-player match and bounded history tests added. Pending CI. No claim of production load or latency certification.
+
+## Post-TV compatibility polish
+User reported the Smart TV recovery patch worked. Its renderer and 30 FPS cap are unchanged. Clear held keyboard, mouse, touch and scope state on menu/focus transitions; cancel delayed weapon swaps at player reset and visual cleanup; permit retry after a failed or timed-out PeerJS download; guard offline username changes against missing peer; use a Set for city remote pruning and clear stale timing samples on visibility changes. City settings accept only supported values. Four targeted regression checks added; complete CI and real-device multiplayer and touch testing remain required.

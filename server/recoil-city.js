@@ -123,7 +123,7 @@
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
     controls.film=find('.rc-film');controls.filmStatus=find('.rc-film-status');controls.filmReveal=find('.rc-film-reveal');controls.hub=find('.rc-a1-hub');controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
     window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
-    dialog.addEventListener('change',e=>{const name=e.target.dataset.option;if(name){options[name]=e.target.value;applyOptions();}});
+    dialog.addEventListener('change',e=>{const name=e.target.dataset.option,value=e.target.value;if(name==='mode'&&['first','third'].includes(value)||name==='quality'&&['low','standard','high'].includes(value)){options[name]=value;applyOptions();}});
     controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
     controls.streets.addEventListener('pointerdown',e=>{
       if(film){if(controls.film.hidden)filmAction('film-show');return;}if(paused)return;
@@ -251,7 +251,7 @@
   async function onlinePulse(now){
     if(!online||onlinePending||now<onlineNext||!world)return;
     onlineNext=now+1100;onlinePending=true;const epoch=onlineEpoch,p=world.player,started=performance.now();
-    try{const d=await onlineApi('pulse',{lease:online.lease,x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);onlineFailures=0;onlineLastSuccess=received;onlineRtt=onlineRtt===null?received-started:onlineRtt*.7+(received-started)*.3;onlineNext=Math.max(onlineNext,received+200);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}for(const id of remoteTargets.keys())if(!visible.some(v=>v.id===id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
+    try{const d=await onlineApi('pulse',{lease:online.lease,x:p.x,y:p.y,angle:p.angle,vehicle:!!p.vehicleId,inside:!!world.interior,moving:p.motion!=='idle'},online.token);if(epoch!==onlineEpoch||!world)return;const received=performance.now(),visible=d.players.filter(v=>!v.inside);onlineFailures=0;onlineLastSuccess=received;onlineRtt=onlineRtt===null?received-started:onlineRtt*.7+(received-started)*.3;onlineNext=Math.max(onlineNext,received+200);for(const r of visible){const old=remoteTargets.get(r.id);remoteTargets.set(r.id,{from:old?sampleRemote(old,received):r,to:r,at:received});}const visibleIds=new Set(visible.map(v=>v.id));for(const id of remoteTargets.keys())if(!visibleIds.has(id))remoteTargets.delete(id);world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,received));onlineNote='Room '+d.code+' · '+(d.players.length+1)+' players';}
     catch(e){if(epoch!==onlineEpoch||!world)return;onlineFailures++;onlineNext=performance.now()+retryDelay(onlineFailures);onlineNote='Reconnecting · '+e.message;if(performance.now()-onlineLastSuccess>3500){remoteTargets.clear();world.remotePlayers=[];}if([401,403,404,409].includes(e.status)){const message=e.message;leaveOnline();onlineNote=message;}}
     finally{if(epoch===onlineEpoch)onlinePending=false;}
   }
@@ -445,7 +445,7 @@
     refresh();frame=requestAnimationFrame(tick);
     return true;
   }
-  function visibility(){clearHeld();previousTime=0;if(document.hidden)saveCareer();}
+  function visibility(){clearHeld();previousTime=0;nextDraw=0;perfSamples=perfTotal=perfSlow=perfFast=0;if(document.hidden)saveCareer();}
   function close(){
     if(!world)return;
     if(film)stopFilm();leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
