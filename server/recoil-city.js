@@ -344,7 +344,7 @@
   }
   function setHelp(show){
     if(!world)return;
-    paused=show;clearHeld();controls.help.hidden=!show;controls.hud.inert=show;previousTime=0;
+    paused=show;clearHeld();if(show)window.RecoilCityGame?.ambientStop?.();controls.help.hidden=!show;controls.hud.inert=show;previousTime=0;
     if(show){
       dialog.querySelector('[data-option=mode]').value=options.mode;dialog.querySelector('[data-option=quality]').value=options.quality;
       const c=world.career;
@@ -392,12 +392,13 @@
     frame=requestAnimationFrame(tick);
     if(online&&online.token!==sessionStorage.getItem('rx5-token'))leaveOnline();
     if(!document.hidden)void onlinePulse(now);
-    if(paused || document.hidden){previousTime=0;nextDraw=0;return;}
+    if(paused || document.hidden){window.RecoilCityGame?.ambientStop?.();previousTime=0;nextDraw=0;return;}
     if(now<nextDraw-.75)return;
     nextDraw=(nextDraw && now-nextDraw<frameInterval ? nextDraw : now)+frameInterval;
     const raw=previousTime?now-previousTime:0,elapsed=Math.min(.1,raw/1000);previousTime=now;
     if(raw>0&&raw<250){perfTotal+=raw;perfSamples++;if(perfSamples>=45){const average=perfTotal/perfSamples;perfAverage=average;perfSlow=average>frameInterval*1.25?perfSlow+1:0;perfFast=average<frameInterval*1.08?perfFast+1:0;const next=adaptScale(world.renderScale||1,average,frameInterval,perfFast,perfSlow);if(next!==(world.renderScale||1)){world.renderScale=next;perfFast=perfSlow=0;}perfTotal=perfSamples=0;}}
-    if(film){filmTick(now,elapsed);return;}
+    if(film){window.RecoilCityGame?.ambientStop?.();filmTick(now,elapsed);return;}
+    if(options.quality!=='low'&&!world.interior)window.RecoilCityGame?.ambientTick?.(world.weather,now/1000);else window.RecoilCityGame?.ambientStop?.();
     if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     const active=new Set(pointers.values());for(const code of held)active.add(arrowCodes[code]);const pressed=name=>active.has(name);
     const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
@@ -445,10 +446,10 @@
     refresh();frame=requestAnimationFrame(tick);
     return true;
   }
-  function visibility(){clearHeld();previousTime=0;nextDraw=0;perfSamples=perfTotal=perfSlow=perfFast=0;if(document.hidden)saveCareer();}
+  function visibility(){clearHeld();previousTime=0;nextDraw=0;perfSamples=perfTotal=perfSlow=perfFast=0;if(document.hidden){window.RecoilCityGame?.ambientStop?.();saveCareer();}}
   function close(){
     if(!world)return;
-    if(film)stopFilm();leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
+    if(film)stopFilm();window.RecoilCityGame?.ambientStop?.();leaveOnline();saveCareer();world=null;cancelAnimationFrame(frame);clearHeld();paused=false;
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);

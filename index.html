@@ -2128,6 +2128,21 @@ function a3PlaySound(ac,type,spatial={gain:1,pan:0}){
  }catch{return false;}
 }
 // Original in-game soundtrack composed for Mirage Ops: procedural oscillator melodies, no downloads.
+// A.3 ambient sound uses a single short, cached noise bed; never competes with voice polyphony.
+const A3_AMBIENT={wind:[340,.008,2.6],rain:[1700,.013,1.9],storm:[180,.018,2.2],sand:[520,.010,2.1],water:[230,.009,2.6],city:[120,.006,2.8]};
+function a3AmbientKind(weather,mode,city=false){const w=String(weather||'').toLowerCase();if(w==='rain'||w==='storm'||w==='sand')return w;if(w==='haze')return 'sand';if(!city&&String(mode).includes('underwater'))return 'water';return city?'city':'wind';}
+let a3Ambient=null,a3AmbientBuffer=null,a3AmbientNext=0;
+function a3AmbientStop(){if(a3Ambient){const a=a3Ambient;a3Ambient=null;try{a.source.stop();}catch{}try{a.source.disconnect();a.filter.disconnect();a.gain.disconnect();}catch{}}a3AmbientNext=0;}
+function a3AmbientTick(kind,now){
+ if(!sound||!allAudioStarted||document.hidden||rxTvUltraLight()||['pi','school'].includes(v91Resolved())||v92Active()&&v92MobileResolved()==='eco'){if(a3Ambient)a3AmbientStop();return;}
+ if(a3Ambient&&a3Ambient.kind!==kind)a3AmbientStop();if(now<a3AmbientNext)return;a3AmbientNext=now+3.2;if(a3Ambient)return;
+ const ac=audioCtx(),p=A3_AMBIENT[kind];if(!p||!ac||ac.state!=='running'||!ac.createBufferSource||!ac.createBiquadFilter||!ac.createBuffer)return;
+ let source,filter,gain;try{if(!a3AmbientBuffer||a3AmbientBuffer.context!==ac){const buffer=ac.createBuffer(1,Math.ceil(ac.sampleRate*3),ac.sampleRate),data=buffer.getChannelData(0);let seed=731;for(let i=0;i<data.length;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;data[i]=seed/2147483648-1;}a3AmbientBuffer={context:ac,buffer};}
+ source=ac.createBufferSource();filter=ac.createBiquadFilter();gain=ac.createGain();source.buffer=a3AmbientBuffer.buffer;filter.type='lowpass';filter.frequency.value=p[0];filter.Q.value=.65;
+ const t=ac.currentTime;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(p[1],t+.22);gain.gain.setValueAtTime(p[1],t+p[2]-.35);gain.gain.linearRampToValueAtTime(0,t+p[2]);source.connect(filter);filter.connect(gain);gain.connect(ac.destination);
+ const voice={kind,source,filter,gain};a3Ambient=voice;source.onended=()=>{try{source.disconnect();filter.disconnect();gain.disconnect();}catch{}if(a3Ambient===voice)a3Ambient=null;};source.start(t);source.stop(t+p[2]);
+ }catch{a3Ambient=null;for(const node of [source,filter,gain])try{node?.disconnect();}catch{}}
+}
 let musicMode='lobby',musicBeat=0,nextMusicBeat=0,allAudioStarted=false;
 const SOUNDTRACK={
  lobby:{tempo:90,bass:[40,-1,40,-1,43,-1,38,-1,36,-1,36,-1,38,-1,43,-1],lead:[64,-1,67,-1,71,-1,67,-1,62,-1,64,-1,69,-1,66,-1]},
@@ -2187,7 +2202,7 @@ for(const event of ['pointerup','click','keydown'])document.addEventListener(eve
 document.addEventListener('visibilitychange',()=>aSyncMenuMusic());
 window.RecoilCityGame = Object.freeze({
   loadout: () => ({weapons: weapons.map(w => ({...w})), equipped: pl.weapon, rayHit: rayCircle3d, sound: playSound}),
-  cues: SOUNDTRACK, scoreBeat, audioEnabled: () => sound, audioContext: audioCtx, suspendMenuMusic:()=>aNewDawnMusic.sync(false)
+  cues: SOUNDTRACK, scoreBeat, audioEnabled: () => sound, audioContext: audioCtx, suspendMenuMusic:()=>aNewDawnMusic.sync(false), ambientTick:(weather,now)=>a3AmbientTick(a3AmbientKind(weather,'city',true),now), ambientStop:a3AmbientStop
 });
 function tone(ac,midi,when,duration,type='triangle',vol=.017,output=ac.destination){if(midi<0)return;const osc=ac.createOscillator(),env=ac.createGain(),freq=440*Math.pow(2,(midi-69)/12);osc.type=type;osc.frequency.setValueAtTime(freq,when);env.gain.setValueAtTime(.00001,when);env.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),when+.022);env.gain.exponentialRampToValueAtTime(.00001,when+duration);osc.connect(env).connect(output);osc.start(when);osc.stop(when+duration+.03)}
 function setMusic(track){musicMode=track==='match'?rxAMatchMusic():SOUNDTRACK[track]?track:'lobby';musicBeat=0;nextMusicBeat=0;if(sound){let ac=audioCtx();if(ac)allAudioStarted=true;}aSyncMenuMusic();}
@@ -2670,7 +2685,7 @@ function capturePointer(){
 function startGame(which){rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';rx5QualityReset();setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
 function quit(){rx3ClearVisuals();vxAfterQuit();rxAfterQuit();if(mode==='host')for(const s of [...tradeSessions.values()])hostCancelTrade(s,'room closed');activeTrade=null;tradeSessions.clear();tradeInvites.clear();roomRoster=[];socialHide();spectating=false;updateSpectatorUI();clearDeathTimers();setMusic('lobby');phase='menu';paused=false;mouseDown=false;mobileFire=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();if(hostConn){hostConn.close();hostConn=null}if(peer){peer.destroy();peer=null}for(const c of remoteConns.values())c.close();remoteConns.clear();remotePlayers.clear();roomCode='';roomPlayerCount=1;lobbyVotes.clear();showScreen('mainMenu');refreshWallet();}
 $('soloBtn').onclick=showVoteSolo;$('roomBtn').onclick=()=>{mode='host';lobbyVotes.clear();showScreen('roomMenu');};$('backToMainBtn').onclick=()=>showScreen('mainMenu');$('helpBtn').onclick=()=>showScreen('helpMenu');$('helpBackBtn').onclick=()=>showScreen('mainMenu');$('resumeBtn').onclick=()=>{hideOverlay();capturePointer();};$('spectateBtn').onclick=enterSpectator;$('deathSpectateBtn').onclick=enterSpectator;$('spectatePrev').onclick=()=>cycleSpectator(-1);$('spectateNext').onclick=()=>cycleSpectator(1);$('spectateExit').onclick=exitSpectator;$('quitBtn').onclick=quit;$('endHomeBtn').onclick=quit;$('againBtn').onclick=()=>{if(mode==='mystery'){vxShowMysteryMenu();return;}if(mode==='boss'){vxBossStart();return;}if(mode==='solo')showVoteSolo();else if(mode==='host'){lobbyVotes.clear();showScreen('roomMenu');$('roomHostSection').classList.remove('hide');$('lobbyVotes').classList.remove('hide');drawVoteCards();}else quit();};
-$('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound){setMusic(musicMode);aSyncMenuMusic(true);}else aNewDawnMusic.sync(false);};
+$('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound){setMusic(musicMode);aSyncMenuMusic(true);}else{aNewDawnMusic.sync(false);a3AmbientStop();}};
 $('difficultyBtn').onclick=()=>{difficulty=(difficulty+1)%3;$('difficultyName').textContent=tr(['easy','medium','hard'][difficulty])};
 $('choosePC').onclick=()=>pickDevice(false);
 $('chooseMobile').onclick=()=>pickDevice(true);
@@ -3906,7 +3921,7 @@ function rx2AfterStart(which){rx2MakeCovers();const custom=which==='custom';if(c
 function rx2BotBehavior(b,dt,now){if(b.rx5EmpUntil>now&&b.alive){b.nextShot=Math.max(b.nextShot,1.5);return true;}if(mode==='training'){if(!b.alive){if(now>=b.respawn){Object.assign(b,spawnBot(b.id));b.x=(b.id-3)*9;b.z=-23-(b.id%3)*7;b.hp=rx5AcademyActive?(rx5AcademyLesson==='precision'?75:85):90;b.name=rx5AcademyActive?'🎯 '+rx5AcademyLesson.toUpperCase()+' '+(b.id+1):'🎯 MOVING TARGET '+(b.id+1);b.nextShot=999;}return true;}b.x+=Math.cos(now*(rx5AcademyActive?(rx5AcademyLesson==='tracking'?1.55:rx5AcademyLesson==='reaction'?2.2:.35):.6)+b.id)*dt*(rx5AcademyActive?(rx5AcademyLesson==='precision'?0:rx5AcademyLesson==='tracking'?2.3:3.6):.48);b.walk+=dt*3;b.yaw=rx2Wrap(b.yaw+dt*.25);return true;}
  if(mode==='objective'){if(!b.alive)return false;if(dist(b,pl)>17&&Math.random()<.08)b.strafedir*=-1;}return false;}
 function rx2OnBotKilled(bot,killer){if(mode==='training'){if(!bot.alive)return true;bot.hp=0;bot.alive=false;bot.respawn=performance.now()/1000+3;rx2TrainingAccuracy.hits++;rx2Kills++;toast('🎯 TARGET DOWN',550);return true;}rx2Kills++;return false;}
-function rx2MovePlayer(dx,dz,dt,running){const now=performance.now()/1000;let sp=1;if(now<rx2SlideUntil&&pl.jump<.01){sp=1.95;pl.crouched=true;}if(keys.Space&&pl.jump<=.01){const cover=rx2Covers.find(c=>c.hp>0&&Math.hypot(pl.x-c.x,pl.z-c.z)<3);if(cover){pl.vy=5.5;pl.jump=.04;toast('↗ VAULT',400);}}slide(pl,dx*sp,dz*sp,.47);}
+function rx2MovePlayer(dx,dz,dt,running){const now=performance.now()/1000;let sp=1;if(now<rx2SlideUntil&&pl.jump<.01){sp=1.95;pl.crouched=true;}if(keys.Space&&pl.jump<=.01){const cover=rx2Covers.find(c=>c.hp>0&&Math.hypot(pl.x-c.x,pl.z-c.z)<3);if(cover){pl.vy=5.5;pl.jump=.04;a3VaultAt=now;toast('↗ VAULT',400);}}slide(pl,dx*sp,dz*sp,.47);}
 function rx2Slide(){const now=performance.now()/1000;if(phase!=='playing'||paused||now<rx2SlideCooldown||pl.jump>.01)return;rx2SlideUntil=now+.48;rx2SlideCooldown=now+1.6;toast('↘ SLIDE',500);}
 function rx2Gadget(type=rx2Settings.gadget){
  const now=performance.now()/1000;
@@ -4187,7 +4202,7 @@ function rx3LoadUI(){
 }
 function rx3UpdateQualityLabel(){let q=rx3Tier();if($('rx3QualityInfo'))$('rx3QualityInfo').textContent=`Active detail: ${['MINIMAL','LIGHT','BALANCED','FULL'][q]} · adaptive motion budget · no forced RAM reservation`;}
 function rx3NewMatch(){rx3ClearVisuals();rx3MoveBlend=0;rx3Recoil=0;rx3CrouchBlend=0;rx3LandVisual=0;rx3WasAirborne=false;rx3AnimSlow=0;rx3AnimFast=0;}
-function rx3ClearVisuals(){a2CancelWeaponSwitch();a3ClearMotion();clearTimeout(rx3HitTimeout);clearTimeout(a3HitFxTimer);$('rx3HitText')?.classList.remove('active');$('rx2HitFx')?.classList.add('hide');rx3Knife={start:0,action:''};rx3HurtAt=-100;rx3InspectBoost=0;rx3LastShotAt=-1;v8GunFireAt=-10;rx3Reload={start:0,end:0,stage:''};if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');if($('rx3HurtRing'))$('rx3HurtRing').classList.remove('active');if($('weaponArt'))$('weaponArt').classList.remove('rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing');}
+function rx3ClearVisuals(){a2CancelWeaponSwitch();a3ClearMotion();a3AmbientStop();clearTimeout(rx3HitTimeout);clearTimeout(a3HitFxTimer);$('rx3HitText')?.classList.remove('active');$('rx2HitFx')?.classList.add('hide');rx3Knife={start:0,action:''};rx3HurtAt=-100;rx3InspectBoost=0;rx3LastShotAt=-1;v8GunFireAt=-10;rx3Reload={start:0,end:0,stage:''};if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');if($('rx3HurtRing'))$('rx3HurtRing').classList.remove('active');if($('weaponArt'))$('weaponArt').classList.remove('rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing');}
 function rx3ReloadStart(now,end){rx3Reload={start:now,end,stage:'out'};if(rx3Tier()<1)return;}
 function rx3ReloadPose(now){const duration=rx3Reload.end-rx3Reload.start;if(duration<=0||now>rx3Reload.end)return 0;
  const t=Math.max(0,Math.min(1,(now-rx3Reload.start)/duration));
@@ -4206,7 +4221,7 @@ function a3RecoilEnvelope(age,index){const d=[.18,.32,.40,.13][index]||.18;if(ag
 function rx3RecoilKick(now,index){const damp=Math.min(1,Math.max(0,rx3Recoil));if(rxTvUltraLight())return damp*([.11,.20,.25,.075][index]||.11);return a3RecoilEnvelope(now-v8GunFireAt,index)*([.105,.19,.23,.075][index]||.105);}
 function rx3PoseGun(ori,index,now){if(rx3Tier()===0)return;
  const kick=rx3RecoilKick(now,index);ori.y-=kick*.55;ori.pitch-=kick*.24;
- if(!rxTvUltraLight()&&rx3Tier()>1){const reload=rx3ReloadPose(now);ori.y-=reload*.12;ori.pitch-=reload*.28;ori.yaw+=reload*.15;const stride=Number(pl.walk)||0,pace=rx3MoveBlend;ori.y+=Math.sin(stride*2)*.013*pace-.07*a3SprintBlend-.06*a3SlideBlend;ori.yaw+=Math.sin(stride)*.018*pace+.08*a3SprintBlend;ori.pitch-=.10*a3SprintBlend+.08*a3SlideBlend;}
+ if(!rxTvUltraLight()&&rx3Tier()>1){const reload=rx3ReloadPose(now);ori.y-=reload*.12;ori.pitch-=reload*.28;ori.yaw+=reload*.15;const stride=Number(pl.walk)||0,pace=rx3MoveBlend;ori.y+=Math.sin(stride*2)*.013*pace-.07*a3SprintBlend-.06*a3SlideBlend;ori.yaw+=Math.sin(stride)*.018*pace+.08*a3SprintBlend;ori.pitch-=.10*a3SprintBlend+.08*a3SlideBlend;const vault=a3VaultPose(now);ori.y-=.24*vault;ori.pitch-=.34*vault;ori.yaw+=.12*vault;}
  if(rxInspectUntil>now){const t=3-(rxInspectUntil-now);const smooth=Math.sin(Math.PI*Math.min(1,t/3));ori.yaw+=Math.sin(t*2.0)*.65*smooth;ori.pitch+=Math.cos(t*1.7)*.26*smooth;ori.y+=Math.sin(t*2.2)*.12*smooth;}
 }
 function rx3KnifeAction(action,now){if(rx3Tier()<=0)return;rx3Knife={action,start:now};if(rx3Tier()>=2)rx3AnimateClass('rx3-knife-swing');}
@@ -4229,6 +4244,7 @@ function rx3BossPoseAt(b,now){const warning=(b.nextShot||0)<.65;const clock=now+
 function rx3VictoryPrepare(){rx3EndWin=mode==='boss'?vxBossOutcome==='win':mode==='mystery'?vxRole==='murderer'?bots.every(b=>!b.alive):pl.alive:pl.kills>=30||mode==='training';}
 function rx3VictoryShow(){const el=$('rx3EndPose');if(!el)return;const title=$('endTitle')?.textContent||'';const lose=/defeat|lose|lost|هزيم/i.test(title);const win=/victory|win|won|فوز/i.test(title);const yes=win||(!lose&&rx3EndWin);el.textContent=yes?'🏆 ✨ 🎉':'🛡️ 💥';el.classList.toggle('loss',!yes);el.style.animation='none';void el.getBoundingClientRect();el.style.animation='';}
 function rx3Tick(now,dt,frameMs){
+ if(!window.RecoilCity?.active){if(phase==='playing'&&!paused&&pl.alive)a3AmbientTick(a3AmbientKind(rxWeather,mode),now);else a3AmbientStop();}
  rx3Recoil=Math.max(0,rx3Recoil-dt*5.3);
  if(phase==='playing'&&!paused){
  if(now-v8GunFireAt<dt*1.5&&v8GunFireAt>0){ // only once per actual shot
@@ -4242,8 +4258,10 @@ function rx3Tick(now,dt,frameMs){
  if(rx3AnimSlow>=2){rx3AutoPenalty=Math.min(2,rx3AutoPenalty+1);rx3AnimSlow=0;rx3UpdateQualityLabel();}else if(rx3AnimFast>=3){rx3AutoPenalty=Math.max(0,rx3AutoPenalty-1);rx3AnimFast=0;rx3UpdateQualityLabel();}}
 }
 let rx3LastShotAt=-1;
-let a3HitFxTimer=0,a3StepDistance=0,a3SprintBlend=0,a3SlideBlend=0;
-function a3ClearMotion(){a3StepDistance=0;a3SprintBlend=0;a3SlideBlend=0;rx3MoveBlend=0;}
+let a3HitFxTimer=0,a3StepDistance=0,a3SprintBlend=0,a3SlideBlend=0,a3VaultAt=-100;
+function a3ClearMotion(){a3StepDistance=0;a3SprintBlend=0;a3SlideBlend=0;rx3MoveBlend=0;a3VaultAt=-100;}
+function a3VaultEnvelope(age){if(age<0||age>=.58)return 0;return age<.16?a3Smoothstep(age/.16):1-a3Smoothstep((age-.16)/.42);}
+function a3VaultPose(now){return rxTvUltraLight()||rx3Tier()<2?0:a3VaultEnvelope(now-a3VaultAt);}
 function a3StepAdvance(distance,travel,stride){if(!Number.isFinite(travel)||travel<0||travel>2)return {distance:0,step:false};const next=distance+travel;return next>=stride?{distance:next%stride,step:true}:{distance:next,step:false};}
 function a3LocalMotion(dt,travel,running,sliding,grounded,now){
  if(rxTvUltraLight()||rx3Tier()<2){a3ClearMotion();return;}
@@ -4303,7 +4321,7 @@ rxseSetup();v8GrantArmoryWithToken();vxSetup();rxSetupX1();rx2Setup();vxSyncTrus
 })();
 
 
-document.addEventListener('visibilitychange',()=>{if(document.hidden){a2ClearHeldInputs();try{audioCtx()?.suspend();}catch(e){}}else if(sound&&allAudioStarted){try{audioCtx()?.resume();}catch(e){}}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){a2ClearHeldInputs();a3AmbientStop();try{audioCtx()?.suspend();}catch(e){}}else if(sound&&allAudioStarted){try{audioCtx()?.resume();}catch(e){}}});
 window.addEventListener('pagehide',a2ClearHeldInputs);
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();mouseDown=false;mobileFire=false;if(rxTvUltraLight()&&rxTvSwitchToSoftware()){console.warn('RECOIL X: TV GPU lost; using software renderer.');return;}paused=true;console.warn('RECOIL X: GPU context lost. Pausing rendering until recovered.');});
 canvas.addEventListener('webglcontextrestored',()=>{if(!gl)return;try{v91StaticChunks=[];program=null;buffer=null;v91DynamicCapacity=0;setupGL();paused=false;console.info('RECOIL X: GPU context restored.');}catch(error){console.error('GPU recovery failed',error);}});
@@ -6030,6 +6048,10 @@ function crownHumanoidPose(b,now,model,motion) {
   if(model==='pawn')pose.head[0]+=.14;
   if(model==='knight')pose.head[0]-=special*.32;
   z1PoseDetails(pose,b,model,step,walk,run,crouch,shoot,reload,hit,leap,free,special,dance);
+  if(b===pl&&model==='fighter'&&!down&&!victory&&!localKnife){const vault=a3VaultPose(now),sliding=rx3Tier()>1&&!rxTvUltraLight()?a3SlideBlend:0;
+    pose.spine[0]-=.33*vault+.23*sliding;pose.hips[4]-=.13*sliding;
+    for(const side of ['L','R']){pose['thigh'+side][0]+=(side==='L'?.58:.25)*vault-.32*sliding;pose['knee'+side][0]-=.36*vault;pose['shoulder'+side][0]+=.28*vault;}
+  }
   return pose;
 }
 
