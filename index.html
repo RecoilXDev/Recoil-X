@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="Z.5-SAND-8" />
+<meta name="rx-release" content="A.3 — Perfection" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
@@ -955,7 +956,12 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 #rx5AcademyClose{flex:0 0 40px;font-size:17px!important}
 @media(max-width:530px){#rx5AcademyScores{grid-template-columns:1fr}}
 </style>
-<style id="rx5-focus-hud-css">body.rx5-focus-hud #tips{display:none!important}body.rx5-focus-hud .hud-panel{backdrop-filter:none!important;box-shadow:none!important}body.rx5-focus-hud #rxWeatherLabel{display:none!important}</style>
+<style id="rx5-focus-hud-css">body.rx5-focus-hud #tips{display:none!important}body.rx5-focus-hud .hud-panel{backdrop-filter:none!important;box-shadow:none!important}body.rx5-focus-hud #rxWeatherLabel{display:none!important}/* A.3 menu motion: short opacity/position transitions, no layout animation. */
+@keyframes a3MenuIn{from{opacity:.62;transform:translateY(5px)}to{opacity:1;transform:none}}
+body:not(.v91-lite):not(.rx-tv-ultralight):not(.rx5-reduce-motion) #overlay .panel-content>div[id]:not(.hide){animation:a3MenuIn .16s ease-out}
+body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd58a;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){#overlay .panel-content>div[id]:not(.hide){animation:none!important}}
+</style>
 </head>
 <body>
 <div id="rxStage">
@@ -964,7 +970,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">UPDATE A</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">UPDATE A.3</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -979,7 +985,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 <div id="mobileControls"><div class="joybase" id="joybase"><div class="joystick" id="joystick"></div></div><div class="touch-swipe" id="touchswipe"></div><div class="touchbuttons"><button class="touchbtn fire" id="touchfire" data-t="fire">إطلاق</button><button class="touchbtn" id="touchjump" data-t="jump">قفز</button><button class="touchbtn" id="touchreload" data-t="reload">تعبئة</button><button class="touchbtn" id="touchweapon" data-t="weapon">سلاح</button><button class="touchbtn skill" id="touchcrouch" data-t="crouch">تسلّل</button><button class="touchbtn skill" id="touchsprint" data-t="sprint">ركض</button></div><button id="rx2TouchGadget" class="rx2-touch hide" type="button">💨 GADGET</button><button id="rx2TouchSlide" class="rx2-touch rx2-slide hide" type="button">↘ SLIDE</button><button id="v8TouchView" class="hide" type="button">👁 VIEW</button><button class="touch-chest" id="touchchest" data-t="openChest">Open chest</button></div>
 <div id="v92MobileIndicator" class="v92-mobile-indicator" aria-live="polite"></div><div id="overlay"><div class="panel"><div class="panel-content">
 <div id="deviceMenu">
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.3</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
   <div class="eyebrow" data-t="chooseDeviceLabel">SELECT YOUR PLATFORM</div>
   <h1 class="game-title">RECOIL <span>X</span></h1><div class="recoil-tagline">LOCK-LOAD-DOMINATE</div>
   <p class="subtitle" data-t="deviceIntro">هل تلعب على هاتف أم كمبيوتر؟ سنجهّز التحكم المناسب لك.</p>
@@ -988,7 +994,7 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
 </div>
 <div id="mainMenu" class="hide">
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A</div></div>
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A.3</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -1015,9 +1021,9 @@ body.rx5-reticle-bold #crosshair{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 
   </div>
   <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Compact menu</button>
 </div>
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.3</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">Five classic maps, plus expansion and mystery arenas. Play solo or online.</div>
-  <div class="menu-stats"><span class="versionlabel">UPDATE A</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
+  <div class="menu-stats"><span class="versionlabel">UPDATE A.3</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
   <div class="mode-grid"><button class="choice" id="soloBtn"><span>🎯</span><strong data-t="solo">حارب الروبوتات</strong><small data-t="soloSub">العب وحدك • واكسب العملات</small></button><button class="choice" id="roomBtn"><span>🔗</span><strong data-t="privateRoom">غرفة خاصة</strong><small data-t="roomSub">رمز دخول • مباريات مع الأصدقاء</small></button></div>
   <div class="menu-actions"><button class="primary" id="shopBtn">🛍️ <span data-t="skinShop">متجر الأزياء</span></button><button class="primary crate-main-btn" id="crateBtn">🎁 <span data-t="lootBoxes">صناديق الغنائم</span></button><button class="primary v8-gun-main-btn" id="v8GunBtn">🔫 <span data-t="v8GunBox">Gun Box</span></button><button class="primary pet-main-btn" id="petBtn">🐾 <span data-t="companions">المرافقون</span></button><button class="primary battlepass-main-btn" id="passBtn">🏆 <span data-t="battlePass">BATTLE PASS</span></button><button class="secondary" id="mapsBtn">🗳️ <span data-t="mapVote">التصويت على الخريطة</span></button></div>
 <div id="rxsePlayerBadge" class="rxse-banner hide" aria-label="Equipped seasonal title"></div><div id="rxseMenuBanner" class="rxse-banner hide" aria-live="polite"></div><button id="rxseOpenBtn" class="primary full hide" type="button">🎊 SEASONAL EVENT HUB</button>
@@ -1823,7 +1829,7 @@ function renderPet(out,now,eye=null,center=null){
  }
  crownDrawPet(out,p,x,y,z,a,now);
 }
-function resetPlayer(){a2CancelWeaponSwitch();crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:1.63,yaw:0,pitch:0,jump:0,vy:0,hp:100,shield:75,kills:0,deaths:0,shots:0,hits:0,weapon:0,nextShot:0,reloadEnd:0,alive:true,walk:0,crouched:false,sprintUsed:0,sprintLockedUntil:0,spawnProtectedUntil:0});pl.mags=weapons.map(w=>w.mag);pl.stocks=weapons.map(w=>w.reserve);drawGunModel(0);}
+function resetPlayer(){a2CancelWeaponSwitch();a3ResetCamera();crownActorMotion.delete(pl);Object.assign(pl,{x:0,z:29,y:1.63,yaw:0,pitch:0,jump:0,vy:0,hp:100,shield:75,kills:0,deaths:0,shots:0,hits:0,weapon:0,nextShot:0,reloadEnd:0,alive:true,walk:0,crouched:false,sprintUsed:0,sprintLockedUntil:0,spawnProtectedUntil:0});pl.mags=weapons.map(w=>w.mag);pl.stocks=weapons.map(w=>w.reserve);drawGunModel(0);}
 const botNames=['SandViper_01','DuneHunter_07','FalconBot_12','MirageGhost','Scorpion_X','DustStriker','OasisSniper','RedCanyonAI','StormRider','NightRecon','GoldWarden','NomadZero'];
 function spawnBot(id){const og=activeMap()?.ogClassic;let spots=og?z5ClassicSpawnPoints:spawns;let spot=spots[(id+1)%spots.length],pos=spot;for(let i=0;i<25;i++){let hot=id<6;let range=og?29:ARENA_HALF-4;let travel=og?26:52;let tryx=hot?clamp(pl.x+rand(-travel,travel),-range,range):rand(-range,range),tryz=hot?clamp(pl.z+rand(-travel,travel),-range,range):rand(-range,range);if(len2(tryx-pl.x,tryz-pl.z)>16&&!blocked(tryx,tryz,.7)){pos=[tryx,tryz];break;}}
 return {id,x:pos[0],z:pos[1],hp:100,yaw:rand(-3,3),speed:rand(2.0,3.1),nextShot:rand(2.4,4.3),sawTarget:false,alive:true,respawn:0,strafedir:Math.random()>.5?1:-1,turn:rand(.9,2),walk:0,name:botNames[id%botNames.length],skinId:skins[1+id%(skins.length-1)].id,personality:['rusher','flanker','guardian','hunter'][id%4]};}
@@ -1866,7 +1872,7 @@ else if(remotePlayers.has(target.id)){let rem=remotePlayers.get(target.id);rem.h
 return hits;}
 function killBot(bot,killer){if(rx2OnBotKilled(bot,killer))return;if(mode==='duel'){rxDuelBotKilled(bot,killer);return;}if(mode==='infection'){rxInfectionBotKilled(bot,killer);return;}if(mode==='mystery'){vxMysteryBotKill(bot,killer);return;}if(mode==='boss'){vxBossOnKill(bot,killer);return;}vxOnKill(killer);bot.deaths=(bot.deaths||0)+1;bot.alive=false;rx5MasteryKill(pl.weapon,killer);bot.respawn=performance.now()/1000+rand(3.5,6.5);killer.kills=(killer.kills||0)+1;addFeed(`${killer.name||username} ✦ ${bot.name}`);if(killer===pl)addCoins(Math.round(25*(equippedPet==='scarab'?1.2:1)*(performance.now()/1000<vxDoubleCoinUntil?2:1)));else if((mode==='host'||z1IsPartyHost())&&remoteConns.has(killer.id))remoteConns.get(killer.id)?.send({t:'coins',amount:25});toast('💥 '+tr('botKill')+' +25 🪙');hitFlash=.22;playSound('kill');if(mode==='host')broadcast({t:'feed',text:`${killer.name||username} ✦ ${bot.name}`});}
 function animateGun(anim,duration){let art=$('weaponArt');art.classList.remove('shoot','reload','switching');void art.offsetWidth;art.classList.add(anim);clearTimeout(gunAnimTimer);gunAnimTimer=setTimeout(()=>art.classList.remove(anim),duration);}
-function fire(now){if(rx5ClientOverheated(now))return;if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}const rx5ShotWeapon=rx5BlueprintWeapon(w,pl.weapon);pl.nextShot=now+rx5ShotWeapon.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;rx5ClientShot(pl.weapon);pl.shots+=rx5ShotWeapon.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
+function fire(now){if(rx5ClientOverheated(now))return;if(rx2FireLocked()||z1Vehicle||z1ChatOpen)return;if(mode==='mystery'){vxMysteryFire(now);return;}if(spectating||!pl.alive||paused||phase!=='playing'||now<pl.nextShot||now<pl.reloadEnd||now<rx2GunReadyAt)return;let w=weapons[pl.weapon];if(pl.mags[pl.weapon]<=0){reload(now);return}v8GunFireAt=now;if(['solo','custom','survival','objective','builder'].includes(mode))rx5LastPlayerShot={x:pl.x,z:pl.z,at:now};const rx5ShotWeapon=rx5BlueprintWeapon(w,pl.weapon);pl.nextShot=now+rx5ShotWeapon.cadence*(mode==='chaos'&&rxChaosType==='rapid'?.55:1);pl.mags[pl.weapon]--;rx5ClientShot(pl.weapon);pl.shots+=rx5ShotWeapon.pellets;flashUntil=now+.065;for(let i=0;i<4;i++)particles.push({x:rxVW()*.72,y:rxVH()*.62,vx:rand(-80,65),vy:rand(-95,-24),life:.26,max:.26,size:rand(2,5),type:'smoke'});const art=$('weaponArt');rx2RecordShot(now,w);animateGun('shoot',125);playSound(w.id==='sniper'?'sniper':w.id==='shot'?'shotgun':'gun');
 if(mode==='guest'){if(hostConn?.open)hostConn.send({t:'fire',x:pl.x,z:pl.z,yaw:pl.yaw,pitch:pl.pitch,crouched:pl.crouched,weapon:pl.weapon});}else{const hits=fireCore(pl,rx5ShotWeapon);pl.hits+=hits;rx5MasteryHits(pl.weapon,hits);if(hits){hitFlash=.14;$('crosshair').classList.add('hit');setTimeout(()=>$('crosshair').classList.remove('hit'),100);playSound('hit');}}
 updateHUD();}
 function reload(now=performance.now()/1000){const rx3Started=pl&&pl.alive&&phase==='playing'&&now>=(pl.reloadEnd||0)&&pl.mags&&pl.stocks&&pl.mags[pl.weapon]<weapons[pl.weapon].max&&pl.stocks[pl.weapon]>0;if(!pl.alive||now<pl.reloadEnd)return;const w=weapons[pl.weapon],n=pl.weapon;if(pl.mags[n]>=w.max||pl.stocks[n]<=0)return;pl.reloadEnd=now+w.reload*(equippedPet==='cobra'?.84:1);toast('🔄 '+tr('reloadMsg'));animateGun('reload',w.reload*(equippedPet==='cobra'?.84:1)*1000);if(rx3Started)rx3ReloadStart(now,pl.reloadEnd);playSound('reload');}
@@ -1875,7 +1881,7 @@ function clearDeathTimers(){if(deathTimer!==null)clearTimeout(deathTimer);if(dea
 function beginDeathCountdown(hostControlled=false){clearDeathTimers();if(phase!=='playing')return;deathDeadline=Date.now()+3000;showScreen('deadMenu');rx2ShowKillcam();$('respawnCountdown').textContent='3';if(document.pointerLockElement)document.exitPointerLock();deathTicker=setInterval(()=>{$('respawnCountdown').textContent=String(Math.max(0,Math.ceil((deathDeadline-Date.now())/1000)));},90);
 if(!hostControlled){deathTimer=setTimeout(()=>{if(phase==='playing'&&!pl.alive)respawn();},3000);}}
 function hurt(dmg){rx2OnHurt(dmg);rx3PlayerHurt(dmg);if(!pl.alive||spectating)return;if(performance.now()/1000<pl.spawnProtectedUntil)return;let shieldAbsorb=Math.min(pl.shield,dmg*.65);pl.shield-=shieldAbsorb;pl.hp-=dmg-shieldAbsorb;$('hurtfx').style.opacity='.8';setTimeout(()=>$('hurtfx').style.opacity='0',130);playSound('hurt');if(pl.hp<=0){pl.hp=0;pl.alive=false;pl.deaths++;vxResetStreak();if(mode==='mystery'){vxMysteryPlayerDeath();return;}if(mode==='duel'){rxDuelPlayerDown();return;}if(mode==='infection'){rxInfectionOutcome='lose';finish();return;}if(mode==='boss')vxBossOutcome='lose';beginDeathCountdown(false);}updateHUD();}
-function respawn(x=null,z=null){vxResetStreak();clearDeathTimers();let options=(activeMap()?.ogClassic?z5ClassicSpawnPoints:spawns).filter(q=>!blocked(q[0],q[1],.6)),s=options[Math.floor(Math.random()*options.length)]||[0,29];pl.x=Number.isFinite(x)?x:s[0];pl.z=Number.isFinite(z)?z:s[1];pl.y=1.63;pl.jump=0;pl.vy=0;pl.hp=100;pl.shield=75;pl.alive=true;pl.crouched=false;mobileCrouch=false;pl.sprintUsed=0;pl.sprintLockedUntil=0;pl.spawnProtectedUntil=performance.now()/1000+2.5;pl.mags[pl.weapon]=weapons[pl.weapon].mag;$('weaponArt').classList.remove('sneaking');$('touchcrouch').classList.remove('active');if(mode!=='guest')shuffleBotsAfterDeath();if(!spectating){hideOverlay();capturePointer();}updateHUD();} 
+function respawn(x=null,z=null){a3ResetCamera();vxResetStreak();clearDeathTimers();let options=(activeMap()?.ogClassic?z5ClassicSpawnPoints:spawns).filter(q=>!blocked(q[0],q[1],.6)),s=options[Math.floor(Math.random()*options.length)]||[0,29];pl.x=Number.isFinite(x)?x:s[0];pl.z=Number.isFinite(z)?z:s[1];pl.y=1.63;pl.jump=0;pl.vy=0;pl.hp=100;pl.shield=75;pl.alive=true;pl.crouched=false;mobileCrouch=false;pl.sprintUsed=0;pl.sprintLockedUntil=0;pl.spawnProtectedUntil=performance.now()/1000+2.5;pl.mags[pl.weapon]=weapons[pl.weapon].mag;$('weaponArt').classList.remove('sneaking');$('touchcrouch').classList.remove('active');if(mode!=='guest')shuffleBotsAfterDeath();if(!spectating){hideOverlay();capturePointer();}updateHUD();} 
 
 // Z.5 Tactical Intelligence — offline bots use cover, memory, deliberate flanks and ambushes.
 // No hidden aiming through walls: shots need a current server-independent LOS and facing check.
@@ -2078,7 +2084,7 @@ if(mode==='host')for(const guest of remotePlayers.values()){if(guest.alive===fal
 if(!pl.alive&&!spectating)return;
 if(!spectating&&!z1ChatOpen&&!z1DriveTick(dt,now)){tickPet(dt);
 let f=(keys.KeyW?1:0)-(keys.KeyS?1:0),r=(keys.KeyD?1:0)-(keys.KeyA?1:0);if(mobile){f+=-moveJoy.y;r+=moveJoy.x;}let mag=Math.hypot(f,r);if(mag>1){f/=mag;r/=mag;mag=1;}
-pl.crouched=!!(mobileCrouch||keys.KeyC||keys.ControlLeft||keys.ControlRight);rx3UpdateMovement(dt,pl.crouched,pl.jump);
+pl.crouched=!!(mobileCrouch||keys.KeyC||keys.ControlLeft||keys.ControlRight);rx3UpdateMovement(dt,pl.crouched,pl.jump,mag);
 let running=(keys.ShiftLeft||keys.ShiftRight||mobileSprint)&&mag>.1&&!pl.crouched&&now>=pl.sprintLockedUntil;
 if(running){pl.sprintUsed=Math.min(10,pl.sprintUsed+dt*(1-.14*(x4Data.skills.stamina||0)));if(pl.sprintUsed>=10){running=false;pl.sprintLockedUntil=now+10;pl.sprintUsed=10;toast('⚡ '+tr('cooldown'),1300);}}
 if(pl.sprintLockedUntil&&now>=pl.sprintLockedUntil){pl.sprintLockedUntil=0;pl.sprintUsed=0;toast('⚡ '+tr('sprintReady'),900);}
@@ -2105,7 +2111,21 @@ function toast(text,duration=1100){const t=$('toast');t.textContent=text;t.style
 function addFeed(text){feedEntries.push({text,until:Date.now()+4500});renderFeed();}
 function renderFeed(){feedEntries=feedEntries.filter(a=>a.until>Date.now()).slice(-5);$('killfeed').replaceChildren(...feedEntries.map(a=>{let div=document.createElement('div');div.className='feed';div.textContent=a.text;return div}));}
 const audioCtx=(()=>{let a=null;return()=>{if(!sound)return null;try{if(!a)a=new (window.AudioContext||window.webkitAudioContext)();if(a.state==='suspended')a.resume();return a}catch(e){return null}}})();
-function playSound(type){const ac=audioCtx();if(!ac)return;let n=ac.currentTime,osc=ac.createOscillator(),gain=ac.createGain();osc.connect(gain).connect(ac.destination);let freq={gun:160,shotgun:90,sniper:70,hit:660,kill:830,hurt:110,reload:330,jump:260}[type]||190;osc.type=type==='kill'||type==='hit'?'sine':'sawtooth';osc.frequency.setValueAtTime(freq,n);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*(type==='kill'?1.7:.35)),n+.12);gain.gain.setValueAtTime(type==='gun'?.035:.063,n);gain.gain.exponentialRampToValueAtTime(.0001,n+.13);osc.start(n);osc.stop(n+.15);}
+function playSound(type){const ac=audioCtx();if(!ac)return;if(!rxTvUltraLight()&&a3PlaySound(ac,type))return;let n=ac.currentTime,osc=ac.createOscillator(),gain=ac.createGain();osc.connect(gain).connect(ac.destination);let freq={gun:160,shotgun:90,sniper:70,hit:660,kill:830,hurt:110,reload:330,jump:260}[type]||190;osc.type=type==='kill'||type==='hit'?'sine':'sawtooth';osc.frequency.setValueAtTime(freq,n);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*(type==='kill'?1.7:.35)),n+.12);gain.gain.setValueAtTime(type==='gun'?.035:.063,n);gain.gain.exponentialRampToValueAtTime(.0001,n+.13);osc.start(n);osc.stop(n+.15);}
+// A.3 procedural audio: bounded polyphony, spatial attenuation, and class-specific envelopes.
+const A3_SOUND={gun:[175,48,.11,'triangle',.042],shotgun:[105,32,.19,'sawtooth',.057],sniper:[125,34,.25,'triangle',.065],hit:[760,525,.085,'sine',.038],kill:[660,1080,.18,'sine',.052],hurt:[115,55,.14,'triangle',.047],reload:[405,175,.095,'triangle',.035],jump:[220,110,.10,'sine',.024],'enemy-shot':[155,46,.15,'triangle',.035],break:[120,45,.17,'sawtooth',.040]};
+function a3SpatialMix(dx,dz,yaw){const d=Math.hypot(dx,dz);return {gain:Math.max(0,1-d/70)**1.65,pan:Math.sin(Math.atan2(dx,-dz)-yaw)};}
+let a3VoiceEnds=[];
+function a3PlaySound(ac,type,spatial={gain:1,pan:0}){
+ const p=A3_SOUND[type];if(!p)return false;const now=ac.currentTime;if(!Number.isFinite(now))return false;
+ a3VoiceEnds=a3VoiceEnds.filter(end=>end>now);const limit=mobile?5:10;if(a3VoiceEnds.length>=limit||spatial.gain<.005)return true;
+ try{const osc=ac.createOscillator(),gain=ac.createGain(),pan=typeof ac.createStereoPanner==='function'?ac.createStereoPanner():null;
+ osc.type=p[3];osc.frequency.setValueAtTime(p[0],now);osc.frequency.exponentialRampToValueAtTime(p[1],now+p[2]);
+ gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,p[4]*spatial.gain),now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+p[2]);
+ osc.connect(gain);if(pan){pan.pan.value=Math.max(-1,Math.min(1,spatial.pan));gain.connect(pan);pan.connect(ac.destination);}else gain.connect(ac.destination);
+ osc.onended=()=>{try{osc.disconnect();gain.disconnect();pan?.disconnect();}catch{}};osc.start(now);osc.stop(now+p[2]+.02);a3VoiceEnds.push(now+p[2]+.02);return true;
+ }catch{return false;}
+}
 // Original in-game soundtrack composed for Mirage Ops: procedural oscillator melodies, no downloads.
 let musicMode='lobby',musicBeat=0,nextMusicBeat=0,allAudioStarted=false;
 const SOUNDTRACK={
@@ -2501,7 +2521,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='UPDATE A • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='UPDATE A.3 • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -3562,7 +3582,11 @@ window.addEventListener('keydown',e=>{if((e.code==='ShiftRight'||e.code==='KeyL'
 $('rxShiftLockBtn').addEventListener('click',rxToggleShiftLock);
 // Smoothly slide the THIRD-PERSON camera to the right of the avatar, like Roblox Shift Lock.
 // The reticle stays centered, mouse look stays active, and the character faces the camera yaw.
-let rxShoulderBlend=0,rxShoulderLast=0;
+let rxShoulderBlend=0,rxShoulderLast=0,a3CameraReach=1,a3CameraAt=0,a3CameraX=0,a3CameraZ=0;
+function a3Ease(current,target,dt,speed){return current+(target-current)*(1-Math.exp(-Math.max(0,dt)*speed));}
+function a3Smoothstep(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);}
+function a3SafeCameraReach(current,target,dt){return target<=current?target:a3Ease(current,target,dt,14);}
+function a3ResetCamera(){a3CameraReach=1;a3CameraAt=0;rxShoulderLast=0;rxShoulderBlend=0;}
 function rxCameraCollision(anchor,want){
  const vx=want[0]-anchor[0],vy=want[1]-anchor[1],vz=want[2]-anchor[2];
  const length=Math.hypot(vx,vy,vz);if(length<.001)return want;
@@ -3577,7 +3601,7 @@ function rxCameraCollision(anchor,want){
 function v8Camera(){
  if(z1Vehicle)return z1JeepCamera();
  const direction=aimVector(pl.yaw,pl.pitch),firstEye=[pl.x,pl.y,pl.z];
- if(!v8ThirdPerson){rxShoulderBlend=0;rxShoulderLast=0;return {eye:firstEye,center:[firstEye[0]+direction.x,firstEye[1]+direction.y,firstEye[2]+direction.z]};}
+ if(!v8ThirdPerson){a3ResetCamera();return {eye:firstEye,center:[firstEye[0]+direction.x,firstEye[1]+direction.y,firstEye[2]+direction.z]};}
  const now=performance.now(),delta=rxShoulderLast?Math.min(.07,Math.max(0,(now-rxShoulderLast)/1000)):.016;
  rxShoulderLast=now;
  const target=rxShiftLock?1:0;
@@ -3594,7 +3618,14 @@ function v8Camera(){
  const shoulderCenter=[shoulderEye[0]+direction.x*28,shoulderEye[1]+direction.y*28,shoulderEye[2]+direction.z*28];
  const intendedEye=normalEye.map((v,i)=>v+(shoulderEye[i]-v)*blend);
  const center=normalCenter.map((v,i)=>v+(shoulderCenter[i]-v)*blend);
- const eye=rxCameraCollision([pl.x,thirdCamY,pl.z],intendedEye);
+ const anchor=[pl.x,thirdCamY,pl.z];let eye=rxCameraCollision(anchor,intendedEye);
+ // Retract immediately at a wall; ease outward once the line of sight clears.
+ if(!rxTvUltraLight()&&rx3Tier()>1){const span=Math.hypot(...intendedEye.map((v,i)=>v-anchor[i]))||1,reach=clamp(Math.hypot(...eye.map((v,i)=>v-anchor[i]))/span,0,1);
+   const reset=!a3CameraAt||now-a3CameraAt>250||Math.hypot(pl.x-a3CameraX,pl.z-a3CameraZ)>3.5;
+   a3CameraReach=reset?reach:a3SafeCameraReach(a3CameraReach,reach,Math.min(.07,(now-a3CameraAt)/1000));
+   a3CameraAt=now;a3CameraX=pl.x;a3CameraZ=pl.z;
+   if(a3CameraReach<reach&&reach>0)eye=anchor.map((v,i)=>v+(eye[i]-v)*a3CameraReach/reach);
+ }else{a3CameraAt=0;a3CameraReach=1;}
  // Keep the view direction consistent if the camera is pushed in by nearby walls.
  return {eye,center:[center[0]+eye[0]-intendedEye[0],center[1]+eye[1]-intendedEye[1],center[2]+eye[2]-intendedEye[2]]};
 }
@@ -3911,7 +3942,7 @@ function rx2Gadget(type=rx2Settings.gadget){
  rx2SoundAt('gadget',x,z);return true;
 }
 function rx2SmokeBlocks(a,b){return rx2Gadgets.some(g=>g.type==='smoke'&&performance.now()/1000-g.started<g.duration&&Math.min(len2(a.x-g.x,a.z-g.z),len2(b.x-g.x,b.z-g.z))<5);}
-function rx2SoundAt(type,x,z){if(!sound)return;try{const ac=audioCtx();if(!ac)return;const osc=ac.createOscillator(),gain=ac.createGain(),pan=ac.createStereoPanner?ac.createStereoPanner():null;const d=clamp(Math.hypot(x-pl.x,z-pl.z),0,90),dir=Math.atan2(x-pl.x,-(z-pl.z))-pl.yaw;
+function rx2SoundAt(type,x,z){if(!sound)return;try{const ac=audioCtx();if(!ac)return;if(!rxTvUltraLight()){const spatial=a3SpatialMix(x-pl.x,z-pl.z,pl.yaw);if(spatial.gain<=0)return;if(a3PlaySound(ac,type,spatial))return;}const osc=ac.createOscillator(),gain=ac.createGain(),pan=ac.createStereoPanner?ac.createStereoPanner():null;const d=clamp(Math.hypot(x-pl.x,z-pl.z),0,90),dir=Math.atan2(x-pl.x,-(z-pl.z))-pl.yaw;
  osc.type=type==='break'?'sawtooth':'triangle';osc.frequency.setValueAtTime(type==='break'?140:410,ac.currentTime);osc.frequency.exponentialRampToValueAtTime(70,ac.currentTime+.16);gain.gain.value=Math.max(.005,.065*(1-d/100));osc.connect(gain);if(pan){pan.pan.value=clamp(Math.sin(dir),-1,1);gain.connect(pan);pan.connect(ac.destination);}else gain.connect(ac.destination);osc.start();osc.stop(ac.currentTime+.16);}catch(e){}}
 function rx2Tick(dt,now){if(phase!=='playing')return;rx2Covers=rx2Covers.filter(c=>!c.rx5Portable||(c.hp>0&&c.expiresAt>now));rx2Heat=Math.max(0,rx2Heat-dt*29);rx2Gadgets=rx2Gadgets.filter(g=>now-g.started<g.duration);
  if(rx2Killcam.length===0||now-rx2Killcam[rx2Killcam.length-1].t>.25)rx2Snapshot(now);
@@ -4135,11 +4166,12 @@ function rxseSetup(){rxseRestoreCollected();$('rxseOpenBtn').onclick=()=>{if(!rx
 let rx3Quality = getStore('rx3_animation_quality','auto');
 if(!['auto','high','balanced','lite','off'].includes(rx3Quality))rx3Quality='auto';
 let rx3Reload={start:0,end:0,stage:''},rx3Knife={start:0,action:''},rx3Recoil=0,rx3CrouchBlend=0,rx3LandVisual=0,rx3WasAirborne=false,rx3HitTimeout=0,rx3HurtAt=0,rx3InspectBoost=0;
-let rx3AnimSlow=0,rx3AnimFast=0,rx3AutoPenalty=0,rx3LastAdaptive=0,rx3EndWin=false;
+let rx3AnimSlow=0,rx3AnimFast=0,rx3AutoPenalty=0,rx3LastAdaptive=0,rx3EndWin=false,rx3MoveBlend=0;
 const rx3WeaponName=['Assault Rifle','Shotgun','Sniper Rifle','SMG'];
 function rx3Tier(){
- if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return 0;
+ if(document.body.classList.contains('rx5-reduce-motion')||window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return 0;
  if(rx3Quality==='off')return 0;
+ if(rxTvUltraLight())return 1;
  if(rx3Quality==='lite')return 1;
  if(rx3Quality==='balanced')return 2;
  if(rx3Quality==='high')return 3;
@@ -4153,25 +4185,27 @@ function rx3LoadUI(){
  rx3UpdateQualityLabel();
 }
 function rx3UpdateQualityLabel(){let q=rx3Tier();if($('rx3QualityInfo'))$('rx3QualityInfo').textContent=`Active detail: ${['MINIMAL','LIGHT','BALANCED','FULL'][q]} · adaptive motion budget · no forced RAM reservation`;}
-function rx3NewMatch(){rx3ClearVisuals();rx3Recoil=0;rx3CrouchBlend=0;rx3LandVisual=0;rx3WasAirborne=false;rx3AnimSlow=0;rx3AnimFast=0;}
+function rx3NewMatch(){rx3ClearVisuals();rx3MoveBlend=0;rx3Recoil=0;rx3CrouchBlend=0;rx3LandVisual=0;rx3WasAirborne=false;rx3AnimSlow=0;rx3AnimFast=0;}
 function rx3ClearVisuals(){a2CancelWeaponSwitch();rx3Reload={start:0,end:0,stage:''};if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');if($('rx3HurtRing'))$('rx3HurtRing').classList.remove('active');if($('weaponArt'))$('weaponArt').classList.remove('rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing');}
 function rx3ReloadStart(now,end){rx3Reload={start:now,end,stage:'out'};if(rx3Tier()<1)return;}
 function rx3ReloadPose(now){const duration=rx3Reload.end-rx3Reload.start;if(duration<=0||now>rx3Reload.end)return 0;
  const t=Math.max(0,Math.min(1,(now-rx3Reload.start)/duration));
- return t<.2?t/.2:t<.6?1:t<.85?(1-(t-.6)/.25):0;
+ return rxTvUltraLight()?t<.2?t/.2:t<.6?1:t<.85?(1-(t-.6)/.25):0:t<.2?a3Smoothstep(t/.2):t<.6?1:t<.89?1-a3Smoothstep((t-.6)/.29):0;
 }
 function rx3AnimateClass(name){const art=$('weaponArt');if(!art)return;for(const c of ['rx3-draw','rx3-mag-out','rx3-mag-in','rx3-bolt','rx3-knife-swing'])art.classList.remove(c);void art.getBoundingClientRect();art.classList.add(name);}
 function rx3EquipWeapon(index){if(rx3Tier()>0)rx3AnimateClass('rx3-draw');rx3Recoil=0;}
 function rx3ApplyReload(now){const el=$('rx3ReloadView');if(!el)return;
  const duration=rx3Reload.end-rx3Reload.start;if(duration<=0||now>rx3Reload.end||phase!=='playing'||paused||!pl.alive){if(el.classList.contains('active'))el.classList.remove('active');return;}
  const t=Math.max(0,Math.min(1,(now-rx3Reload.start)/duration));
- const w=weapons[pl.weapon];const stage=t<.24?'MAG OUT':t<.69?'REPLACE '+(w.id==='shotgun'?'SHELLS':'MAGAZINE'):t<.89?'CHAMBER':'READY';
+ const w=weapons[pl.weapon];const stage=t<.24?'MAG OUT':t<.69?'REPLACE '+(w.id==='shot'?'SHELLS':'MAGAZINE'):t<.89?'CHAMBER':'READY';
  $('rx3ReloadStage').textContent=`${rx3WeaponName[pl.weapon]||'WEAPON'} · ${stage}`;$('rx3ReloadFill').style.width=Math.round(t*100)+'%';
  el.classList.toggle('active',rx3Tier()>0);if(stage!==rx3Reload.stage&&rx3Tier()>1){rx3Reload.stage=stage;if(stage==='MAG OUT')rx3AnimateClass('rx3-mag-out');if(stage.startsWith('REPLACE'))rx3AnimateClass('rx3-mag-in');if(stage==='CHAMBER')rx3AnimateClass('rx3-bolt');}
 }
-function rx3RecoilKick(now,index){const damp=Math.min(1,Math.max(0,rx3Recoil));return damp*([.11,.20,.25,.075][index]||.11);}
+function a3RecoilEnvelope(age,index){const d=[.18,.32,.40,.13][index]||.18;if(age<0||age>=d)return 0;return Math.pow(1-age/d,2);}
+function rx3RecoilKick(now,index){const damp=Math.min(1,Math.max(0,rx3Recoil));if(rxTvUltraLight())return damp*([.11,.20,.25,.075][index]||.11);return a3RecoilEnvelope(now-v8GunFireAt,index)*([.105,.19,.23,.075][index]||.105);}
 function rx3PoseGun(ori,index,now){if(rx3Tier()===0)return;
  const kick=rx3RecoilKick(now,index);ori.y-=kick*.55;ori.pitch-=kick*.24;
+ if(!rxTvUltraLight()&&rx3Tier()>1){const reload=rx3ReloadPose(now);ori.y-=reload*.12;ori.pitch-=reload*.28;ori.yaw+=reload*.15;const stride=Number(pl.walk)||0,pace=rx3MoveBlend;ori.y+=Math.sin(stride*2)*.013*pace;ori.yaw+=Math.sin(stride)*.018*pace;}
  if(rxInspectUntil>now){const t=3-(rxInspectUntil-now);const smooth=Math.sin(Math.PI*Math.min(1,t/3));ori.yaw+=Math.sin(t*2.0)*.65*smooth;ori.pitch+=Math.cos(t*1.7)*.26*smooth;ori.y+=Math.sin(t*2.2)*.12*smooth;}
 }
 function rx3KnifeAction(action,now){if(rx3Tier()<=0)return;rx3Knife={action,start:now};if(rx3Tier()>=2)rx3AnimateClass('rx3-knife-swing');}
@@ -4179,7 +4213,8 @@ function rx3KnifePose(now){const duration=rx3Knife.action==='throw'?.65:.45;cons
 function rx3BotHit(bot,dmg){if(!bot)return;bot.rx3HitAt=performance.now()/1000;bot.rx3HitAmount=Math.min(1.1,Math.max(.3,dmg/60));}
 function rx3PlayerHurt(dmg){if(phase!=='playing'||rx3Tier()===0)return;rx3HurtAt=performance.now()/1000;const ring=$('rx3HurtRing');if(ring)ring.classList.add('active');}
 function rx3ShowHitMarker(head){if(rx3Tier()<2)return;const el=$('rx3HitText');if(!el)return;el.textContent=head?'✹ HEADSHOT':'✦ HIT';el.classList.remove('active');void el.getBoundingClientRect();el.classList.add('active');clearTimeout(rx3HitTimeout);rx3HitTimeout=setTimeout(()=>el.classList.remove('active'),370);}
-function rx3UpdateMovement(dt,crouched,jump){const desired=crouched?1:0;rx3CrouchBlend+=(desired-rx3CrouchBlend)*Math.min(1,dt*11);
+function rx3UpdateMovement(dt,crouched,jump,movement=0){const desired=crouched?1:0;rx3CrouchBlend+=(desired-rx3CrouchBlend)*Math.min(1,dt*11);
+ if(!rxTvUltraLight()&&rx3Tier()>1)rx3MoveBlend=a3Ease(rx3MoveBlend,Math.max(0,Math.min(1,movement)),dt,12);else rx3MoveBlend=0;
  const airborne=jump>.02;if(rx3WasAirborne&&!airborne){rx3LandVisual=-.1;}rx3WasAirborne=airborne;
  rx3LandVisual+=(0-rx3LandVisual)*Math.min(1,dt*14);
 }
@@ -4202,7 +4237,7 @@ function rx3Tick(now,dt,frameMs){
  if($('rx3HurtRing'))$('rx3HurtRing').classList.toggle('active',now-rx3HurtAt<.32&&rx3Tier()>0);
  if($('rx3InspectMeta'))$('rx3InspectMeta').classList.toggle('hide',now>=rx3InspectBoost);
  }else{if($('rx3ReloadView'))$('rx3ReloadView').classList.remove('active');if($('rx3InspectMeta'))$('rx3InspectMeta').classList.add('hide');}
- if(rx3Quality==='auto'&&now-rx3LastAdaptive>8){rx3LastAdaptive=now;if(frameMs>1000/v91FpsTarget()*1.28){rx3AnimSlow++;rx3AnimFast=0;}else{rx3AnimFast++;rx3AnimSlow=0;}
+ if(rx3Quality==='auto'&&phase==='playing'&&!paused&&now-rx3LastAdaptive>8){rx3LastAdaptive=now;if(frameMs>1000/v91FpsTarget()*1.28){rx3AnimSlow++;rx3AnimFast=0;}else{rx3AnimFast++;rx3AnimSlow=0;}
  if(rx3AnimSlow>=2){rx3AutoPenalty=Math.min(2,rx3AutoPenalty+1);rx3AnimSlow=0;rx3UpdateQualityLabel();}else if(rx3AnimFast>=3){rx3AutoPenalty=Math.max(0,rx3AutoPenalty-1);rx3AnimFast=0;rx3UpdateQualityLabel();}}
 }
 let rx3LastShotAt=-1;
@@ -5936,7 +5971,7 @@ function crownMotion(b,now) {
 function crownHumanoidPose(b,now,model,motion) {
   const walk=Math.min(1,motion.pace/4.15),run=clamp((motion.pace-4.8)/3.8,0,1);
   const step=motion.stride,lift=b.verticalOffset||b.jump||0;
-  const crouch=b.crouched?(b===pl?Math.max(.55,rx3CrouchBlend):1):0;
+  const crouch=b===pl&&rx3Tier()>1?clamp(rx3CrouchBlend,0,1):b.crouched?(b===pl?Math.max(.55,rx3CrouchBlend):1):0;
   const shoot=Math.max(0,1-(now-(b===pl?v8GunFireAt:b.crownShotAt??-100))*9);
   const reloadTime=now-(b.crownReloadAt??-100);
   const reload=b===pl?rx3ReloadPose(now):reloadTime>=0&&reloadTime<1.18?Math.sin(reloadTime/1.18*Math.PI):0;
@@ -7691,7 +7726,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · UPDATE A';version.textContent='UPDATE A';
+  brand.textContent='RECOIL X · UPDATE A.3';version.textContent='UPDATE A.3';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10771,8 +10806,8 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.3';
+  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.3';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');

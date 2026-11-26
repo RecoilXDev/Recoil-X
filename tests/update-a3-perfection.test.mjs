@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const src=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const between=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)));
+const camera=new Function(between('function a3Ease(','function a3ResetCamera(')+';return {a3Ease,a3Smoothstep,a3SafeCameraReach};')();
+const kick=new Function(between('function a3RecoilEnvelope(','function rx3RecoilKick(')+';return a3RecoilEnvelope;')();
+const spatial=new Function(between('function a3SpatialMix(','let a3VoiceEnds=')+';return a3SpatialMix;')();
+test('A.3 camera easing never overshoots and retracts immediately at walls',()=>{assert.equal(camera.a3SafeCameraReach(1,.3,.016),.3);const a=camera.a3SafeCameraReach(.3,1,.016);assert.ok(a>.3&&a<1);assert.equal(camera.a3Smoothstep(0),0);assert.equal(camera.a3Smoothstep(1),1);assert.equal(camera.a3Smoothstep(.5),.5);});
+test('A.3 weapon recoil is bounded and returns to neutral by class',()=>{for(let i=0;i<4;i++){assert.equal(kick(-1,i),0);assert.equal(kick(0,i),1);assert.equal(kick(.5,i),0);assert.ok(kick(.06,i)>0&&kick(.06,i)<1);}assert.ok(kick(.2,2)>kick(.2,3));});
+test('A.3 spatial audio is directional and attenuates to silence',()=>{assert.equal(spatial(0,-1,0).pan,0);assert.ok(spatial(10,0,0).pan>.99);assert.ok(spatial(-10,0,0).pan<-.99);assert.ok(spatial(0,-10,0).gain>spatial(0,-40,0).gain);assert.equal(spatial(0,-70,0).gain,0);});
+test('A.3 audio voice pool bounds concurrency and supports mono output',()=>{let now=0,starts=0;const param=()=>({setValueAtTime(){},exponentialRampToValueAtTime(){}});const ac={get currentTime(){return now;},destination:{},createOscillator(){return {frequency:param(),connect(){},start(){starts++},stop(){}}},createGain(){return {gain:param(),connect(){}}}};const play=new Function('mobile',between('const A3_SOUND=','// Original in-game soundtrack composed for Mirage Ops')+';return a3PlaySound;')(true);for(let i=0;i<30;i++)assert.equal(play(ac,'gun'),true);assert.equal(starts,5);now=1;assert.equal(play(ac,'gun'),true);assert.equal(starts,6);});
+test('A.3 retains TV 30 FPS and reduced-motion bypasses',()=>{assert.match(src,/tv:\{fps:30,/);assert.match(src,/rxTvUltraLight\(\)\?Math.min\(f,30\)/);assert.match(src,/rx5-reduce-motion/);assert.match(src,/rx-release" content="A\.3/);});
