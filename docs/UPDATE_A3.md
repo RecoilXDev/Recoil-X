@@ -8,3 +8,5 @@ First polish pass, based on deployed A.2 (260/260 tests).
 - Visible A.3 release label, preserved compatibility build identifier and new service-worker cache revision.
 
 Five targeted checks passed directly, plus inline JavaScript/service-worker syntax. Full CI and physical-device playtesting pending. No new modes, model overhaul, physics or weapon damage changes. Spatial audio is procedural stereo positioning, not a recorded audio pack or full occlusion simulation. This is the first A.3 pass, not final visual QA.
+
+Deployment follow-up: initial A.3 passed all 265 tests but failed an outdated live branding check. The next deployment failed one legacy title assertion after the browser title was corrected. The regression now requires the browser title and startup branding to match release metadata, and preserves legacy branding safeguards. Direct checks of both the regression and expected live HTML passed; complete redeployment is pending.
