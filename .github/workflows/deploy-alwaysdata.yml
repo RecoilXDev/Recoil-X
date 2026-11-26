@@ -104,10 +104,10 @@ jobs:
             https://recoil-x.alwaysdata.net/
           echo "RECOIL X website responded successfully."
 
-      - name: Verify the deployed Z.5 assets and game modes
+      - name: Verify current release and preserved game modes
         run: |
           curl --fail --silent --show-error --location --retry 5 --retry-delay 3 \
-            --output /tmp/recoil-z5-live.html https://recoil-x.alwaysdata.net/
+            --output /tmp/recoil-z5-live.html "https://recoil-x.alwaysdata.net/?build=$GITHUB_SHA"
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
           grep -Fq 'Z.5 Clan Wars' /tmp/recoil-z5-live.html
@@ -131,8 +131,18 @@ jobs:
           grep -Fq 'content="Z.5-SAND-8"' /tmp/recoil-z5-live.html
           grep -Fq 'content="A-NEW-DAWN-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
-          grep -Fq '<title>RECOIL X — Update A</title>' /tmp/recoil-z5-live.html
-          grep -Fq "querySelector('.brandchip').textContent='RECOIL X · UPDATE A'" /tmp/recoil-z5-live.html
+          # The Node server appends online scripts before </body>; compare the exact expected response.
+          node --input-type=module <<'VERIFY_HTML'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const source=readFileSync('index.html','utf8');
+          const live=readFileSync('/tmp/recoil-z5-live.html','utf8');
+          const scripts=['admin-panel','z5-panel','z5-economy-panel','z5-matchhub','z5-ingame','z5-expansion','z5-player-guide','a-curator','a-control-center'].map(name=>'<script src="/'+name+'.js" defer></script>').join('');
+          const expected=source.replace(/<\/body>/i,scripts+'</body>');
+          assert.ok(source.includes('name="rx-release"'),'Source must declare current release');
+          assert.ok(live===expected,'Live HTML differs from the checked-out release');
+          console.log('Verified exact deployed HTML and current release metadata.');
+          VERIFY_HTML
           if grep -Eq 'UPDATE A (NEW DAWN )?PREVIEW|UPDATE A · NEW DAWN PREVIEW' /tmp/recoil-z5-live.html; then echo 'Outdated public preview branding' >&2; exit 1; fi
           if grep -Fq "querySelector('.brandchip').textContent='Z.3'" /tmp/recoil-z5-live.html; then
             echo 'Legacy Z.3 startup branding unexpectedly present' >&2; exit 1
