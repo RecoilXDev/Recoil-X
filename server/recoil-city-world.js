@@ -255,7 +255,7 @@
   }
   const driven = state => state.vehicles.find(v => v.id === state.player.vehicleId);
   function clearOfCars(state, x, y, radius, ignore) {
-    return !state.vehicles.some(v => v !== ignore && Math.hypot(v.x - x, v.y - y) < radius + carRadius);
+    const limit=(radius+carRadius)**2;return !state.vehicles.some(v=>{if(v===ignore)return false;const dx=v.x-x,dy=v.y-y;return dx*dx+dy*dy<limit;});
   }
   function interact(state) {
     const player = state.player, car = driven(state);
@@ -450,8 +450,7 @@
     car.angle += turn * Math.sign(car.speed) * Math.min(1, Math.abs(car.speed) / 25) * (2.45 - .75 * Math.abs(car.speed) / 166) * dt;
     const dx = Math.cos(car.angle) * car.speed * dt, dy = Math.sin(car.angle) * car.speed * dt;
     const x = car.x + dx, y = car.y + dy;
-    const other = state.vehicles.find(v => v !== car && Math.hypot(v.x - x, v.y - y) < carRadius * 2
-      && (v.x - car.x) * dx + (v.y - car.y) * dy > 0);
+    const other = state.vehicles.find(v=>{if(v===car)return false;const vx=v.x-x,vy=v.y-y;return vx*vx+vy*vy<(carRadius*2)**2&&(v.x-car.x)*dx+(v.y-car.y)*dy>0;});
     if (!clearOfBuildings(x, y, carRadius) || other) {
       if (other?.kind === 'traffic' && Math.abs(car.speed) > 42 && state.hitCooldown <= 0) {
         heatUp(state, 'Traffic collision reported.');
@@ -470,7 +469,7 @@
   function vehicleImpact(state,car,oldX,oldY){
     const speed=Math.abs(car.speed);if(speed<18)return;
     const dx=car.x-oldX,dy=car.y-oldY,l=dx*dx+dy*dy||1;
-    for(const npc of [...state.locals,...state.officers]){
+    for(const group of [state.locals,state.officers])for(const npc of group){
       if(npc.hp<=0||npc.stunUntil>state.elapsed)continue;
       const t=clamp(((npc.x-oldX)*dx+(npc.y-oldY)*dy)/l,0,1);
       if(Math.hypot(npc.x-oldX-t*dx,npc.y-oldY-t*dy)>13)continue;
