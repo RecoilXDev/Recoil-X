@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="Z.5-SAND-8" />
-<meta name="rx-release" content="A.3 — Perfection" />
+<meta name="rx-release" content="A.4 — Evolution" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X — Update A.3</title>
+<title>RECOIL X — Update A.4</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
@@ -970,7 +970,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">UPDATE A.3</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">UPDATE A.4</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -985,7 +985,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="mobileControls"><div class="joybase" id="joybase"><div class="joystick" id="joystick"></div></div><div class="touch-swipe" id="touchswipe"></div><div class="touchbuttons"><button class="touchbtn fire" id="touchfire" data-t="fire">إطلاق</button><button class="touchbtn" id="touchjump" data-t="jump">قفز</button><button class="touchbtn" id="touchreload" data-t="reload">تعبئة</button><button class="touchbtn" id="touchweapon" data-t="weapon">سلاح</button><button class="touchbtn skill" id="touchcrouch" data-t="crouch">تسلّل</button><button class="touchbtn skill" id="touchsprint" data-t="sprint">ركض</button></div><button id="rx2TouchGadget" class="rx2-touch hide" type="button">💨 GADGET</button><button id="rx2TouchSlide" class="rx2-touch rx2-slide hide" type="button">↘ SLIDE</button><button id="v8TouchView" class="hide" type="button">👁 VIEW</button><button class="touch-chest" id="touchchest" data-t="openChest">Open chest</button></div>
 <div id="v92MobileIndicator" class="v92-mobile-indicator" aria-live="polite"></div><div id="overlay"><div class="panel"><div class="panel-content">
 <div id="deviceMenu">
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.3</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.4</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
   <div class="eyebrow" data-t="chooseDeviceLabel">SELECT YOUR PLATFORM</div>
   <h1 class="game-title">RECOIL <span>X</span></h1><div class="recoil-tagline">LOCK-LOAD-DOMINATE</div>
   <p class="subtitle" data-t="deviceIntro">هل تلعب على هاتف أم كمبيوتر؟ سنجهّز التحكم المناسب لك.</p>
@@ -994,7 +994,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 </div>
 <div id="mainMenu" class="hide">
 <div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A.3</div></div>
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A.4</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -1021,9 +1021,9 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
   </div>
   <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Compact menu</button>
 </div>
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.3</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
+  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.4</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">Five classic maps, plus expansion and mystery arenas. Play solo or online.</div>
-  <div class="menu-stats"><span class="versionlabel">UPDATE A.3</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
+  <div class="menu-stats"><span class="versionlabel">UPDATE A.4</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
   <div class="mode-grid"><button class="choice" id="soloBtn"><span>🎯</span><strong data-t="solo">حارب الروبوتات</strong><small data-t="soloSub">العب وحدك • واكسب العملات</small></button><button class="choice" id="roomBtn"><span>🔗</span><strong data-t="privateRoom">غرفة خاصة</strong><small data-t="roomSub">رمز دخول • مباريات مع الأصدقاء</small></button></div>
   <div class="menu-actions"><button class="primary" id="shopBtn">🛍️ <span data-t="skinShop">متجر الأزياء</span></button><button class="primary crate-main-btn" id="crateBtn">🎁 <span data-t="lootBoxes">صناديق الغنائم</span></button><button class="primary v8-gun-main-btn" id="v8GunBtn">🔫 <span data-t="v8GunBox">Gun Box</span></button><button class="primary pet-main-btn" id="petBtn">🐾 <span data-t="companions">المرافقون</span></button><button class="primary battlepass-main-btn" id="passBtn">🏆 <span data-t="battlePass">BATTLE PASS</span></button><button class="secondary" id="mapsBtn">🗳️ <span data-t="mapVote">التصويت على الخريطة</span></button></div>
 <div id="rxsePlayerBadge" class="rxse-banner hide" aria-label="Equipped seasonal title"></div><div id="rxseMenuBanner" class="rxse-banner hide" aria-live="polite"></div><button id="rxseOpenBtn" class="primary full hide" type="button">🎊 SEASONAL EVENT HUB</button>
@@ -1469,7 +1469,8 @@ function putBox(out,x,y,z,w,h,d,col){let X=x-w/2,Y=y,Z=z-d/2,rx=x+w/2,ty=y+h,rz=
  let faces=[[[X,Y,rz],[rx,Y,rz],[rx,ty,rz],[X,ty,rz],[0,0,1]],[[rx,Y,Z],[X,Y,Z],[X,ty,Z],[rx,ty,Z],[0,0,-1]],[[rx,Y,rz],[rx,Y,Z],[rx,ty,Z],[rx,ty,rz],[1,0,0]],[[X,Y,Z],[X,Y,rz],[X,ty,rz],[X,ty,Z],[-1,0,0]],[[X,ty,rz],[rx,ty,rz],[rx,ty,Z],[X,ty,Z],[0,1,0]],[[X,Y,Z],[rx,Y,Z],[rx,Y,rz],[X,Y,rz],[0,-1,0]]];
  for(const f of faces){let order=[0,1,2,0,2,3];for(const j of order){let p=f[j];out.push(p[0],p[1],p[2],col[0],col[1],col[2],f[4][0],f[4][1],f[4][2]);}}}
 function putBeam(out,ax,ay,az,bx,by,bz,width,col){let dx=bx-ax,dy=by-ay,dz=bz-az,l=Math.hypot(dx,dy,dz)||1;let xx=-dz/l*width,zz=dx/l*width;function v(x,y,z){out.push(x,y,z,col[0],col[1],col[2],0,1,0)}v(ax-xx,ay,az-zz);v(ax+xx,ay,az+zz);v(bx+xx,by,bz+zz);v(ax-xx,ay,az-zz);v(bx+xx,by,bz+zz);v(bx-xx,by,bz-zz)}
-function addObstacle(x,z,w,d,h,c=colors.cover){obstacles.push({x,z,w,d,h});putBox(staticVerts,x,0,z,w,h,d,c);putBox(staticVerts,x,h-.08,z,w+.08,.08,d+.08,[Math.min(1,c[0]*1.55),Math.min(1,c[1]*1.55),Math.min(1,c[2]*1.55)]);}
+function a4ArenaTrim(out,x,z,w,d,h,c,quality){if(quality<2||w<1.4||d<1.4||w>15||d>15||h<.8||h>7.5)return;const trim=c.map(v=>Math.min(1,v*.72+.06)),edge=c.map(v=>Math.min(1,v*1.16+.03));const thick=.035;for(const side of [-1,1]){putBox(out,x+side*(w*.5-thick*.5),h*.16,z,thick,h*.65,d*.76,trim);putBox(out,x,h*.16,z+side*(d*.5-thick*.5),w*.76,h*.65,thick,trim);putBox(out,x+side*w*.34,h*.83,z,w*.12,.045,d*.83,edge);} }
+function addObstacle(x,z,w,d,h,c=colors.cover){obstacles.push({x,z,w,d,h});putBox(staticVerts,x,0,z,w,h,d,c);putBox(staticVerts,x,h-.08,z,w+.08,.08,d+.08,[Math.min(1,c[0]*1.55),Math.min(1,c[1]*1.55),Math.min(1,c[2]*1.55)]);if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2)a4ArenaTrim(staticVerts,x,z,w,d,h,c,2);}
 
 // X.3.1 — original, collision-aware Murder Mystery environments.
 function rx31BuildMysteryArena(m){
@@ -2537,7 +2538,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='UPDATE A.3 • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='UPDATE A.4 • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -3285,8 +3286,9 @@ function vxKnifeColor(k){
   trim:hexRgb(k.rarity==='golden'?'#fbe9a2':k.rarity==='silver'?'#b6d2e7':k.light)};
 }
 function vxColorMul(col,m){return col.map(x=>Math.max(0,Math.min(1,x*m)));}
+function a4KnifeDetail(out,c,k){for(const side of [-1,1]){putBox(out,side*.117,-.096,.27,.024,.095,.55,c.trim);putBox(out,side*.14,-.11,-.105,.045,.16,.12,c.steel);}putBox(out,0,-.084,.66,.17,.04,.09,c.trim);if(k.rarityIndex>=4)putBox(out,0,.17,-.14,.075,.035,.075,c.edge);}
 function vxKnifeMesh(k){
- if(vxKnifeMeshCache.has(k.id))return vxKnifeMeshCache.get(k.id);
+ const cacheKey=k.id+':'+(!rxTvUltraLight()&&v91EffectiveGraphics()>=2?'a4':'base');if(vxKnifeMeshCache.has(cacheKey))return vxKnifeMeshCache.get(cacheKey);
  const out=[],c=vxKnifeColor(k);
  const emit=(a,b,d,color)=>{
   const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
@@ -3333,7 +3335,8 @@ function vxKnifeMesh(k){
  // A raised socket and gemstone set in the guard identify the theme/rarity in 3D.
  putBox(out,0,.045,-.13,.145,.115,.20,c.steel);
  putBox(out,0,.124,-.14,.095,.05,.105,c.trim);
- const verts=new Float32Array(out);vxKnifeMeshCache.set(k.id,verts);return verts;
+ if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2)a4KnifeDetail(out,c,k);
+ const verts=new Float32Array(out);vxKnifeMeshCache.set(cacheKey,verts);return verts;
 }
 function vxDrawKnifeModel(out,k,x,y,z,yaw=0,scale=1){
  const m=vxKnifeMesh(k),c=Math.cos(yaw),sn=Math.sin(yaw);
@@ -3651,6 +3654,13 @@ function v8Mat(o,x,y,z){let yaw=o.yaw||0,pitch=o.pitch||0,cy=Math.cos(yaw),sy=Ma
 const V8_TMP=[];
 function v8Part(out,o,x,y,z,w,h,d,color){V8_TMP.length=0;putBox(V8_TMP,x,y,z,w,h,d,color);for(let i=0;i<V8_TMP.length;i+=9){let p=v8Mat(o,V8_TMP[i],V8_TMP[i+1],V8_TMP[i+2]);out.push(...p,V8_TMP[i+3],V8_TMP[i+4],V8_TMP[i+5],V8_TMP[i+6],V8_TMP[i+7],V8_TMP[i+8]);}}
 function v8Line(out,o,a,b,size,color){let p=v8Mat(o,...a),q=v8Mat(o,...b);putBeam(out,...p,...q,size,color);}
+function a4WeaponDetail(index,part,line,base,light,dark,extra,season){
+ const panel=base.map(v=>Math.min(1,v*.86+.08));const end=[.85,.83,1.24,.58][index]||.85;
+ for(const side of [-1,1]){const x=side*(index===1?.175:index===3?.172:.143);part(x,.07,.32,.027,.11,.29,panel);part(x,-.015,.18,.025,.045,.17,dark);if(index===0||index===3){for(let i=0;i<(extra?4:2);i++)part(x*.8,.07,.47+i*.075,.024,.045,.035,light);}else if(index===1){for(let i=0;i<(extra?5:3);i++)part(side*.178,-.046,.57+i*.049,.025,.115,.023,dark);}else{part(side*.089,.29,.36,.025,.085,.26,panel);part(side*.12,.30,.58,.025,.095,.11,dark);}}
+ part(0,.15,end,.12,.045,.12,dark);if(index===2){part(0,.36,.30,.115,.07,.16,light);part(0,.20,.68,.15,.045,.14,panel);}if(index===3)part(0,-.47,.27,.155,.045,.18,light);if(index===0)part(0,-.37,.32,.20,.045,.19,panel);
+ if(extra)for(const sign of [-1,1]){part(sign*.12,.10,-.07,.024,.075,.15,panel);part(sign*.11,.105,.23,.035,.035,.04,light);}
+ if(season){for(const sign of [-1,1])line([sign*.13,.20,.35],[sign*.22,.31,.69],.028,light);part(0,.31,.84,.10,.045,.12,panel);}
+}
 function v8DrawWeapon(out,owner,index,finish,first,now){if(!finish)return;
  let base=hexRgb(finish.base),light=hexRgb(finish.glow),dark=hexRgb(finish.shadow),steel=[.12,.13,.17];
  const forward=aimVector(owner.yaw||0,owner.pitch||0);const ori=first?{x:owner.x+Math.cos(owner.yaw)*.38+forward.x*.47,y:owner.y-.41+forward.y*.47,z:owner.z+Math.sin(owner.yaw)*.38+forward.z*.47,yaw:owner.yaw,pitch:owner.pitch}:
@@ -3689,6 +3699,7 @@ const muzzle=index===2?1.58:index===1?1.04:index===3?.79:1.2;
  }
  part(0,.13,muzzle,.17,.05,.11,light);
  if(first&&v91EffectiveGraphics()>=1||!first&&owner.rigGrip)z1WeaponTrim(index,part,line,base,light,dark,fire);
+ if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2&&(first||owner.rigGrip))a4WeaponDetail(index,part,line,base,light,dark,first&&v91EffectiveGraphics()>=3,finish.seasonOnly);
  // Separate three-dimensional designs for every named Godly silhouette.
  const st=finish.style;
  if(finish.seasonOnly&&index===0){
@@ -3909,7 +3920,7 @@ function rx2CoverBlocked(x,z,r){for(const c of rx2Covers){if(c.hp<=0)continue;le
 function rx2CoverRay(ox,oy,oz,dx,dy,dz){let closest=1000;for(const c of rx2Covers)if(c.hp>0)closest=Math.min(closest,rayBox(ox,oy,oz,dx,dy,dz,c));return closest;}
 function rx2HitCover(origin,dir,hitDistance,power){if(rx2Covers.length===0)return;for(const c of rx2Covers){if(c.hp<=0)continue;const d=rayBox(origin.x,origin.y,origin.z,dir.x,dir.y,dir.z,c);if(Math.abs(d-hitDistance)>.25)continue;c.hp=Math.max(0,c.hp-power);if(!c.hp){toast('🧱 COVER DESTROYED',750);rx2SoundAt('break',c.x,c.z);}break;}}
 function rx2MakeCovers(){rx2Covers=[];if(crownArena)return;for(const [x,z] of [[14,-16],[-15,-20],[19,21],[-22,17],[37,-8],[-36,9]])if(!obstacles.some(o=>Math.abs(o.x-x)<4&&Math.abs(o.z-z)<4))rx2Covers.push({x,z,w:2.7,d:2.0,h:1.55,hp:90,maxHp:90});}
-function rx2RenderExtras(out,now){for(const c of rx2Covers)if(c.hp>0){const k=c.hp/c.maxHp;putBox(out,c.x,0,c.z,c.w,c.h,c.d,[.23+.23*(1-k),.40*k+.12,.45*k+.12]);putBox(out,c.x,c.h-.1,c.z,c.w+.07,.18,c.d+.07,[.12,.83*k+.12,.77*k+.12]);}
+function rx2RenderExtras(out,now){for(const c of rx2Covers)if(c.hp>0){const k=c.hp/c.maxHp;putBox(out,c.x,0,c.z,c.w,c.h,c.d,[.23+.23*(1-k),.40*k+.12,.45*k+.12]);putBox(out,c.x,c.h-.1,c.z,c.w+.07,.18,c.d+.07,[.12,.83*k+.12,.77*k+.12]);if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2)a4ArenaTrim(out,c.x,c.z,c.w,c.d,c.h,[.23+.23*(1-k),.40*k+.12,.45*k+.12],2);}
  for(const g of rx2Gadgets){const age=now-g.started;if(age>g.duration)continue;const radius=g.type==='smoke'?2.4:1;const col=g.type==='smoke'?[.36,.44,.55]:g.type==='decoy'?[.90,.45,.24]:[.15,.91,.84];if(rx2Effective()>0){for(let i=0;i<(mobile?3:7);i++){let angle=i*6.283/7+now*.23;putBox(out,g.x+Math.cos(angle)*radius,g.type==='smoke'?1.1+Math.sin(i*2+now)*.38:.6,g.z+Math.sin(angle)*radius,.28,.38,.28,col);}}}
  if(rx2Effective()>1&&rx2Settings.godly&&rx2Settings.particles&&phase==='playing'&&pl.alive&&!spectating){if(v8Owned?.length){let n=mobile?2:6;for(let i=0;i<n;i++){const a=i*6.283/n+now*.8;putBox(out,pl.x+Math.cos(a)*.65,pl.y-.5+Math.sin(now*1.8+a)*.17,pl.z+Math.sin(a)*.65,.045,.055,.055,[.32,.90,.89]);}}}
 }
@@ -5604,7 +5615,7 @@ function crownFighterMesh(model,lod,variant,civilian=false) {
   ]):CROWN_BONES;
   const m=crownPartBuilder(joints);
   const close=lod===0,detail=lod<2,regular=model==='fighter'||model==='infected';
-  const sides=close?8:detail?6:4, limbSides=close?7:detail?5:4;
+  const sides=close?10:detail?6:4, limbSides=close?9:detail?5:4;
   const width=proportion?.[0]||1,leg=.39*(proportion?.[1]||1);
   const size=(profiles,amount)=>profiles.map(([x,y,z,rx,rz,t])=>[x,y,z,rx*amount,rz,t]);
   const select=(high,low)=>close?high:detail?
@@ -5707,6 +5718,7 @@ function crownFighterMesh(model,lod,variant,civilian=false) {
       }
     }
   }
+  if(detail)a4FighterDetail(m,model,lod,variant,civilian);
   if(civilian)return m;
   if(regular){
     if(detail&&(variant===1||variant===3))m.strut('head',1,[-.172,.123,.066],[-.224,.278,.104],.031,.011,4);
@@ -5717,6 +5729,14 @@ function crownFighterMesh(model,lod,variant,civilian=false) {
   return m;
 }
 
+function a4FighterDetail(m,model,lod,variant,civilian){if(lod>=2)return;const close=lod===0;const regular=model==='fighter'||model==='infected';
+ if(civilian){m.prism('chest',5,[[-.093,.11],[.093,.11],[.075,.17],[-.075,.17]],-.172,.025);m.prism('chest',0,[[-.080,.092],[.080,.092],[.070,.115],[-.070,.115]],-.178,.021);if(close){for(const sign of [-1,1]){m.gem('head',7,sign*.069,.014,-.145,.025,.014,.010);m.gem('head',6,sign*.164,-.018,.008,.027,.050,.028);}}return;}
+ for(const side of ['L','R']){const sign=side==='R'?1:-1;const shoulder='shoulder'+side,hand='hand'+side,foot='foot'+side;
+ m.prism('chest',2,[[sign*.08,-.13],[sign*.22,-.10],[sign*.22,-.06],[sign*.09,-.08]],-.241,.018);m.gem(shoulder,regular?1:3,sign*.08,.047,-.132,.069,.058,.026);
+ if(close){m.strut('chest',1,[sign*.09,.19,-.20],[sign*.22,.09,-.244],.025,.018,5);m.prism(hand,2,[[-.043,-.108],[.043,-.108],[.046,-.071],[-.046,-.071]],-.081,.027);m.prism(foot,1,[[-.083,-.087],[.083,-.087],[.074,-.055],[-.074,-.055]],-.213,.027);m.gem('head',2,sign*.17,.065,-.085,.035,.053,.026);}
+ }
+ if(!regular){m.gem('chest',3,0,.165,-.258,.075,.085,.035);if(close)for(const side of ['L','R']){const sign=side==='R'?1:-1;m.gem('shoulder'+side,1,sign*.12,.12,.035,.11,.14,.10);m.gem('knee'+side,3,0,-.063,-.145,.051,.073,.021);}}
+}
 function crownHumanHead(m,model,variant,close,detail,tone) {
   const sides=close?10:detail?8:4;
   const face=detail?[
@@ -5880,6 +5900,7 @@ function crownScorpionMesh(lod) {
   strut('stinger',1,[0,.1,.02],[0,.11,-.49],.22,.14,6);
   strut('stinger',3,[0,.11,-.48],[0,-.23,-.76],.13,.013,5);
   z1TitanShell(m,lod);
+  if(lod<2){for(const side of ['L','R']){const sign=side==='R'?1:-1;gem('carapace',3,sign*.35,.45,-.46,.12,.085,.17);if(lod===0){for(let i=0;i<3;i++)gem('leg'+side+i,1,sign*.27,.05,0,.12,.10,.10);gem('pincer'+side,3,sign*.07,.19,-.20,.075,.05,.085);}}if(lod===0)for(let i=0;i<3;i++)gem('tail'+i,1,0,.41,.05,.12-i*.02,.07,.10);}
   return m;
 }
 
@@ -6092,7 +6113,7 @@ function crownActorSpec(b,distance) {
 const cityCivilianMeshes=new Map();
 window.RecoilCityCharacter=Object.freeze({
   emit(person,time,detail,out){
-    const lod=detail==='high'?1:2,key=lod+':'+Number(!!person.shorts);
+    const police=!!person.unit,hero=!!person.a4Hero;const lod=detail==='high'?(hero||police?0:1):detail==='standard'?1:2,key=lod+':'+Number(!!person.shorts)+':'+Number(police);
     let mesh=cityCivilianMeshes.get(key);
     if(!mesh){
       mesh=crownFighterMesh('fighter',lod,0,true);
@@ -6102,6 +6123,7 @@ window.RecoilCityCharacter=Object.freeze({
         if(joint.startsWith('knee'))part.color=person.shorts?6:4;
         if(joint.startsWith('elbow')||joint.startsWith('hand'))part.color=6;
       }
+      if(police&&lod<2){mesh.prism('chest',2,[[-.18,-.14],[.18,-.14],[.21,.13],[-.21,.13]],-.19,.065);mesh.gem('chest',3,.11,.075,-.26,.048,.045,.018);mesh.ellipsoid('head',2,0,.18,.01,.18,.078,.15,6,.8);mesh.prism('head',2,[[-.14,.11],[.14,.11],[.13,.14],[-.13,.14]],-.205,.075);}
       cityCivilianMeshes.set(key,mesh);
     }
     const swing=Number(person.phase)||0,aim=person.mood==='defend'||(person.aimUntil||0)>time;
@@ -7759,7 +7781,7 @@ function crownMountUI(){
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · UPDATE A.3';version.textContent='UPDATE A.3';
+  brand.textContent='RECOIL X · UPDATE A.4';version.textContent='UPDATE A.4';
   $('zMainBtn').textContent='Update Z · The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
@@ -10840,8 +10862,8 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.3';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.3';
+  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.4';
+  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.4';
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');
