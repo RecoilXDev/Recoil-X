@@ -11,7 +11,7 @@ test('staged server serves full Z.5 page, original saves path, Match Hub and hea
    assert.equal(home.status,200);
    const html=await home.text();
    for(const key of ['OG Futuristic Arena','rxSimpleQuick','rxSimpleBotLevel',
-     'Z.5 Search & Destroy','Z.5 PvP Extraction 2.0','/z5-matchhub.js','/z5-economy-panel.js']){
+     "searchdestroy:'Search & Destroy'","extraction:'PvP Extraction 2.0'",'/z5-matchhub.js','/z5-economy-panel.js']){
      assert.ok(html.includes(key),key+' not present on live-served HTML');
    }
    const matchHub=await fetch(base+'/z5-matchhub.js');

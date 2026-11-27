@@ -64,7 +64,10 @@ test('battle pass is half price and legacy purchasers get one credit only',()=>{
 test('PWA cache renews without losing accessible sand theme and existing game options',()=>{
  assert.match(sw,/recoil-city-3d-radio/);
  assert.match(html,/id="rxSimpleQuick"/);
- assert.match(html,/content="Z\.5-SAND-8"/);
+ const build=html.match(/<meta name="rx-build" content="([^"]+)"/)?.[1];
+ assert.ok(build,'Current build metadata required');
+ assert.match(html,/const RX_RELEASE=/);
+ assert.ok(html.includes('dataset.rxBuild=RX_RELEASE.build'),'Compact menu must use current build');
  assert.match(html,/rx-home-layout-v2/);
  assert.match(html,/const RX_PITY_LIMIT=25/);
  assert.match(html,/rxChestFairStreakV1/);
