@@ -20,3 +20,8 @@ Five targeted checks and four syntax checks passed directly. Full integration, a
 - Nearby cars use sculpted, tapered shells, distinct sport/sedan/utility rooflines, wheel arch trim and detailed lamps; dashboard, console and door interiors upgraded. Distant cars retain simpler geometry. Vehicle physics and ownership unchanged.
 - Existing home, club and shop interiors get room-specific furnishing, lighting fixtures, shelves, products, a register and stage equipment. Added character clothing and footwear details to standard/high rig models. Low graphics and TV fallback retain their original geometry budgets (apart from invalid palette correction).
 - This is a procedural mesh pass, not a replacement with imported photorealistic assets. Hardware FPS and visual QA remain necessary.
+
+## Weapon Evolution follow-up
+- Four core FPS classes now use original beveled receiver and body geometry on high/ultra, with distinct decorative panels and finish accents. The previous geometry remains on low/TV and distant actors; existing Godly and seasonal silhouettes, reload and recoil behavior remain intact.
+- High-detail knife handles and guards are beveled, with additional grip accents and subdivided curved blade profiles. Collection previews reuse the updated meshes. No change to knife stats, rarity or inventory.
+- Recoil City standard/high uses four distinct sculpted held weapon models, including first-person and animated NPC views; TV/low retain the original simple geometry. These are fictional cosmetic meshes only, not changes to weapon mechanics or hit detection.

@@ -326,7 +326,25 @@
     const pts=[];for(let i=0;i<10;i++)pts.push([Math.cos(i*tau/10)*l,Math.sin(i*tau/10)*w,.09]);
     g.face(pts,'#555855');
   }
-  function heldWeapon(g,x,y,z,id){
+  // Cosmetic model geometry; no weapon simulation or hit detection changes.
+  function a4CityWeaponModel(g,x,y,z,id,rich){
+    const key=['ar','shot','sniper','smg'].includes(id)?id:'ar',steel='#526168',body='#3c4b50',edge='#889b9b',dark='#293a40';
+    const p={ar:[1.7,3.3,.53],shot:[1.8,3.9,.67],sniper:[1.75,4.8,.50],smg:[1.45,2.3,.59]}[key], [receiver,length,width]=p;
+    const chamfer=(cx,cy,cz,l,w,h,c)=>{
+      const b=Math.min(w,h)*.22,ring=t=>[[t,cy-w/2+b,cz],[t,cy+w/2-b,cz],[t,cy+w/2,cz+b],[t,cy+w/2,cz+h-b],[t,cy+w/2-b,cz+h],[t,cy-w/2+b,cz+h],[t,cy-w/2,cz+h-b],[t,cy-w/2,cz+b]];
+      const a=ring(cx-l/2),d=ring(cx+l/2);for(let i=0;i<8;i++)g.face([a[i],a[(i+1)%8],d[(i+1)%8],d[i]],c,i%2?.93:1.04);g.face(a,c,.8);g.face(d,c,1.02);
+    };
+    chamfer(x+.4,y,z,receiver,width,.58,body);chamfer(x-.63,y,z-.02,.85,.44,.41,dark);
+    chamfer(x+length*.58,y,z+.1,length*.70,key==='shot'?.38:.26,.27,steel);
+    chamfer(x+.16,y,z-.5,key==='smg'?.42:.47,.38,key==='smg'?.78:.65,dark);
+    for(const sign of [-1,1]){g.box(x+.38,y+sign*(width/2+.014),z+.20,.85,.035,.16,edge);
+      if(rich)for(let i=0;i<3;i++)g.box(x+.02+i*.30,y+sign*(width/2+.038),z+.24,.11,.025,.10,dark);}
+    if(key==='sniper'){chamfer(x+.55,y,z+.6,1.12,.44,.36,body);g.box(x+1.11,y,z+.67,.055,.30,.22,'#719b9f');}
+    else if(key==='shot'){chamfer(x+length*.45,y,z-.045,.68,.60,.21,body);g.box(x+1.12,y,z+.54,.22,.19,.19,edge);}
+    else{g.box(x+1.12,y,z+.54,.22,.19,.19,edge);g.box(x+.42,y,z+.58,.55,.14,.08,dark);}
+  }
+  function heldWeapon(g,x,y,z,id,detail=false,rich=false){
+    if(detail&&!tvSafe()){a4CityWeaponModel(g,x,y,z,id,rich);return;}
     const length={ar:3.3,shot:3.9,sniper:4.8,smg:2.3}[id]||3.3;
     g.box(x+.4,y,z,1.7,.53,.58,'#374549');g.box(x-.63,y,z-.02,.85,.44,.41,'#53615f');
     g.box(x+length*.58,y,z+.1,length*.7,.26,.27,'#59696b');
@@ -355,7 +373,7 @@
         const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
         m.faces.push({p:points,c,solid:false,uv:null});
       }
-      if(p.hp>0&&!(p.stunUntil>time)&&(p.mood==='defend'||(p.aimUntil||0)>time)){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
+      if(p.hp>0&&!(p.stunUntil>time)&&(p.mood==='defend'||(p.aimUntil||0)>time)){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId,m.detail!=='low',m.detail==='high'&&hero);}
       return;
     }
     const named=hero&&p.character?shared?.cast?.[p.character]:null;
@@ -389,7 +407,7 @@
       const hand=[aiming?3.6:arm+.2,side*(aiming?.93:2.27),aiming?9.5+bob:6.88+bob+(sprint?.55:0)];
       g.bar(shoulder,elbow,.74,coat);g.bar(elbow,hand,.52,'#c59370');
     }
-    if(aiming)heldWeapon(g,3.6,1,9.38+bob,weaponId);
+    if(aiming)heldWeapon(g,3.6,1,9.38+bob,weaponId,m.detail!=='low',m.detail==='high'&&hero);
   }
   function a4CityVehicleDetail(g,v,inside,extra){if(inside){g.box(4.6,.3,5.45,1.0,1.75,.34,'#202a31');g.box(4.59,.3,5.80,.78,1.48,.06,'#6e9b99');g.box(3.95,2.2,4.8,1.65,2.3,.27,'#526167');for(const side of [-1,1])g.box(4.8,side*3.7,5.43,.55,.85,.24,'#91a2a0');return;}
  for(const side of [-1,1]){g.box(10.8,side*2.15,3.02,.22,1.4,.19,'#aeb9b7');g.box(-10.88,side*3.85,2.72,.20,.85,.24,'#565e61');g.box(-.8,side*5.19,4.12,.95,.18,.14,'#c1c7bd');if(extra)for(const x of [-6.6,6.8]){const yy=side*5.69,roll=v.wheel||0;for(let i=0;i<3;i++){const a=roll+i*Math.PI/3;g.bar([x-.78*Math.cos(a),yy,2.35-.78*Math.sin(a)],[x+.78*Math.cos(a),yy,2.35+.78*Math.sin(a)],.085,'#b2b6ad',4);}}}
@@ -566,7 +584,7 @@
       const sway=a3CityStride(p,state.elapsed,a3CityVisuals(m))*.11;
       const kick=Math.max(0,(p.aimUntil||0)-state.elapsed)*.55;
       hands.bar([.9,1.34,9.65+sway],[3.67,1.12,10.14+sway],.33,'#ba9474');
-      heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id);
+      heldWeapon(hands,3.63-kick,1.12,10.08+sway+kick,state.weapons[state.weapon]?.id,m.detail!=='low',m.detail==='high');
     }
     const g=local(m),goal=!state.interior&&W().objectiveGoal(state);
     if(!state.interior)for(const site of [...state.map.properties,state.map.dealer,...state.map.venues])if(near(site))g.bar([site.x,site.y,.2],[site.x,site.y,.4],5.5,'#77c7ce',10);

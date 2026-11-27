@@ -3288,7 +3288,8 @@ function vxKnifeColor(k){
 function vxColorMul(col,m){return col.map(x=>Math.max(0,Math.min(1,x*m)));}
 function a4KnifeDetail(out,c,k){for(const side of [-1,1]){putBox(out,side*.117,-.096,.27,.024,.095,.55,c.trim);putBox(out,side*.14,-.11,-.105,.045,.16,.12,c.steel);}putBox(out,0,-.084,.66,.17,.04,.09,c.trim);if(k.rarityIndex>=4)putBox(out,0,.17,-.14,.075,.035,.075,c.edge);}
 function vxKnifeMesh(k){
- const cacheKey=k.id+':'+(!rxTvUltraLight()&&v91EffectiveGraphics()>=2?'a4':'base');if(vxKnifeMeshCache.has(cacheKey))return vxKnifeMeshCache.get(cacheKey);
+ const detailed=!rxTvUltraLight()&&v91EffectiveGraphics()>=2;
+ const cacheKey=k.id+':'+(detailed?'a4-evolution':'base');if(vxKnifeMeshCache.has(cacheKey))return vxKnifeMeshCache.get(cacheKey);
  const out=[],c=vxKnifeColor(k);
  const emit=(a,b,d,color)=>{
   const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
@@ -3304,6 +3305,10 @@ function vxKnifeMesh(k){
   [[-.24,.17,0],[-.54,.24,0],[-.83,.20,-.05],[-1.17,.31,-.14],[-1.48,.16,-.18],[-1.78,.0,-.18]]
  ];
  let stations=shapes[(k.shape||0)%6];
+ // Interpolate the curved designs without changing their original silhouette bounds.
+ if(detailed&&[1,2,5].includes((k.shape||0)%6)){
+  const refined=[];for(let i=0;i<stations.length-1;i++){const a=stations[i],b=stations[i+1];refined.push(a,a.map((v,j)=>(v+b[j])/2));}refined.push(stations.at(-1));stations=refined;
+ }
  // Shaped blade built from faceted ridges and actual two-sided bevels, not a flat texture.
  for(let i=0;i<stations.length-1;i++){
   const [az,aw,ac]=stations[i],[bz,bw,bc]=stations[i+1];
@@ -3323,10 +3328,11 @@ function vxKnifeMesh(k){
  // Edge closure at the blade root.
  emit([-stations[0][1],0,stations[0][0]],[0,-.072,stations[0][0]],[stations[0][1],0,stations[0][0]],c.shade);
  // Handle: ribbed pistol-style grip, front and rear bolsters and signature crossguard.
- putBox(out,0,-.102,.275,.23,.204,.86,c.grip);
- putBox(out,0,-.12,.67,.28,.24,.17,c.shade);
- putBox(out,0,-.13,-.18,.34,.27,.18,c.shade);
- putBox(out,0,-.13,-.105,.69,.17,.145,c.trim);
+ const handlePart=detailed?a4BeveledPart:putBox;
+ handlePart(out,0,-.102,.275,.23,.204,.86,c.grip);
+ handlePart(out,0,-.12,.67,.28,.24,.17,c.shade);
+ handlePart(out,0,-.13,-.18,.34,.27,.18,c.shade);
+ handlePart(out,0,-.13,-.105,.69,.17,.145,c.trim);
  for(let i=0;i<4;i++)putBox(out,0,-.084,.11+i*.115,.251,.035,.043,i%2?c.trim:vxColorMul(c.trim,.64));
  for(const side of [-1,1]){
   putBox(out,side*.25,-.11,-.11,.12,.22,.22,c.shade);
@@ -3335,7 +3341,9 @@ function vxKnifeMesh(k){
  // A raised socket and gemstone set in the guard identify the theme/rarity in 3D.
  putBox(out,0,.045,-.13,.145,.115,.20,c.steel);
  putBox(out,0,.124,-.14,.095,.05,.105,c.trim);
- if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2)a4KnifeDetail(out,c,k);
+ if(detailed){a4KnifeDetail(out,c,k);
+  for(const side of [-1,1])for(let i=0;i<3;i++)putBox(out,side*.118,-.065,.17+i*.16,.017,.063,.065,i%2?c.shade:c.trim);
+ }
  const verts=new Float32Array(out);vxKnifeMeshCache.set(cacheKey,verts);return verts;
 }
 function vxDrawKnifeModel(out,k,x,y,z,yaw=0,scale=1){
@@ -3654,6 +3662,41 @@ function v8Mat(o,x,y,z){let yaw=o.yaw||0,pitch=o.pitch||0,cy=Math.cos(yaw),sy=Ma
 const V8_TMP=[];
 function v8Part(out,o,x,y,z,w,h,d,color){V8_TMP.length=0;putBox(V8_TMP,x,y,z,w,h,d,color);for(let i=0;i<V8_TMP.length;i+=9){let p=v8Mat(o,V8_TMP[i],V8_TMP[i+1],V8_TMP[i+2]);out.push(...p,V8_TMP[i+3],V8_TMP[i+4],V8_TMP[i+5],V8_TMP[i+6],V8_TMP[i+7],V8_TMP[i+8]);}}
 function v8Line(out,o,a,b,size,color){let p=v8Mat(o,...a),q=v8Mat(o,...b);putBeam(out,...p,...q,size,color);}
+// Original, cosmetic beveled mesh. Coordinates use the same bounds as putBox.
+const a4WeaponShapeCache=new Map();
+function a4BeveledShape(w,h,d){
+ const key=[w,h,d].join(':');if(a4WeaponShapeCache.has(key))return a4WeaponShapeCache.get(key);
+ const x=w/2,b=Math.min(w,h)*.22;
+ const outline=[[-x+b,0],[x-b,0],[x,b],[x,h-b],[x-b,h],[-x+b,h],[-x,h-b],[-x,b]];
+ const a=outline.map(([x,y])=>[x,y,-d/2]),z=outline.map(([x,y])=>[x,y,d/2]),out=[];
+ function tri(p,q,r){const u=q.map((v,i)=>v-p[i]),v=r.map((v,i)=>v-p[i]);const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],len=Math.hypot(...n)||1;
+  for(const t of [p,q,r])out.push(...t,...n.map(v=>v/len));}
+ for(let i=0;i<8;i++){const j=(i+1)%8;tri(a[i],a[j],z[j]);tri(a[i],z[j],z[i]);}
+ for(let i=1;i<7;i++){tri(a[0],a[i+1],a[i]);tri(z[0],z[i],z[i+1]);}
+ const mesh=new Float32Array(out);if(a4WeaponShapeCache.size<128)a4WeaponShapeCache.set(key,mesh);return mesh;
+}
+function a4BeveledPart(out,x,y,z,w,h,d,color,transform=null){
+ const shape=a4BeveledShape(w,h,d),origin=transform?transform(0,0,0):null;
+ for(let i=0;i<shape.length;i+=6){
+  const p=[x+shape[i],y+shape[i+1],z+shape[i+2]],n=[shape[i+3],shape[i+4],shape[i+5]];
+  const q=transform?transform(...p):p,rot=transform?transform(...n).map((v,j)=>v-origin[j]):n;
+  out.push(...q,...color,...rot);
+ }
+}
+function a4WeaponVisualFinish(index,part,base,light,dark,extra){
+ const rim=base.map(v=>Math.min(1,v*.65+.14)),ink=dark.map(v=>Math.min(1,v*.65+.04));
+ const profiles=[{z:.30,w:.27},{z:.29,w:.35},{z:.20,w:.30},{z:.28,w:.35}],p=profiles[index];if(!p)return;
+ for(const side of [-1,1]){
+  const x=side*(p.w/2+.006);
+  part(x,.075,p.z,.018,.095,.23,rim);
+  for(let i=0;i<(extra?3:2);i++)part(x,.10,p.z-.10+i*.10,.021,.023,.045,ink);
+  part(x,.02,p.z-.18,.022,.055,.07,light);
+ }
+ if(index===2){part(0,.365,.61,.135,.024,.11,rim);part(0,.28,.81,.11,.07,.035,ink);}
+ else if(index===1){part(0,.13,.42,.22,.035,.10,rim);}
+ else if(index===0){part(0,.15,.43,.13,.024,.25,rim);}
+ else{part(0,.15,.32,.15,.026,.15,rim);}
+}
 function a4WeaponDetail(index,part,line,base,light,dark,extra,season){
  const panel=base.map(v=>Math.min(1,v*.86+.08));const end=[.85,.83,1.24,.58][index]||.85;
  for(const side of [-1,1]){const x=side*(index===1?.175:index===3?.172:.143);part(x,.07,.32,.027,.11,.29,panel);part(x,-.015,.18,.025,.045,.17,dark);if(index===0||index===3){for(let i=0;i<(extra?4:2);i++)part(x*.8,.07,.47+i*.075,.024,.045,.035,light);}else if(index===1){for(let i=0;i<(extra?5:3);i++)part(side*.178,-.046,.57+i*.049,.025,.115,.023,dark);}else{part(side*.089,.29,.36,.025,.085,.26,panel);part(side*.12,.30,.58,.025,.095,.11,dark);}}
@@ -3672,6 +3715,8 @@ function v8DrawWeapon(out,owner,index,finish,first,now){if(!finish)return;
 ori.y-=fire*.055+switching*(index===2?.62:index===1?.46:.34);const zshift=fire*.12;
  const part=(x,y,z,w,h,d,c)=>v8Part(out,ori,x,y+bob,z-zshift,w,h,d,c);
  const line=(a,b,w,c)=>v8Line(out,ori,[a[0],a[1]+bob,a[2]-zshift],[b[0],b[1]+bob,b[2]-zshift],w,c);
+ const modelDetail=!rxTvUltraLight()&&v91EffectiveGraphics()>=2&&(first||owner.rigGrip);
+ const sculpt=(x,y,z,w,h,d,c)=>modelDetail?a4BeveledPart(out,x,y+bob,z-zshift,w,h,d,c,(...p)=>v8Mat(ori,...p)):part(x,y,z,w,h,d,c);
  if(first){const reloadPose=rx3ReloadPose(now);
  if(reloadPose>0){if(index===1){for(let i=0;i<3;i++)part(-.16+i*.13,-.27-reloadPose*.31,.11+i*.10,.07,.14,.07,i%2?base:light);}
  else part(.15,-.25-.65*reloadPose,.15,.15,.30,.15,dark);}
@@ -3679,27 +3724,27 @@ ori.y-=fire*.055+switching*(index===2?.62:index===1?.46:.34);const zshift=fire*.
 const muzzle=index===2?1.58:index===1?1.04:index===3?.79:1.2;
  // Mechanical silhouette varies by weapon class.
  if(index===0){ // assault rifle: long handguard, side-rail, angled magazine, telescopic stock
-  part(0,0,.30,.27,.23,.58,base);part(0,.04,.70,.20,.17,.37,dark);part(0,.04,1.10,.095,.10,.31,steel);
-  part(0,0,-.12,.26,.10,.36,dark);part(0,-.22,.32,.18,.29,.16,dark);
-  part(0,-.26,.03,.095,.30,.12,base);part(0,.22,.25,.08,.06,.6,light);
+  sculpt(0,0,.30,.27,.23,.58,base);sculpt(0,.04,.70,.20,.17,.37,dark);sculpt(0,.04,1.10,.095,.10,.31,steel);
+  sculpt(0,0,-.12,.26,.10,.36,dark);sculpt(0,-.22,.32,.18,.29,.16,dark);
+  sculpt(0,-.26,.03,.095,.30,.12,base);sculpt(0,.22,.25,.08,.06,.6,light);
  }else if(index===1){ // shotgun: broad pump, twin barrels, shell-fed receiver
-  part(0,0,.29,.35,.28,.42,base);part(0,0,-.16,.30,.13,.41,dark);
-  for(const sx of [-.09,.09])part(sx,.04,.84,.095,.11,.60,steel);
-  part(0,-.08,.68,.35,.16,.28,base);part(0,-.22,.20,.12,.28,.13,dark);
-  for(let j=0;j<4;j++)part(-.16+j*.105,.20,.26,.045,.11,.10,light);
+  sculpt(0,0,.29,.35,.28,.42,base);sculpt(0,0,-.16,.30,.13,.41,dark);
+  for(const sx of [-.09,.09])sculpt(sx,.04,.84,.095,.11,.60,steel);
+  sculpt(0,-.08,.68,.35,.16,.28,base);sculpt(0,-.22,.20,.12,.28,.13,dark);
+  for(let j=0;j<4;j++)sculpt(-.16+j*.105,.20,.26,.045,.11,.10,light);
  }else if(index===2){ // sniper: extra-long barrel, scope with lenses and cheek rest
-  part(0,0,.20,.30,.22,.51,base);part(0,.04,.78,.105,.10,.85,steel);
-  part(0,.24,.25,.16,.13,.41,dark);part(0,.29,.61,.21,.13,.20,light);
-  part(0,0,-.21,.24,.14,.41,dark);part(0,-.23,.11,.13,.31,.15,base);
-  part(0,.11,1.50,.19,.08,.15,light);
+  sculpt(0,0,.20,.30,.22,.51,base);sculpt(0,.04,.78,.105,.10,.85,steel);
+  sculpt(0,.24,.25,.16,.13,.41,dark);sculpt(0,.29,.61,.21,.13,.20,light);
+  sculpt(0,0,-.21,.24,.14,.41,dark);sculpt(0,-.23,.11,.13,.31,.15,base);
+  sculpt(0,.11,1.50,.19,.08,.15,light);
  }else{ // SMG: short body, compact side rails, vertical extended magazine
-  part(0,0,.28,.35,.28,.38,base);part(0,.035,.66,.14,.13,.34,steel);
-  part(0,-.34,.27,.13,.48,.15,dark);part(0,-.19,-.08,.12,.29,.14,base);
-  part(0,.24,.29,.16,.12,.19,dark);part(0,.04,-.09,.27,.07,.28,light);
+  sculpt(0,0,.28,.35,.28,.38,base);sculpt(0,.035,.66,.14,.13,.34,steel);
+  sculpt(0,-.34,.27,.13,.48,.15,dark);sculpt(0,-.19,-.08,.12,.29,.14,base);
+  sculpt(0,.24,.29,.16,.12,.19,dark);sculpt(0,.04,-.09,.27,.07,.28,light);
  }
  part(0,.13,muzzle,.17,.05,.11,light);
  if(first&&v91EffectiveGraphics()>=1||!first&&owner.rigGrip)z1WeaponTrim(index,part,line,base,light,dark,fire);
- if(!rxTvUltraLight()&&v91EffectiveGraphics()>=2&&(first||owner.rigGrip))a4WeaponDetail(index,part,line,base,light,dark,first&&v91EffectiveGraphics()>=3,finish.seasonOnly);
+ if(modelDetail){a4WeaponDetail(index,part,line,base,light,dark,first&&v91EffectiveGraphics()>=3,finish.seasonOnly);a4WeaponVisualFinish(index,part,base,light,dark,first&&v91EffectiveGraphics()>=3);}
  // Separate three-dimensional designs for every named Godly silhouette.
  const st=finish.style;
  if(finish.seasonOnly&&index===0){
