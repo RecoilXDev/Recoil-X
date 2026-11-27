@@ -1,6 +1,6 @@
 const scope=new URL(self.registration.scope);
 const prefix='recoil-x-shell:'+scope.pathname+':';
-const cacheName=prefix+'recoil-city-3d-radio-update-a4-evolution4';
+const cacheName=prefix+'recoil-city-3d-radio-update-a4-evolution5';
 const shell=new URL('index.html',scope).href;
 const assets=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png',
   'server/recoil-city-world.js','server/recoil-city-view.js','server/recoil-city-radio.js','server/city-radio/tracks.json',

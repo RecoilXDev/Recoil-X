@@ -25,3 +25,8 @@ Five targeted checks and four syntax checks passed directly. Full integration, a
 - Four core FPS classes now use original beveled receiver and body geometry on high/ultra, with distinct decorative panels and finish accents. The previous geometry remains on low/TV and distant actors; existing Godly and seasonal silhouettes, reload and recoil behavior remain intact.
 - High-detail knife handles and guards are beveled, with additional grip accents and subdivided curved blade profiles. Collection previews reuse the updated meshes. No change to knife stats, rarity or inventory.
 - Recoil City standard/high uses four distinct sculpted held weapon models, including first-person and animated NPC views; TV/low retain the original simple geometry. These are fictional cosmetic meshes only, not changes to weapon mechanics or hit detection.
+
+## A.4 release-candidate human animation and boss pass
+- Deterministic mixed pedestrian appearances, six additional hair/face variants and a narrower body rig on standard/high. Named story cast remains intact. Close high-quality civilians now use close LOD; distant civilians retain medium geometry.
+- City poses include idle breathing, spine/hip sway, walk/run distinction, foot motion, jumping, and stable falls; input values are bounded. Original TV renderer is unchanged. Boss chest crests, shoulder and scorpion shell detail improved without combat changes.
+- Release gate: actual device testing, visual screenshot comparison and 30 FPS TV target still require physical validation. A distinct Wadi Stomper model was not found in the source, and a full 30-minute movie is not implemented. Do not represent those as shipped.

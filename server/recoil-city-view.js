@@ -367,7 +367,8 @@
     const base=local(m,p.x,p.y,0,p.angle);shadow(base,hero?2.8:2.15,hero?2:1.65);
     const shared=window.RecoilCityCharacter;
     if(shared&&!tvSafe()){
-      const data=shared.emit(hero?{...p,phase:a3CityStride(p,time,a3CityVisuals(m)),a4Hero:true,color:'#327d79',pants:'#354256'}:p,time,m.detail||'low',[]);
+      const close=Number.isFinite(m.eyeX)&&Math.hypot(p.x-m.eyeX,p.y-m.eyeY)<65;
+      const data=shared.emit(hero?{...p,phase:a3CityStride(p,time,a3CityVisuals(m)),a4Hero:true,color:'#327d79',pants:'#354256'}:{...p,a4Close:close},time,m.detail||'low',[]);
       for(let i=0;i<data.length;i+=27){
         const rgb=data.slice(i+3,i+6),shade=.70+.30*Math.max(0,data[i+7]),c={rgb:rgb.map(v=>Math.min(1,v*shade)),css:'rgb('+rgb.map(v=>Math.round(Math.min(1,v*shade)*255)).join(',')+')'};
         const points=[];for(let j=0;j<27;j+=9)points.push([p.x-data[i+j+2],p.y+data[i+j],(p.z||0)+data[i+j+1]]);
@@ -572,7 +573,7 @@
     }
   }
   function dynamic(state,cam) {
-    const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;
+    const m=mesh(), p=state.player, first=cam.mode==='first';m.detail=state.quality;m.eyeX=cam.x;m.eyeY=cam.y;
     const far2=cam.far*cam.far,near=v=>(v.x-cam.x)**2+(v.y-cam.y)**2<far2;
     if(state.interior){const s=state.interior,g=local(m,s.x,s.y);g.box(0,0,-.4,30,22,.4,'#a99a81');g.box(0,-11,0,30,.7,16,'#b9ab95');g.box(0,11,0,30,.7,16,'#b9ab95');g.box(15,0,0,.7,22,16,'#a99a81');if(s.safe){if(s.kind==='club'){g.box(10,0,0,7,16,1.3,'#77538d');for(let i=-2;i<=2;i++)g.box(0,i*3,.02,4,2.5,.12,i%2?'#cb75ad':'#607fcb');g.box(12,0,1.3,2,8,2,'#493450');}else{g.box(9,-6,0,7,5,1.7,'#c6ad91');g.box(9,6,0,5,3,2,'#84664e');g.box(1,6,0,5,2,1.4,'#517d72');}}else{g.box(4,0,0,2,13,4,'#705442');actor(m,s.keeper,false,state.elapsed);}if(!tvSafe()&&m.detail!=='low')a4InteriorDetails(g,s,m.detail==='high');}else{
     for(const v of state.vehicles)if(near(v))automobile(m,v,v.id===p.vehicleId,state.elapsed,first&&v.id===p.vehicleId,Math.hypot(v.x-cam.x,v.y-cam.y)<(state.quality==='high'?170:105));

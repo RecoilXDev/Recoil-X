@@ -5651,7 +5651,7 @@ function crownPartBuilder(bones) {
 }
 
 function crownFighterMesh(model,lod,variant,civilian=false) {
-  const proportion={
+  const proportion=civilian&&lod<2&&variant>=6?[.90,1]:{
     lava:[1.09,1.04],ice:[1.02,1.07],darkness:[.91,1.07],earth:[1.24,.91],water:[.99,1.10],
     knight:[1.02,1.08],bishop:[.87,1.13],rook:[1.25,.88],queen:[.91,1.09],king:[1.13,1.02],titan:[1.22,.96]
   }[model];
@@ -5786,14 +5786,14 @@ function a4FighterDetail(m,model,lod,variant,civilian){if(lod>=2)return;const cl
  if(!regular){m.gem('chest',3,0,.165,-.258,.075,.085,.035);if(close)for(const side of ['L','R']){const sign=side==='R'?1:-1;m.gem('shoulder'+side,1,sign*.12,.12,.035,.11,.14,.10);m.gem('knee'+side,3,0,-.063,-.145,.051,.073,.021);}}
 }
 function a4CivilianHead(m,variant,close,tone){
-  const v=((variant%6)+6)%6,sides=close?12:8;
-  const jaw=[.113,.135,.105,.124,.102,.141][v],width=[1,.99,.96,1.02,.94,1.04][v];
+  const v=((variant%6)+6)%6,sides=close?12:8,alternate=variant>=6;
+  const jaw=[.113,.135,.105,.124,.102,.141][v]*(alternate?.94:1),width=[1,.99,.96,1.02,.94,1.04][v]*(alternate?.97:1);
   const shape=[[0,-.179,-.016,jaw*.65,.079,0],[0,-.142,-.023,jaw,.111,0],
     [0,-.084,-.008,.150*width,.141,0],[0,-.012,-.003,.168*width,.150,0],
     [0,.066,.008,.169*width,.157,0],[0,.137,.013,.157*width,.150,0],[0,.195,.009,.104,.102,0]];
   m.skin('head',null,tone.skin,shape,sides);
   // Short, swept, receding, cropped, tousled and closely shaved silhouettes.
-  const heights=[.095,.078,.047,.066,.112,.029], hairH=heights[v];
+  const heights=alternate?[.104,.102,.073,.09,.115,.06]:[.095,.078,.047,.066,.112,.029], hairH=heights[v];
   m.ellipsoid('head',1,0,.144+hairH*.22,.031,.172*width,hairH,.157,close?10:6,.74);
   if(v!==5){
     m.ellipsoid('head',1,0,.068,.114,.160*width,.106,.067,6,.80);
@@ -5810,7 +5810,13 @@ function a4CivilianHead(m,variant,close,tone){
   }
   m.gem('head',tone.skin,0,-.045,-.147,.032,.057,.047);
   m.prism('head',tone.shade,[[-.039,-.114],[.039,-.114],[.027,-.102],[-.027,-.102]],-.145,.012);
-  if(close&&(v===1||v===3||v===5))m.prism('head',7,[[-.083,-.122],[.083,-.122],[.048,-.156],[-.048,-.156]],-.113,.017);
+  if(alternate){
+    if(v===0||v===3){m.ellipsoid('head',1,0,-.045,.15,.151,.16,.095,close?8:6,.82);}
+    else if(v===1||v===4){m.ellipsoid('head',1,0,.145,.166,.087,.082,.077,6,.8);}
+    else if(v===2){m.ellipsoid('head',1,0,.018,.154,.143,.116,.075,6,.8);}
+    else m.ellipsoid('head',1,0,.12,.10,.159,.072,.112,6,.75);
+  }
+  if(!alternate&&close&&(v===1||v===3||v===5))m.prism('head',7,[[-.083,-.122],[.083,-.122],[.048,-.156],[-.048,-.156]],-.113,.017);
 }
 function crownHumanHead(m,model,variant,close,detail,tone) {
   const sides=close?10:detail?8:4;
@@ -5928,6 +5934,16 @@ function crownBossTrim(m,model,close,detail) {
       }
     }
   }
+  if(detail&&(model==='earth'||model==='titan'||model==='lava'||model==='ice')){
+    // Boss identity reads at gameplay distance: distinctive shoulder crests and chest inlays.
+    for(const side of ['L','R']){
+      const sign=side==='R'?1:-1;
+      const color=model==='earth'?1:model==='ice'?3:0;
+      gem('shoulder'+side,color,sign*.20,.15,-.08,.095,.135,.065);
+      if(close){prism('chest',1,[[sign*.06,.13],[sign*.18,.10],[sign*.16,.045],[sign*.065,.07]],-.259,.025);gem('thigh'+side,2,sign*.025,-.17,-.12,.075,.14,.04);}
+    }
+    if(close)gem('chest',3,0,.09,-.28,.055,.065,.023);
+  }
   if(model==='nemesis'){
     horn(-1,[.171,.126,.05],[.282,.271,.051],[.265,.393,.01]);
     gem('shoulderR',1,.089,.032,-.115,.20,.17,.087);
@@ -5975,6 +5991,12 @@ function crownScorpionMesh(lod) {
   strut('stinger',1,[0,.1,.02],[0,.11,-.49],.22,.14,6);
   strut('stinger',3,[0,.11,-.48],[0,-.23,-.76],.13,.013,5);
   z1TitanShell(m,lod);
+  if(lod===0){
+    for(const side of [-1,1]){
+      const joint='carapace';
+      for(let i=0;i<3;i++)gem(joint,1,side*(.44+i*.04),.34,-.41+i*.34,.11,.09,.14);
+    }
+  }
   if(lod<2){for(const side of ['L','R']){const sign=side==='R'?1:-1;gem('carapace',3,sign*.35,.45,-.46,.12,.085,.17);if(lod===0){for(let i=0;i<3;i++)gem('leg'+side+i,1,sign*.27,.05,0,.12,.10,.10);gem('pincer'+side,3,sign*.07,.19,-.20,.075,.05,.085);}}if(lod===0)for(let i=0;i<3;i++)gem('tail'+i,1,0,.41,.05,.12-i*.02,.07,.10);}
   return m;
 }
@@ -6196,10 +6218,36 @@ function a4HumanAppearance(person){
   const cast=Object.hasOwn(A4_HUMAN_CAST,person.character)?A4_HUMAN_CAST[person.character]:null;
   if(cast)return {...person,...cast};
   const id=Number.isFinite(person.id)?Math.abs(Math.trunc(person.id)):0;
-  return {...person,variant:id%6};
+  return {...person,variant:id%6+(person.bodyStyle==='female'?6:0)};
 }
 
 // City civilians reuse the FPS fighter body mesh and skeleton, without armor.
+function a4CityPose(person,time,lod){
+  const finite=(n,f=0)=>Number.isFinite(n)?n:f,limit=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const raw=limit(finite(person.phase),-1,1),aim=person.mood==='defend'||finite(person.aimUntil)>time;
+  const idle=person.motion==='idle'||(person.id>=10000&&person.id<20000&&!aim);
+  const jump=person.motion==='jumping',run=person.motion==='sprinting'||person.mood==='flee',swing=idle?0:raw;
+  const down=person.hp<=0||person.stunUntil>time;
+  const impact=down&&Number.isFinite(person.impactAt)?limit((time-person.impactAt)/.24,0,1):down?1:0,fall=impact*impact*(3-2*impact);
+  const breath=lod<2&&!down?Math.sin(time*2.1+finite(person.id)*.37):0;
+  const bob=down?0:Math.abs(swing)*(run?.034:.020)+breath*.009;
+  const pose={root:[0,-finite(person.angle),1.45*fall,0,.55*fall,0],
+    hips:[run?-.055:0,0,-swing*.055,0,bob,0],
+    spine:[run?-.15:0,swing*.075,0],
+    chest:[aim?.035:0,-swing*.047,0],
+    head:[jump?-.07:0,aim?0:breath*.042,-swing*.026]};
+  if(down){pose.hips=[0,0,0];pose.spine=[.11,0,0];pose.chest=[.06,0,0];pose.head=[-.12,0,0];}
+  for(const sign of [-1,1]){
+    const side=sign>0?'R':'L',step=swing*sign;
+    pose['thigh'+side]=[down?.15*sign:jump?(sign>0?.43:-.17):step*(run?.65:.42),0,sign*.03];
+    pose['knee'+side]=[down?-.15:jump?-.62:-Math.max(0,-step)*(run?.79:.55),0,0];
+    pose['foot'+side]=[down?0:Math.max(0,-step)*.19,0,0];
+    pose['shoulder'+side]=[down?.18:aim?1.05:jump?.37:-step*(run?.52:.36),0,sign*(down?.28:.12)];
+    pose['elbow'+side]=[down?.25:aim?.84:run?.56:.28,0,0];
+    pose['hand'+side]=[aim?0:breath*.045,0,0];
+  }
+  return pose;
+}
 const cityCivilianMeshes=new Map();
 window.RecoilCityCharacter=Object.freeze({
   cast:A4_HUMAN_CAST,
@@ -6207,7 +6255,7 @@ window.RecoilCityCharacter=Object.freeze({
   emit(person,time,detail,out){
     person=a4HumanAppearance(person);
     const police=!!person.unit,hero=!!person.a4Hero,keeper=!police&&!hero&&person.id>=10000&&person.id<20000;
-    const lod=detail==='high'?(hero||police?0:1):detail==='standard'?1:2,variant=lod<2?person.variant:0;
+    const lod=detail==='high'?(hero||police||person.a4Close?0:1):detail==='standard'?1:2,variant=lod<2?person.variant:0;
     const key=lod+':'+Number(!!person.shorts)+':'+(police?'police':keeper?'keeper':'civilian')+':'+variant;
     let mesh=cityCivilianMeshes.get(key);
     if(!mesh){
@@ -6233,17 +6281,7 @@ window.RecoilCityCharacter=Object.freeze({
       if(keeper&&lod<2){mesh.prism('chest',2,[[-.17,-.16],[.17,-.16],[.14,.10],[-.14,.10]],-.188,.031);mesh.prism('chest',4,[[-.082,-.10],[.082,-.10],[.082,-.045],[-.082,-.045]],-.222,.02);}
       cityCivilianMeshes.set(key,mesh);
     }
-    const swing=Number(person.phase)||0,aim=person.mood==='defend'||(person.aimUntil||0)>time;
-    const down=person.hp<=0||person.stunUntil>time;
-    const impact=down&&Number.isFinite(person.impactAt)?clamp((time-person.impactAt)/.24,0,1):down?1:0,fall=impact*impact*(3-2*impact);
-    const pose={root:[0,-(person.angle||0),1.45*fall,0,.55*fall,0]};
-    for(const sign of [-1,1]){
-      const side=sign>0?'R':'L',step=swing*sign;
-      pose['thigh'+side]=[step*.42,0,sign*.03];
-      pose['knee'+side]=[-Math.max(0,-step)*.55,0,0];
-      pose['shoulder'+side]=[aim?1.05:-step*.36,0,sign*.12];
-      pose['elbow'+side]=[aim?.84:.28,0,0];
-    }
+    const pose=a4CityPose(person,time,lod);
     const skin=hexRgb(person.skinTone||'#c4926d'),shirt=hexRgb(person.color||'#327d79'),pants=hexRgb(person.pants||'#405572'),hair=hexRgb(person.hair||'#362a27');
     crownEmitRig(out,mesh,pose,[shirt,hair,[.16,.18,.20],shirt,pants,shirt,skin,skin.map(v=>v*.65),[.88,.87,.82],[.11,.09,.08]],6.5);
     return out;

@@ -159,6 +159,7 @@
           const id = walkers.length;
           const walker = {id, hp: 70, mood: 'calm', alarm: 0, downUntil: 0, active: false, left, right, top, bottom, length, color: coats[id % coats.length],
             distance: (id * 83 + i * 137 + 15) % length, speed: (12 + id % 6) * (id % 2 ? -1 : 1)};
+          walker.bodyStyle=(id%5===1||id%5===3)?'female':'male';
           placeWalker(walker);
           walkers.push(dressCivilian(walker,seed));
         }
