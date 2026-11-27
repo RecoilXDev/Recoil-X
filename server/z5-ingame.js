@@ -87,8 +87,8 @@ news.setAttribute('role','dialog');news.setAttribute('aria-modal','true');
 news.setAttribute('aria-label','Current update details');
 news.innerHTML=[
 '<div class="rx5-dialog"><h2>RECOIL X <span id="rx5CurrentRelease" style="color:#69e3de"></span></h2>',
-'<p>Current release — Recoil City analog touch movement, camera-facing shift lock, consistent release labels and improved models.</p>',
-'<div class="rx5-features"><div class="rx5-feature"><strong>Mobile City controls</strong><small>Analog joystick and independent camera swipes.</small></div><div class="rx5-feature"><strong>Model refinement</strong><small>Improved buildings, vehicles, palms and human faces.</small></div>',
+'<p>Origins — a small tribute to Zone 90 and the A era. Visit the museum, select a retro finish, play the OG arena, or discover the beach drawing.</p>',
+'<div class="rx5-features"><div class="rx5-feature"><strong>Origins Museum</strong><small>Four eras, five offline retro finishes, and the OG arena exhibition.</small></div><div class="rx5-feature"><strong>East Beach Promenade</strong><small>Find the hand-drawn sand lettering in Recoil City.</small></div><div class="rx5-feature"><strong>Mobile City controls</strong><small>Analog joystick and independent camera swipes.</small></div><div class="rx5-feature"><strong>Model refinement</strong><small>Improved buildings, vehicles, palms and human faces.</small></div>',
 '<div class="rx5-feature"><strong>⚔ Clan Wars</strong><small>Two verified clans fight in Online Play. Locked teams and server-only win records appear in Career & Clans.</small></div>',
 '<div class="rx5-feature"><strong>🌊 Underwater Combat</strong><small>Battle in Abyss Laboratory. Oxygen drains and can be refilled by holding Use beside air stations.</small></div>',
 '<div class="rx5-feature"><strong>💥 Multiplayer Destruction</strong><small>Demolition, Clan Wars and Underwater maps now include server-controlled breakable cover.</small></div>',

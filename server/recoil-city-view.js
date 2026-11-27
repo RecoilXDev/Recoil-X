@@ -228,6 +228,22 @@
     if(detail){g.box(x,y,0,1.6,1.6,.6,'#747c78');g.bar([x,y,.6],[x,y,2.4],.61,'#59676a',6);g.box(x+dx,y+dy,17,2.5,1.75,.23,'#647476');}
   }
   function rect(g,x,y,w,h,z,c){g.face([[x,y,z],[x+w,y,z],[x+w,y+h,z],[x,y+h,z]],c);}
+  // Hand-drawn geometric lettering: a small, static coastal Easter egg.
+  function a5BeachDrawing(g,x,y,scale=1){
+    const glyphs={R:[[0,1,0,0],[0,0,.75,0],[.75,0,.75,.48],[.75,.48,0,.48],[.3,.48,.8,1]],E:[[.8,0,0,0],[0,0,0,1],[0,.5,.65,.5],[0,1,.8,1]],C:[[.8,0,0,0],[0,0,0,1],[0,1,.8,1]],O:[[0,0,.8,0],[.8,0,.8,1],[.8,1,0,1],[0,1,0,0]],I:[[.1,0,.7,0],[.4,0,.4,1],[.1,1,.7,1]],L:[[0,0,0,1],[0,1,.8,1]],X:[[0,0,.8,1],[.8,0,0,1]]};
+    let n=0;for(const char of 'RECOIL X'){if(char===' '){n+=.55;continue;}for(const [a,b,c,d] of glyphs[char]){
+      const ax=x+(n+a)*scale,ay=y+b*scale,bx=x+(n+c)*scale,by=y+d*scale,len=Math.hypot(bx-ax,by-ay)||1,w=scale*.065,dx=-(by-ay)/len*w,dy=(bx-ax)/len*w;
+      g.face([[ax+dx,ay+dy,.13],[bx+dx,by+dy,.13],[bx-dx,by-dy,.13],[ax-dx,ay-dy,.13]],'#8d7047',.94);
+    }n+=1.12;}
+  }
+  function a5Beach(g,b,near,rich){
+    rect(g,b.x,b.y,b.w,b.h,.01,'#dfc999');rect(g,b.x,b.y+b.h*.09,b.w,b.h*.13,.06,'#cabda2');
+    rect(g,b.x+b.w*.75,b.y+b.h*.25,b.w*.25,b.h*.75,.03,'#75b7b5');
+    for(let i=0;i<3;i++){rect(g,b.x+b.w*.73+i*2,b.y+b.h*.25,1,b.h*.75,.09,i%2?'#b8e0cf':'#a3d5ce');}
+    a5BeachDrawing(g,b.x+b.w*.12,b.y+b.h*.46,Math.min(7,b.w*.067));
+    for(let i=0;i<3;i++){palm(g,b.x+13+i*b.w*.22,b.y+15,18+i,near,rich);g.box(b.x+14+i*b.w*.22,b.y+25,1.2,6,1.6,.6,'#8e7759');}
+    if(near)for(let i=0;i<2;i++){const x=b.x+b.w*.30+i*15,y=b.y+b.h*.78;g.bar([x,y,0],[x,y,7],.22,'#856c50',5);for(let j=0;j<8;j++){const a=j*Math.PI/4,c=(j+1)*Math.PI/4;g.face([[x,y,7.9],[x+Math.cos(a)*4,y+Math.sin(a)*4,6.3],[x+Math.cos(c)*4,y+Math.sin(c)*4,6.3]],j%2?'#f2e3bd':'#3a8e92');}}
+  }
   function scenery(map,region) {
     const detail=!tvSafe()&&region?.quality==='high';
     const nearbyDetail=(x,y)=>!tvSafe()&&!!region&&region.quality!=='low'&&Math.abs(x-region.x)<=310&&Math.abs(y-region.y)<=310;
@@ -280,7 +296,8 @@
     map.blocks.forEach((b,i)=>{
       if(!close(b.x+b.w/2,b.y+b.h/2,Math.hypot(b.w,b.h)/2+30))return;
       const g=chunk(b.x+b.w/2,b.y+b.h/2,Math.hypot(b.w,b.h)/2+30);
-      if(b.kind==='park'){
+      if(b.beach){a5Beach(g,b,nearbyDetail(b.x+b.w/2,b.y+b.h/2),detail);}
+      else if(b.kind==='park'){
         rect(g,b.x,b.y,b.w,b.h,.01,'#82a778');
         rect(g,b.x+b.w*.45,b.y,b.w*.12,b.h,.06,'#ceb993');
         rect(g,b.x,b.y+b.h*.45,b.w,b.h*.12,.07,'#ceb993');

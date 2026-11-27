@@ -33,7 +33,9 @@
         const w = xEdges[col + 1] - (col === roadsX.length ? 10 : 53) - x;
         const h = yEdges[row + 1] - (row === roadsY.length ? 10 : 53) - y;
         const district = districtAt(x + w / 2, y + h / 2);
-        if ((col === 2 && row === 2) || (col === 4 && row === 1)) {
+        if(col===9&&row===3){
+          blocks.push({x,y,w,h,district,kind:'park',beach:true,name:'East Beach Promenade'});
+        } else if ((col === 2 && row === 2) || (col === 4 && row === 1)) {
           blocks.push({x, y, w, h, district, kind: 'park', name: col === 2 ? 'Canal Gardens' : 'Lantern Park'});
         } else if (w > 120 && h > 120) {
           const split = (w - 24) / 2;

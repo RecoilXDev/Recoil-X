@@ -2,12 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<meta name="rx-build" content="A.4-HOTFIX-1" />
-<meta name="rx-release" content="A.4 — Evolution" />
+<meta name="rx-build" content="A.5-ORIGINS-1" />
+<meta name="rx-release" content="A.5 — Origins" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <meta name="theme-color" content="#291c15" />
-<title>RECOIL X — Update A.4</title>
+<title>RECOIL X — Update A.5</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./recoil-icon-192.png" />
 <meta name="description" content="RECOIL X Crown Trials: animated 3D humanoid fighters, Kingdom boss trials, Chess, and playable holiday missions through 2031." />
@@ -2689,7 +2689,7 @@ function capturePointer(){
   if(result&&typeof result.catch==='function')result.catch(()=>rxEnableTvMouse(true));
  }catch(e){rxEnableTvMouse(true);}
 }
-function startGame(which){rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';rx5QualityReset();setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
+function startGame(which){a5OriginMatch=a5OriginPending&&which==='solo'&&currentMapId==='og-future';rx3NewMatch();rx2BeforeStart(which);vxAfterStartGame();rxTvLastPointer=null;rxTvPointerPos=null;clearDeathTimers();mode=which;spectating=false;updateSpectatorUI();phase='playing';rx5QualityReset();setMusic('match');earnedMatch=0;gameSeconds=480;paused=false;rx5SquadIntel=null;rx5LastPlayerShot=null;resetPlayer();resetBots();resetChests();petPulse=0;feedEntries=[];renderFeed();$('hud').classList.add('active');$('crosshair').classList.add('active');$('weaponArt').classList.add('active');v8SyncViewUI();$('mobileControls').classList.toggle('active',mobile);rxOnGameplayStart();$('gameModeLabel').textContent=username+' · '+(mode==='solo'?tr('soloMode'):`${roomCode} • ${tr(mode==='host'?'hostMode':'guestMode')}`);$('mapHudLabel').textContent=mapName(activeMap());hideOverlay();socialCount();capturePointer();updateHUD();toast('🎯 '+tr('welcome'),1500);rx2AfterStart(which);}
 function quit(){rx3ClearVisuals();vxAfterQuit();rxAfterQuit();if(mode==='host')for(const s of [...tradeSessions.values()])hostCancelTrade(s,'room closed');activeTrade=null;tradeSessions.clear();tradeInvites.clear();roomRoster=[];socialHide();spectating=false;updateSpectatorUI();clearDeathTimers();setMusic('lobby');phase='menu';paused=false;mouseDown=false;mobileFire=false;isScope=false;if(document.pointerLockElement)document.exitPointerLock();if(hostConn){hostConn.close();hostConn=null}if(peer){peer.destroy();peer=null}for(const c of remoteConns.values())c.close();remoteConns.clear();remotePlayers.clear();roomCode='';roomPlayerCount=1;lobbyVotes.clear();showScreen('mainMenu');refreshWallet();}
 $('soloBtn').onclick=showVoteSolo;$('roomBtn').onclick=()=>{mode='host';lobbyVotes.clear();showScreen('roomMenu');};$('backToMainBtn').onclick=()=>showScreen('mainMenu');$('helpBtn').onclick=()=>showScreen('helpMenu');$('helpBackBtn').onclick=()=>showScreen('mainMenu');$('resumeBtn').onclick=()=>{hideOverlay();capturePointer();};$('spectateBtn').onclick=enterSpectator;$('deathSpectateBtn').onclick=enterSpectator;$('spectatePrev').onclick=()=>cycleSpectator(-1);$('spectateNext').onclick=()=>cycleSpectator(1);$('spectateExit').onclick=exitSpectator;$('quitBtn').onclick=quit;$('endHomeBtn').onclick=quit;$('againBtn').onclick=()=>{if(mode==='mystery'){vxShowMysteryMenu();return;}if(mode==='boss'){vxBossStart();return;}if(mode==='solo')showVoteSolo();else if(mode==='host'){lobbyVotes.clear();showScreen('roomMenu');$('roomHostSection').classList.remove('hide');$('lobbyVotes').classList.remove('hide');drawVoteCards();}else quit();};
 $('soundBtn').onclick=()=>{sound=!sound;window.RecoilCityRadio?.masterChanged();$('soundBtn').querySelector('span').textContent=tr(sound?'soundOn':'soundOff');nextMusicBeat=0;if(sound){setMusic(musicMode);aSyncMenuMusic(true);}else{aNewDawnMusic.sync(false);a3AmbientStop();}};
@@ -3013,6 +3013,21 @@ window.addEventListener('blur',a2ClearHeldInputs);
 const V8_RARITY_COLORS={common:'#858585',uncommon:'#01deeb',rare:'#00c703',legendary:'#db0106',godly:'#fa03b0',silver:'#b7c9e3',golden:'#efc63d'};
 const V8_CASE_COST=350;
 const V8_GUN_IDS=['ar','shot','sniper','smg'];
+// Origins presets are offline exhibition cosmetics, not inventory or tradable rewards.
+const A5_ORIGIN_STYLES=Object.freeze([
+ {id:'classic',name:'Classic Steel',base:'#60717b',glow:'#b2e5ef',shadow:'#26323c'},
+ {id:'neon',name:'Neon Grid',base:'#1b354e',glow:'#42edee',shadow:'#121f30'},
+ {id:'amber',name:'Amber Circuit',base:'#805830',glow:'#ffe3a1',shadow:'#35291e'},
+ {id:'violet',name:'Violet Pulse',base:'#55416f',glow:'#d7b8ff',shadow:'#251c39'},
+ {id:'green',name:'Vector Green',base:'#315c4d',glow:'#a8efab',shadow:'#172e29'}
+].map(Object.freeze));
+let a5OriginPending=false,a5OriginMatch=false,a5OriginStyle=getStore('a5OriginStyle','classic');
+function a5OriginFinish(index,style){
+ const s=A5_ORIGIN_STYLES.find(v=>v.id===style),gun=V8_GUN_IDS[index];if(!s||!gun)return null;
+ return {...s,id:'a5_origin_'+gun+'_'+s.id,gun,ar:s.name,rarity:'common',style:'standard'};
+}
+function a5OriginActive(local,mode,map,active){return !!local&&mode==='solo'&&map==='og-future'&&active===true;}
+
 const V8_GUN_LABELS=['ASSAULT RIFLE','TACTICAL SHOTGUN','SNIPER','SMG'];
 const V8_GUN_EMOJI=['🔫','💥','🎯','⚡'];
 const V8_GODLY_DATA=[
@@ -3119,7 +3134,7 @@ async function aRefreshSeasonReward(){
  }catch{if(token===z1Token&&account===z1Account?.id)aSeasonReward=null;}
 }
 window.RXSeasonGodly={refresh:aRefreshSeasonReward,preview:tier=>{const f=aSeasonFinish(tier);return f?v8Svg(f):'';}};
-function gunFinishFor(n,local=true,remoteDawn=false){const gun=V8_GUN_IDS[n]||'ar';if(local&&gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}if(gun==='ar'&&(local?aDawnEquipped.weapon==='dawn_rifle':remoteDawn)){const finish=aDawnRifleFinish(V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent'));if(finish)return finish;}return (local&&V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun]))||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
+function gunFinishFor(n,local=true,remoteDawn=false){if(a5OriginActive(local,mode,currentMapId,a5OriginMatch)){const retro=a5OriginFinish(n,a5OriginStyle);if(retro)return retro;}const gun=V8_GUN_IDS[n]||'ar';if(local&&gun==='ar'&&aSeasonReward?.equipped){const finish=aSeasonFinish(aSeasonReward.tier);if(finish)return finish;}if(gun==='ar'&&(local?aDawnEquipped.weapon==='dawn_rifle':remoteDawn)){const finish=aDawnRifleFinish(V8_GUN_FINISHES.find(f=>f.id==='g8_ar_serpent'));if(finish)return finish;}return (local&&V8_GUN_FINISHES.find(f=>f.id===v8Equipped[gun]))||V8_GUN_FINISHES.find(f=>f.id===`g8_${gun}_common`);}
 function v8Localized(f){return language==='ar'?f.ar:f.name;}
 function v8RarityName(r){return tr(RARITIES.find(f=>f.id===r)?.key||'rarityCommon');}
 function v8CaseRoll(gun){const rarity=rxPityRoll('gun',rollRarity),pool=V8_GUN_FINISHES.filter(f=>f.gun===gun&&f.rarity===rarity&&!f.seasonOnly&&!['g8_sniper_omega','g8_sniper_oman_falcon'].includes(f.id));return pool[randomInt(pool.length)];}
@@ -9589,6 +9604,28 @@ function z1FunctionalPanel(id,heading,description){
   if(copy&&description)copy.textContent=description;
 }
 
+function a5MountOrigins(){
+  const body=z1MakeScreen('a5OriginsMenu','Origins Museum');
+  const intro=document.createElement('p');intro.textContent='From Zone 90 to RECOIL X: a tribute to the early game, not an exact archived build.';body.append(intro);
+  const entries=[
+    ['ZONE 90','The beginning: simple futuristic arena combat.'],
+    ['THE X ERA','Expanded modes, equipment and animation systems.'],
+    ['THE Z ERA','Multiplayer, tactical challenges and the return of the OG arena.'],
+    ['THE A ERA','Recoil City, New Dawn and model evolution.']
+  ];
+  for(const [name,copy] of entries){const row=document.createElement('article');row.className='crown-card';const h=document.createElement('h3'),p=document.createElement('p');h.textContent=name;p.textContent=copy;row.append(h,p);body.append(row);}
+  const title=document.createElement('h3');title.textContent='Retro exhibition finishes';body.append(title);
+  const note=document.createElement('p');note.textContent='Five free visual presets for the Origins exhibition only. No inventory, rarity, combat or trade changes.';body.append(note);
+  const grid=document.createElement('div');grid.className='z1-menu-grid';body.append(grid);
+  const draw=()=>{grid.replaceChildren();for(const s of A5_ORIGIN_STYLES){const b=crownButton(s.name,()=>{a5OriginStyle=s.id;setStore('a5OriginStyle',s.id);draw();},'secondary');b.setAttribute('aria-pressed',String(a5OriginStyle===s.id));b.innerHTML=v8Svg(a5OriginFinish(0,s.id))+'<strong></strong>';b.querySelector('strong').textContent=(a5OriginStyle===s.id?'✓ ':'')+s.name;grid.append(b);}};
+  if(!A5_ORIGIN_STYLES.some(s=>s.id===a5OriginStyle))a5OriginStyle='classic';draw();
+  body.append(crownButton('Play OG Futuristic Arena',()=>{a5OriginPending=true;try{chooseMap('og-future');startGame('solo');gameSeconds=300;updateHUD();}finally{a5OriginPending=false;}},'primary full'));
+  const beach=document.createElement('p');beach.textContent='City discovery: look for the RECOIL X sand drawing at East Beach Promenade.';body.append(beach);
+  const future=document.createElement('p');future.textContent='Next milestone: Update B. More details will be announced later.';body.append(future);
+  const open=()=>showScreen('a5OriginsMenu');
+  $('z1Home').append(crownButton('Origins Museum · Zone 90',open,'secondary full','a5OriginsEntry'));
+  $('rxSimpleActions').append(crownButton('Origins Museum',open,'secondary full','a5OriginsCompact'));
+}
 function z1MountUI(){
   z1MenuPlay();
   z1MakeScreen('z1CollectionMenu','Collection','<div class="z1-menu-grid" id="z1Locker"></div>');
@@ -9638,7 +9675,7 @@ function z1MountUI(){
   graphics.querySelector('.brandchip').classList.add('z1-retired');
   $('zEventsMenu').querySelector('p').textContent='Live events use Oman time. Each edition has three maps, a 100-tier pass, a Gun Box, and a Knife Box.';
 
-  z1BuildHome();
+  z1BuildHome();a5MountOrigins();
   const syncHolidays=zzRefreshTabs,syncClassics=rxseRefresh;
   zzRefreshTabs=function z1HolidayTabs(){syncHolidays();z1UpdateLiveEvents();};
   rxseRefresh=function z1ClassicTabs(){syncClassics();z1UpdateLiveEvents();};
