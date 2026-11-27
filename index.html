@@ -5664,9 +5664,12 @@ function crownFighterMesh(model,lod,variant,civilian=false) {
   }
 
   if(civilian){
-    crownHumanHead(m,model,variant,close,detail,tone);
-    for(let i=m.parts.length-1;i>=0;i--){const p=m.parts[i];if(p.joint===m.index.head&&p.color!==tone.skin&&p.color!==tone.shade)m.parts.splice(i,1);}
-    m.ellipsoid('head',1,0,.145,.025,.174,.092,.16,detail?6:4,.72);
+    if(detail)a4CivilianHead(m,variant,close,tone);
+    else {
+      crownHumanHead(m,model,variant,close,detail,tone);
+      for(let i=m.parts.length-1;i>=0;i--){const p=m.parts[i];if(p.joint===m.index.head&&p.color!==tone.skin&&p.color!==tone.shade)m.parts.splice(i,1);}
+      m.ellipsoid('head',1,0,.145,.025,.174,.092,.16,4,.72);
+    }
   }else crownHumanHead(m,model,variant,close,detail,tone);
   for(const s of [-1,1]){
     const side=s>0?'R':'L';
@@ -5736,6 +5739,33 @@ function a4FighterDetail(m,model,lod,variant,civilian){if(lod>=2)return;const cl
  if(close){m.strut('chest',1,[sign*.09,.19,-.20],[sign*.22,.09,-.244],.025,.018,5);m.prism(hand,2,[[-.043,-.108],[.043,-.108],[.046,-.071],[-.046,-.071]],-.081,.027);m.prism(foot,1,[[-.083,-.087],[.083,-.087],[.074,-.055],[-.074,-.055]],-.213,.027);m.gem('head',2,sign*.17,.065,-.085,.035,.053,.026);}
  }
  if(!regular){m.gem('chest',3,0,.165,-.258,.075,.085,.035);if(close)for(const side of ['L','R']){const sign=side==='R'?1:-1;m.gem('shoulder'+side,1,sign*.12,.12,.035,.11,.14,.10);m.gem('knee'+side,3,0,-.063,-.145,.051,.073,.021);}}
+}
+function a4CivilianHead(m,variant,close,tone){
+  const v=((variant%6)+6)%6,sides=close?12:8;
+  const jaw=[.113,.135,.105,.124,.102,.141][v],width=[1,.99,.96,1.02,.94,1.04][v];
+  const shape=[[0,-.179,-.016,jaw*.65,.079,0],[0,-.142,-.023,jaw,.111,0],
+    [0,-.084,-.008,.150*width,.141,0],[0,-.012,-.003,.168*width,.150,0],
+    [0,.066,.008,.169*width,.157,0],[0,.137,.013,.157*width,.150,0],[0,.195,.009,.104,.102,0]];
+  m.skin('head',null,tone.skin,shape,sides);
+  // Short, swept, receding, cropped, tousled and closely shaved silhouettes.
+  const heights=[.095,.078,.047,.066,.112,.029], hairH=heights[v];
+  m.ellipsoid('head',1,0,.144+hairH*.22,.031,.172*width,hairH,.157,close?10:6,.74);
+  if(v!==5){
+    m.ellipsoid('head',1,0,.068,.114,.160*width,.106,.067,6,.80);
+    if(close&&v!==2)for(const sign of [-1,1])m.ellipsoid('head',1,sign*.146,.072,.025,.035,.079,.123,5,.78);
+    if(v===0||v===4)m.gem('head',1,-.054,.166,-.105,.108,.071,.066);
+  }
+  for(const sign of [-1,1]){
+    m.ellipsoid('head',tone.skin,sign*.167*width,-.021,.013,.026,.053,.031,5,.74);
+    m.prism('head',tone.shade,[[sign*.036,.021],[sign*.105,.025],[sign*.104,.039],[sign*.039,.041]],-.154,.013);
+    if(close){
+      m.gem('head',8,sign*.071,.003,-.153,.029,.013,.012);
+      m.gem('head',9,sign*.070,.003,-.166,.009,.010,.006);
+    }else m.gem('head',tone.shade,sign*.071,.003,-.153,.025,.010,.010);
+  }
+  m.gem('head',tone.skin,0,-.045,-.147,.032,.057,.047);
+  m.prism('head',tone.shade,[[-.039,-.114],[.039,-.114],[.027,-.102],[-.027,-.102]],-.145,.012);
+  if(close&&(v===1||v===3||v===5))m.prism('head',7,[[-.083,-.122],[.083,-.122],[.048,-.156],[-.048,-.156]],-.113,.017);
 }
 function crownHumanHead(m,model,variant,close,detail,tone) {
   const sides=close?10:detail?8:4;
@@ -6109,14 +6139,34 @@ function crownActorSpec(b,distance) {
   return {model,id,variant,lod,scale:CROWN_SCALES[model]||1};
 }
 
+const A4_HUMAN_CAST=Object.freeze({
+  ryan:Object.freeze({name:'Ryan',variant:0,color:'#327d79',pants:'#354256',skinTone:'#d5a27b',hair:'#372c27'}),
+  marcus:Object.freeze({name:'Marcus',variant:1,color:'#93483d',pants:'#303b4b',skinTone:'#956044',hair:'#241f20'}),
+  victor:Object.freeze({name:'Victor Kane',variant:2,color:'#444650',pants:'#282e39',skinTone:'#d8ad91',hair:'#85817a'}),
+  carter:Object.freeze({name:'Detective Carter',variant:3,color:'#465d76',pants:'#303845',skinTone:'#b4805b',hair:'#443329'}),
+  eddie:Object.freeze({name:'Eddie',variant:4,color:'#bd8a48',pants:'#414a58',skinTone:'#e2b38d',hair:'#795338'}),
+  leon:Object.freeze({name:'Leon',variant:5,color:'#65734a',pants:'#343e42',skinTone:'#78503a',hair:'#292323'})
+});
+function a4HumanAppearance(person){
+  const cast=Object.hasOwn(A4_HUMAN_CAST,person.character)?A4_HUMAN_CAST[person.character]:null;
+  if(cast)return {...person,...cast};
+  const id=Number.isFinite(person.id)?Math.abs(Math.trunc(person.id)):0;
+  return {...person,variant:id%6};
+}
+
 // City civilians reuse the FPS fighter body mesh and skeleton, without armor.
 const cityCivilianMeshes=new Map();
 window.RecoilCityCharacter=Object.freeze({
+  cast:A4_HUMAN_CAST,
+  appearance:a4HumanAppearance,
   emit(person,time,detail,out){
-    const police=!!person.unit,hero=!!person.a4Hero;const lod=detail==='high'?(hero||police?0:1):detail==='standard'?1:2,key=lod+':'+Number(!!person.shorts)+':'+Number(police);
+    person=a4HumanAppearance(person);
+    const police=!!person.unit,hero=!!person.a4Hero,keeper=!police&&!hero&&person.id>=10000&&person.id<20000;
+    const lod=detail==='high'?(hero||police?0:1):detail==='standard'?1:2,variant=lod<2?person.variant:0;
+    const key=lod+':'+Number(!!person.shorts)+':'+(police?'police':keeper?'keeper':'civilian')+':'+variant;
     let mesh=cityCivilianMeshes.get(key);
     if(!mesh){
-      mesh=crownFighterMesh('fighter',lod,0,true);
+      mesh=crownFighterMesh('fighter',lod,variant,true);
       for(const part of mesh.parts){
         const joint=CROWN_BONES[part.joint][0];
         if(joint==='hips'||joint.startsWith('thigh'))part.color=4;
@@ -6124,6 +6174,7 @@ window.RecoilCityCharacter=Object.freeze({
         if(joint.startsWith('elbow')||joint.startsWith('hand'))part.color=6;
       }
       if(police&&lod<2){mesh.prism('chest',2,[[-.18,-.14],[.18,-.14],[.21,.13],[-.21,.13]],-.19,.065);mesh.gem('chest',3,.11,.075,-.26,.048,.045,.018);mesh.ellipsoid('head',2,0,.18,.01,.18,.078,.15,6,.8);mesh.prism('head',2,[[-.14,.11],[.14,.11],[.13,.14],[-.13,.14]],-.205,.075);}
+      if(keeper&&lod<2){mesh.prism('chest',2,[[-.17,-.16],[.17,-.16],[.14,.10],[-.14,.10]],-.188,.031);mesh.prism('chest',4,[[-.082,-.10],[.082,-.10],[.082,-.045],[-.082,-.045]],-.222,.02);}
       cityCivilianMeshes.set(key,mesh);
     }
     const swing=Number(person.phase)||0,aim=person.mood==='defend'||(person.aimUntil||0)>time;
@@ -6138,7 +6189,7 @@ window.RecoilCityCharacter=Object.freeze({
       pose['elbow'+side]=[aim?.84:.28,0,0];
     }
     const skin=hexRgb(person.skinTone||'#c4926d'),shirt=hexRgb(person.color||'#327d79'),pants=hexRgb(person.pants||'#405572'),hair=hexRgb(person.hair||'#362a27');
-    crownEmitRig(out,mesh,pose,[shirt,hair,[.16,.18,.20],shirt,pants,shirt,skin,[.32,.21,.17]],6.5);
+    crownEmitRig(out,mesh,pose,[shirt,hair,[.16,.18,.20],shirt,pants,shirt,skin,skin.map(v=>v*.65),[.88,.87,.82],[.11,.09,.08]],6.5);
     return out;
   }
 });

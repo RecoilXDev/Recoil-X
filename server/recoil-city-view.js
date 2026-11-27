@@ -300,7 +300,8 @@
       if(p.hp>0&&!(p.stunUntil>time)&&(p.mood==='defend'||(p.aimUntil||0)>time)){const g=local(m,p.x,p.y,p.z||0,p.angle);heldWeapon(g,3.6,1,9.38,weaponId);}
       return;
     }
-    const g=local(m,p.x,p.y,p.z||0,p.angle), coat=hero?'#327d79':p.color, pants=hero?'#354256':'#474956';
+    const named=hero&&p.character?shared?.cast?.[p.character]:null;
+    const g=local(m,p.x,p.y,p.z||0,p.angle), coat=named?.color||(hero?'#327d79':p.color), pants=named?.pants||(hero?'#354256':'#474956');
     if(p.hp<=0||p.stunUntil>time){g.box(0,0,.4,5,2.8,2.2,coat);g.box(3.6,0,.5,2.3,2,1.7,'#bc8a69');for(const side of [-1,1]){g.box(-3.8,side*.9,.35,3.6,1,.85,pants);g.box(.1,side*2,.45,2.8,.8,.8,coat);}return;}
     const jumping=p.motion==='jumping', sprint=p.motion==='sprinting'||p.mood==='flee', aiming=(p.aimUntil||0)>time||p.mood==='defend';
     const swing=hero?(p.motion==='idle'?0:Math.sin(p.phase)):p.phase;

@@ -109,6 +109,7 @@
       </div><div class="rc-film" hidden aria-label="Cinematic replay controls"><small class="rc-film-status"></small><button type="button" data-click="film-pause">Pause</button><button type="button" data-click="film-replay">Replay</button><button type="button" data-click="film-next">Next scene</button><button type="button" data-click="film-speed">1×</button><button type="button" data-click="film-hide">Hide controls</button><button type="button" data-click="film-stop">Exit cinematic</button></div><button class="rc-film-reveal" data-click="film-show" hidden type="button" aria-label="Show cinematic controls">⋯</button><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
         <label class="rc-settings-row">Camera<select data-option="mode"><option value="third">Third person</option><option value="first">First person</option></select></label>
         <label class="rc-settings-row">Graphics<select data-option="quality"><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label>
+        <label class="rc-settings-row">A.4 character<select data-option="character"><option value="default">Default</option><option value="ryan">Ryan</option><option value="marcus">Marcus</option><option value="victor">Victor Kane</option><option value="carter">Detective Carter</option><option value="eddie">Eddie</option><option value="leon">Leon</option></select></label>
         <div class="rc-radio-slot"></div><section class="rc-a1-hub" hidden></section>
         <details><summary>City controls</summary><dl><dt>Move</dt><dd>WASD, arrow keys, or the direction pad. Shift to sprint. Space to jump or brake.</dd>
         <dt>Look</dt><dd>Drag with the right mouse button or swipe the street. Z/X to turn, Page Up/Down to look vertically. C centers the camera. V switches view.</dd>
@@ -123,7 +124,7 @@
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
     controls.film=find('.rc-film');controls.filmStatus=find('.rc-film-status');controls.filmReveal=find('.rc-film-reveal');controls.hub=find('.rc-a1-hub');controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
     window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
-    dialog.addEventListener('change',e=>{const name=e.target.dataset.option,value=e.target.value;if(name==='mode'&&['first','third'].includes(value)||name==='quality'&&['low','standard','high'].includes(value)){options[name]=value;applyOptions();}});
+    dialog.addEventListener('change',e=>{const name=e.target.dataset.option,value=e.target.value;if(name==='mode'&&['first','third'].includes(value)||name==='quality'&&['low','standard','high'].includes(value)||name==='character'&&["default","ryan","marcus","victor","carter","eddie","leon"].includes(value)){options[name]=value;applyOptions();}});
     controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
     controls.streets.addEventListener('pointerdown',e=>{
       if(film){if(controls.film.hidden)filmAction('film-show');return;}if(paused)return;
@@ -346,7 +347,7 @@
     if(!world)return;
     paused=show;clearHeld();if(show)window.RecoilCityGame?.ambientStop?.();controls.help.hidden=!show;controls.hud.inert=show;previousTime=0;
     if(show){
-      dialog.querySelector('[data-option=mode]').value=options.mode;dialog.querySelector('[data-option=quality]').value=options.quality;
+      dialog.querySelector('[data-option=mode]').value=options.mode;dialog.querySelector('[data-option=quality]').value=options.quality;dialog.querySelector('[data-option=character]').value=options.character;
       const c=world.career;
       setText(controls.career,c.deliveries+' deliveries · '+c.trips+' passenger trips · '+(c.discoveries?.length||0)+'/3 discoveries'+(c.bestTime>0?' · Best job '+Math.round(c.bestTime)+'s':''));
       controls.resume.focus({preventScroll:true});
@@ -379,10 +380,11 @@
   function startFilm(id){
     if(film||online||onlinePending||onlineConnectBusy||!world)return;
     const W=window.RecoilCityWorld,sequence=W.cinematicScenes.map(s=>s.id),index=id==='all'?0:sequence.indexOf(id),next=W.createCinematic(sequence[index],{quality:options.quality,...window.RecoilCityGame?.loadout()});if(!next)return;
+    next.player.character=options.character;
     saveCareer();film={world,sequence,index,autoAdvance:id==='all',playing:true,speed:1,yaw,tilt,manualUntil,scale:world.renderScale||1};world=next;world.renderScale=film.scale;clearHeld();setHelp(false);controls.hub.hidden=true;controls.hud.hidden=true;controls.film.hidden=false;controls.filmReveal.hidden=true;previousTime=0;nextDraw=0;filmStatus();controls.streets.focus({preventScroll:true});
   }
   function filmStatus(){if(!film)return;const f=world.cinematic,scene=window.RecoilCityWorld.cinematicScenes.find(s=>s.id===f.id);setText(controls.filmStatus,scene.name+' · '+(film.index+1)+'/'+film.sequence.length+' · '+f.time.toFixed(1)+' / '+f.seconds+'s'+(f.done?' · Complete':''));setText(controls.film.querySelector('[data-click=film-pause]'),film.playing&&!f.done?'Pause':'Play');setText(controls.film.querySelector('[data-click=film-speed]'),film.speed+'×');}
-  function resetFilm(index){const next=window.RecoilCityWorld.createCinematic(film.sequence[index],{quality:options.quality,...window.RecoilCityGame?.loadout()});if(!next)return;film.index=index;film.playing=true;next.renderScale=world.renderScale||1;world=next;previousTime=0;lastFilter='';filmStatus();}
+  function resetFilm(index){const next=window.RecoilCityWorld.createCinematic(film.sequence[index],{quality:options.quality,...window.RecoilCityGame?.loadout()});if(!next)return;next.player.character=options.character;film.index=index;film.playing=true;next.renderScale=world.renderScale||1;world=next;previousTime=0;lastFilter='';filmStatus();}
   function stopFilm(){if(!film)return;const saved=film;film=null;world=saved.world;yaw=saved.yaw;tilt=saved.tilt;manualUntil=saved.manualUntil;controls.hud.hidden=false;controls.film.hidden=true;controls.filmReveal.hidden=true;lastFilter='';previousTime=0;nextDraw=0;lastNotice=null;clearHeld();refresh();}
   function filmAction(action){if(!film)return;if(action==='film-stop'){stopFilm();return;}if(action==='film-pause'){if(world.cinematic.done)resetFilm(film.index);else film.playing=!film.playing;}if(action==='film-replay')resetFilm(film.index);if(action==='film-next')resetFilm((film.index+1)%film.sequence.length);if(action==='film-speed')film.speed=film.speed===1?.5:film.speed===.5?2:1;if(action==='film-hide'){controls.film.hidden=true;controls.filmReveal.hidden=true;}if(action==='film-show'){controls.film.hidden=false;controls.filmReveal.hidden=true;}filmStatus();controls.streets.focus({preventScroll:true});}
   function filmTick(now,elapsed){const W=window.RecoilCityWorld;if(film.playing){W.stepCinematic(world,elapsed*film.speed);if(world.cinematic.done&&film.autoAdvance&&film.index+1<film.sequence.length){resetFilm(film.index+1);}}
@@ -422,7 +424,7 @@
   }
   function currentDevice(){return cityDeviceProfile(navigator.userAgent,Number(navigator.hardwareConcurrency)||0,Number(navigator.deviceMemory)||0,matchMedia('(pointer:coarse)').matches);}
   function applyOptions(){
-    world.quality=options.quality;world.populationAt=0;world.renderScale=1;perfSamples=perfTotal=perfSlow=perfFast=0;
+    world.player.character=options.character;world.quality=options.quality;world.populationAt=0;world.renderScale=1;perfSamples=perfTotal=perfSlow=perfFast=0;
     frameInterval=1000/(options.quality==='low'?30:currentDevice().fps);
     try{localStorage.setItem(prefsKey,JSON.stringify(options));}catch{}
     refresh();
@@ -433,7 +435,7 @@
     let career;
     try{career=JSON.parse(localStorage.getItem(careerKey));}catch{}
     let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefsKey))||{};}catch{}
-    options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:currentDevice().quality};
+    options={mode:prefs.mode==='first'?'first':'third',quality:['low','standard','high'].includes(prefs.quality)?prefs.quality:currentDevice().quality,character:["default","ryan","marcus","victor","carter","eddie","leon"].includes(prefs.character)?prefs.character:'default'};
     mapBase=null;mapRoute=null;routeAt=0;lastFilter='';perfAverage=0;world=window.RecoilCityWorld.create({career,quality:options.quality,...window.RecoilCityGame?.loadout()});yaw=world.player.angle=-.16;tilt=0;manualUntil=0;lastCareer=JSON.stringify(world.career);lastNotice=null;
     previousFocus=document.activeElement;
     document.exitPointerLock?.();

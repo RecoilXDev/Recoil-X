@@ -9,3 +9,8 @@ First coordinated model upgrade pass on A.3 (271 tests passed on last deployment
 - A.4 branding and cache revision updated; old A.3 version test generalized without removing its TV/reduced-motion checks.
 
 Five targeted checks and four syntax checks passed directly. Full integration, actual model appearance, FPS measurements and physical-device QA pending.
+
+## Human Evolution follow-up
+- Six selectable cast appearances (Ryan, Marcus, Victor Kane, Detective Carter, Eddie, Leon) in City settings, applied to the local character and existing cinematic replay. These are procedural visual interpretations, not film-grade models or a completed story campaign.
+- Standard/high City civilians now have six deterministic face and hairstyle variants, with close-detail eyes, ears, jaw silhouettes, and optional facial hair. Police retain uniforms; shopkeepers gain apron/pocket geometry. Low LOD retains the earlier geometry, and the TV path only changes optional outfit colors. No simulation, hitbox, network or economy changes.
+- A separate Wadi Stomper model and full scripted movie remain outside this patch: no matching existing Wadi Stomper asset or story scene system was verified. Physical-device QA and CI deployment verification still required.
