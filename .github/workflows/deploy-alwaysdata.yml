@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     # Intentionally disabled until the owner configures the secrets below.
     if: ${{ vars.RECOIL_X_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest

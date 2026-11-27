@@ -1,0 +1,31 @@
+name: Update B preview regression
+on:
+  push:
+    branches: [feature/update-b-preview]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: update-b-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    if: github.ref == 'refs/heads/feature/update-b-preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm install --prefix server --ignore-scripts --no-audit --no-fund
+      - name: Syntax and existing regression tests
+        run: |
+          for f in server/*.mjs server/*.js; do node --check "$f"; done
+          node --test tests/*.test.mjs tests/*.test.cjs
+      - name: Save offline visual preview
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: RECOIL-X-B-lobby-preview
+          path: preview/update-b-lobby.html
