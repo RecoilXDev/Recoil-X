@@ -5,11 +5,11 @@ const vm=require('node:vm');
 const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 test('full expansion integrates real selectable modes into existing game UI',()=>{
- const modes={gungame:'Z.5 Gun Game',onechamber:'Z.5 One in the Chamber',
-  hardcore:'Z.5 Hardcore',bounty:'Z.5 Bounty Hunt',
-  chaos:'Z.5 Procedural Hazard Arena',parkour:'Z.5 Parkour Race',
-  ctf:'Z.5 Capture the Flag',roulette:'Z.5 Duel Roulette',
-  searchdestroy:'Z.5 Search & Destroy',extraction:'Z.5 PvP Extraction 2.0'};
+ const modes={gungame:'Gun Game',onechamber:'One in the Chamber',
+  hardcore:'Hardcore',bounty:'Bounty Hunt',
+  chaos:'Procedural Hazard Arena',parkour:'Parkour Race',
+  ctf:'Capture the Flag',roulette:'Duel Roulette',
+  searchdestroy:'Search & Destroy',extraction:'PvP Extraction 2.0'};
  for(const [key,label] of Object.entries(modes))assert.ok(html.includes(key+":'"+label+"'"),key+' missing');
  assert.match(html,/m\.mode==='parkour'&&s\.type==='parkour'/);
  assert.match(html,/m\.mode==='searchdestroy'&&s\.type==='searchdestroy'/);

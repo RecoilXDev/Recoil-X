@@ -8,8 +8,8 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('clean UI source has valid syntax and explicit current release identity',()=>{
  const js=read('server/z5-ingame.js'),html=read('index.html'),sw=read('sw.js');
  assert.doesNotThrow(()=>new vm.Script(js,{filename:'z5-ingame.js'}));
- assert.match(js,/Z\.5-SAND-8/);
- assert.match(html,/<meta name="rx-build" content="Z\.5-SAND-8"/);
+ assert.match(js,/window\.RecoilRelease/);
+ assert.match(html,/<meta name="rx-build" content="[^"]+"/);
  assert.match(html,/localHeat:true/);
  assert.match(html,/id="rxSimpleQuick"/);
  assert.match(sw,/recoil-city-3d-radio/);
@@ -20,7 +20,7 @@ test('clean UI puts newest changes in front while preserving all advanced featur
  const script=read('server/z5-ingame.js');
  assert.doesNotThrow(()=>new vm.Script(script).runInContext(h.ctx));
  const {ui,ctx}=h;
- assert.equal(ctx.RXZ5InGame.version,'Z.5-SAND-8');
+ assert.equal(ctx.RXZ5InGame.version,ctx.RecoilRelease.build);
  assert.ok(ui.querySelector('#rx5-release-strip'));
  assert.ok(ui.querySelector('#rx5-open-news'));
  assert.ok(ui.querySelector('#rx5More'));

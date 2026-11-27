@@ -30,7 +30,7 @@ test('old Z.3 global version reassignment cannot reappear in source',()=>{
  const release=html.match(/<meta name="rx-release" content="([A-Z](?:\.\d+)?) — [^"]+"\s*\/>/);
  assert.ok(release,'Current release metadata is required');
  assert.ok(html.includes('<title>RECOIL X — Update '+release[1]+'</title>'),'Browser title must match the current release');
- assert.ok(html.includes("querySelector('.brandchip').textContent='RECOIL X · UPDATE "+release[1]+"'"),'Startup branding must match the current release');
- assert.match(html,/Z\.5-SAND-8/);
+ assert.ok(html.includes("querySelector('.brandchip').textContent=RX_RELEASE.brand"),'Startup branding must use current release metadata');
+ assert.match(html,/const RX_RELEASE=/);assert.match(html,/name="rx-build" content="[^"]+"/);
  assert.match(server,/recoil:'Z\.5'/);
 });

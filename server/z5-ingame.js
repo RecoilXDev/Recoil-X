@@ -3,6 +3,7 @@
 (()=>{
 'use strict';
 if(window.RXZ5InGame)return;
+const release=window.RecoilRelease||{full:document.querySelector('meta[name="rx-release"]')?.getAttribute('content')||'RECOIL X',build:document.querySelector('meta[name="rx-build"]')?.getAttribute('content')||'unknown'};
 const $=id=>document.getElementById(id);
 const menu=$('mainMenu'),simple=$('rxSimpleActions'),pause=$('pauseMenu');
 if(!menu||!simple||!pause)return;
@@ -78,16 +79,16 @@ document.head.append(style);
 const hero=document.createElement('div');
 hero.id='rx5-release-strip';
 hero.setAttribute('aria-label','Current RECOIL X version');
-hero.innerHTML='<div><strong>Z.5 · TACTICAL EXPANSION</strong><small>Latest update</small></div><button type="button" id="rx5-open-news">Updates</button>';
+hero.innerHTML='<div><strong></strong><small>Latest update</small></div><button type="button" id="rx5-open-news">Updates</button>';hero.querySelector('strong').textContent=release.full;
 simple.append(hero); // moved into the advanced drawer during setup
 const news=document.createElement('div');
 news.id='rx5WhatsNew';news.hidden=true;
 news.setAttribute('role','dialog');news.setAttribute('aria-modal','true');
-news.setAttribute('aria-label','Z.5 update details');
+news.setAttribute('aria-label','Current update details');
 news.innerHTML=[
-'<div class="rx5-dialog"><h2>RECOIL X <span style="color:#69e3de">Z.5</span></h2>',
-'<p>TACTICAL EXPANSION — playable new features added to the existing game.</p>',
-'<div class="rx5-features">',
+'<div class="rx5-dialog"><h2>RECOIL X <span id="rx5CurrentRelease" style="color:#69e3de"></span></h2>',
+'<p>Current release — Recoil City analog touch movement, camera-facing shift lock, consistent release labels and improved models.</p>',
+'<div class="rx5-features"><div class="rx5-feature"><strong>Mobile City controls</strong><small>Analog joystick and independent camera swipes.</small></div><div class="rx5-feature"><strong>Model refinement</strong><small>Improved buildings, vehicles, palms and human faces.</small></div>',
 '<div class="rx5-feature"><strong>⚔ Clan Wars</strong><small>Two verified clans fight in Online Play. Locked teams and server-only win records appear in Career & Clans.</small></div>',
 '<div class="rx5-feature"><strong>🌊 Underwater Combat</strong><small>Battle in Abyss Laboratory. Oxygen drains and can be refilled by holding Use beside air stations.</small></div>',
 '<div class="rx5-feature"><strong>💥 Multiplayer Destruction</strong><small>Demolition, Clan Wars and Underwater maps now include server-controlled breakable cover.</small></div>',
@@ -107,10 +108,10 @@ news.innerHTML=[
 '<div class="rx5-feature"><strong>🎯 Cleaner Aim</strong><small>Optional high-visibility crosshair and a compact heat indicator in the HUD.</small></div>',
 '<div class="rx5-feature"><strong>🛡 Multiplayer Safety</strong><small>Server-side weapon heat and protection against excessive input traffic in casual games.</small></div>',
 '</div>',
-'<div class="rx5-warning">Z.5 is still a staged roadmap. EMPs and portable shields are offline-only; the 85-feature list is not yet complete.</div>',
+'<div class="rx5-warning">Legacy feature notes: EMPs and portable shields are offline-only; some expansion roadmap items are not yet complete.</div>',
 '<div class="rx5-dialog-actions"><button type="button" id="rx5-news-options">COMBAT SETTINGS</button><button type="button" data-rx5-close>GOT IT</button></div></div>'
 ].join('');
-document.body.append(news);
+document.body.append(news);news.querySelector('#rx5CurrentRelease').textContent=release.full;
 let previousFocus=null;
 function showNews(){
  previousFocus=document.activeElement;
@@ -360,7 +361,7 @@ body.rx5-sand-ui #mainMenu:not(.rx-simple-active) #rxSimpleToggle:hover{color:#f
 #z1SettingsMenu #rx5Options>summary{min-height:44px}
 `;
 const pauseMore=document.createElement('details');pauseMore.id='rx5PauseMore';
-pauseMore.innerHTML='<summary>MORE FEATURES · Z.5</summary>';
+pauseMore.innerHTML='<summary>MORE FEATURES</summary>';
 const pauseControls=pause.querySelector('.mode-grid');
 const pauseSettings=document.createElement('details');pauseSettings.id='rx5PauseSettings';
 pauseSettings.innerHTML='<summary>GRAPHICS & PERFORMANCE</summary>';
@@ -384,7 +385,7 @@ for(const target of [simpleGroup,pauseGroup]){
 }
 
 const pauseNews=document.createElement('button');
-pauseNews.type='button';pauseNews.textContent='✦ Z.5 UPDATE NOTES';
+pauseNews.type='button';pauseNews.textContent='✦ UPDATE NOTES';
 pauseNews.addEventListener('click',showNews);
 pauseNews.style.cssText='display:block;margin:8px auto;padding:8px 15px;border:1px solid #37687d;border-radius:9px;background:#143c51;color:#e4fdff;cursor:pointer';
 pauseMore.before(pauseNews);
@@ -401,6 +402,6 @@ async function open(key){
  }catch(error){console.warn('RECOIL X Z.5 navigation:',error);try{await career();}catch{}}
 }
 document.body.classList.add('rx5-sand-ui');
-window.RXZ5InGame={open,showNews,version:'Z.5-SAND-8'};
+window.RXZ5InGame={open,showNews,version:release.build};
 window.RXZ5Admin?.refresh();
 })();

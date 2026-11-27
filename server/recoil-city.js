@@ -16,6 +16,22 @@
   function cityDeviceProfile(ua,cores,ram,touch){const tv=/SMART-TV|SmartTV|Tizen|Web0S|WebOS|HbbTV|NetCast/i.test(ua||''),weak=tv||touch||/Raspberry Pi|Raspbian|armv7l/i.test(ua||'')||(cores>0&&cores<=4)||(ram>0&&ram<=4)||(!cores&&!ram);return {tv,weak,quality:weak?'low':'standard',fps:weak?30:60};}
   const remoteTargets=new Map();
   const held = new Set(), pointers = new Map();
+  let stickPointer=null,stick={x:0,y:0};
+  function cityStickVector(dx,dy,radius){
+    if(!Number.isFinite(dx)||!Number.isFinite(dy)||!(radius>0))return {x:0,y:0};
+    const length=Math.hypot(dx,dy),normalized=Math.min(1,length/radius),dead=.13;
+    if(normalized<=dead)return {x:0,y:0};
+    const strength=(normalized-dead)/(1-dead);
+    return {x:dx/length*strength,y:dy/length*strength};
+  }
+  function cityMovementAxes(stick,forward,turn){const clamp=v=>Math.max(-1,Math.min(1,v));return {forward:clamp(forward-stick.y),turn:clamp(turn+stick.x)};}
+  function cityTouchLock(touch,car){return !!touch&&!car;}
+  function touchCity(){return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0&&matchMedia('(max-width:1000px)').matches;}
+  function resetStick(){stickPointer=null;stick={x:0,y:0};if(controls?.stickThumb)controls.stickThumb.style.transform='translate(-50%,-50%)';}
+  function updateStick(e){const rect=controls.stick.getBoundingClientRect(),r=rect.width*.34;
+    stick=cityStickVector(e.clientX-rect.left-rect.width/2,e.clientY-rect.top-rect.height/2,r);
+    controls.stickThumb.style.transform='translate(calc(-50% + '+(stick.x*r)+'px),calc(-50% + '+(stick.y*r)+'px))';
+  }
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
   const style = document.createElement('style');
   style.textContent = `
@@ -53,12 +69,9 @@
     #recoil-city .rc-sheet p{margin:10px 0;color:var(--muted)}#recoil-city .rc-sheet button{margin-top:4px}
     @media(pointer:coarse),(max-width:740px){
       #recoil-city .rc-hud{inset:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
-      #recoil-city .rc-pad{display:grid;position:absolute;left:0;bottom:0;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:3px}
-      #recoil-city .rc-pad button{padding:0;font-size:21px;touch-action:none;background:#16251fe0}
-      #recoil-city .rc-pad button[data-held]{background:#ffcd68;color:#18221e}
-      #recoil-city .rc-pad button::before{content:"";display:inline-block;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid currentColor}
-      #recoil-city .rc-left::before{transform:rotate(-90deg)}#recoil-city .rc-right::before{transform:rotate(90deg)}#recoil-city .rc-down::before{transform:rotate(180deg)}
-      #recoil-city .rc-up{grid-area:1/2}#recoil-city .rc-left{grid-area:2/1}#recoil-city .rc-down{grid-area:2/2}#recoil-city .rc-right{grid-area:2/3}
+      #recoil-city .rc-pad{display:block;position:absolute;left:4px;bottom:4px;width:clamp(100px,23vw,132px);aspect-ratio:1;border-radius:50%;border:2px solid #b5c3ae80;background:#17282299;box-shadow:inset 0 0 0 7px #c4d9c112;touch-action:none;pointer-events:auto}
+      #recoil-city .rc-stick-thumb{position:absolute;left:50%;top:50%;width:43%;height:43%;transform:translate(-50%,-50%);border:1px solid #d8e7c3;background:#a0b49a88;border-radius:50%;pointer-events:none;box-shadow:0 2px 8px #101b18a0}
+      #recoil-city .rc-pad[data-active] .rc-stick-thumb{background:#ffcd68b0}
       #recoil-city .rc-nav{position:absolute;right:0;top:53px;width:108px;max-width:none}
       #recoil-city .rc-bottom{display:contents}#recoil-city .rc-job{position:absolute;right:0;bottom:0;width:min(310px,calc(100% - 147px));max-width:none;padding:8px}
       #recoil-city .rc-actions{gap:4px;margin-top:5px}#recoil-city .rc-actions button{font-size:12px;padding:4px 6px}
@@ -78,13 +91,15 @@
     #recoil-city .rc-sheet details{margin:12px 0}
     #recoil-city .rc-skills{display:none}
     @media(pointer:coarse),(max-width:740px){
-      #recoil-city .rc-skills{position:absolute;left:0;bottom:96px;display:grid;grid-template-columns:repeat(2,minmax(44px,1fr));gap:3px;max-width:136px}
+      #recoil-city .rc-skills{position:absolute;left:0;bottom:144px;display:grid;grid-template-columns:repeat(2,minmax(44px,1fr));gap:3px;max-width:136px}
       #recoil-city .rc-skills button{font-size:12px;padding:4px;touch-action:none}
       #recoil-city .rc-loadout{font-size:10px;padding:0 4px 4px}
       #recoil-city .rc-sheet{max-height:calc(100dvh - 22px)}
     }
     @media(max-width:450px){#recoil-city .rc-menu button{font-size:12px;padding:6px 8px}#recoil-city .rc-jobhead{gap:4px}#recoil-city .rc-nav{width:98px}}
-    @media(max-height:420px){#recoil-city .rc-place{padding:4px 8px}#recoil-city .rc-nav{width:96px}}
+    @media(max-height:420px){#recoil-city .rc-place{padding:4px 8px}#recoil-city .rc-nav{width:96px}#recoil-city .rc-pad{width:104px}#recoil-city .rc-skills{bottom:116px}}
+    #recoil-city .rc-shift-indicator{display:none;position:absolute;top:calc(50% + 12px);left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.1em;color:#fff5dc;text-shadow:0 1px 3px #000;pointer-events:none}
+    #recoil-city[data-touch-lock] .rc-shift-indicator{display:block}
   `;
   document.head.append(style);
   function mount() {
@@ -93,7 +108,7 @@
     dialog.setAttribute('aria-labelledby','rc-title');
     dialog.innerHTML = `
       <canvas class="rc-sky" aria-hidden="true"></canvas><canvas class="rc-streets" tabindex="-1" aria-label="City streets. Use the map and dispatch directions to find your destination."></canvas>
-      <div class="rc-hud"><i class="rc-reticle" aria-hidden="true"></i><div class="rc-head"><div class="rc-panel rc-place"><h2 id="rc-title">Recoil City · A.1</h2><span class="rc-area"></span></div>
+      <div class="rc-hud"><i class="rc-reticle" aria-hidden="true"></i><div class="rc-head"><div class="rc-panel rc-place"><h2 id="rc-title">Recoil City</h2><span class="rc-area"></span></div>
         <div class="rc-menu"><button type="button" data-click="cityhub">City Hub</button><button type="button" data-click="help">Settings</button><button type="button" data-click="exit">Exit city</button></div></div>
         <div class="rc-bottom"><div class="rc-panel rc-nav"><canvas class="rc-map" width="250" height="150" aria-label="City map, north at the top"></canvas>
           <div class="rc-trip"><span class="rc-speed"></span><span class="rc-cash"></span></div><span class="rc-loadout"></span></div>
@@ -102,16 +117,15 @@
           <button type="button" data-click="vehicle"><span></span><kbd>E</kbd></button><button type="button" data-hold="brake" hidden>Brake</button>
           <button type="button" data-click="shop" hidden><span></span><kbd>B</kbd></button><button type="button" data-click="interior" hidden><span>Enter shop</span><kbd>T</kbd></button><button type="button" data-click="rob" hidden>Rob shop <kbd>H</kbd></button><button type="button" data-click="paint" hidden><span></span><kbd>G</kbd></button></div></div></div>
         <div class="rc-skills" aria-label="On-foot controls"><button data-click="jump">Jump</button><button data-hold="sprint">Sprint</button><button data-hold="fire">Fire</button><button data-click="weapon">Weapon</button></div>
-        <div class="rc-pad" aria-label="Movement controls"><button type="button" class="rc-up" data-hold="up" aria-label="Up or accelerate"></button>
-          <button type="button" class="rc-left" data-hold="left" aria-label="Left"></button><button type="button" class="rc-down" data-hold="down" aria-label="Down or reverse"></button>
-          <button type="button" class="rc-right" data-hold="right" aria-label="Right"></button></div>
+        <div class="rc-pad" aria-label="Analog movement joystick"><i class="rc-stick-thumb" aria-hidden="true"></i></div>
+        <span class="rc-shift-indicator" aria-hidden="true">SHIFT LOCK</span>
         <p class="rc-notice" role="status" aria-live="polite"></p><div class="rc-death" hidden style="position:absolute;inset:0;z-index:50;pointer-events:none;background:#100000aa;text-align:center;align-content:center;color:#ed3030;font:900 clamp(48px,15vw,140px) system-ui;letter-spacing:.08em;text-shadow:0 4px 12px #000" role="alert">DEAD</div>
       </div><div class="rc-film" hidden aria-label="Cinematic replay controls"><small class="rc-film-status"></small><button type="button" data-click="film-pause">Pause</button><button type="button" data-click="film-replay">Replay</button><button type="button" data-click="film-next">Next scene</button><button type="button" data-click="film-speed">1×</button><button type="button" data-click="film-hide">Hide controls</button><button type="button" data-click="film-stop">Exit cinematic</button></div><button class="rc-film-reveal" data-click="film-show" hidden type="button" aria-label="Show cinematic controls">⋯</button><div class="rc-help" hidden><section class="rc-panel rc-sheet" aria-labelledby="rc-guide-title"><h3 id="rc-guide-title">City settings</h3>
         <label class="rc-settings-row">Camera<select data-option="mode"><option value="third">Third person</option><option value="first">First person</option></select></label>
         <label class="rc-settings-row">Graphics<select data-option="quality"><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label>
-        <label class="rc-settings-row">A.4 character<select data-option="character"><option value="default">Default</option><option value="ryan">Ryan</option><option value="marcus">Marcus</option><option value="victor">Victor Kane</option><option value="carter">Detective Carter</option><option value="eddie">Eddie</option><option value="leon">Leon</option></select></label>
+        <label class="rc-settings-row">Character<select data-option="character"><option value="default">Default</option><option value="ryan">Ryan</option><option value="marcus">Marcus</option><option value="victor">Victor Kane</option><option value="carter">Detective Carter</option><option value="eddie">Eddie</option><option value="leon">Leon</option></select></label>
         <div class="rc-radio-slot"></div><section class="rc-a1-hub" hidden></section>
-        <details><summary>City controls</summary><dl><dt>Move</dt><dd>WASD, arrow keys, or the direction pad. Shift to sprint. Space to jump or brake.</dd>
+        <details><summary>City controls</summary><dl><dt>Move</dt><dd>WASD, arrow keys, or the analog joystick. On mobile, swipe to look while moving; facing stays locked to the camera. Shift to sprint. Space to jump or brake.</dd>
         <dt>Look</dt><dd>Drag with the right mouse button or swipe the street. Z/X to turn, Page Up/Down to look vertically. C centers the camera. V switches view.</dd>
         <dt>Combat</dt><dd>Click or hold F to fire. Q or 1–4 to change weapon. R reloads. On touch, use Fire and Weapon. An empty magazine reloads automatically.</dd>
         <dt>E</dt><dd>Enter or take a nearby vehicle. Slow down to exit.</dd><dt>J</dt><dd>Accept, collect, or deliver the current city job.</dd>
@@ -123,6 +137,9 @@
       heat:find('.rc-heat'),objective:find('.rc-objective'),notice:find('.rc-notice'),job:find('[data-click="job"]'),vehicle:find('[data-click="vehicle"]'),
       brake:find('[data-hold="brake"]'),paint:find('[data-click="paint"]'),help:find('.rc-help'),career:find('.rc-career'),resume:find('[data-click="resume"]'),hud:find('.rc-hud')};
     controls.film=find('.rc-film');controls.filmStatus=find('.rc-film-status');controls.filmReveal=find('.rc-film-reveal');controls.hub=find('.rc-a1-hub');controls.sky=find('.rc-sky');controls.reticle=find('.rc-reticle');controls.loadout=find('.rc-loadout');controls.skills=find('.rc-skills');controls.shop=find('[data-click="shop"]');controls.interior=find('[data-click="interior"]');controls.rob=find('[data-click="rob"]');controls.death=find('.rc-death');
+    controls.stick=find('.rc-pad');controls.stickThumb=find('.rc-stick-thumb');
+    controls.stick.addEventListener('pointerdown',e=>{if(paused||film||stickPointer!==null)return;e.preventDefault();e.stopPropagation();stickPointer=e.pointerId;controls.stick.setPointerCapture(e.pointerId);controls.stick.setAttribute('data-active','');updateStick(e);});
+    controls.stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer){e.preventDefault();updateStick(e);}});
     window.RecoilCityRadio?.mount(find('.rc-radio-slot'));
     dialog.addEventListener('change',e=>{const name=e.target.dataset.option,value=e.target.value;if(name==='mode'&&['first','third'].includes(value)||name==='quality'&&['low','standard','high'].includes(value)||name==='character'&&["default","ryan","marcus","victor","carter","eddie","leon"].includes(value)){options[name]=value;applyOptions();}});
     controls.streets.addEventListener('contextmenu',e=>e.preventDefault());
@@ -130,6 +147,7 @@
       if(film){if(controls.film.hidden)filmAction('film-show');return;}if(paused)return;
       controls.streets.focus({preventScroll:true});controls.streets.setPointerCapture(e.pointerId);
       if(e.pointerType==='mouse'&&e.button===0){firing=true;queuedShot=true;return;}
+      if(lookPointer)return;
       lookPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
     });
     controls.streets.addEventListener('pointermove',e=>{
@@ -158,6 +176,7 @@
       button.setAttribute('data-held','');
     });
     function release(event) {
+      if(event.pointerId===stickPointer){resetStick();controls.stick.removeAttribute('data-active');}
       if(event.pointerType==='mouse')firing=false;
       if(lookPointer?.id===event.pointerId)lookPointer=null;
       const name = pointers.get(event.pointerId);
@@ -326,7 +345,7 @@
     if(value===lastCareer)return;
     try{localStorage.setItem(careerKey,value);lastCareer=value;}catch{}
   }
-  function clearHeld(){held.clear();pointers.clear();lookPointer=null;firing=false;queuedShot=false;dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
+  function clearHeld(){held.clear();pointers.clear();resetStick();controls?.stick?.removeAttribute('data-active');lookPointer=null;firing=false;queuedShot=false;dialog?.querySelectorAll('[data-held]').forEach(b=>b.removeAttribute('data-held'));}
   function act(action){
     if(!world || paused||film||world.deathUntil)return;
     if(action==='vehicle'){if(window.RecoilCityWorld.interact(world)){yaw=world.player.angle;tilt=0;manualUntil=0;}}
@@ -403,10 +422,11 @@
     if(options.quality!=='low'&&!world.interior)window.RecoilCityGame?.ambientTick?.(world.weather,now/1000);else window.RecoilCityGame?.ambientStop?.();
     if(online)world.remotePlayers=[...remoteTargets.values()].map(v=>sampleRemote(v,now));
     const active=new Set(pointers.values());for(const code of held)active.add(arrowCodes[code]);const pressed=name=>active.has(name);
-    const forward=Number(pressed('up'))-Number(pressed('down')),turn=Number(pressed('right'))-Number(pressed('left'));
+    const {forward,turn}=cityMovementAxes(stick,Number(pressed('up'))-Number(pressed('down')),Number(pressed('right'))-Number(pressed('left')));
     const look=Number(pressed('lookRight'))-Number(pressed('lookLeft')),vertical=Number(pressed('lookUp'))-Number(pressed('lookDown'));
     if(look||vertical){yaw+=look*elapsed*1.85;tilt=Math.max(-.6,Math.min(.62,tilt+vertical*elapsed));manualUntil=world.elapsed+1.4;}
-    const p=world.player,car=p.vehicleId;
+    const p=world.player,car=p.vehicleId,shiftLock=cityTouchLock(touchCity(),car);
+    dialog.toggleAttribute('data-touch-lock',shiftLock);
     if(car && !lookPointer && world.elapsed>=manualUntil){
       const delta=p.angle-yaw;yaw+=Math.atan2(Math.sin(delta),Math.cos(delta))*(1-Math.exp(-elapsed*5));
     }
@@ -416,7 +436,7 @@
     if(fire){cam=window.RecoilCityView.camera(world,view);aim={yaw,pitch:cam.pitch,origin:cam};}
     window.RecoilCityWorld.step(world,{forward,turn,walkX,walkY,sprint:pressed('sprint'),brake:pressed('brake'),fire,aim},elapsed);
     if(elapsed>0)queuedShot=false;
-    if(!car && (forward||turn||options.mode==='first'||firing||pressed('fire')))p.angle=yaw;
+    if(!car && (shiftLock||forward||turn||options.mode==='first'||firing||pressed('fire')))p.angle=yaw;
     cam=window.RecoilCityView.camera(world,view);
     window.RecoilCityView.draw(controls.streets,world,cam,controls.sky);
     const night=world.cityHour<6||world.cityHour>=19,filter=night?'night':world.weather;if(filter!==lastFilter){lastFilter=filter;controls.sky.style.filter=night?'brightness(.4) saturate(.75)':world.weather==='Rain'?'brightness(.72)':'';controls.streets.style.filter=night?'brightness(.58) saturate(.82)':world.weather==='Haze'?'contrast(.86) sepia(.16)':world.weather==='Rain'?'brightness(.82) saturate(.75)':'';}
@@ -440,6 +460,7 @@
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
+    setText(dialog.querySelector('#rc-title'),'Recoil City · '+(window.RecoilRelease?.version||''));
     applyOptions();window.RecoilCityGame?.suspendMenuMusic?.();window.RecoilCityRadio?.enterCity();
     setHelp(false);previousTime=0;nextHud=0;nextDraw=0;
     window.addEventListener('keydown',keyboard,true);window.addEventListener('keyup',keyboard,true);

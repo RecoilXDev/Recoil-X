@@ -109,26 +109,26 @@ jobs:
           curl --fail --silent --show-error --location --retry 5 --retry-delay 3 \
             --output /tmp/recoil-z5-live.html "https://recoil-x.alwaysdata.net/?build=$GITHUB_SHA"
           grep -Fq 'OG Futuristic Arena' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Search & Destroy' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Clan Wars' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Dual SMGs' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Ricochet Arena' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Melee Parry' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Moving Train Yard' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Volcanic Eruption' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Time Fracture' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Titan Mech Raid' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Alien Invasion' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 World Boss Weekend' /tmp/recoil-z5-live.html
+          grep -Fq 'Search & Destroy' /tmp/recoil-z5-live.html
+          grep -Fq 'Clan Wars' /tmp/recoil-z5-live.html
+          grep -Fq 'Dual SMGs' /tmp/recoil-z5-live.html
+          grep -Fq 'Ricochet Arena' /tmp/recoil-z5-live.html
+          grep -Fq 'Melee Parry' /tmp/recoil-z5-live.html
+          grep -Fq 'Moving Train Yard' /tmp/recoil-z5-live.html
+          grep -Fq 'Volcanic Eruption' /tmp/recoil-z5-live.html
+          grep -Fq 'Time Fracture' /tmp/recoil-z5-live.html
+          grep -Fq 'Titan Mech Raid' /tmp/recoil-z5-live.html
+          grep -Fq 'Alien Invasion' /tmp/recoil-z5-live.html
+          grep -Fq 'World Boss Weekend' /tmp/recoil-z5-live.html
           grep -Fq 'id="z2Preset"' /tmp/recoil-z5-live.html
           grep -Fq 'id="z2DraftTeams"' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Underwater Combat' /tmp/recoil-z5-live.html
-          grep -Fq 'Z.5 Multiplayer Destruction' /tmp/recoil-z5-live.html
+          grep -Fq 'Underwater Combat' /tmp/recoil-z5-live.html
+          grep -Fq 'Multiplayer Destruction' /tmp/recoil-z5-live.html
           grep -Fq 'rx5LowG' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
           grep -Fq 'const pool=MAPS.filter(m=>!m.mysteryOnly' /tmp/recoil-z5-live.html
-          grep -Fq 'content="Z.5-SAND-8"' /tmp/recoil-z5-live.html
+          grep -Fq 'name="rx-build"' /tmp/recoil-z5-live.html
           grep -Fq 'content="A-NEW-DAWN-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
           # The Node server appends online scripts before </body>; compare the exact expected response.
@@ -157,7 +157,7 @@ jobs:
           grep -Fq 'Guest-only local backup' /tmp/recoil-z5-guide.js
           curl --fail --silent --show-error --location \
             --output /tmp/recoil-z5-expansion.js https://recoil-x.alwaysdata.net/z5-expansion.js
-          grep -Fq 'Z.5 Parties & More' /tmp/recoil-z5-expansion.js
+          grep -Fq 'Parties & More' /tmp/recoil-z5-expansion.js
           grep -Fq 'Broadcast spectating' /tmp/recoil-z5-expansion.js
           grep -Fq 'script src="/z5-ingame.js" defer' /tmp/recoil-z5-live.html
           curl --fail --silent --show-error --location \
@@ -165,7 +165,7 @@ jobs:
           grep -Fq 'Career & Clans' /tmp/recoil-z5-ingame.js
           grep -Fq 'Forge & Market' /tmp/recoil-z5-ingame.js
           grep -Fq 'Match Hub' /tmp/recoil-z5-ingame.js
-          grep -Fq 'Z.5-SAND-8' /tmp/recoil-z5-ingame.js
+          grep -Fq 'window.RecoilRelease' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5-release-strip' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5-sand-ui' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5PauseSettings' /tmp/recoil-z5-ingame.js
@@ -188,7 +188,7 @@ jobs:
           if grep -Fq 'body.rx5-ui-polished #overlay' /tmp/recoil-z5-ingame.js; then echo 'Old navy design still active' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-manifest.json https://recoil-x.alwaysdata.net/manifest.webmanifest
           grep -Fq '"theme_color": "#291c15"' /tmp/recoil-z5-manifest.json
-          grep -Fq "window.RXZ5InGame={open,showNews,version:'Z.5-SAND-8'}" /tmp/recoil-z5-ingame.js
+          grep -Fq 'window.RXZ5InGame={open,showNews,version:release.build}' /tmp/recoil-z5-ingame.js
           grep -Fq 'rx5WhatsNew' /tmp/recoil-z5-ingame.js
           grep -Fq 'Training Academy' /tmp/recoil-z5-ingame.js
           grep -Fq 'Abyss Leviathan' /tmp/recoil-z5-ingame.js
@@ -240,4 +240,4 @@ jobs:
           grep -Fq 'Mean HTTP RTT' /tmp/recoil-z5-priority.js
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-priority-guide.js https://recoil-x.alwaysdata.net/z5-player-guide.js
           grep -Fq 'Copy game invitation' /tmp/recoil-z5-priority-guide.js
-          echo "Z.5 clean UI build, active offline weapon heat, role-gated Admin and current service worker verified live."
+          echo "Current release UI, active offline weapon heat, role-gated Admin and current service worker verified live."

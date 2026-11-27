@@ -30,3 +30,8 @@ Five targeted checks and four syntax checks passed directly. Full integration, a
 - Deterministic mixed pedestrian appearances, six additional hair/face variants and a narrower body rig on standard/high. Named story cast remains intact. Close high-quality civilians now use close LOD; distant civilians retain medium geometry.
 - City poses include idle breathing, spine/hip sway, walk/run distinction, foot motion, jumping, and stable falls; input values are bounded. Original TV renderer is unchanged. Boss chest crests, shoulder and scorpion shell detail improved without combat changes.
 - Release gate: actual device testing, visual screenshot comparison and 30 FPS TV target still require physical validation. A distinct Wadi Stomper model was not found in the source, and a full 30-minute movie is not implemented. Do not represent those as shipped.
+
+## A.4 Hotfix 1 — Claude audit follow-up
+- Analog touch joystick with radial dead zone, full diagonal movement, independent look pointer and camera-facing shift lock on foot. Driving uses the same analog stick and preserves auto-follow camera. Cancel, pointer loss, blur and settings reset input.
+- Current release branding is derived from the release meta tag. Recoil City and main menu labels follow it; old version prefixes removed from feature hubs and mode names, while historical feature names remain. Build metadata updated to A.4-HOTFIX-1.
+- Additional building window geometry, roof silhouettes, richer facade textures, fuller high-detail palms, distinct car trim and facial contours. Existing low/TV geometry budgets retained. Device and visual testing remain necessary.

@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
-<meta name="rx-build" content="Z.5-SAND-8" />
+<meta name="rx-build" content="A.4-HOTFIX-1" />
 <meta name="rx-release" content="A.4 — Evolution" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
@@ -970,7 +970,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="hud"><span id="rxModeHud" class="hide"></span><span id="rxWeatherLabel" class="hide"></span><div id="rxInspectPanel" class="hide"></div><button id="rxInspectBtn" class="hide" type="button">🔍 INSPECT</button><div id="vxStreakHud" class="vx-streak-hud hide">⚡ STREAK <b id="vxStreakValue">0</b></div><div id="vxMysteryHud" class="vx-mini-hud hide"><span id="vxHudInfo">ROLE</span> · <span id="vxMysteryStatus">MYSTERY</span></div><div id="vxBossHud" class="vx-mini-hud hide"><span id="vxBossInfo">🦂 BOSS BREAKOUT</span><div class="vx-boss-meter"><i id="vxBossHp"></i></div></div><button id="socialHudBtn" class="social-hud-trigger hide" type="button">👥 <span data-t="playersOnline">Players</span> <b id="socialHudCount">1</b></button>
 <div class="hud-top"><div class="hud-panel"><div class="hud-logo">RECOIL <b>X</b></div><div class="hudwallet">🪙 <span id="coinsHUD">0</span></div><div class="small" id="hudPlayers" aria-live="polite">👥 1 player • 🤖 7 bots</div><div class="small" id="gameModeLabel">تدريب ضد الروبوتات</div></div></div>
 <div class="hud-panel hud-center"><strong id="timer">04:00</strong><div class="hud-kills"><span><span data-t="kills">القتل</span> <b id="kills">0</b></span><span><span data-t="deaths">الموت</span> <b id="deaths">0</b></span></div></div>
-<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge">UPDATE A.4</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
+<div class="hud-panel hud-left"><div class="small" id="v9ModeBadge" data-rx-release="label">RECOIL X</div><div class="small" id="mapHudLabel">الخريطة • DUNE OUTPOST</div><canvas id="minimap" width="160" height="160"></canvas></div>
 <div id="killfeed"></div><div id="nameplates"></div><div id="toast"></div><div id="fpsCounter" class="fps-counter">-- FPS</div><div id="spectatorBar" class="spectator-bar hide"><b>👁 <span data-t="spectating">SPECTATING</span>: <span id="spectateName"></span></b><div><button id="spectatePrev" data-t="previousPlayer">◀ Previous</button><button id="spectateNext" data-t="nextPlayer">Next ▶</button><button id="spectateExit" data-t="exitSpectator">Return to game</button></div></div>
 <div class="hud-bottom"><div class="hud-panel healthblock"><div class="meter-title"><span data-t="health">❤️ الصحة</span><span id="healthText">100</span></div><div class="meter"><div id="healthBar" class="fill"></div></div><div class="meter-title"><span data-t="shield">🛡️ الدرع</span><span id="shieldText">75</span></div><div class="meter"><div id="shieldBar" class="fill blue" style="width:75%"></div></div></div><div class="hud-panel sprint-box"><div class="meter-title"><span data-t="sprint">⚡ Sprint</span><b id="sprintState">10s</b></div><div class="meter sprint-meter"><div id="sprintBar" class="fill sprint-fill" style="width:100%"></div></div><div class="sneak-label" id="sneakState" data-t="standUp">Standing</div></div><div class="hud-panel ammo-box"><div class="weapon-name" id="weaponLabel">ASSAULT RIFLE</div><div class="ammo-num"><span id="ammo">30</span><em> / <span id="reserve">180</span></em></div><div class="weapon-keys" data-t="weaponKeys">[1–4] تبديل • [R] تعبئة</div></div></div>
 <div id="tips" data-t="tips">WASD للحركة • الفأرة للتصويب • زر الفأرة للإطلاق • SHIFT للركض • SPACE للقفز • ESC للإيقاف</div>
@@ -985,7 +985,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="mobileControls"><div class="joybase" id="joybase"><div class="joystick" id="joystick"></div></div><div class="touch-swipe" id="touchswipe"></div><div class="touchbuttons"><button class="touchbtn fire" id="touchfire" data-t="fire">إطلاق</button><button class="touchbtn" id="touchjump" data-t="jump">قفز</button><button class="touchbtn" id="touchreload" data-t="reload">تعبئة</button><button class="touchbtn" id="touchweapon" data-t="weapon">سلاح</button><button class="touchbtn skill" id="touchcrouch" data-t="crouch">تسلّل</button><button class="touchbtn skill" id="touchsprint" data-t="sprint">ركض</button></div><button id="rx2TouchGadget" class="rx2-touch hide" type="button">💨 GADGET</button><button id="rx2TouchSlide" class="rx2-touch rx2-slide hide" type="button">↘ SLIDE</button><button id="v8TouchView" class="hide" type="button">👁 VIEW</button><button class="touch-chest" id="touchchest" data-t="openChest">Open chest</button></div>
 <div id="v92MobileIndicator" class="v92-mobile-indicator" aria-live="polite"></div><div id="overlay"><div class="panel"><div class="panel-content">
 <div id="deviceMenu">
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.4</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
+  <div class="topline"><span class="brandchip" data-rx-release="brand">RECOIL X</span><span class="sunmark">📱 MOBILE SURVIVAL</span></div>
   <div class="eyebrow" data-t="chooseDeviceLabel">SELECT YOUR PLATFORM</div>
   <h1 class="game-title">RECOIL <span>X</span></h1><div class="recoil-tagline">LOCK-LOAD-DOMINATE</div>
   <p class="subtitle" data-t="deviceIntro">هل تلعب على هاتف أم كمبيوتر؟ سنجهّز التحكم المناسب لك.</p>
@@ -993,8 +993,8 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
   <div class="settings"><label for="deviceLang" data-t="language">اللغة</label><select id="deviceLang" class="langpicker"><option value="ar">العربية</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><div class="rx-language-quick" aria-label="Select language"><button type="button" data-rx-lang="ar">العربية</button><button type="button" data-rx-lang="en">English</button><button type="button" data-rx-lang="es">Español</button><button type="button" data-rx-lang="fr">Français</button><button type="button" data-rx-lang="tr">Türkçe</button></div></div>
 </div>
 <div id="mainMenu" class="hide">
-<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="Z.5-SAND-8" aria-label="Compact menu">
-  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto">UPDATE A.4</div></div>
+<div id="rxSimplePanel" class="rx-simple-panel" data-rx-build="" aria-label="Compact menu">
+  <div class="rx-simple-heading"><div class="rx-simple-brand">RECOIL <b>X</b></div><div class="rx-simple-motto" data-rx-release="label">RECOIL X</div></div>
   <div id="rxSimpleActions">
     <button class="rx-simple-quick" type="button" id="rxSimpleQuick">▶ QUICK PLAY<small>Classic · Random map · 5-minute battle</small></button>
     <div class="rx-simple-grid">
@@ -1021,18 +1021,18 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
   </div>
   <button type="button" class="rx-simple-toggle" id="rxSimpleToggle">Compact menu</button>
 </div>
-  <div class="topline"><span class="brandchip">RECOIL X · UPDATE A.4</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
+  <div class="topline"><span class="brandchip" data-rx-release="brand">RECOIL X</span><span class="sunmark">⚜ LOCK-LOAD-DOMINATE</span></div>
   <div class="eyebrow recoil-motto">LOCK-LOAD-DOMINATE</div><h1 class="game-title">RECOIL <span>X</span></h1><div class="subtitle" data-t="subtitle">Five classic maps, plus expansion and mystery arenas. Play solo or online.</div>
-  <div class="menu-stats"><span class="versionlabel">UPDATE A.4</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
+  <div class="menu-stats"><span class="versionlabel" data-rx-release="label">RECOIL X</span><span>🌵 <b data-t="fiveMaps">٥ خرائط أساسية</b></span><span>⚔ <b data-t="weapons4">٤ أسلحة</b></span><span>🪙 <b id="coinsMain">0</b> <b data-t="coins">عملات</b></span><span class="relic-top">🏅 <b id="relicMain">0</b> <b data-t="desertTokens">Desert Tokens</b></span></div>
   <div class="mode-grid"><button class="choice" id="soloBtn"><span>🎯</span><strong data-t="solo">حارب الروبوتات</strong><small data-t="soloSub">العب وحدك • واكسب العملات</small></button><button class="choice" id="roomBtn"><span>🔗</span><strong data-t="privateRoom">غرفة خاصة</strong><small data-t="roomSub">رمز دخول • مباريات مع الأصدقاء</small></button></div>
   <div class="menu-actions"><button class="primary" id="shopBtn">🛍️ <span data-t="skinShop">متجر الأزياء</span></button><button class="primary crate-main-btn" id="crateBtn">🎁 <span data-t="lootBoxes">صناديق الغنائم</span></button><button class="primary v8-gun-main-btn" id="v8GunBtn">🔫 <span data-t="v8GunBox">Gun Box</span></button><button class="primary pet-main-btn" id="petBtn">🐾 <span data-t="companions">المرافقون</span></button><button class="primary battlepass-main-btn" id="passBtn">🏆 <span data-t="battlePass">BATTLE PASS</span></button><button class="secondary" id="mapsBtn">🗳️ <span data-t="mapVote">التصويت على الخريطة</span></button></div>
 <div id="rxsePlayerBadge" class="rxse-banner hide" aria-label="Equipped seasonal title"></div><div id="rxseMenuBanner" class="rxse-banner hide" aria-live="polite"></div><button id="rxseOpenBtn" class="primary full hide" type="button">🎊 SEASONAL EVENT HUB</button>
 <div class="vx-event-badge hide" id="vxMainEventBadge">🇴🇲 OMAN NATIONAL DAY</div>
   <div id="vxClockStatus" class="vx-clock-status" role="status" aria-live="polite">⏱ Checking event schedule…</div>
- <button class="primary full rx2-main-button" id="rx2OpenBtn" data-rx2="hub" type="button">🔪 VERSION X.3.1 · MYSTERY MAPS + MULTITOUCH</button>
+ <button class="primary full rx2-main-button" id="rx2OpenBtn" data-rx2="hub" type="button">🔪 MURDER MYSTERY · MAPS + MULTITOUCH</button>
  <div class="vx-mode-grid"><button class="vx-mode-card" id="vxMysteryBtn"><b data-vx="vxMystery">🔪 MYSTERY BOTS</b><small>Solo • Role-based AI • Throwing knives</small></button><button class="vx-mode-card" id="vxBossBtn"><b data-vx="vxBoss">🦂 BOSS BREAKOUT</b><small>Two waves • Desert Titan boss</small></button></div>
  <div class="vx-menu-actions"><button class="primary hide" id="vxEventBtn" data-vx="vxEvent">🇴🇲 Oman National Day</button><button class="secondary" id="vxKnivesBtn" data-vx="vxKnives">🔪 Knife Boxes</button><button class="secondary" id="vxForgeBtn" data-vx="vxForge">⚒️ Weapon Forge</button></div>
-  <div class="rx-x12-grid" aria-label="Version X.1 game modes and progression">
+  <div class="rx-x12-grid" aria-label="Game modes and progression">
 <button class="mode" type="button" id="rxInfectionBtn" data-rx12="infection">🦠 INFECTION</button>
 <button class="mode" type="button" id="rxDuelBtn" data-rx12="duel">⚔️ 1V1 DUEL</button>
 <button class="mode" type="button" id="rxChaosBtn" data-rx12="chaos">💥 CHAOS ROUNDS</button>
@@ -1047,7 +1047,7 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="shopMenu" class="hide"><div class="topline"><span class="brandchip">THE OUTFITTER // X</span><span class="walletlarge">🪙 <span id="shopCoins">0</span></span></div><div class="eyebrow" data-t="shopLabel">DESERT ARMORY</div><h2 class="menu-subhead center" data-t="shopTitle">متجر أزياء المقاتلين</h2><p class="status center" data-t="shopNote">احصل على 25 عملة لكل روبوت و75 لكل لاعب. الأزياء للتزيين فقط.</p><div class="shop-tools"><select id="rarityFilter" class="langpicker wide-select" aria-label="Filter skins"><option value="all" data-t="allRarities">All rarities</option><option value="common" data-t="rarityCommon">Common</option><option value="uncommon" data-t="rarityUncommon">Uncommon</option><option value="rare" data-t="rarityRare">Rare</option><option value="legendary" data-t="rarityLegendary">Legendary</option><option value="godly" data-t="rarityGodly">Godly</option><option value="silver" data-t="raritySilver">Silver Godly</option><option value="golden" data-t="rarityGolden">Golden Godly</option></select><label class="owned-filter"><input type="checkbox" id="ownedFilter"> <span data-t="ownedOnly">Owned only</span></label><span id="skinCount" class="small"></span></div><div id="skinGrid" class="skin-grid"></div><button class="secondary full" id="shopBackBtn" data-t="back">عودة</button></div>
 
 <div id="v8GunMenu" class="hide v8-gun-menu">
- <div class="topline"><span class="brandchip">RECOIL X VERSION X.2 // LOCK-LOAD-DOMINATE</span><span class="walletlarge">🪙 <span id="v8GunCoins">0</span></span></div>
+ <div class="topline"><span class="brandchip">RECOIL X // WEAPON COLLECTION</span><span class="walletlarge">🪙 <span id="v8GunCoins">0</span></span></div>
  <div class="v8-armory-banner"><strong data-t="v8ArmoryTitle">LOCK-LOAD-DOMINATE</strong><span data-t="v8ArmorySubtitle">3D weapon collection · One exclusive finish per gun case · earned coins only</span></div>
  <h2 class="menu-subhead center" data-t="v8Cases">WEAPON CASES</h2>
  <div id="v8GunCases" class="v8-gun-cases"></div>
@@ -1094,13 +1094,13 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
  <button class="secondary full" id="rxseCloseBtn" type="button">BACK</button>
  </div>
 
-<div id="vxEventMenu" class="hide"><div class="eyebrow">RECOIL X // VERSION X.1 COMPLETE</div><h2 class="vx-panel-title" data-vx="vxEventTitle">OMAN NATIONAL DAY</h2><p class="vx-panel-note" data-vx="vxEventSubtitle">14-day celebration • November 20–December 3, 2026</p><div class="vx-event-badge" id="vxEventStatus"></div><div class="vx-stats">🎟️ <span data-vx="vxEventPoints">CELEBRATION TOKENS</span>: <b id="vxEventTokens">0</b></div><h3 class="vx-section-title" data-vx="vxMissions">EVENT MISSIONS</h3><div class="vx-card-grid three" id="vxEventMissions"></div><h3 class="vx-section-title" data-vx="vxShopTitle">EXCLUSIVE EVENT REWARDS</h3><div class="vx-card-grid" id="vxEventRewards"></div><button class="secondary full" id="vxEventBack" data-vx="vxBack">BACK</button></div>
+<div id="vxEventMenu" class="hide"><div class="eyebrow">RECOIL X // EVENTS</div><h2 class="vx-panel-title" data-vx="vxEventTitle">OMAN NATIONAL DAY</h2><p class="vx-panel-note" data-vx="vxEventSubtitle">14-day celebration • November 20–December 3, 2026</p><div class="vx-event-badge" id="vxEventStatus"></div><div class="vx-stats">🎟️ <span data-vx="vxEventPoints">CELEBRATION TOKENS</span>: <b id="vxEventTokens">0</b></div><h3 class="vx-section-title" data-vx="vxMissions">EVENT MISSIONS</h3><div class="vx-card-grid three" id="vxEventMissions"></div><h3 class="vx-section-title" data-vx="vxShopTitle">EXCLUSIVE EVENT REWARDS</h3><div class="vx-card-grid" id="vxEventRewards"></div><button class="secondary full" id="vxEventBack" data-vx="vxBack">BACK</button></div>
 <div id="vxKnifeMenu" class="hide"><div class="eyebrow">RECOIL X // KNIFE VAULT</div><h2 class="vx-panel-title" data-vx="vxKnifeTitle">10 KNIFE BOXES</h2><p class="vx-panel-note" data-vx="vxKnifeSubtitle">70 original blades • earned coins only</p><div class="vx-stats">🪙 <b id="vxKnifeCash">0</b> &nbsp; 🔩 <span data-vx="vxShards">SHARDS</span> <b id="vxKnifeShard">0</b></div><div class="vx-panel-note">BASE BOX ODDS: Common 56% · Uncommon 24% · Rare 11% · Legendary 7% · Godly 1.5% · Silver .4% · Golden .1%. Legendary+ is guaranteed within 25 paid knife boxes without one.</div><div class="vx-panel-note" id="rxKnifePity" aria-live="polite"></div><div class="vx-card-grid" id="vxKnifeBoxes"></div><h3 class="vx-section-title">🔪 KNIFE INVENTORY</h3><div class="vx-card-grid three" id="vxKnifeCollection"></div><button class="secondary full" id="vxKnifeBack" data-vx="vxBack">BACK</button></div>
 <div id="vxForgeMenu" class="hide"><div class="eyebrow">RECOIL X // CRAFTING</div><h2 class="vx-panel-title" data-vx="vxForgeTitle">THE WEAPON FORGE</h2><p class="vx-panel-note" data-vx="vxForgeSubtitle">Turn duplicates into shards and craft exclusive cosmetics.</p><div class="vx-stats">🔩 <span data-vx="vxShards">SHARDS</span> <b id="vxForgeShards">0</b></div><div class="vx-card-grid" id="vxForgeRecipes"></div><button class="secondary full" id="vxForgeBack" data-vx="vxBack">BACK</button></div>
 <div id="vxMysteryMenu" class="hide"><div class="eyebrow">RECOIL X // MYSTERY BOTS</div><h2 class="vx-panel-title">🔪 MYSTERY MODE</h2><p class="vx-panel-note" data-vx="vxMurderDesc">Murderer: slash or throw. Sheriff: eliminate murderer. Innocents: survive.</p><h3 class="vx-section-title" data-vx="vxRandomRoles">🎲 Roles are assigned randomly</h3><p class="vx-role-rules" data-vx="vxRandomRules">No role picking · 1 Murderer (10%) · 1 Sheriff (10%) · 8 Innocents (80%)</p><p class="vx-panel-note">🔪 PC: Click to slash, E or right-click to throw. 📱 Slash and Throw buttons appear on mobile. Solo offline with smart bots.</p><section class="rx31-mm-vote" aria-label="Murder Mystery map voting"><h3>🗳️ MYSTERY MAP VOTE · 10 ORIGINAL MAPS</h3><p class="vx-panel-note">Choose your mystery arena. In solo bot matches, your vote decides the map. Other bots only play the round.</p><div class="rx31-map-grid" id="rx31MysteryMapGrid"></div><p id="rx31Selected" class="rx31-selected">Choose a map to begin.</p></section><button class="primary full" id="vxMysteryStart" data-vx="vxStartMystery">START BOT MYSTERY</button><button class="secondary full" id="vxMysteryBack" style="margin-top:10px" data-vx="vxBack">BACK</button></div>
 
 <div id="rx2HubMenu" class="hide rx-mini-menu">
- <div class="eyebrow">RECOIL X · VERSION X.4</div><h2 class="vx-panel-title">🎬 ANIMATION REVOLUTION</h2>
+ <div class="eyebrow">RECOIL X · ANIMATION REVOLUTION</div><h2 class="vx-panel-title">🎬 ANIMATION REVOLUTION</h2>
  <p class="rx-note">Gameplay, graphics and performance upgrades. Offline modes remain playable with bots. These options never grant real-money purchases.</p>
  <section class="rx3-section" id="rx3AnimSettings"><h3>🎬 X.3 ANIMATION REVOLUTION</h3><p>Animated reloads, natural bot movement, recoil, knife swings, hit reactions, better jump/crouch, weapon inspection and boss attacks.</p><label for="rx3QualitySelect">Animation quality</label><select id="rx3QualitySelect" aria-label="Animation quality"><option value="auto">Auto · device aware</option><option value="high">High · full animations</option><option value="balanced">Balanced · reduced extras</option><option value="lite">Lite · older phones</option><option value="off">Off · minimal effects</option></select><div id="rx3QualityInfo" class="rx3-hint">Adaptive animation budget; no fixed RAM use.</div></section>
 <div class="rx2-menu-grid">
@@ -1122,6 +1122,12 @@ body:not(.rx-tv-ultralight) #overlay button:focus-visible{outline:2px solid #ffd
 <div id="v8Reveal" class="hide" role="dialog" aria-modal="true" aria-live="assertive"><div class="v8-opening"><span class="v8-box-icon">📦</span><h2 id="v8RevealTitle">OPENING...</h2><div id="v8RevealArt"></div><h3 id="v8RevealName"></h3><span id="v8RevealRarity" class="v8-rarity"></span><p id="v8RevealDetail" class="v8-status-note"></p><button class="primary full" id="v8RevealClose" disabled>CONTINUE</button></div></div>
 </div>
 <script>
+// Release metadata is the single source for live branding; feature names stay version-neutral.
+const RX_RELEASE=(()=>{const full=document.querySelector('meta[name="rx-release"]').getAttribute('content'),version=full.split(' — ')[0],build=document.querySelector('meta[name="rx-build"]').getAttribute('content');return Object.freeze({full,version,build,label:'UPDATE '+version,brand:'RECOIL X · UPDATE '+version});})();
+window.RecoilRelease=RX_RELEASE;
+document.title='RECOIL X — Update '+RX_RELEASE.version;
+for(const el of document.querySelectorAll('[data-rx-release]')){const value=RX_RELEASE[el.dataset.rxRelease];if(typeof value==='string')el.textContent=value;}
+document.getElementById('rxSimplePanel').dataset.rxBuild=RX_RELEASE.build;
 (()=>{'use strict';
 // RECOIL X V8.2: LOCK-LOAD-DOMINATE — 3D browser FPS, token jackpots, pass, spectator, cosmetics and 5 maps.
 const GAME_VERSION="UPDATE Z · CROWN TRIALS", GAME_NAME="RECOIL X";
@@ -2538,7 +2544,7 @@ function v9RenderPresetControls(id){let parent=$(id);if(!parent)return;parent.re
  }}
 function applyGraphics(){document.body.classList.remove('graphics-low','graphics-medium','graphics-high','graphics-ultra','graphics-cinematic');document.body.classList.add('graphics-'+graphicsQuality);
  $('fpsCounter').classList.toggle('visible',showFPS);
- const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent='UPDATE A.4 • '+v9ModeName(graphicsQuality);
+ const modeBadge=$('v9ModeBadge');if(modeBadge)modeBadge.textContent=RX_RELEASE.label+' • '+v9ModeName(graphicsQuality);
  if($('qualityButtons'))renderGraphics();v91RenderControls();rx2GraphicsRefresh();
  canvas.width=0;canvas.height=0;}
 function renderGraphics(){v91RenderControls();v9RenderPresetControls('qualityButtons');v9RenderPresetControls('v9PauseQuality');const note=$('v9TechNote');if(note)note.textContent=(V9_NAMES[language]||V9_NAMES.en).info;$('fpsToggle').checked=showFPS;}
@@ -4040,10 +4046,10 @@ function rx2CreateLoadouts(){const box=$('rx2LoadoutButtons');if(!box)return;box
 function rx2Open(){showScreen('rx2HubMenu');rx2SaveSettings();rx2CreateLoadouts();}
 function rx2Start(which){if(which==='custom'){rx2MyCustom.bots=Math.min(mobile?12:20,Number($('rx2BotCount').value)||8);rx2MyCustom.seconds=Number($('rx2RoundTime').value)||480;rx2MyCustom.difficulty=Number($('rx2BotDifficulty').value)||1;}startGame(which);}
 const RX2_TEXT={
- en:{hub:'🎬 VERSION X.3 · ANIMATION REVOLUTION',training:'🎯 TRAINING RANGE',objective:'📍 OBJECTIVE OPS',custom:'⚙️ CUSTOM MATCH',gadget:'💨 TACTICAL GADGETS',back:'BACK',subtitle:'Gameplay, shaders and advanced performance. The core game remains playable offline.'},
+ en:{hub:'🎬 ANIMATION REVOLUTION',training:'🎯 TRAINING RANGE',objective:'📍 OBJECTIVE OPS',custom:'⚙️ CUSTOM MATCH',gadget:'💨 TACTICAL GADGETS',back:'BACK',subtitle:'Gameplay, shaders and advanced performance. The core game remains playable offline.'},
  ar:{hub:'🎬 الإصدار X.3 · ثورة الرسوم المتحركة',training:'🎯 ميدان التدريب',objective:'📍 مهمات الأهداف',custom:'⚙️ مباراة مخصصة',gadget:'💨 أدوات تكتيكية',back:'رجوع',subtitle:'تطويرات أسلوب اللعب والرسومات والأداء مع دعم اللعب الفردي.'},
  es:{hub:'🎬 VERSIÓN X.3 · ANIMACIONES',training:'🎯 CAMPO DE PRÁCTICA',objective:'📍 MISIONES',custom:'⚙️ PARTIDA PERSONALIZADA',gadget:'💨 DISPOSITIVOS',back:'VOLVER',subtitle:'Jugabilidad, gráficos y rendimiento avanzado.'},
- fr:{hub:'🎬 VERSION X.3 · ANIMATIONS',training:'🎯 STAND DE TIR',objective:'📍 MISSIONS',custom:'⚙️ PARTIE PERSONNALISÉE',gadget:'💨 GADGETS',back:'RETOUR',subtitle:'Jeu, effets graphiques et performances.'},
+ fr:{hub:'🎬 ANIMATIONS',training:'🎯 STAND DE TIR',objective:'📍 MISSIONS',custom:'⚙️ PARTIE PERSONNALISÉE',gadget:'💨 GADGETS',back:'RETOUR',subtitle:'Jeu, effets graphiques et performances.'},
  tr:{hub:'🎬 X.3 SÜRÜMÜ · ANİMASYON',training:'🎯 ATIŞ ALANI',objective:'📍 GÖREVLER',custom:'⚙️ ÖZEL MAÇ',gadget:'💨 TAKTİK CİHAZLAR',back:'GERİ',subtitle:'Geliştirilmiş oyun, grafik ve performans.'}
 };
 function rx2Translate(){const lang=RX2_TEXT[language]||RX2_TEXT.en;for(const node of document.querySelectorAll('[data-rx2]'))node.textContent=lang[node.dataset.rx2]||RX2_TEXT.en[node.dataset.rx2]||node.textContent;}
@@ -4568,8 +4574,8 @@ function x4Keyboard(ev){if(['INPUT','SELECT','TEXTAREA'].includes(document.activ
  switch(ev.code){case 'KeyE': if(mode!=='mystery'||vxRole!=='murderer'){x4Interact();ev.preventDefault();}break;case 'KeyQ':x4Peek(-1);break;case 'KeyZ':x4Peek(1);break;case 'KeyN':x4NextVision();break;case 'KeyB':x4CycleSquad();break;case 'KeyP':x4Photo();break;}
 }
 document.addEventListener('keydown',x4Keyboard);
-function x4BaseUI(){const host=x4E('mainMenu'),button=document.createElement('button');button.className='primary full';button.id='x4MenuBtn';button.textContent='🚀 VERSION X.4 · 20 FEATURE EXPANSION';button.style.margin='12px 0';button.onclick=x4Open;const actions=host.querySelector('.menu-actions');if(actions)actions.insertAdjacentElement('afterend',button);else host.append(button);
- const menu=document.createElement('section');menu.id='x4HubMenu';menu.className='hide x4-hub';menu.innerHTML=`<div class="eyebrow">RECOIL X // VERSION X.4</div><h2 class="vx-panel-title">🚀 20-FEATURE EXPANSION</h2><p class="vx-panel-note">All new modes are offline/bot-playable. Saves remain in your browser. The developer panel stays separate.</p><p id="x4Stats" class="x4-stats"></p>
+function x4BaseUI(){const host=x4E('mainMenu'),button=document.createElement('button');button.className='primary full';button.id='x4MenuBtn';button.textContent='🚀 20-FEATURE EXPANSION';button.style.margin='12px 0';button.onclick=x4Open;const actions=host.querySelector('.menu-actions');if(actions)actions.insertAdjacentElement('afterend',button);else host.append(button);
+ const menu=document.createElement('section');menu.id='x4HubMenu';menu.className='hide x4-hub';menu.innerHTML=`<div class="eyebrow">RECOIL X // EXPANSION</div><h2 class="vx-panel-title">🚀 20-FEATURE EXPANSION</h2><p class="vx-panel-note">All new modes are offline/bot-playable. Saves remain in your browser. The developer panel stays separate.</p><p id="x4Stats" class="x4-stats"></p>
  <div class="x4-list"><button class="primary" id="x4Extraction">🚁 EXTRACTION RUSH</button><button class="primary" id="x4Squad">👥 SQUAD COMMAND</button><button class="primary" id="x4Dom">🏳️ DOMINATION</button><button class="primary" id="x4Rank">🏆 OFFLINE RANKED</button></div>
  <h3 class="x4-head">⚙️ CUSTOMIZATION & PROGRESSION</h3><div class="x4-list"><label>Weapon attachment<select id="x4Attachment"><option value="standard">Standard</option><option value="scope">Precision scope</option><option value="grip">Stability grip</option><option value="suppressor">Suppressor</option><option value="magazine">Extended magazine (+25% capacity)</option></select></label><label>Squad order<select id="x4Order"><option value="follow">Follow</option><option value="defend">Defend</option><option value="attack">Attack</option><option value="hold">Hold</option></select></label></div>
  <p id="x4SkillInfo" class="x4-stats"></p><div class="x4-list"><button class="secondary" data-x4skill="reload">+ Faster Reload</button><button class="secondary" data-x4skill="stamina">+ Stamina</button><button class="secondary" data-x4skill="gadget">+ Gadget Charge</button></div>
@@ -4746,8 +4752,8 @@ const x5PrevShow=showScreen;showScreen=function(screen){if(screen==='x5HubMenu')
 function x5Open(){showScreen('x5HubMenu');x5RefreshHub();}
 function x5RefreshHub(){x5P('x5Progress').textContent=`CAMPAIGN ${x5Data.completed.length}/6 · NEMESIS TIER ${x5Data.nemesis.tier||1} · BEST WAVE ${x5Data.bestWave||0} · CUSTOM MAP BLOCKS ${x5Data.builder.length}`;
  x5P('x5Campaign').textContent='🎬 OPERATION BLACKOUT · MISSION '+(Math.min(5,(x5Data.mission||0))+1)+'/6';x5P('x5LiteOn').checked=!!x5Data.lite;x5P('x5LiteAuto').checked=!!x5Data.auto;x5MasteryUI();x5EditCanvas();}
-function x5UI(){const host=x5P('mainMenu');const button=document.createElement('button');button.className='primary full';button.id='x5MenuBtn';button.style.margin='10px 0';button.textContent='⚡ VERSION X.5 — ALL 10 NEW FEATURES';button.onclick=x5Open;x5P('x4MenuBtn').insertAdjacentElement('afterend',button);
- const s=document.createElement('section');s.id='x5HubMenu';s.className='hide x5-hub';s.innerHTML=`<div class="eyebrow">RECOIL X // VERSION X.5</div><h2 class="vx-panel-title">⚡ ALL 10 FEATURES — LIVE</h2><p class="vx-panel-note">Offline campaign, heists, convoy escort, survival, map creator, weapon mastery, evolving rival, grappling hook, new gadgets, and adaptive Lite Engine. X.4 and earlier game systems are preserved.</p><p id="x5Progress" class="x5-stat"></p>
+function x5UI(){const host=x5P('mainMenu');const button=document.createElement('button');button.className='primary full';button.id='x5MenuBtn';button.style.margin='10px 0';button.textContent='⚡ ADVENTURE MODES';button.onclick=x5Open;x5P('x4MenuBtn').insertAdjacentElement('afterend',button);
+ const s=document.createElement('section');s.id='x5HubMenu';s.className='hide x5-hub';s.innerHTML=`<div class="eyebrow">RECOIL X // ADVENTURE MODES</div><h2 class="vx-panel-title">⚡ ALL 10 FEATURES — LIVE</h2><p class="vx-panel-note">Offline campaign, heists, convoy escort, survival, map creator, weapon mastery, evolving rival, grappling hook, new gadgets, and adaptive Lite Engine. X.4 and earlier game systems are preserved.</p><p id="x5Progress" class="x5-stat"></p>
  <div class="x5-modes"><button id="x5Campaign" class="primary">🎬 CAMPAIGN</button><button id="x5Heist" class="primary">💎 HEIST MODE</button><button id="x5Convoy" class="primary">🚚 CONVOY ASSAULT</button><button id="x5Survival" class="primary">♾️ INFINITE SURVIVAL</button><button id="x5BuilderPlay" class="primary">🧱 PLAY CUSTOM MAP</button></div>
  <h3>🧱 MAP CREATOR · 14 × 14 GRID</h3><p class="vx-panel-note">Tap grid cells. Save locally, export JSON, or import a friend's map. Blocks add collision in custom-map matches.</p><div class="x5-choices"><button data-x5tool="wall">🧱 WALL</button><button data-x5tool="cover">🛡️ COVER</button><button data-x5tool="tower">🏢 TOWER</button><button data-x5tool="spawn">🏁 SPAWN</button><button data-x5tool="objective">🎯 OBJECTIVE</button><button data-x5tool="erase">🧽 ERASE</button></div>
  <canvas id="x5BuilderCanvas" width="364" height="364" style="display:block;width:min(100%,364px);aspect-ratio:1;margin:9px auto;border:2px solid #d6ae72;border-radius:10px;touch-action:manipulation;cursor:crosshair"></canvas>
@@ -4848,7 +4854,7 @@ const zStartBase=startGame;startGame=function(which){const r=zStartBase(which);i
 const zFinishBase=finish;finish=function(){if(phase!=='playing')return;const r=zRun,win=!!r?.won,kind=r?.type||mode;
  if(r&&!r.done){r.done=true;if(kind!=='online')zSeasonPoints(false);}
  if(phase==='playing'&&kind!=='online'&&kind!=='guest'&&kind!=='host')zHolidayMatchReward();
- zFinishBase();if(r){const e=zP('zEndLine');if(e){e.classList.remove('hide');e.textContent=`UPDATE Z · ${kind.toUpperCase()} · ${win?'VICTORY':'MATCH ENDED'} · ${zProfile.rating} OFFLINE RATING`;}if(kind!=='online'&&zP('endTitle'))zP('endTitle').textContent=win?'🏆 UPDATE Z · VICTORY':'⚔️ UPDATE Z · MATCH ENDED';}
+ zFinishBase();if(r){const e=zP('zEndLine');if(e){e.classList.remove('hide');e.textContent=`${RX_RELEASE.label} · ${kind.toUpperCase()} · ${win?'VICTORY':'MATCH ENDED'} · ${zProfile.rating} OFFLINE RATING`;}if(kind!=='online'&&zP('endTitle'))zP('endTitle').textContent=win?'🏆 VICTORY':'⚔️ MATCH ENDED';}
 };
 const zQuitBase=quit;quit=function(){zDisconnect();zRun=null;document.body.classList.remove('z-playing');zP('zLive')?.classList.add('hide');document.body.classList.remove('z-actions-open');return zQuitBase();};
 const zKillBase=killBot;killBot=function(b,killer){const alive=!!b?.alive;const r=zRun;const result=zKillBase(b,killer);if(!alive||b.alive||!r||killer!==pl)return result;
@@ -4951,10 +4957,10 @@ function zHandleNetwork(m){if(m.t==='error'){zP('zServerStatus').textContent='Se
 function zAddUI(){const style=document.createElement('style');style.textContent=`
  .z-hub{direction:ltr;text-align:left;color:#f4e7cb;width:100%;max-height:76vh;overflow:auto;padding:10px 16px 25px;scrollbar-width:thin}.z-hub h2{font:900 25px Impact,Arial,sans-serif;letter-spacing:.6px;color:#ffe4ac;margin:8px 0}.z-hub h3{color:#f6c782;font-size:15px;margin:19px 0 8px}.z-hub small,.z-hub p{color:#e3c8a4;font-size:12px;line-height:1.6}.z-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.z-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.z-modes button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px;color:#fff1ce;background:#65402b;border:1px solid #b58b5b;border-radius:12px;min-height:75px}.z-modes button:hover{background:#8b5633}.z-modes small{color:#e2c5a5}.z-hub select,.z-hub input{background:#241b19;color:#ffe7bb;border:1px solid #ab8153;border-radius:8px;padding:10px;max-width:100%;width:100%;font:12px Tahoma,Arial;text-transform:none;letter-spacing:normal}.z-hub label{font-size:12px;display:block;margin:7px 0}.z-event{border:1px solid #896643;background:#352a23;border-radius:11px;padding:10px;margin:9px 0}.z-event-live{border-color:#eac66f;background:linear-gradient(125deg,#665134,#2f2822)}.z-event-head{display:flex;align-items:center;gap:10px}.z-event-icon{font-size:29px}.z-event-info{flex:1;min-width:0}.z-event-info b{display:block;font-size:13px}.z-event-info small{display:block;font-size:10px;color:#cbb397;margin-top:3px}.z-event-number{font-size:11px;text-align:right;white-space:nowrap;color:#ffdc91}.z-event-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.z-event-buttons button{background:#715038;border:1px solid #ad8557;border-radius:7px;color:#ffefd3;padding:8px 9px;font:700 11px Tahoma,Arial;min-height:31px}.z-event-buttons button:disabled{opacity:.45}.z-highlight{border:1px solid #bea16e;padding:10px;border-radius:9px;background:#69472570;font-size:12px;line-height:1.7}.z-label{position:absolute;right:13px;top:195px;padding:7px 11px;border-radius:8px;background:#251b19db;border:1px solid #d7ac5c;color:#ffe5a5;font:800 11px/1.5 Tahoma,Arial;max-width:40%;z-index:4;pointer-events:none}.z-label.bottom{top:auto;bottom:8px;left:30%;right:auto;max-width:40%;opacity:.88;font-size:10px}.z-touch{position:absolute;left:73px;z-index:32;font:900 10px Tahoma,Arial;color:#fff1d7;background:#4e3f2ad9;border:1px solid #c5a36b;border-radius:9px;padding:8px 5px;pointer-events:auto;display:none}.touch-selected.z-playing.z-actions-open .z-touch{display:block}.z-mobile-toggle{position:absolute;left:5px;top:32%;z-index:40;padding:8px;background:#7d5434;color:#ffedcd;border:1px solid #edc077;border-radius:10px;font:900 10px Tahoma,Arial;pointer-events:auto;display:none}.touch-selected.z-playing .z-mobile-toggle{display:block}.z-touch.z-u{top:36%}.z-touch.z-v{top:44%}.z-touch.z-x{top:52%}.z-touch.z-k{top:60%}.z-touch.z-t{top:68%}@media(max-width:720px){.z-hub{padding:7px 9px;max-height:76vh}.z-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.z-modes button{padding:9px 7px;min-height:71px}.z-label{right:5px;top:98px;font-size:9px;max-width:39%}.z-label.bottom{font-size:8px;bottom:2px;left:35%}.z-touch{left:63px;padding:5px 3px;font-size:9px}.z-touch.z-u{top:31%}.z-touch.z-v{top:39%}.z-touch.z-x{top:47%}.z-touch.z-k{top:55%}.z-touch.z-t{top:63%}}@media(max-height:480px){.z-touch.z-u{top:14%}.z-touch.z-v{top:26%}.z-touch.z-x{top:38%}.z-touch.z-k{top:50%}.z-touch.z-t{top:62%}}
  `;document.head.append(style);
- const btn=document.createElement('button');btn.className='primary full';btn.id='zMainBtn';btn.textContent='🚀 UPDATE Z — THE NEXT ERA · 20 FEATURES + 19 HOLIDAYS';btn.style.margin='10px 0';btn.onclick=zOpenHub;zP('x5MenuBtn').insertAdjacentElement('afterend',btn);
- const hub=document.createElement('section');hub.id='zHubMenu';hub.className='hide z-hub';hub.innerHTML=`<div class="eyebrow">RECOIL X // UPDATE Z</div><h2>🚀 THE NEXT ERA</h2><p>New playable modes, armor, class abilities, skill-based offline seasons, destructible props, secrets, and dedicated-server connection support. Existing X.5 features remain available.</p><div id="zPlayerStatus" class="z-highlight"></div><h3>⚔️ SIX PLAYABLE Z MODES</h3><div id="zModeButtons" class="z-modes"></div><h3>🎁 19 ANNUAL HOLIDAY EVENTS</h3><button class="primary full" id="zEventsOpen">🎊 OPEN HOLIDAY EVENT HUB · NO NEW YEAR EVENT</button><p>Holiday events only change menus, inventory and prizes. Their costumes and finishes work in normal matches; no extra holiday effects or weather.</p><h3>🎖️ CUSTOMIZE YOUR OPERATOR</h3><div class="z-two"><label>Class<select id="zClass"></select></label><label>Ultimate<select id="zUlt"></select></label><label>Faction<select id="zFaction"><option>Falcons</option><option>Vipers</option></select></label><label>Armor preset<select id="zArmorMode"><option value="balanced">Balanced</option><option value="heavy">Heavy</option><option value="light">Light</option></select></label></div><p id="zClassInfo"></p><h3>🌐 ONLINE MATCHES (REQUIRES EXTERNAL SERVER)</h3><p>Use the included Node.js WebSocket server. Enter its public wss:// URL once deployed. Existing PeerJS rooms still work separately.</p><label>Server WebSocket address<input id="zServerUrl" placeholder="wss://your-server.onrender.com"></label><label>Room code<input id="zRoomCode" value="public" maxlength="20"></label><button class="primary full" id="zConnect">🌐 CONNECT TO LIVE SERVER</button><p id="zServerStatus" class="z-highlight">No server connected. Offline modes work immediately.</p><h3>🎮 Z COMBAT CONTROLS</h3><p>U ultimate · V class ability · T repair armor · X tactical slide · Y zipline from center · K knife strike · E interact. Mobile has action buttons. Original controls are unchanged.</p><p class="z-highlight">ONLINE SCOPE: Dedicated rooms and server-validated positions/hits are supported by the included backend; global account login, persistent competitive leaderboards, and production security still require additional infrastructure. Offline rating is clearly labelled.</p><button class="secondary full" id="zBack">← MAIN MENU</button>`;
+ const btn=document.createElement('button');btn.className='primary full';btn.id='zMainBtn';btn.textContent='🚀 THE NEXT ERA · MODES & EVENTS';btn.style.margin='10px 0';btn.onclick=zOpenHub;zP('x5MenuBtn').insertAdjacentElement('afterend',btn);
+ const hub=document.createElement('section');hub.id='zHubMenu';hub.className='hide z-hub';hub.innerHTML=`<div class="eyebrow">RECOIL X // THE NEXT ERA</div><h2>🚀 THE NEXT ERA</h2><p>New playable modes, armor, class abilities, skill-based offline seasons, destructible props, secrets, and dedicated-server connection support. Existing X.5 features remain available.</p><div id="zPlayerStatus" class="z-highlight"></div><h3>⚔️ SIX PLAYABLE Z MODES</h3><div id="zModeButtons" class="z-modes"></div><h3>🎁 19 ANNUAL HOLIDAY EVENTS</h3><button class="primary full" id="zEventsOpen">🎊 OPEN HOLIDAY EVENT HUB · NO NEW YEAR EVENT</button><p>Holiday events only change menus, inventory and prizes. Their costumes and finishes work in normal matches; no extra holiday effects or weather.</p><h3>🎖️ CUSTOMIZE YOUR OPERATOR</h3><div class="z-two"><label>Class<select id="zClass"></select></label><label>Ultimate<select id="zUlt"></select></label><label>Faction<select id="zFaction"><option>Falcons</option><option>Vipers</option></select></label><label>Armor preset<select id="zArmorMode"><option value="balanced">Balanced</option><option value="heavy">Heavy</option><option value="light">Light</option></select></label></div><p id="zClassInfo"></p><h3>🌐 ONLINE MATCHES (REQUIRES EXTERNAL SERVER)</h3><p>Use the included Node.js WebSocket server. Enter its public wss:// URL once deployed. Existing PeerJS rooms still work separately.</p><label>Server WebSocket address<input id="zServerUrl" placeholder="wss://your-server.onrender.com"></label><label>Room code<input id="zRoomCode" value="public" maxlength="20"></label><button class="primary full" id="zConnect">🌐 CONNECT TO LIVE SERVER</button><p id="zServerStatus" class="z-highlight">No server connected. Offline modes work immediately.</p><h3>🎮 Z COMBAT CONTROLS</h3><p>U ultimate · V class ability · T repair armor · X tactical slide · Y zipline from center · K knife strike · E interact. Mobile has action buttons. Original controls are unchanged.</p><p class="z-highlight">ONLINE SCOPE: Dedicated rooms and server-validated positions/hits are supported by the included backend; global account login, persistent competitive leaderboards, and production security still require additional infrastructure. Offline rating is clearly labelled.</p><button class="secondary full" id="zBack">← MAIN MENU</button>`;
  zP('x5HubMenu').parentElement.append(hub);
- const events=document.createElement('section');events.id='zEventsMenu';events.className='hide z-hub';events.innerHTML='<div class="eyebrow">RECOIL X // HOLIDAYS</div><h2>🎊 HOLIDAY EVENTS</h2><p>19 annual celebrations with daily gifts and event-only armor, rifle finishes and knives. Only active events allow purchases; owned collectibles stay yours. Islamic holidays are based on calendar calculations and can differ by local moon sighting. Anniversary date defaults to August 1 and can be customized in source.</p><div id="zEventsList"></div><button class="secondary full" id="zEventsBack">← UPDATE Z</button>';
+ const events=document.createElement('section');events.id='zEventsMenu';events.className='hide z-hub';events.innerHTML='<div class="eyebrow">RECOIL X // HOLIDAYS</div><h2>🎊 HOLIDAY EVENTS</h2><p>19 annual celebrations with daily gifts and event-only armor, rifle finishes and knives. Only active events allow purchases; owned collectibles stay yours. Islamic holidays are based on calendar calculations and can differ by local moon sighting. Anniversary date defaults to August 1 and can be customized in source.</p><div id="zEventsList"></div><button class="secondary full" id="zEventsBack">← THE NEXT ERA</button>';
  hub.parentElement.append(events);
  const modes=zP('zModeButtons');for(const [key,icon,name,desc] of Z_MODES){const b=document.createElement('button');b.innerHTML=`<strong>${icon} ${name}</strong><small>${desc}</small>`;b.onclick=()=>zPlay(key);modes.append(b);}
  zP('zClass').innerHTML=Object.entries(Z_ROLES).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('');zP('zUlt').innerHTML=Object.entries(Z_ULTS).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}</option>`).join('');
@@ -5238,7 +5244,7 @@ function zpMount(){
  const events=zP('zEventsMenu'),list=zP('zEventsList');const detail=document.createElement('div');detail.id='zpDetail';detail.className='hide';list.insertAdjacentElement('afterend',detail);
  zP('zEventsOpen').textContent='🎊 19 HOLIDAYS · 100 TIERS EACH · GUN + KNIFE BOXES';
  const blurb=events.querySelector('p');if(blurb)blurb.textContent='19 holiday events, each with its OWN 100-tier free pass, five unique quests, a Gun Box and Knife Box. Tier 100 = 1,000 coins. No New Year event, weather events, holiday world meshes, or real-money purchases. Rewards are saved locally; active dates follow the device calendar in Oman time.';
- zP('zEventsBack').textContent='← UPDATE Z';
+ zP('zEventsBack').textContent='← THE NEXT ERA';
  const originalOpen=zOpenEvents;zOpenEvents=function(){zpSelected=null;originalOpen();zpEventHubOpen();};
  zP('zEventsOpen').onclick=zOpenEvents;
  const oldRender=zRenderEvents;zRenderEvents=function(){zpEventList();if(zpSelected){const h=Z_HOLIDAYS.find(e=>e.id===zpSelected);if(h)zpRenderDetails(h);}else zpRenderDetails(null);};
@@ -5405,7 +5411,7 @@ function zzBuildSpecial(){const hub=zP('zHubMenu'),main=zP('zMainBtn');if(!hub||
  const actions=document.createElement('div');actions.className='zz-actions';actions.innerHTML='<button type="button" class="primary" id="zzKingdomBtn">🏰 KINGDOM FORGE</button><button type="button" class="primary" id="zzChessBtn">♟️ CHESS CHALLENGES</button>';hub.querySelector('#zPlayerStatus')?.insertAdjacentElement('afterend',actions);
  const shortcut=document.createElement('button');shortcut.className='primary full zz-shortcut';shortcut.textContent='🏰 KINGDOMS + ♟️ CHESS';shortcut.onclick=()=>zzOpenSpecial('kingdom');main.insertAdjacentElement('afterend',shortcut);
  const eventTab=document.createElement('button');eventTab.id='zzLiveEventTab';eventTab.className='primary full zz-event-tab hide';eventTab.onclick=()=>zOpenEvents();shortcut.insertAdjacentElement('beforebegin',eventTab);
- const panel=document.createElement('section');panel.id='zzSpecialMenu';panel.className='hide z-hub';panel.innerHTML='<div class="eyebrow">RECOIL X // UPDATE Z</div><h2>🏰 KINGDOMS & ♟️ CHESS</h2><p>Every eligible chest opening gives 1 random Kingdom Scrap and 1 random Chess Piece. Duplicates become Chess Dust.</p><div class="zz-actions"><button id="zzKingdomSelect" class="primary">🏰 KINGDOM FORGE</button><button id="zzChessSelect" class="secondary">♟️ CHESS BOARD</button></div><div id="zzSpecialContents"></div><button id="zzSpecialBack" class="secondary full">← BACK TO UPDATE Z</button>';
+ const panel=document.createElement('section');panel.id='zzSpecialMenu';panel.className='hide z-hub';panel.innerHTML='<div class="eyebrow">RECOIL X // THE NEXT ERA</div><h2>🏰 KINGDOMS & ♟️ CHESS</h2><p>Every eligible chest opening gives 1 random Kingdom Scrap and 1 random Chess Piece. Duplicates become Chess Dust.</p><div class="zz-actions"><button id="zzKingdomSelect" class="primary">🏰 KINGDOM FORGE</button><button id="zzChessSelect" class="secondary">♟️ CHESS BOARD</button></div><div id="zzSpecialContents"></div><button id="zzSpecialBack" class="secondary full">← BACK TO UPDATE Z</button>';
  hub.insertAdjacentElement('afterend',panel);
  zP('zzKingdomBtn').onclick=()=>zzOpenSpecial('kingdom');zP('zzChessBtn').onclick=()=>zzOpenSpecial('chess');zP('zzKingdomSelect').onclick=()=>{zzSelected='kingdom';zzRenderSpecial();};zP('zzChessSelect').onclick=()=>{zzSelected='chess';zzRenderSpecial();};zP('zzSpecialBack').onclick=zOpenHub;
  const style=document.createElement('style');style.textContent=`
@@ -5787,7 +5793,7 @@ function a4FighterDetail(m,model,lod,variant,civilian){if(lod>=2)return;const cl
 }
 function a4CivilianHead(m,variant,close,tone){
   const v=((variant%6)+6)%6,sides=close?12:8,alternate=variant>=6;
-  const jaw=[.113,.135,.105,.124,.102,.141][v]*(alternate?.94:1),width=[1,.99,.96,1.02,.94,1.04][v]*(alternate?.97:1);
+  const jaw=[.105,.144,.095,.130,.101,.148][v]*(alternate?.94:1),width=[1,.99,.94,1.03,.94,1.05][v]*(alternate?.97:1);
   const shape=[[0,-.179,-.016,jaw*.65,.079,0],[0,-.142,-.023,jaw,.111,0],
     [0,-.084,-.008,.150*width,.141,0],[0,-.012,-.003,.168*width,.150,0],
     [0,.066,.008,.169*width,.157,0],[0,.137,.013,.157*width,.150,0],[0,.195,.009,.104,.102,0]];
@@ -5809,6 +5815,7 @@ function a4CivilianHead(m,variant,close,tone){
     }else m.gem('head',tone.shade,sign*.071,.003,-.153,.025,.010,.010);
   }
   m.gem('head',tone.skin,0,-.045,-.147,.032,.057,.047);
+  if(close){m.gem('head',tone.skin,0,-.060,-.183,.025,.022,.016);for(const sign of [-1,1])m.gem('head',tone.shade,sign*.103,-.037,-.126,.030,.018,.009);}
   m.prism('head',tone.shade,[[-.039,-.114],[.039,-.114],[.027,-.102],[-.027,-.102]],-.145,.012);
   if(alternate){
     if(v===0||v===3){m.ellipsoid('head',1,0,-.045,.15,.151,.16,.095,close?8:6,.82);}
@@ -7919,22 +7926,22 @@ function crownReturnToTrial(result){
 
 function crownMountUI(){
   const hub=$('zzSpecialMenu'),shortcut=document.querySelector('.zz-shortcut');
-  const marker=hub.querySelector('.eyebrow');marker.textContent='RECOIL X · UPDATE Z';
+  const marker=hub.querySelector('.eyebrow');marker.textContent='RECOIL X · CROWN TRIALS';
   hub.querySelector('h2').textContent='Crown Trials';
   hub.querySelector('p').id='crownIntro';
   shortcut.id='crownTrialsButton';shortcut.textContent='Crown Trials · Kingdoms & Chess';
   $('zzKingdomSelect').textContent='Kingdom Forge';$('zzChessSelect').textContent='Chess';
   $('zzKingdomBtn').textContent='Kingdom Forge';$('zzChessBtn').textContent='Chess Challenges';
   const brand=$('mainMenu').querySelector('.brandchip'),version=$('mainMenu').querySelector('.versionlabel');
-  brand.textContent='RECOIL X · UPDATE A.4';version.textContent='UPDATE A.4';
-  $('zMainBtn').textContent='Update Z · The Next Era';
+  brand.textContent=RX_RELEASE.brand;version.textContent=RX_RELEASE.label;
+  $('zMainBtn').textContent='The Next Era';
   $('vxClockStatus')?.classList.add('hide');
   $('zHubMenu').querySelectorAll(':scope > p')[1].textContent=
     'Live holiday events include a year-specific pass, boxes, and playable missions.';
   $('zEventsMenu').querySelector('p').textContent=
     'Open a live event for its 100-tier pass, Gun Box, Knife Box, and missions. Event dates use Oman time.';
   const bottom=$('zzSpecialBack');
-  bottom.textContent='Back to Update Z';
+  bottom.textContent='Back to The Next Era';
   const nav=document.createElement('div');nav.className='crown-card-actions crown-nav';
   nav.append(crownButton('Character preview',crownOpenShowcase,'secondary','crownPreviewOpen'),
     crownButton('Main menu',()=>showScreen('mainMenu'),'secondary'));
@@ -9664,14 +9671,14 @@ const Z2_MODES={
   arena:'Competitive Arena',overcharge:'Overcharge',relic:'Relic Relay',
   chess:'Chess Draft Duels',rescue:'Squad Rescue',escort:'Core Escort',hotzone:'Moving Hot Zone',
   elimination:'Elimination Rounds',budget:'Weapon Budget Draft',props:'Prop Hunt',jeep:'Jeep Relay',raid:'Co-op Crown Raids',
-  gungame:'Z.5 Gun Game',onechamber:'Z.5 One in the Chamber',hardcore:'Z.5 Hardcore',
-  bounty:'Z.5 Bounty Hunt',chaos:'Z.5 Procedural Hazard Arena',parkour:'Z.5 Parkour Race',
-  ctf:'Z.5 Capture the Flag',roulette:'Z.5 Duel Roulette',
-  searchdestroy:'Z.5 Search & Destroy',extraction:'Z.5 PvP Extraction 2.0',
-  clanwar:'⚔ Z.5 Clan Wars',underwater:'🌊 Z.5 Underwater Combat',demolition:'💥 Z.5 Multiplayer Destruction',
-  dualwield:'🔫 Z.5 Dual SMGs',ricochet:'↗ Z.5 Ricochet Arena',parry:'⚔ Z.5 Melee Parry',
-  train:'🚆 Z.5 Moving Train Yard',volcano:'🌋 Z.5 Volcanic Eruption',timefracture:'⌛ Z.5 Time Fracture',pawblast:'⚡ Physics Breaker',
-  titanraid:'🤖 Z.5 Titan Mech Raid',alieninvasion:'👽 Z.5 Alien Invasion',worldboss:'🌍 Z.5 World Boss Weekend'
+  gungame:'Gun Game',onechamber:'One in the Chamber',hardcore:'Hardcore',
+  bounty:'Bounty Hunt',chaos:'Procedural Hazard Arena',parkour:'Parkour Race',
+  ctf:'Capture the Flag',roulette:'Duel Roulette',
+  searchdestroy:'Search & Destroy',extraction:'PvP Extraction 2.0',
+  clanwar:'⚔ Clan Wars',underwater:'🌊 Underwater Combat',demolition:'💥 Multiplayer Destruction',
+  dualwield:'🔫 Dual SMGs',ricochet:'↗ Ricochet Arena',parry:'⚔ Melee Parry',
+  train:'🚆 Moving Train Yard',volcano:'🌋 Volcanic Eruption',timefracture:'⌛ Time Fracture',pawblast:'⚡ Physics Breaker',
+  titanraid:'🤖 Titan Mech Raid',alieninvasion:'👽 Alien Invasion',worldboss:'🌍 World Boss Weekend'
 };
 // Flooded arena screen tint applies only in an active online underwater match.
 const rx5WaterStyle=document.createElement('style');
@@ -11007,8 +11014,8 @@ function z2MountUI(){
   const link=crownButton('',z2Open,'secondary','z2HomeAccess');
   z2Text('strong','Operation Overdrive',link);
   $('z1PlayBtn').after(link);
-  $('mainMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.4';
-  $('deviceMenu').querySelector('.brandchip').textContent='RECOIL X · UPDATE A.4';
+  $('mainMenu').querySelector('.brandchip').textContent=RX_RELEASE.brand;
+  $('deviceMenu').querySelector('.brandchip').textContent=RX_RELEASE.brand;
   $('z1Locker').append(z2SmallButton('Operator Avatar Maker',z2OpenAvatar));
   $('z1SettingsMenu').querySelector('.z1-screen-body').append(z2SmallButton('Edit touch controls',z2TouchEdit));
   const mapTools=$('x5HubMenu').querySelector('.x5-choices');
