@@ -6174,6 +6174,17 @@ window.RecoilCityCharacter=Object.freeze({
         if(joint.startsWith('elbow')||joint.startsWith('hand'))part.color=6;
       }
       if(police&&lod<2){mesh.prism('chest',2,[[-.18,-.14],[.18,-.14],[.21,.13],[-.21,.13]],-.19,.065);mesh.gem('chest',3,.11,.075,-.26,.048,.045,.018);mesh.ellipsoid('head',2,0,.18,.01,.18,.078,.15,6,.8);mesh.prism('head',2,[[-.14,.11],[.14,.11],[.13,.14],[-.13,.14]],-.205,.075);}
+      if(lod<2){
+        // Clothing is attached to the existing rig; no changes to poses or hitboxes.
+        for(const side of ['L','R']){
+          const sign=side==='R'?1:-1;
+          mesh.prism('shoulder'+side,0,[[sign*.03,-.24],[sign*.105,-.22],[sign*.10,-.185],[sign*.025,-.20]],-.101,.018);
+          if(lod===0){mesh.gem('hand'+side,6,sign*.035,-.065,-.071,.033,.05,.023);
+            mesh.prism('foot'+side,1,[[-.071,-.068],[.071,-.068],[.068,-.039],[-.068,-.039]],-.185,.025);}
+        }
+        if(!person.shorts){for(const side of ['L','R'])mesh.prism('thigh'+side,4,[[-.066,-.07],[.066,-.07],[.059,-.135],[-.059,-.135]],-.131,.018);}
+        if(lod===0)mesh.prism('hips',2,[[-.20,.014],[.20,.014],[.19,.044],[-.19,.044]],-.158,.023);
+      }
       if(keeper&&lod<2){mesh.prism('chest',2,[[-.17,-.16],[.17,-.16],[.14,.10],[-.14,.10]],-.188,.031);mesh.prism('chest',4,[[-.082,-.10],[.082,-.10],[.082,-.045],[-.082,-.045]],-.222,.02);}
       cityCivilianMeshes.set(key,mesh);
     }
