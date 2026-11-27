@@ -24,7 +24,12 @@ test('Operation Simplicity adds selectable OG futuristic map and offline quick p
  assert.match(html,/addObstacle\(0,t\*39,80,1\.8,7,metal\)/);
  assert.match(html,/id="rxSimpleQuick"/);
  assert.match(html,/id="rxSimpleToggle"/);
- assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/);
+ assert.match(html,/const pool=bQuickPool\(MAPS\)/);
+ const start=html.indexOf('function bQuickPool('),end=html.indexOf('let rx31StickTouchIdentifier',start);
+ const pool=new Function(html.slice(start,end)+';return bQuickPool;')();
+ const regular={id:'old'},aero={id:'aero',bCollection:'aero'},restricted=[{mysteryOnly:true,bCollection:'aero'},{eventOnly:true,bCollection:'aero'},{specialOnly:true,bCollection:'aero'}];
+ assert.deepEqual(pool([regular,aero,...restricted]),[aero]);
+ assert.deepEqual(pool([regular,...restricted]),[regular]);
  assert.match(html,/chooseMap\(chosen\?\.id\|\|'dunes'\);startGame\('solo'\);gameSeconds=300/);
  assert.match(html,/mainMenu\.rx-simple-active/);
  assert.match(html,/rx-home-layout-v2/);

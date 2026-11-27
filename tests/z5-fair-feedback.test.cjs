@@ -14,7 +14,12 @@ test('the player sees accurate original/expansion map claims and no internal imp
  assert.doesNotMatch(html,/GitHub Pages is static/);
  assert.doesNotMatch(html,/server-side economy is required for cheat-resistant multiplayer rewards/);
  assert.match(html,/browser-local and separate from server-backed account rewards/);
- assert.match(html,/const pool=MAPS\.filter\(m=>!m\.mysteryOnly/);
+ assert.match(html,/const pool=bQuickPool\(MAPS\)/);
+ const start=html.indexOf('function bQuickPool('),end=html.indexOf('let rx31StickTouchIdentifier',start);
+ const pool=new Function(html.slice(start,end)+';return bQuickPool;')();
+ const regular={id:'old'},aero={id:'aero',bCollection:'aero'},restricted=[{mysteryOnly:true,bCollection:'aero'},{eventOnly:true,bCollection:'aero'},{specialOnly:true,bCollection:'aero'}];
+ assert.deepEqual(pool([regular,aero,...restricted]),[aero]);
+ assert.deepEqual(pool([regular,...restricted]),[regular]);
 });
 
 test('both published cosmetic and knife rarity distributions total exactly 100%',()=>{

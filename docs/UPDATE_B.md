@@ -6,3 +6,6 @@ Review limitations: actual screenshot fidelity, translations, full mobile/TV vis
 
 ## Packaging preview
 Preview-only GitHub Actions builds Windows x64 setup and Android debug APK, without deployment. Windows uses WebView2, .NET 8 and Inno Setup; requires a supported Windows OS and installed WebView2 Runtime. Android uses native WebView, minSdk 23, forced landscape, emulator URL by default; physical devices require a trusted HTTPS preview server configured with -PrxGameUrl. Windows can set RX_GAME_URL to a trusted HTTPS preview origin. Wrappers use the existing hosted app and same-origin server; they are not offline bundles. Preview app identifiers/storage separate from eventual release. Production signing and a signed update feed must be configured before public distribution. No credentials committed. Alwaysdata is guarded to main even on manual runs.
+
+## Regression round 1
+The first full regression run completed 302 tests: 299 passed and three failed on outdated exact-string expectations (health release name and the old quick-play pool implementation). Both Windows and Android packaging passed. Updated the tests to verify the actual B health release and exercise the Aero priority and restricted-map exclusions, retaining all multiplayer tests. Rerun required to verify the full suite; do not merge.
