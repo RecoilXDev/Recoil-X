@@ -27,15 +27,30 @@
   function cityMovementAxes(stick,forward,turn){const clamp=v=>Math.max(-1,Math.min(1,v));return {forward:clamp(forward-stick.y),turn:clamp(turn+stick.x)};}
   function cityTouchLock(touch,car){return !!touch&&!car;}
   function touchCity(){return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0&&matchMedia('(max-width:1000px)').matches;}
+  // City is a top-layer dialog, not a child of the main game's rotated stage.
+  // Apply the same clockwise virtual landscape transform directly to the dialog.
+  function cityLandscape(touch,w,h){return !!touch&&h>w;}
+  function cityScreenDelta(dx,dy,rotated){return rotated?{x:dy,y:-dx}:{x:dx,y:dy};}
+  function cityRotated(){return !!dialog?.classList.contains('rc-landscape');}
+  function syncCityOrientation(){
+    if(!dialog||!world)return;
+    const w=window.innerWidth,h=window.innerHeight,rotate=cityLandscape(touchCity(),w,h);
+    const changed=dialog.classList.contains('rc-landscape')!==rotate||dialog.style.getPropertyValue('--rc-physical-w')!==w+'px'||dialog.style.getPropertyValue('--rc-physical-h')!==h+'px';
+    dialog.style.setProperty('--rc-physical-w',w+'px');dialog.style.setProperty('--rc-physical-h',h+'px');
+    dialog.classList.toggle('rc-landscape',rotate);
+    if(changed){clearHeld();previousTime=0;nextDraw=0;}
+  }
   function resetStick(){stickPointer=null;stick={x:0,y:0};if(controls?.stickThumb)controls.stickThumb.style.transform='translate(-50%,-50%)';}
-  function updateStick(e){const rect=controls.stick.getBoundingClientRect(),r=rect.width*.34;
-    stick=cityStickVector(e.clientX-rect.left-rect.width/2,e.clientY-rect.top-rect.height/2,r);
+  function updateStick(e){const rect=controls.stick.getBoundingClientRect(),r=controls.stick.clientWidth*.34;
+    const d=cityScreenDelta(e.clientX-rect.left-rect.width/2,e.clientY-rect.top-rect.height/2,cityRotated());
+    stick=cityStickVector(d.x,d.y,r);
     controls.stickThumb.style.transform='translate(calc(-50% + '+(stick.x*r)+'px),calc(-50% + '+(stick.y*r)+'px))';
   }
   const arrowCodes = {KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'brake',ShiftLeft:'sprint',ShiftRight:'sprint',KeyF:'fire',KeyZ:'lookLeft',KeyX:'lookRight',PageUp:'lookUp',PageDown:'lookDown'};
   const style = document.createElement('style');
   style.textContent = `
     #recoil-city{--ink:#18221e;--glass:#15211df1;--paper:#fff4db;--gold:#ffcd68;--muted:#cfdbce;position:fixed;inset:0;margin:0;padding:0;width:100%;height:100%;max-width:100%;max-height:100%;border:0;background:#496050;color:var(--paper);font:500 14px/1.35 Barlow,Arial,sans-serif;overflow:hidden;isolation:isolate;touch-action:none;user-select:none;color-scheme:dark;z-index:2147483600}
+    #recoil-city.rc-landscape{inset:auto;left:0;top:0;width:var(--rc-physical-h);height:var(--rc-physical-w);max-width:none;max-height:none;transform-origin:top left;transform:translateX(var(--rc-physical-w)) rotate(90deg)}
     #recoil-city:not([open]),#recoil-city [hidden]{display:none!important}
     #recoil-city::backdrop{background:#121c18}#recoil-city *{box-sizing:border-box}#recoil-city canvas{display:block}
     #recoil-city .rc-streets{position:absolute;inset:0;width:100%;height:100%;outline:none}
@@ -100,6 +115,15 @@
     @media(max-height:420px){#recoil-city .rc-place{padding:4px 8px}#recoil-city .rc-nav{width:96px}#recoil-city .rc-pad{width:104px}#recoil-city .rc-skills{bottom:116px}}
     #recoil-city .rc-shift-indicator{display:none;position:absolute;top:calc(50% + 12px);left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.1em;color:#fff5dc;text-shadow:0 1px 3px #000;pointer-events:none}
     #recoil-city[data-touch-lock] .rc-shift-indicator{display:block}
+    #recoil-city.rc-landscape .rc-hud{inset:10px 16px}
+    #recoil-city.rc-landscape .rc-pad{width:104px;left:4px;bottom:4px}
+    #recoil-city.rc-landscape .rc-skills{bottom:116px;max-width:136px}
+    #recoil-city.rc-landscape .rc-place{max-width:55%;padding:4px 8px}
+    #recoil-city.rc-landscape .rc-menu button{font-size:12px;padding:6px 8px}
+    #recoil-city.rc-landscape .rc-nav{width:96px}
+    #recoil-city.rc-landscape .rc-sheet{max-height:calc(var(--rc-physical-w) - 28px);padding:12px}
+    #recoil-city.rc-landscape .rc-film{width:min(94%,760px)}
+    #recoil-city.rc-landscape .rc-job{width:min(310px,calc(100% - 147px))}
   `;
   document.head.append(style);
   function mount() {
@@ -153,7 +177,8 @@
     controls.streets.addEventListener('pointermove',e=>{
       if(lookPointer?.id!==e.pointerId)return;
       const sensitivity=e.pointerType==='mouse'?.0065:.009;
-      yaw+=(e.clientX-lookPointer.x)*sensitivity;tilt=Math.max(-.6,Math.min(.62,tilt-(e.clientY-lookPointer.y)*sensitivity));
+      const d=cityScreenDelta(e.clientX-lookPointer.x,e.clientY-lookPointer.y,cityRotated());
+      yaw+=d.x*sensitivity;tilt=Math.max(-.6,Math.min(.62,tilt-d.y*sensitivity));
       manualUntil=world.elapsed+1.4;lookPointer.x=e.clientX;lookPointer.y=e.clientY;
     });
     dialog.addEventListener('cancel', event => { event.preventDefault(); if(film){stopFilm();return;} if (paused) setHelp(false); else close(); });
@@ -460,12 +485,16 @@
     previousFocus=document.activeElement;
     document.exitPointerLock?.();
     dialog.showModal();
+    syncCityOrientation();
     setText(dialog.querySelector('#rc-title'),'Recoil City · '+(window.RecoilRelease?.version||''));
     applyOptions();window.RecoilCityGame?.suspendMenuMusic?.();window.RecoilCityRadio?.enterCity();
     setHelp(false);previousTime=0;nextHud=0;nextDraw=0;
     window.addEventListener('keydown',keyboard,true);window.addEventListener('keyup',keyboard,true);
     window.addEventListener('blur',clearHeld);document.addEventListener('visibilitychange',visibility);
     window.addEventListener('pagehide',saveCareer);
+    window.addEventListener('resize',syncCityOrientation,{passive:true});
+    window.visualViewport?.addEventListener('resize',syncCityOrientation,{passive:true});
+    window.screen?.orientation?.addEventListener('change',syncCityOrientation);
     refresh();frame=requestAnimationFrame(tick);
     return true;
   }
@@ -476,6 +505,9 @@
     window.removeEventListener('keydown',keyboard,true);window.removeEventListener('keyup',keyboard,true);
     window.removeEventListener('blur',clearHeld);document.removeEventListener('visibilitychange',visibility);
     window.removeEventListener('pagehide',saveCareer);
+    window.removeEventListener('resize',syncCityOrientation);
+    window.visualViewport?.removeEventListener('resize',syncCityOrientation);
+    window.screen?.orientation?.removeEventListener('change',syncCityOrientation);
     window.RecoilCityRadio?.leaveCity();window.RecoilCityRadio?.unmount?.(dialog);window.RecoilCityView.release(controls.streets);
     dialog.close();dialog.remove();dialog=null;controls=null;cam=null;mapBase=null;mapRoute=null;
     if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;

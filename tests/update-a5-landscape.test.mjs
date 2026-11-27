@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const city=readFileSync(new URL('../server/recoil-city.js',import.meta.url),'utf8');
+const a=city.indexOf('function cityLandscape('),b=city.indexOf('function cityRotated(',a);
+const api=new Function(city.slice(a,b)+';return {landscape:cityLandscape,delta:cityScreenDelta};')();
+test('City virtual landscape is touch-only and portrait-only',()=>{assert.equal(api.landscape(true,390,844),true);assert.equal(api.landscape(true,844,390),false);assert.equal(api.landscape(false,390,844),false);assert.equal(api.landscape(true,500,500),false);});
+test('City input axes follow clockwise rotation for joystick and camera',()=>{for(const [dx,dy,x,y] of [[20,0,0,-20],[-20,0,0,20],[0,20,20,0],[0,-20,-20,0],[3,4,4,-3]]){const d=api.delta(dx,dy,true);assert.equal(d.x===x,true);assert.equal(d.y===y,true);}assert.deepEqual(api.delta(3,4,false),{x:3,y:4});assert.match(city,/stick=cityStickVector\(d.x,d.y,r\)/);assert.match(city,/yaw\+=d.x\*sensitivity/);});
+test('City modal orientation lifecycle resets touches and restores normal menu',()=>{assert.match(city,/translateX\(var\(--rc-physical-w\)\) rotate\(90deg\)/);assert.match(city,/if\(changed\)\{clearHeld\(\)/);assert.match(city,/dialog.showModal\(\);\s*syncCityOrientation\(\)/);assert.match(city,/removeEventListener\('resize',syncCityOrientation\)/);assert.match(city,/dialog.close\(\);dialog.remove\(\)/);});
