@@ -278,6 +278,7 @@ test('offline files are served and the worker caches only its scoped game shell'
     assert.equal((await fetch(url+'/server/recoil-city-cover.webp')).headers.get('content-type'),'image/webp');
     const photo=await fetch(url+'/server/b-coastal-reference.webp');assert.equal(photo.status,200);assert.equal(photo.headers.get('content-type'),'image/webp');assert.equal(Buffer.from(await photo.arrayBuffer()).toString('ascii',8,12),'WEBP');
     const hd=await fetch(url+'/server/b-coastal-hd.avif');assert.equal(hd.status,200);assert.equal(hd.headers.get('content-type'),'image/avif');assert.equal(Buffer.from(await hd.arrayBuffer()).toString('ascii',8,12),'avif');
+    for(const theme of ['aero','sand','zone90','metro','midnight','aurora','cyber','golden']){const art=await fetch(url+'/server/b-theme-'+theme+'.svg');assert.equal(art.status,200);assert.match(art.headers.get('content-type'),/image\/svg\+xml/);assert.match(await art.text(),/width="1920" height="1080"/);}
     const icon=await fetch(url+'/recoil-icon-192.png');
     assert.equal(icon.headers.get('content-type'),'image/png');
     assert.equal(new DataView(await icon.arrayBuffer()).getUint32(16),192);
@@ -297,7 +298,7 @@ test('offline files are served and the worker caches only its scoped game shell'
   let job;
   listeners.get('install')({waitUntil:value=>job=value});
   await job;
-  const expected=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png','server/recoil-city-world.js','server/recoil-city-view.js','server/recoil-city-radio.js','server/city-radio/tracks.json','server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp','server/b-coastal-hd.avif'];
+  const expected=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png','server/recoil-city-world.js','server/recoil-city-view.js','server/recoil-city-radio.js','server/city-radio/tracks.json','server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp','server/b-coastal-hd.avif','server/b-theme-aero.svg'];
   assert.deepEqual([...cached.keys()].sort(),expected.map(path=>'https://example.test/Recoil-X/'+path).sort());
   assert.ok(cached.has('https://example.test/Recoil-X/server/city-radio/47_menu.mp3'),'New Dawn is available offline');
   for(const file of ['recoil-city-world.js','recoil-city-view.js','recoil-city-radio.js','recoil-city.js','recoil-city-cover.webp']){

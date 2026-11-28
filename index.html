@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="B-PREVIEW-1" />
-<meta name="rx-ui-revision" content="B-UI-STABLE-4" />
+<meta name="rx-ui-revision" content="B-UI-STABLE-6" />
 <meta name="rx-release" content="B — Ocean Breeze" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
@@ -1139,6 +1139,30 @@ body[data-b-theme]:not([data-b-theme=aero]) #overlay.b-device-active #deviceMenu
 @media(max-height:550px) and (orientation:landscape){#bLobby[data-theme]:not([data-theme=aero]){min-height:0;grid-template-columns:24% 1fr 23%;grid-template-rows:auto 1fr auto;padding:7px;gap:5px}#bLobby[data-theme]:not([data-theme=aero]) .b-nav{padding:6px;gap:4px}#bLobby[data-theme]:not([data-theme=aero]) .b-nav>button{min-height:30px;padding:4px 7px;font-size:12px}#bLobby[data-theme]:not([data-theme=aero]) .b-nav>.b-primary{min-height:38px;font-size:16px}#bLobby[data-theme]:not([data-theme=aero]) .b-cards button{min-height:70px;padding:7px;font-size:16px}#bLobby[data-theme]:not([data-theme=aero]) .b-logo{font-size:37px}#bLobby[data-theme]:not([data-theme=aero]) .b-social{padding:6px;max-height:120px}}
 @media(max-width:480px){body[data-b-theme] #overlay .crate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 body.rx-tv-ultralight #bLobby[data-theme] *,body.v91-lite #bLobby[data-theme] *,body.rx-tv-ultralight #overlay .panel *,body.v91-lite #overlay .panel *{animation:none!important;transition:none!important;filter:none!important}
+
+/* B-UI-STABLE-5: native 1920x1080 scalable scenic artwork; only the active background is loaded in the lobby. */
+:root{--b-theme-art:url("server/b-theme-aero.svg")}
+body[data-b-theme=aero],.b-reward[data-theme-id=aero] {--b-theme-art:url("server/b-theme-aero.svg")}
+body[data-b-theme=sand],.b-reward[data-theme-id=sand] {--b-theme-art:url("server/b-theme-sand.svg")}
+body[data-b-theme=zone90],.b-reward[data-theme-id=zone90] {--b-theme-art:url("server/b-theme-zone90.svg")}
+body[data-b-theme=metro],.b-reward[data-theme-id=metro] {--b-theme-art:url("server/b-theme-metro.svg")}
+body[data-b-theme=midnight],.b-reward[data-theme-id=midnight] {--b-theme-art:url("server/b-theme-midnight.svg")}
+body[data-b-theme=aurora],.b-reward[data-theme-id=aurora] {--b-theme-art:url("server/b-theme-aurora.svg")}
+body[data-b-theme=cyber],.b-reward[data-theme-id=cyber] {--b-theme-art:url("server/b-theme-cyber.svg")}
+body[data-b-theme=golden],.b-reward[data-theme-id=golden] {--b-theme-art:url("server/b-theme-golden.svg")}
+#bLobby[data-theme][data-theme]{background-image:linear-gradient(180deg,#06182d24,#06182d05 32%,#06182d40),var(--b-theme-art);background-size:cover;background-position:center;background-repeat:no-repeat}
+body #overlay.b-device-active:not(.b-lobby-active),body[data-b-theme] #overlay:not(.b-lobby-active):not(.b-device-active),body[data-b-theme]:not([data-b-theme=aero]) #overlay.b-device-active:not(.b-lobby-active){background:linear-gradient(180deg,#081d3450,#081d3480),var(--b-theme-art) center/cover no-repeat!important}
+body[data-b-theme] :is(#rx5-exp-wrap,#rx-guide-shell,#rx5-market-screen,#rx5-hub-backdrop,#rx5CollectionHub,#rx5HudEditor){background:linear-gradient(#07182c80,#07182cb5),var(--b-theme-art) center/cover no-repeat!important}
+#bLobby[data-theme][data-theme] .b-cards button{background-image:linear-gradient(0deg,var(--b-dark),#10263a70 45%,transparent),var(--b-theme-art);background-position:center;background-size:cover}
+#bThemesMenu .b-reward[data-theme-id] .b-swatch{background-image:var(--b-theme-art)!important;background-size:cover!important;background-position:center!important}
+body[data-b-theme] #overlay .crate-card .crate-art{background:radial-gradient(ellipse at 50% 25%,var(--b-menu-panel),var(--b-menu-dark) 80%)!important;border-color:var(--b-menu-edge)!important;filter:none;overflow:hidden}
+body[data-b-theme] #overlay .crate-card .crate-art::before{width:88px;height:52px;top:22px;left:50%;transform:translateX(-50%);border:1px solid var(--crate-a);border-radius:7px;background:linear-gradient(145deg,#ffffff55 0 22%,transparent 23%),linear-gradient(170deg,var(--crate-a),var(--crate-b) 75%);box-shadow:inset 0 -8px 0 #0003,0 6px 12px #0007}
+body[data-b-theme] #overlay .crate-card .crate-art::after{content:'';position:absolute;left:50%;top:40px;width:88px;height:2px;transform:translateX(-50%);background:var(--crate-a);opacity:.9}
+body[data-b-theme] #overlay .crate-card .crate-art span{position:relative;z-index:1;width:34px;height:34px;transform:none;font-size:21px;border:1px solid var(--crate-a);border-radius:6px;background:var(--crate-b);box-shadow:none}
+body #overlay.b-device-active,body[data-b-theme] #overlay:not(.b-lobby-active),#bLobby[data-theme][data-theme]{background-color:var(--b-menu-dark,#133e64)!important}
+body[data-b-theme] .vx-knife-preview{background:radial-gradient(ellipse,var(--b-menu-panel),var(--b-menu-dark));border-color:var(--b-menu-edge)}
+body[data-b-theme] :is(#overlay button,.social-panel button,#rx5CollectionHub button):disabled{opacity:.58;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){#bLobby *,#overlay .panel *,#crateReveal,#v8Reveal{animation:none!important;transition:none!important}}
 
 </style>
 </head>
@@ -3366,10 +3390,10 @@ function bMeshPreviewData(f,view='card'){
  const index=V8_GUN_IDS.indexOf(f.gun);if(index<0)return null;
  const key=[f.id,index,f.base,f.glow,f.shadow,f.style,f.rarity,!!f.seasonOnly,rxTvUltraLight(),v91EffectiveGraphics(),view].join('|');
  if(bWeaponPreviewCache.has(key))return bWeaponPreviewCache.get(key);
- const mesh=[];v8DrawWeapon(mesh,{x:0,y:0,z:0,yaw:0,pitch:0,rigGrip:true},index,f,false,0);
+ const mesh=[];v8DrawWeapon(mesh,{x:0,y:0,z:0,yaw:0,pitch:0,rigGrip:true,previewDetail:true},index,f,false,0);
  if(!mesh.length||mesh.length%27!==0)return null;
- const canvas=bWeaponPreviewCanvas||(bWeaponPreviewCanvas=document.createElement('canvas'));canvas.width=320;canvas.height=170;
- const ctx=canvas.getContext('2d',{alpha:true});if(!ctx)return null;
+ const canvas=bWeaponPreviewCanvas||(bWeaponPreviewCanvas=document.createElement('canvas'));const ratio=rxTvUltraLight()||v91EffectiveGraphics()<2?1:2;canvas.width=320*ratio;canvas.height=170*ratio;
+ const ctx=canvas.getContext('2d',{alpha:true});if(!ctx)return null;ctx.scale(ratio,ratio);
  const faces=[];let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
  for(let i=0;i<mesh.length;i+=27){
   const poly=[];let depth=0;
@@ -3543,8 +3567,8 @@ function vxKnifeColor(k){
 }
 function vxColorMul(col,m){return col.map(x=>Math.max(0,Math.min(1,x*m)));}
 function a4KnifeDetail(out,c,k){for(const side of [-1,1]){putBox(out,side*.117,-.096,.27,.024,.095,.55,c.trim);putBox(out,side*.14,-.11,-.105,.045,.16,.12,c.steel);}putBox(out,0,-.084,.66,.17,.04,.09,c.trim);if(k.rarityIndex>=4)putBox(out,0,.17,-.14,.075,.035,.075,c.edge);}
-function vxKnifeMesh(k){
- const detailed=!rxTvUltraLight()&&v91EffectiveGraphics()>=2;
+function vxKnifeMesh(k,previewDetail=false){
+ const detailed=previewDetail||(!rxTvUltraLight()&&v91EffectiveGraphics()>=2);
  const cacheKey=k.id+':'+(detailed?'a4-evolution':'base');if(vxKnifeMeshCache.has(cacheKey))return vxKnifeMeshCache.get(cacheKey);
  const out=[],c=vxKnifeColor(k);
  const emit=(a,b,d,color)=>{
@@ -3621,10 +3645,9 @@ let vxKnifePreviewObserver=null;
 function vxDrawKnifePreview(canvas,k){
  const ctx=canvas.getContext('2d',{alpha:true});if(!ctx)return;
  const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
- let grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'#172a3c');grad.addColorStop(.52,'#0d192d');grad.addColorStop(1,'#08121e');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
  const glow=ctx.createRadialGradient(W*.62,H*.42,4,W*.62,H*.45,W*.5);
  glow.addColorStop(0,k.light+'33');glow.addColorStop(1,k.light+'00');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
- const m=vxKnifeMesh(k),right=[.80,0,-.60],up=[-.32,.86,-.43],eye=[.45,.65,.62];
+ const m=vxKnifeMesh(k,true),right=[.80,0,-.60],up=[-.32,.86,-.43],eye=[.45,.65,.62];
  const ts=[];
  for(let i=0;i<m.length;i+=27){let poly=[],depth=0;for(let j=0;j<3;j++){
   let p=i+9*j,x=m[p],y=m[p+1],z=m[p+2];
@@ -3971,7 +3994,7 @@ function v8DrawWeapon(out,owner,index,finish,first,now){if(!finish)return;
 ori.y-=fire*.055+switching*(index===2?.62:index===1?.46:.34);const zshift=fire*.12;
  const part=(x,y,z,w,h,d,c)=>v8Part(out,ori,x,y+bob,z-zshift,w,h,d,c);
  const line=(a,b,w,c)=>v8Line(out,ori,[a[0],a[1]+bob,a[2]-zshift],[b[0],b[1]+bob,b[2]-zshift],w,c);
- const modelDetail=!rxTvUltraLight()&&v91EffectiveGraphics()>=2&&(first||owner.rigGrip);
+ const modelDetail=!rxTvUltraLight()&&v91EffectiveGraphics()>=2&&(first||owner.rigGrip)||owner.previewDetail===true;
  const sculpt=(x,y,z,w,h,d,c)=>modelDetail?a4BeveledPart(out,x,y+bob,z-zshift,w,h,d,c,(...p)=>v8Mat(ori,...p)):part(x,y,z,w,h,d,c);
  if(first){const reloadPose=rx3ReloadPose(now);
  if(reloadPose>0){if(index===1){for(let i=0;i<3;i++)part(-.16+i*.13,-.27-reloadPose*.31,.11+i*.10,.07,.14,.07,i%2?base:light);}
@@ -6554,10 +6577,30 @@ function rxTvDrawActor(out,b,kind){
   putBox(out,x,y+1.44*k*c,z,.46*k,.48*k*c,.44*k,palette[1]);
   if(!(mode==='mystery'&&(b.role==='innocent'||(kind==='player'&&vxRole==='innocent')))&&!b.crownUnarmed){const yaw=b.yaw||0;putBox(out,x+Math.sin(yaw)*.43*k,y+1.02*k*c,z+Math.cos(yaw)*.43*k,.22*k,.20*k,.48*k,palette[2]);}
 }
+// B soldier recovery: use the original A.4 skeleton, prioritizing visible nearby actors.
+function bSoldierLodPlan(candidates,hardware,fps,target,resolution,slow){
+ const plan=new Map(),cap=Math.max(1,target||30);
+ const ratio=fps>0?fps/cap:0,scale=Number.isFinite(resolution)?resolution:1;
+ const stressed=slow>=12||(fps>0&&ratio<.72)||scale<.73;
+ if(stressed)return plan;
+ const healthy=ratio>=.9&&scale>=.82&&slow<4;
+ const full=hardware?((fps===0||healthy)?2:1):(healthy?1:0);
+ const mid=hardware?(healthy||fps===0?3:1):1;
+ let nFull=0,nMid=0;
+ const ordered=candidates.filter(c=>Number.isFinite(c.distance)&&c.distance>=0&&c.actor).sort((a,b)=>(Number(!!b.local)-Number(!!a.local))||a.distance-b.distance);
+ for(const c of ordered){
+  if(plan.has(c.actor))continue;
+  if(nFull<full&&c.distance<=(hardware?15:6)){plan.set(c.actor,0);nFull++;continue;}
+  if(nMid<mid&&c.distance<=(hardware?25:12)){plan.set(c.actor,1);nMid++;}
+ }
+ return plan;
+}
+let bSoldierLods=new Map();
 function crownDrawActor(out,b,distance,now,kind='bot') {
   if(b.alive===false||(kind==='remote'&&!(b.hp>0)))return;
-  if(rxTvUltraLight()){rxTvDrawActor(out,b,kind);return;}
-  const {model,id,variant,lod,scale}=crownActorSpec(b,distance);
+  const tv=rxTvUltraLight(),tvLod=tv?bSoldierLods.get(b):undefined;
+  if(tv&&tvLod===undefined){rxTvDrawActor(out,b,kind);return;}
+  const {model,id,variant,lod:baseLod,scale}=crownActorSpec(b,distance),lod=tvLod??baseLod;
   const motion=crownMotion(b,now),mesh=crownMesh(model,lod,variant);
   const pose=model==='scorpion'?crownScorpionPose(b,now,motion):crownHumanoidPose(b,now,model,motion);
   const sourcePalette=crownPalette(id,model);
@@ -6657,6 +6700,14 @@ function crownDrawCharacters(out,eye,center,now,menu) {
   const range=v91RenderDistance(),vx=center[0]-eye[0],vz=center[2]-eye[2],length=Math.hypot(vx,vz)||1;
   function visible(b,d){
     return d<range+12&&(d<7||(b.x-eye[0])*vx+(b.z-eye[2])*vz>-d*length*.13);
+  }
+  if(rxTvUltraLight()){
+    const candidates=[];
+    const offer=(actor,local=false)=>{if(!actor||actor.alive===false||actor.spectating||!(crownModel(actor)==='fighter'||crownModel(actor)==='infected'))return;const distance=Math.hypot(actor.x-eye[0],actor.z-eye[2]);if(local||visible(actor,distance))candidates.push({actor,distance,local});};
+    for(const b of bots)if(b.alive)offer(b);
+    if(mode==='host'||mode==='guest'||mode==='z-online'||mode==='crown-overdrive'||z1IsPartyHost())for(const p of remotePlayers.values())if(p.hp>0&&!(z2IsMatch()&&(z2Live.match.mode==='jeep'||z2Live.match.mode==='props'&&p.prop>=0)))offer(p);
+    if(!menu&&!spectating&&pl.alive&&!z1Vehicle&&v8ThirdPerson)offer(pl,true);
+    bSoldierLods=bSoldierLodPlan(candidates,!!gl,fpsValue,v91FpsTarget(),perfResolutionScale,perfFramesSlow);
   }
   for(const b of bots){
     if(!b.alive)continue;

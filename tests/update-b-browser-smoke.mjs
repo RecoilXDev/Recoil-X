@@ -16,9 +16,10 @@ try{
   await page.addInitScript(()=>{localStorage.setItem('zone90v2_rx-home-layout-v2','"compact"');localStorage.setItem('zone90v2_z1Progress',JSON.stringify({xp:50000,kills:0}));});
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.locator('#overlay.b-device-active #choosePC').waitFor({state:'visible'});
-  const photo=await page.locator('#overlay').evaluate(e=>getComputedStyle(e).backgroundImage);assert.match(photo,/b-coastal-(?:hd\.avif|reference\.webp)/,'actual device background');
+  const photo=await page.locator('#overlay').evaluate(e=>getComputedStyle(e).backgroundImage);assert.match(photo,/b-theme-aero\.svg/,'native scalable device background');
+  const dimensions=await page.locator('#overlay').evaluate(async el=>{const bg=getComputedStyle(el).backgroundImage;const src=bg.match(/url\("?([^\")]+)"?\)/)[1];const art=new Image();art.src=src;await art.decode();return [art.naturalWidth,art.naturalHeight];});assert.deepEqual(dimensions,[1920,1080]);
   const size=await page.evaluate(async()=>{const image=new Image();image.src='server/b-coastal-hd.avif';await image.decode();return [image.naturalWidth,image.naturalHeight];});assert.deepEqual(size,[796,366]);
-  assert.equal(await page.locator('meta[name="rx-ui-revision"]').getAttribute('content'),'B-UI-STABLE-4');
+  assert.equal(await page.locator('meta[name="rx-ui-revision"]').getAttribute('content'),'B-UI-STABLE-6');
   await page.locator('#choosePC').click();
   await page.locator('#bLobby[data-theme=aero]').waitFor({state:'visible'});
   assert.equal(await page.locator('#mainMenu').evaluate(e=>e.classList.contains('rx-simple-active')),false);
@@ -50,7 +51,7 @@ try{
    await page.locator('#bThemesMenu .z1-back').click();
    await page.locator('#bLobby[data-theme="'+id+'"]').waitFor({state:'visible'});
    const view=await page.locator('#bLobby').evaluate(el=>({bg:getComputedStyle(el).backgroundImage,panel:getComputedStyle(document.body).getPropertyValue('--b-menu-panel').trim(),width:el.clientWidth,scroll:el.scrollWidth}));
-   backgrounds.add(view.bg);palettes.add(view.panel);assert.ok(view.scroll<=view.width+2,'no horizontal clipping in '+id);
+   assert.ok(view.bg.includes('b-theme-'+id+'.svg'));backgrounds.add(view.bg);palettes.add(view.panel);assert.ok(view.scroll<=view.width+2,'no horizontal clipping in '+id);
    await page.locator('#bLobby [data-b-action=collection]').click();
    const panel=await page.locator('#overlay .panel').evaluate(el=>getComputedStyle(el).backgroundImage);assert.match(panel,/gradient/);
    await page.locator('#z1CollectionMenu .z1-back').click();

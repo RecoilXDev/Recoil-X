@@ -1,0 +1,21 @@
+name: Update B visual fix regression
+on:
+  push:
+    branches: [fix/update-b-hd-theme-models]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm install --prefix server --ignore-scripts --no-audit --no-fund
+      - run: node --test tests/*.test.mjs tests/*.test.cjs
+      - run: npm install --prefix "$RUNNER_TEMP/rx-browser" --no-audit --no-fund --ignore-scripts playwright-core@1.55.0
+      - run: RX_PLAYWRIGHT_MODULE="$RUNNER_TEMP/rx-browser/node_modules/playwright-core" CHROME_BIN="$(command -v google-chrome || command -v chromium)" node tests/update-b-browser-smoke.mjs
