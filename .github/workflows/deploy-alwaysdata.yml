@@ -227,7 +227,7 @@ jobs:
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done
-          for asset in recoil-city-world.js recoil-city-view.js recoil-city-radio.js recoil-city.js recoil-city-cover.webp; do
+          for asset in recoil-city-world.js recoil-city-view.js recoil-city-radio.js recoil-city.js recoil-city-cover.webp b-coastal-reference.webp; do
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/server/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done
