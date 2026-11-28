@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="B-PREVIEW-1" />
+<meta name="rx-ui-revision" content="B-UI-STABLE-3" />
 <meta name="rx-release" content="B — Ocean Breeze" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
@@ -255,7 +256,7 @@ body.graphics-high #v9Atmosphere{opacity:.6}body.graphics-ultra #v9Atmosphere{op
 .v91-pause-row select{max-width:160px}
 body.v91-lite #v9Atmosphere{display:none!important}
 body.v91-lite #fx{display:none!important}
-body.rx-tv-ultralight #game{filter:none!important}body.rx-tv-ultralight #rxWeatherFx,body.rx-tv-ultralight #screenfx{display:none!important}body.rx-tv-ultralight #weaponArt.active{opacity:1!important;filter:none!important}body.rx-tv-ultralight .panel,body.rx-tv-ultralight .hudbox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.rx-tv-ultralight #game{filter:none!important}body.rx-tv-ultralight #rxWeatherFx,body.rx-tv-ultralight #screenfx{display:none!important}body.rx-tv-ultralight:not(.v8-webgl) #weaponArt.active{opacity:1!important;filter:none!important}body.rx-tv-ultralight .panel,body.rx-tv-ultralight .hudbox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 @media(max-width:480px){.v91-perf-options{gap:5px}.v91-perf-options button{padding:7px}.v91-perf-line{font-size:11px}}
 
 /* V9.2 MOBILE SURVIVAL — reduce GPU compositing overhead on touch devices */
@@ -1017,8 +1018,8 @@ body.rx-tv-ultralight :is(.b-mesh-preview,.crate-art,.v8-opening),body.v91-lite 
 
 /* November 27 Coastal Frontier reference: photographic artwork + real, accessible controls. */
 :root{--b-coastal-photo:url("server/b-coastal-reference.webp")}
-#overlay.b-device-active{padding:0!important;background:linear-gradient(180deg,#2487c855,#064d7388),var(--b-coastal-photo) center/cover no-repeat!important;align-items:center!important}
-#overlay.b-device-active .panel{width:min(94vw,1040px)!important;max-width:none!important;max-height:96vh!important;border:1px solid #d5ffffa0!important;border-radius:26px!important;background:linear-gradient(145deg,#b9f4ff60,#0b5c91c7 52%,#043959df)!important;box-shadow:inset 0 1px 3px #fff,0 12px 36px #00345188!important;color:#f5fcff!important;backdrop-filter:none!important}
+body #overlay.b-device-active:not(.b-lobby-active){padding:0!important;background:linear-gradient(180deg,#2487c855,#064d7388),var(--b-coastal-photo) center/cover no-repeat!important;align-items:center!important}
+body #overlay.b-device-active:not(.b-lobby-active) .panel{width:min(94vw,1040px)!important;max-width:none!important;max-height:96vh!important;border:1px solid #d5ffffa0!important;border-radius:26px!important;background:linear-gradient(145deg,#b9f4ff60,#0b5c91c7 52%,#043959df)!important;box-shadow:inset 0 1px 3px #fff,0 12px 36px #00345188!important;color:#f5fcff!important;backdrop-filter:none!important}
 #overlay.b-device-active .panel-content{padding:clamp(16px,3vw,34px)!important;overflow:auto}
 #deviceMenu{position:relative;text-align:center;isolation:isolate;color:#f5fcff}
 #deviceMenu .topline{justify-content:center;gap:8px}#deviceMenu .topline .sunmark{display:none}
@@ -1248,7 +1249,7 @@ function rxTvSwitchToSoftware(){
  const ctx=layer.getContext('2d',{alpha:false});if(!ctx)return false;
  canvas.insertAdjacentElement('afterend',layer);rxTvSoftwareCanvas=layer;ctx2d=ctx;
  gl=null;program=null;buffer=null;v91StaticChunks=[];v91DynamicCapacity=0;v91DynamicArray=new Float32Array(0);crownUltraPipeline=null;
- document.body.classList.remove('v8-webgl');rxTvFallbackMapDirty=true;paused=false;return true;
+ document.body.classList.remove('v8-webgl');rxTvFallbackMapDirty=true;paused=false;try{drawGunModel(pl.weapon);}catch{}return true;
 }
 let crownArena=null;
 let running=false,phase='menu',mode='solo',paused=false,gameSeconds=480,lastFrame=performance.now(),roundEnd=0;
@@ -1544,6 +1545,9 @@ const GUN_ART={
  smg:`<path d="M47 133L117 128L145 105L264 99L311 112L358 109L371 127L342 145L282 146L278 173L252 173L240 220L205 214L219 147L138 154L95 171L47 164Z" fill="url(#metal)" stroke="#b6b4a3" stroke-width="5"/><path d="M358 115L477 116L483 128L470 141L358 140Z" fill="#232f2f" stroke="#9ca9a0" stroke-width="5"/><path d="M60 125L60 105L109 99L118 129Z" fill="#212c2b"/><path d="M150 110L162 92H251L272 110" fill="none" stroke="#293c36" stroke-width="7"/><path d="M221 149L250 146L245 235L222 237Z" fill="#202828" stroke="#c5b68d" stroke-width="4"/><path d="M307 123L358 123" stroke="#ded0ae" stroke-width="6"/>`
 };
 function drawGunModel(i){const gun=weapons[i]?.id||'ar',s=skinBy(equipped),art=$('weaponArt');
+ // A software-only renderer cannot draw WebGL; use a cached projection of the same mesh.
+ if(!gl){try{const data=bMeshPreviewData(gunFinishFor(i),'hud');if(data){art.innerHTML='<image data-b-hud-mesh="true" href="'+data+'" x="86" y="32" width="494" height="318" preserveAspectRatio="xMidYMid meet"/>';return;}}catch{}}
+
 art.innerHTML=`<defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${s.trim}"/><stop offset=".35" stop-color="${s.body}"/><stop offset="1" stop-color="${s.mask}"/></linearGradient></defs><path d="M261 324L408 178L448 206L341 350L186 350Z" fill="${s.mask}" stroke="${s.trim}" stroke-width="5"/>${GUN_ART[gun]}<path d="M182 267L224 239L268 259L285 320L247 347H181Z" fill="#a98461" stroke="#624934" stroke-width="8"/><path d="M302 260L347 229L382 253L394 314L344 347H289Z" fill="#9a7354" stroke="#604835" stroke-width="8"/>`;
 }
 let switchTimeout1=0,switchTimeout2=0;
@@ -3287,9 +3291,9 @@ function v8FlatSvg(f){
 // Static projection of the original 3D game mesh; one reusable 2D canvas.
 const bWeaponPreviewCache=new Map();
 let bWeaponPreviewCanvas;
-function bMeshPreviewData(f){
+function bMeshPreviewData(f,view='card'){
  const index=V8_GUN_IDS.indexOf(f.gun);if(index<0)return null;
- const key=[f.id,index,f.base,f.glow,f.shadow,f.style,f.rarity,!!f.seasonOnly,rxTvUltraLight(),v91EffectiveGraphics()].join('|');
+ const key=[f.id,index,f.base,f.glow,f.shadow,f.style,f.rarity,!!f.seasonOnly,rxTvUltraLight(),v91EffectiveGraphics(),view].join('|');
  if(bWeaponPreviewCache.has(key))return bWeaponPreviewCache.get(key);
  const mesh=[];v8DrawWeapon(mesh,{x:0,y:0,z:0,yaw:0,pitch:0,rigGrip:true},index,f,false,0);
  if(!mesh.length||mesh.length%27!==0)return null;
@@ -3298,9 +3302,9 @@ function bMeshPreviewData(f){
  const faces=[];let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
  for(let i=0;i<mesh.length;i+=27){
   const poly=[];let depth=0;
-  for(let j=0;j<3;j++){const p=i+j*9,x=mesh[p],y=mesh[p+1],z=mesh[p+2],u=.30*x-.954*z,v=-.36*x+.927*y-.113*z;
+  for(let j=0;j<3;j++){const p=i+j*9,x=mesh[p],y=mesh[p+1],z=mesh[p+2],u=view==='hud'?(.72*x+.69*z):(.30*x-.954*z),v=view==='hud'?(-.28*x+.91*y+.29*z):(-.36*x+.927*y-.113*z);
    if(!Number.isFinite(u+v))return null;
-   poly.push([u,v]);depth+=.884*x+.378*y+.278*z;
+   poly.push([u,v]);depth+=view==='hud'?(.63*x+.41*y-.66*z):(.884*x+.378*y+.278*z);
    minX=Math.min(minX,u);maxX=Math.max(maxX,u);minY=Math.min(minY,v);maxY=Math.max(maxY,v);}
   const lit=Math.max(.42,Math.min(1.26,.76+.25*mesh[i+6]+.32*mesh[i+7]-.13*mesh[i+8]));
   const rgb=mesh.slice(i+3,i+6).map(v=>Math.max(0,Math.min(255,Math.round(v*255*lit))));
@@ -6604,10 +6608,9 @@ function crownDrawCharacters(out,eye,center,now,menu) {
   }else if(mode==='mystery'&&vxRole==='murderer'){
     if(!rxTvUltraLight())crownViewArms(out,now,true);vxDrawHeldKnife(out,now);
   }else if(mode!=='mystery'||vxRole==='sheriff'){
-    if(!rxTvUltraLight()&&(!v92Active()||v92MobileResolved()!=='eco')){
-      crownViewArms(out,now);
-      v8DrawWeapon(out,pl,pl.weapon,gunFinishFor(pl.weapon),true,now);
-    }
+    // Keep the actual 3D gun on low graphics; only the extra arm geometry is optional.
+    if(!rxTvUltraLight()&&(!v92Active()||v92MobileResolved()!=='eco'))crownViewArms(out,now);
+    if(gl)v8DrawWeapon(out,pl,pl.weapon,gunFinishFor(pl.weapon),true,now);
   }
 }
 
@@ -13177,7 +13180,7 @@ runCrownGame();
   // The older preferences selected Sand Edition's compact layout automatically.
   // Migrate every profile to classic until the player explicitly chooses a layout here.
   let simplified=false;
-  try{simplified=api.read('rx-home-layout-v2','classic')==='compact';}catch{}
+  try{simplified=api.read('rx-b-layout-opt-in',false)===true&&api.read('rx-home-layout-v2','classic')==='compact';}catch{}
   const panel=document.getElementById('rxSimplePanel'),city=document.getElementById('z1CityEntry');
   root.append(panel);
   function apply(value){
@@ -13195,7 +13198,7 @@ runCrownGame();
   level.onchange=()=>{api.setBotMode(level.value);try{api.write('rx5-bot-challenge',level.value)}catch{}};
   toggle.onclick=()=>{
     apply(!simplified);
-    try{api.write('rx-home-layout-v2',simplified?'compact':'classic');}catch{}
+    try{api.write('rx-home-layout-v2',simplified?'compact':'classic');api.write('rx-b-layout-opt-in',true);}catch{}
     const first=document.getElementById(simplified?'rxSimpleQuick':'z1CityEntry');
     first?.focus();
   };

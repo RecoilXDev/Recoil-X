@@ -65,6 +65,11 @@ jobs:
           for f in server/*.mjs server/*.js tests/*.test.mjs tests/*.test.cjs; do node --check "$f"; done
           node --test tests/*.test.mjs tests/*.test.cjs
 
+      - name: Browser smoke tests on desktop and Smart TV user-agent
+        run: |
+          npm install --prefix "$RUNNER_TEMP/rx-browser" --no-audit --no-fund --ignore-scripts playwright-core@1.55.0
+          RX_PLAYWRIGHT_MODULE="$RUNNER_TEMP/rx-browser/node_modules/playwright-core" CHROME_BIN="$(command -v google-chrome || command -v chromium)" node tests/update-b-browser-smoke.mjs
+
       - name: Upload the game page and offline files
         run: |
           scp -4 -o BatchMode=yes -o StrictHostKeyChecking=yes \
@@ -129,6 +134,7 @@ jobs:
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
           grep -Fq 'const pool=bQuickPool(MAPS)' /tmp/recoil-z5-live.html
           grep -Fq 'name="rx-build"' /tmp/recoil-z5-live.html
+          grep -Fq 'content="B-UI-STABLE-3"' /tmp/recoil-z5-live.html
           grep -Fq 'content="B-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
           # The Node server appends online scripts before </body>; compare the exact expected response.
