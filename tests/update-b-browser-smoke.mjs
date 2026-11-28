@@ -19,7 +19,7 @@ try{
   const photo=await page.locator('#overlay').evaluate(e=>getComputedStyle(e).backgroundImage);assert.match(photo,/b-theme-aero\.svg/,'native scalable device background');
   const dimensions=await page.locator('#overlay').evaluate(async el=>{const bg=getComputedStyle(el).backgroundImage;const src=bg.match(/url\("?([^\")]+)"?\)/)[1];const art=new Image();art.src=src;await art.decode();return [art.naturalWidth,art.naturalHeight];});assert.deepEqual(dimensions,[1920,1080]);
   const size=await page.evaluate(async()=>{const image=new Image();image.src='server/b-coastal-hd.avif';await image.decode();return [image.naturalWidth,image.naturalHeight];});assert.deepEqual(size,[796,366]);
-  assert.equal(await page.locator('meta[name="rx-ui-revision"]').getAttribute('content'),'B-UI-STABLE-5');
+  assert.equal(await page.locator('meta[name="rx-ui-revision"]').getAttribute('content'),'B-UI-STABLE-6');
   await page.locator('#choosePC').click();
   await page.locator('#bLobby[data-theme=aero]').waitFor({state:'visible'});
   assert.equal(await page.locator('#mainMenu').evaluate(e=>e.classList.contains('rx-simple-active')),false);

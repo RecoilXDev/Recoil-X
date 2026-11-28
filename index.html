@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="rx-build" content="B-PREVIEW-1" />
-<meta name="rx-ui-revision" content="B-UI-STABLE-5" />
+<meta name="rx-ui-revision" content="B-UI-STABLE-6" />
 <meta name="rx-release" content="B — Ocean Breeze" />
 <meta name="rx-update" content="A-NEW-DAWN-PREVIEW-1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
@@ -6577,10 +6577,30 @@ function rxTvDrawActor(out,b,kind){
   putBox(out,x,y+1.44*k*c,z,.46*k,.48*k*c,.44*k,palette[1]);
   if(!(mode==='mystery'&&(b.role==='innocent'||(kind==='player'&&vxRole==='innocent')))&&!b.crownUnarmed){const yaw=b.yaw||0;putBox(out,x+Math.sin(yaw)*.43*k,y+1.02*k*c,z+Math.cos(yaw)*.43*k,.22*k,.20*k,.48*k,palette[2]);}
 }
+// B soldier recovery: use the original A.4 skeleton, prioritizing visible nearby actors.
+function bSoldierLodPlan(candidates,hardware,fps,target,resolution,slow){
+ const plan=new Map(),cap=Math.max(1,target||30);
+ const ratio=fps>0?fps/cap:0,scale=Number.isFinite(resolution)?resolution:1;
+ const stressed=slow>=12||(fps>0&&ratio<.72)||scale<.73;
+ if(stressed)return plan;
+ const healthy=ratio>=.9&&scale>=.82&&slow<4;
+ const full=hardware?((fps===0||healthy)?2:1):(healthy?1:0);
+ const mid=hardware?(healthy||fps===0?3:1):1;
+ let nFull=0,nMid=0;
+ const ordered=candidates.filter(c=>Number.isFinite(c.distance)&&c.distance>=0&&c.actor).sort((a,b)=>(Number(!!b.local)-Number(!!a.local))||a.distance-b.distance);
+ for(const c of ordered){
+  if(plan.has(c.actor))continue;
+  if(nFull<full&&c.distance<=(hardware?15:6)){plan.set(c.actor,0);nFull++;continue;}
+  if(nMid<mid&&c.distance<=(hardware?25:12)){plan.set(c.actor,1);nMid++;}
+ }
+ return plan;
+}
+let bSoldierLods=new Map();
 function crownDrawActor(out,b,distance,now,kind='bot') {
   if(b.alive===false||(kind==='remote'&&!(b.hp>0)))return;
-  if(rxTvUltraLight()){rxTvDrawActor(out,b,kind);return;}
-  const {model,id,variant,lod,scale}=crownActorSpec(b,distance);
+  const tv=rxTvUltraLight(),tvLod=tv?bSoldierLods.get(b):undefined;
+  if(tv&&tvLod===undefined){rxTvDrawActor(out,b,kind);return;}
+  const {model,id,variant,lod:baseLod,scale}=crownActorSpec(b,distance),lod=tvLod??baseLod;
   const motion=crownMotion(b,now),mesh=crownMesh(model,lod,variant);
   const pose=model==='scorpion'?crownScorpionPose(b,now,motion):crownHumanoidPose(b,now,model,motion);
   const sourcePalette=crownPalette(id,model);
@@ -6680,6 +6700,14 @@ function crownDrawCharacters(out,eye,center,now,menu) {
   const range=v91RenderDistance(),vx=center[0]-eye[0],vz=center[2]-eye[2],length=Math.hypot(vx,vz)||1;
   function visible(b,d){
     return d<range+12&&(d<7||(b.x-eye[0])*vx+(b.z-eye[2])*vz>-d*length*.13);
+  }
+  if(rxTvUltraLight()){
+    const candidates=[];
+    const offer=(actor,local=false)=>{if(!actor||actor.alive===false||actor.spectating||!(crownModel(actor)==='fighter'||crownModel(actor)==='infected'))return;const distance=Math.hypot(actor.x-eye[0],actor.z-eye[2]);if(local||visible(actor,distance))candidates.push({actor,distance,local});};
+    for(const b of bots)if(b.alive)offer(b);
+    if(mode==='host'||mode==='guest'||mode==='z-online'||mode==='crown-overdrive'||z1IsPartyHost())for(const p of remotePlayers.values())if(p.hp>0&&!(z2IsMatch()&&(z2Live.match.mode==='jeep'||z2Live.match.mode==='props'&&p.prop>=0)))offer(p);
+    if(!menu&&!spectating&&pl.alive&&!z1Vehicle&&v8ThirdPerson)offer(pl,true);
+    bSoldierLods=bSoldierLodPlan(candidates,!!gl,fpsValue,v91FpsTarget(),perfResolutionScale,perfFramesSlow);
   }
   for(const b of bots){
     if(!b.alive)continue;
