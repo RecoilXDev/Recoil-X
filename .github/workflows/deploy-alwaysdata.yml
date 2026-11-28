@@ -22,9 +22,8 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
-    # Intentionally disabled until the owner configures the secrets below.
-    if: ${{ vars.RECOIL_X_DEPLOY_ENABLED == 'true' }}
+    # Deploy only the production branch when explicitly enabled.
+    if: ${{ github.ref == 'refs/heads/main' && vars.RECOIL_X_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out RECOIL X
@@ -128,9 +127,9 @@ jobs:
           grep -Fq 'rx5LowG' /tmp/recoil-z5-live.html
           grep -Fq 'rxSimpleQuick' /tmp/recoil-z5-live.html
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
-          grep -Fq 'const pool=MAPS.filter(m=>!m.mysteryOnly' /tmp/recoil-z5-live.html
+          grep -Fq 'const pool=bQuickPool(MAPS)' /tmp/recoil-z5-live.html
           grep -Fq 'name="rx-build"' /tmp/recoil-z5-live.html
-          grep -Fq 'content="A-NEW-DAWN-PREVIEW-1"' /tmp/recoil-z5-live.html
+          grep -Fq 'content="B-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
           # The Node server appends online scripts before </body>; compare the exact expected response.
           node --input-type=module <<'VERIFY_HTML'
@@ -213,7 +212,7 @@ jobs:
             echo 'Legacy LAB launcher must be removed' >&2; exit 1
           fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-sw.js https://recoil-x.alwaysdata.net/sw.js
-          grep -Fq 'recoil-city-3d-radio' /tmp/recoil-z5-sw.js
+          grep -Fq 'recoil-city-3d-radio-update-b-preview1' /tmp/recoil-z5-sw.js
           grep -Fq 'const PASS_MAX=100,PASS_COST=300,PASS_FINAL_COST=500' /tmp/recoil-z5-live.html
           grep -Fq 'RX_PITY_LIMIT=25' /tmp/recoil-z5-live.html
           grep -Fq 'Five classic maps, plus expansion and mystery arenas' /tmp/recoil-z5-live.html
@@ -221,7 +220,7 @@ jobs:
           if grep -Fq '100.5%' /tmp/recoil-z5-live.html; then echo 'Outdated odds adjustment remains' >&2; exit 1; fi
           curl --fail --silent --show-error --location --output /tmp/recoil-z5-health.json https://recoil-x.alwaysdata.net/rx-api/health
           grep -Fq '"recoil":"Z.5"' /tmp/recoil-z5-health.json
-          node -e "if (require('/tmp/recoil-z5-health.json').release !== 'recoil-city-3d-radio') process.exit(1)"
+          node -e "if (require('/tmp/recoil-z5-health.json').release !== 'update-b-preview') process.exit(1)"
           curl --fail --silent --show-error --output /tmp/live-season-schedule.json https://recoil-x.alwaysdata.net/rx-api/a/season/schedule
           node -e "const s=require('/tmp/live-season-schedule.json'); if(s.start!==Date.parse('2026-11-25T00:00:00+04:00') || !Number.isFinite(s.now) || !['upcoming','active','ended'].includes(s.state)) process.exit(1)"
           for asset in a-control-center.js a-curator.js; do
