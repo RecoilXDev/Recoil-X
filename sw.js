@@ -4,8 +4,9 @@ const cacheName=prefix+'recoil-city-3d-radio-update-b-preview1-coastal-reference
 const shell=new URL('index.html',scope).href;
 const assets=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png',
   'server/recoil-city-world.js','server/recoil-city-view.js','server/recoil-city-radio.js','server/city-radio/tracks.json',
-  'server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp','server/b-coastal-hd.avif']
+  'server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp','server/b-coastal-hd.avif','server/b-theme-aero.svg']
   .map(path=>new URL(path,scope).href);
+const themeAssets=new Set(["server/b-theme-aero.svg","server/b-theme-sand.svg","server/b-theme-zone90.svg","server/b-theme-metro.svg","server/b-theme-midnight.svg","server/b-theme-aurora.svg","server/b-theme-cyber.svg","server/b-theme-golden.svg"].map(path=>new URL(path,scope).href));
 const shellPaths=new Set([scope.pathname,new URL(shell).pathname]);
 
 self.addEventListener('install',event=>{
@@ -45,6 +46,8 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET'||url.origin!==scope.origin)return;
   if(request.mode==='navigate'&&shellPaths.has(url.pathname)){
     navigate(event,url);
+  }else if(themeAssets.has(url.href)){
+    event.respondWith((async()=>{const hit=await stored(url.href);if(hit)return hit;const response=await fetch(request);if(response.ok){try{await (await caches.open(cacheName)).put(url.href,response.clone());}catch{}}return response;})());
   }else if(assets.includes(url.href)&&url.pathname.endsWith('.mp3')){
     event.respondWith(fetch(request).catch(async()=>{
       const recording=await stored(url.href);if(!recording)return Response.error();

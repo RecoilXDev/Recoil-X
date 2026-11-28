@@ -46,7 +46,15 @@ const cityAssets = new Map([
   ['/server/recoil-city.js', 'text/javascript; charset=utf-8'],
   ['/server/recoil-city-cover.webp', 'image/webp'],
   ['/server/b-coastal-reference.webp', 'image/webp'],
-  ['/server/b-coastal-hd.avif', 'image/avif']
+  ['/server/b-coastal-hd.avif', 'image/avif'],
+  ['/server/b-theme-aero.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-sand.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-zone90.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-metro.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-midnight.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-aurora.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-cyber.svg', 'image/svg+xml; charset=utf-8'],
+  ['/server/b-theme-golden.svg', 'image/svg+xml; charset=utf-8']
 ]);
 
 const radioRoot = '/server/city-radio/';
