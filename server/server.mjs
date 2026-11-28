@@ -45,7 +45,8 @@ const cityAssets = new Map([
   ['/server/city-radio/tracks.json', 'application/json; charset=utf-8'],
   ['/server/recoil-city.js', 'text/javascript; charset=utf-8'],
   ['/server/recoil-city-cover.webp', 'image/webp'],
-  ['/server/b-coastal-reference.webp', 'image/webp']
+  ['/server/b-coastal-reference.webp', 'image/webp'],
+  ['/server/b-coastal-hd.avif', 'image/avif']
 ]);
 
 const radioRoot = '/server/city-radio/';

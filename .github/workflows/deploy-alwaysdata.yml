@@ -134,7 +134,7 @@ jobs:
           grep -Fq 'Classic · Random map · 5-minute battle' /tmp/recoil-z5-live.html
           grep -Fq 'const pool=bQuickPool(MAPS)' /tmp/recoil-z5-live.html
           grep -Fq 'name="rx-build"' /tmp/recoil-z5-live.html
-          grep -Fq 'content="B-UI-STABLE-3"' /tmp/recoil-z5-live.html
+          grep -Fq 'content="B-UI-STABLE-4"' /tmp/recoil-z5-live.html
           grep -Fq 'content="B-PREVIEW-1"' /tmp/recoil-z5-live.html
           grep -Fq 'function rxAModeScore' /tmp/recoil-z5-live.html
           # The Node server appends online scripts before </body>; compare the exact expected response.
@@ -233,7 +233,7 @@ jobs:
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done
-          for asset in recoil-city-world.js recoil-city-view.js recoil-city-radio.js recoil-city.js recoil-city-cover.webp b-coastal-reference.webp; do
+          for asset in recoil-city-world.js recoil-city-view.js recoil-city-radio.js recoil-city.js recoil-city-cover.webp b-coastal-reference.webp b-coastal-hd.avif; do
             curl --fail --silent --show-error --output "/tmp/live-$asset" "https://recoil-x.alwaysdata.net/server/$asset?build=$GITHUB_SHA"
             cmp "server/$asset" "/tmp/live-$asset"
           done

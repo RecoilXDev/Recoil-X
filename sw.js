@@ -1,10 +1,10 @@
 const scope=new URL(self.registration.scope);
 const prefix='recoil-x-shell:'+scope.pathname+':';
-const cacheName=prefix+'recoil-city-3d-radio-update-b-preview1-coastal-reference3';
+const cacheName=prefix+'recoil-city-3d-radio-update-b-preview1-coastal-reference4';
 const shell=new URL('index.html',scope).href;
 const assets=['index.html','manifest.webmanifest','recoil-icon-192.png','recoil-icon-512.png',
   'server/recoil-city-world.js','server/recoil-city-view.js','server/recoil-city-radio.js','server/city-radio/tracks.json',
-  'server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp']
+  'server/city-radio/Welcome_to_Recoil_City.mp3','server/city-radio/47_menu.mp3','server/recoil-city.js','server/recoil-city-cover.webp','server/b-coastal-reference.webp','server/b-coastal-hd.avif']
   .map(path=>new URL(path,scope).href);
 const shellPaths=new Set([scope.pathname,new URL(shell).pathname]);
 
