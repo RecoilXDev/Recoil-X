@@ -6,7 +6,7 @@ const {makeHarness}=require('./helpers/dom-harness.cjs');
 const root=path.join(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
 
-test('Update A public name survives all legacy app initialization and device selection',()=>{
+test('Current public name survives all legacy app initialization and device selection',()=>{
  const h=makeHarness();
  const {ui}=h;
  const main=ui.querySelector('#mainMenu .brandchip');
@@ -15,11 +15,9 @@ test('Update A public name survives all legacy app initialization and device sel
  const hud=ui.querySelector('#v9ModeBadge');
  const title=ui.querySelector('title');
  assert.ok(main&&device&&version&&hud&&title);
- assert.match(main.textContent,/UPDATE A/i);
- assert.match(device.textContent,/UPDATE A/i);
- assert.match(version.textContent,/UPDATE A/i);
- assert.match(hud.textContent,/UPDATE A/i);
- assert.match(title.textContent,/UPDATE A/i);
+ const release=read('index.html').match(/<meta name="rx-release" content="([A-Z](?:\.\d+)?) — /)?.[1];assert.ok(release);
+ const expected=new RegExp('UPDATE '+release.replace('.', '\\.'),'i');
+ for(const node of [main,device,version,hud,title])assert.match(node.textContent,expected);
  assert.doesNotMatch(main.textContent,/Z\.[35]|preview|RC\d/i);
  assert.doesNotMatch(device.textContent,/Z\.[35]|preview|RC\d/i);
 });

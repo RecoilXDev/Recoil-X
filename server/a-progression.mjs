@@ -9,6 +9,8 @@ export function cupWindow(now){
  return {state,index,start,end:Math.min(start+CUP_WEEK,SEASON_END)};
 }
 export const SEASON_GODLY='Sandwyrm';
+export const B_LEVEL_REWARDS=Object.freeze([{"id":"b-level-5","level":5,"name":"Aero Pulse SMG","kind":"gun","slot":"smg"},{"id":"b-level-10","level":10,"name":"Crystal Knife","kind":"knife","slot":0},{"id":"b-level-15","level":15,"name":"Frutiger Metro","kind":"theme","slot":"metro"},{"id":"b-level-20","level":20,"name":"Ocean Strike Rifle","kind":"gun","slot":"ar"},{"id":"b-level-25","level":25,"name":"Coral Karambit","kind":"knife","slot":3},{"id":"b-level-30","level":30,"name":"Midnight","kind":"theme","slot":"midnight"},{"id":"b-level-35","level":35,"name":"Phantom Sniper","kind":"gun","slot":"sniper"},{"id":"b-level-40","level":40,"name":"Aqua Scythe","kind":"knife","slot":4},{"id":"b-level-45","level":45,"name":"Neon Dragon Rifle","kind":"gun","slot":"ar"},{"id":"b-level-50","level":50,"name":"Aurora","kind":"theme","slot":"aurora"},{"id":"b-level-55","level":55,"name":"Eclipse Shotgun","kind":"gun","slot":"shot"},{"id":"b-level-60","level":60,"name":"Sapphire Blade","kind":"knife","slot":1},{"id":"b-level-65","level":65,"name":"Silver Phantom","kind":"gun","slot":"sniper"},{"id":"b-level-70","level":70,"name":"Silver Reaper Knife","kind":"knife","slot":4},{"id":"b-level-75","level":75,"name":"Cyber Aero","kind":"theme","slot":"cyber"},{"id":"b-level-80","level":80,"name":"Golden Tempest Rifle","kind":"gun","slot":"ar"},{"id":"b-level-85","level":85,"name":"Golden Karambit","kind":"knife","slot":3},{"id":"b-level-90","level":90,"name":"Celestial Sniper","kind":"gun","slot":"sniper"},{"id":"b-level-95","level":95,"name":"Legacy Sword","kind":"knife","slot":5},{"id":"b-level-100","level":100,"name":"Golden Legacy","kind":"theme","slot":"golden"}].map(Object.freeze));
+export function bAccountRewards(xp){const level=1+Math.floor(Math.max(0,Number.isFinite(xp)?xp:0)/500);return B_LEVEL_REWARDS.filter(r=>r.level<=level).map(r=>r.id);}
 const rewardFor=rank=>rank===1?'gold':rank===2?'silver':rank===3?'bronze':'blue';
 export function createAProgression(db,{clock=Date.now}={}){
  db.exec(`CREATE TABLE IF NOT EXISTS rx_a_progress(player INTEGER PRIMARY KEY REFERENCES users(id),xp INTEGER NOT NULL DEFAULT 0,season_xp INTEGER NOT NULL DEFAULT 0,matches INTEGER NOT NULL DEFAULT 0,wins INTEGER NOT NULL DEFAULT 0,public INTEGER NOT NULL DEFAULT 0);
@@ -72,7 +74,7 @@ export function createAProgression(db,{clock=Date.now}={}){
    const r=get.get(user.id)||{xp:0,season_xp:0,matches:0,wins:0,public:0};
    const level=1+Math.floor(r.xp/500);
    const seasonLevel=1+Math.floor(r.season_xp/500);
-   return {xp:r.xp,level,nextLevelXp:level*500,matches:r.matches,wins:r.wins,public:!!r.public,season:{name:'Season 1 — New Dawn',start:SEASON_START,end:SEASON_END,state:seasonState(clock()),xp:r.season_xp,level:seasonLevel,milestones:milestones.map(m=>({...m,unlocked:r.season_xp>=m.xp&&seasonState(clock())!=='upcoming'}))}};
+   return {xp:r.xp,level,nextLevelXp:level*500,bRewards:bAccountRewards(r.xp),matches:r.matches,wins:r.wins,public:!!r.public,season:{name:'Season 1 — New Dawn',start:SEASON_START,end:SEASON_END,state:seasonState(clock()),xp:r.season_xp,level:seasonLevel,milestones:milestones.map(m=>({...m,unlocked:r.season_xp>=m.xp&&seasonState(clock())!=='upcoming'}))}};
  }
  function settle(result,now=clock()){
    if(!result?.id||![0,1].includes(result.winner)||['remake','forfeit','abandoned'].includes(result.reason)||result.duration<30000)return;
